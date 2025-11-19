@@ -1,0 +1,1179 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>הגדרות - English Learning Games</title>
+    <link rel="stylesheet" href="styles.css?t=1762332862">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .password-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .password-modal.show {
+            display: flex;
+        }
+
+        .password-dialog {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            max-width: 400px;
+            width: 90%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        }
+
+        .password-dialog h3 {
+            margin-bottom: 20px;
+            color: #667eea;
+            font-size: 1.5rem;
+        }
+
+        .password-dialog input {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+        }
+
+        .password-dialog input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .password-error {
+            color: #f56565;
+            margin-bottom: 15px;
+            display: none;
+        }
+
+        .password-error.show {
+            display: block;
+        }
+
+        .settings-container {
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .protected-section {
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .protected-section.locked {
+            opacity: 0.7;
+            cursor: pointer;
+        }
+
+        .protected-section.locked::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(245, 158, 11, 0.05);
+            border-radius: 20px;
+            pointer-events: none;
+        }
+
+        /* Password prompt buttons removed - using top bar unlock button only */
+
+        .protected-section.unlocked {
+            opacity: 1;
+        }
+
+        .settings-action-bar {
+            position: sticky;
+            top: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            z-index: 100;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .settings-action-bar h1 {
+            color: white;
+            font-size: 1.8rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .action-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .action-btn-back {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .action-btn-back:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .action-btn-save {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+        }
+
+        .action-btn-save:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
+        }
+
+        .action-btn-reset {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .action-btn-reset:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
+        }
+
+        .action-btn-delete {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+        }
+
+        .action-btn-delete:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
+        }
+
+        .action-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .settings-header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+
+        .settings-header h1 {
+            font-size: 2.5rem;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .settings-header h1 i {
+            color: #667eea;
+            margin-left: 15px;
+        }
+
+        .settings-section {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            margin-bottom: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .settings-section h2 {
+            font-size: 1.8rem;
+            color: #667eea;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .settings-section h2 i {
+            font-size: 1.5rem;
+        }
+
+        .setting-item {
+            margin-bottom: 25px;
+            padding: 15px;
+            background: rgba(102, 126, 234, 0.05);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        .setting-item:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: translateX(-5px);
+        }
+
+        .setting-label {
+            display: block;
+            font-size: 1.1rem;
+            font-weight: 600;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .setting-description {
+            font-size: 0.9rem;
+            color: #718096;
+            margin-bottom: 12px;
+        }
+
+        .checkbox-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-item:hover {
+            border-color: #667eea;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+        }
+
+        .checkbox-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .checkbox-item.checked {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .checkbox-item.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .checkbox-item label {
+            cursor: pointer;
+            font-weight: 500;
+            flex: 1;
+        }
+
+        .category-count {
+            background: #667eea;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .slider-container {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .slider {
+            flex: 1;
+            height: 8px;
+            border-radius: 5px;
+            background: #e2e8f0;
+            outline: none;
+            -webkit-appearance: none;
+        }
+
+        .slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+        }
+
+        .slider::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            background: #667eea;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            border: none;
+        }
+
+        .slider-value {
+            min-width: 60px;
+            text-align: center;
+            font-weight: 700;
+            color: #667eea;
+            font-size: 1.2rem;
+        }
+
+        .radio-group {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .radio-item {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px;
+            background: white;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .radio-item:hover {
+            border-color: #667eea;
+        }
+
+        .radio-item input[type="radio"] {
+            width: 20px;
+            height: 20px;
+            cursor: pointer;
+            accent-color: #667eea;
+        }
+
+        .radio-item.selected {
+            border-color: #667eea;
+            background: rgba(102, 126, 234, 0.1);
+        }
+
+        .button-group {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+            flex-wrap: wrap;
+        }
+
+        .btn {
+            padding: 15px 40px;
+            border: none;
+            border-radius: 50px;
+            font-size: 1.1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
+        }
+
+        .btn-secondary {
+            background: #e2e8f0;
+            color: #4a5568;
+        }
+
+        .btn-secondary:hover {
+            background: #cbd5e0;
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
+        }
+
+        .btn-danger:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(245, 101, 101, 0.5);
+        }
+
+        .warning-message {
+            background: rgba(237, 137, 54, 0.1);
+            border: 2px solid #ed8936;
+            border-radius: 12px;
+            padding: 15px;
+            margin-top: 15px;
+            color: #c05621;
+            font-weight: 600;
+            display: none;
+        }
+
+        .warning-message.show {
+            display: block;
+            animation: shake 0.5s ease;
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .success-message {
+            background: rgba(72, 187, 120, 0.1);
+            border: 2px solid #48bb78;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 20px;
+            color: #2f855a;
+            font-weight: 600;
+            text-align: center;
+            display: none;
+        }
+
+        .success-message.show {
+            display: block;
+            animation: slideDown 0.5s ease;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 34px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 26px;
+            width: 26px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #667eea;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(26px);
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            color: white;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 1.1rem;
+            margin-bottom: 20px;
+            padding: 10px 20px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 50px;
+            transition: all 0.3s ease;
+        }
+
+        .back-link:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(5px);
+        }
+
+        .theme-preview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 15px;
+        }
+
+        .theme-option {
+            padding: 20px;
+            border-radius: 12px;
+            border: 3px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-align: center;
+            font-weight: 600;
+        }
+
+        .theme-option:hover {
+            transform: scale(1.05);
+        }
+
+        .theme-option.selected {
+            border-color: #667eea;
+            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .theme-classic {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .theme-modern {
+            background: linear-gradient(145deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: #333;
+        }
+
+        /* ========== User Table Styles ========== */
+        .user-table-container {
+            overflow-x: auto;
+            margin-top: 15px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: white;
+        }
+
+        .user-table thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .user-table th {
+            padding: 15px;
+            text-align: right;
+            font-weight: 600;
+            font-size: 1rem;
+        }
+
+        .user-table td {
+            padding: 12px 15px;
+            border-bottom: 1px solid #e2e8f0;
+            color: #2d3748;
+            font-weight: 500;
+        }
+
+        .user-table tbody tr:hover {
+            background: rgba(102, 126, 234, 0.05);
+        }
+
+        .user-table tbody tr:last-child td {
+            border-bottom: none;
+        }
+
+        .user-status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+        }
+
+        .user-status-badge.has-password {
+            background: rgba(72, 187, 120, 0.1);
+            color: #2f855a;
+        }
+
+        .user-status-badge.no-password {
+            background: rgba(245, 158, 11, 0.1);
+            color: #c05621;
+        }
+
+        .user-action-btn {
+            padding: 6px 12px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        .user-action-btn.reset {
+            background: rgba(245, 158, 11, 0.1);
+            color: #d97706;
+        }
+
+        .user-action-btn.reset:hover {
+            background: rgba(245, 158, 11, 0.2);
+        }
+
+        .user-action-btn.delete {
+            background: rgba(245, 101, 101, 0.1);
+            color: #e53e3e;
+        }
+
+        .user-action-btn.delete:hover {
+            background: rgba(245, 101, 101, 0.2);
+        }
+
+        /* ========== Mobile Responsive ========== */
+        @media (max-width: 768px) {
+            html {
+                font-size: 16px; /* Prevent iOS zoom */
+            }
+
+            .settings-container {
+                padding: 20px 15px;
+            }
+
+            .settings-action-bar {
+                padding: 15px;
+            }
+
+            .settings-action-bar h1 {
+                font-size: 1.3rem;
+                width: 100%;
+                justify-content: center;
+            }
+
+            .action-buttons {
+                width: 100%;
+                justify-content: center;
+            }
+
+            .action-btn {
+                padding: 12px 20px;
+                font-size: 0.95rem;
+                min-height: 48px; /* Touch-friendly */
+            }
+
+            .settings-section {
+                padding: 25px 20px;
+            }
+
+            .settings-section h2 {
+                font-size: 1.4rem;
+            }
+
+            .setting-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 15px;
+            }
+
+            .setting-label {
+                width: 100%;
+            }
+
+            .setting-input {
+                width: 100%;
+            }
+
+            .slider-container {
+                width: 100%;
+            }
+
+            .button-group {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .button-group button {
+                width: 100%;
+            }
+
+            .password-dialog {
+                padding: 30px 20px;
+                max-width: 95%;
+            }
+
+            input[type="text"],
+            input[type="password"] {
+                font-size: 16px !important; /* Prevent iOS zoom */
+            }
+        }
+
+        @media (max-width: 480px) {
+            .settings-container {
+                padding: 15px 10px;
+            }
+
+            .settings-action-bar h1 {
+                font-size: 1.2rem;
+            }
+
+            .action-btn {
+                padding: 10px 16px;
+                font-size: 0.9rem;
+            }
+
+            .settings-section {
+                padding: 20px 15px;
+            }
+
+            .settings-section h2 {
+                font-size: 1.2rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Header (same as main page) -->
+    <header class="top-header" style="display: flex; position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 1000;">
+        <div class="header-left">
+            <div class="app-logo" id="settings-home-btn" style="cursor: pointer;">
+                <i class="fas fa-graduation-cap"></i>
+                <span>לומדים אנגלית</span>
+            </div>
+            <nav class="top-game-nav">
+                <button class="top-game-btn" data-nav="vocabulary" title="בונה אוצר מילים">
+                    <i class="fas fa-book"></i>
+                    <span>אוצר מילים</span>
+                </button>
+                <button class="top-game-btn" data-nav="grammar" title="תרגול דקדוק">
+                    <i class="fas fa-spell-check"></i>
+                    <span>דקדוק</span>
+                </button>
+                <button class="top-game-btn" data-nav="pronunciation" title="הגייה">
+                    <i class="fas fa-microphone"></i>
+                    <span>הגייה</span>
+                </button>
+                <button class="top-game-btn" data-nav="listening" title="הקשבה">
+                    <i class="fas fa-headphones"></i>
+                    <span>הקשבה</span>
+                </button>
+                <button class="top-game-btn" data-nav="reading" title="איית אותי">
+                    <i class="fas fa-book-open"></i>
+                    <span>קריאה</span>
+                </button>
+            </nav>
+        </div>
+        <div class="header-right">
+            <a href="stats.html" class="header-icon-btn" title="סטטיסטיקות">
+                <i class="fas fa-chart-line"></i>
+            </a>
+            <a href="settings.html" class="header-icon-btn active" title="הגדרות">
+                <i class="fas fa-cog"></i>
+            </a>
+            <div class="header-user-info" id="header-user-info">
+                <div class="header-user-avatar" id="header-user-avatar">O</div>
+                <div class="header-user-details">
+                    <span class="header-user-name" id="header-user-name">User</span>
+                </div>
+            </div>
+            <button class="header-icon-btn" id="header-logout-btn" title="התנתק">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="settings-container">
+        <!-- Settings Action Buttons (beneath top bar) -->
+        <div class="settings-action-bar" style="margin-top: 80px;">
+            <h1>
+                <i class="fas fa-cog"></i>
+                הגדרות
+            </h1>
+            <div class="action-buttons">
+                <button class="action-btn action-btn-unlock" id="unlock-protected-btn" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                    <i class="fas fa-lock"></i>
+                    פתח הגדרות מוגנות
+                </button>
+                <button class="action-btn action-btn-save" id="save-settings-top">
+                    <i class="fas fa-save"></i>
+                    שמור וצא
+                </button>
+                <button class="action-btn action-btn-reset" id="reset-settings-top">
+                    <i class="fas fa-undo"></i>
+                    אפס הגדרות
+                </button>
+            </div>
+        </div>
+
+        <!-- Vocabulary Categories -->
+        <div class="settings-section">
+            <h2><i class="fas fa-book"></i>קטגוריות אוצר מילים</h2>
+            <div class="setting-item">
+                <label class="setting-label">בחר קטגוריות <span class="category-count" id="selected-count">0/13</span></label>
+                <p class="setting-description">בחר מאילו קטגוריות תרצה ללמוד מילים. מומלץ לבחור לפחות 5 קטגוריות כדי לשמור על מגוון ולהתחרות בציונים.</p>
+                <p class="setting-description" style="color: #f59e0b; font-weight: 600;">
+                    <i class="fas fa-info-circle"></i>
+                    פחות מ-5 קטגוריות = מצב אימון (ללא ציונים)
+                </p>
+
+                <div class="checkbox-grid" id="category-checkboxes">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+
+                <div class="warning-message" id="category-warning">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    בחרת פחות מ-5 קטגוריות - המשחק יהיה במצב אימון (הציונים לא יישמרו).
+                </div>
+            </div>
+        </div>
+
+        <!-- Game Enable/Disable -->
+        <div class="settings-section protected-section" data-protected="true">
+            <h2><i class="fas fa-gamepad"></i>הפעלת/ביטול משחקים</h2>
+            <div class="setting-item">
+                <label class="setting-label">בחר אילו משחקים להפעיל</label>
+                <p class="setting-description">ניתן להפעיל או לבטל משחקים ספציפיים</p>
+
+                <div class="radio-group">
+                    <div class="setting-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="setting-label">🎯 משחק אוצר מילים (Vocabulary)</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="game-vocabulary" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="setting-label">👂 משחק הקשבה (Listening)</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="game-listening" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="setting-label">📖 משחק קריאה (Reading)</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="game-reading" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                    </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="setting-label">🎤 משחק הגייה (Pronunciation)</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="game-pronunciation" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="setting-label">📝 משחק דקדוק (Grammar)</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="game-grammar" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Audio Settings -->
+        <div class="settings-section protected-section" data-protected="true">
+            <h2><i class="fas fa-volume-up"></i>הגדרות שמע</h2>
+
+            <div class="setting-item">
+                <label class="setting-label">בחירת קול</label>
+                <p class="setting-description">בחר את הקול המועדף עליך לקריאת המילים</p>
+                <a href="voice-test.html" class="btn" style="display: inline-block; padding: 10px 20px; background: #2196F3; color: white; text-decoration: none; border-radius: 6px;">🎤 בדוק קולות זמינים</a>
+            </div>
+        </div>
+
+        <!-- Game Settings -->
+        <div class="settings-section protected-section" data-protected="true">
+            <h2><i class="fas fa-gamepad"></i>הגדרות משחק</h2>
+
+            <div class="setting-item">
+                <label class="setting-label">מספר שאלות למשחק</label>
+                <p class="setting-description">כמה שאלות בכל משחק</p>
+                <div class="slider-container">
+                    <input type="range" min="5" max="20" step="1" value="10" class="slider" id="questions-count">
+                    <span class="slider-value" id="questions-value">10</span>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">כמה פעמים לחץ על המילה</label>
+                <p class="setting-description">מספר הפעמים שצריך ללחוץ על המילה לפני שהתשובות מופיעות</p>
+                <div class="slider-container">
+                    <input type="range" min="1" max="5" step="1" value="3" class="slider" id="click-count">
+                    <span class="slider-value" id="clicks-value">3</span>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">מספר השמעות מותרות</label>
+                <p class="setting-description">כמה פעמים אפשר לשמוע כל מילה</p>
+                <div class="slider-container">
+                    <input type="range" min="3" max="15" step="1" value="8" class="slider" id="audio-plays">
+                    <span class="slider-value" id="plays-value">8</span>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">רמת קושי</label>
+                <p class="setting-description">בחר את רמת הקושי המתאימה לך</p>
+                <div class="radio-group">
+                    <div class="radio-item" data-value="beginner">
+                        <input type="radio" name="difficulty" value="beginner" id="diff-beginner" checked>
+                        <label for="diff-beginner">מתחיל - מילים פשוטות</label>
+                    </div>
+                    <div class="radio-item" data-value="intermediate">
+                        <input type="radio" name="difficulty" value="intermediate" id="diff-intermediate">
+                        <label for="diff-intermediate">בינוני - מילים מגוונות</label>
+                    </div>
+                    <div class="radio-item" data-value="advanced">
+                        <input type="radio" name="difficulty" value="advanced" id="diff-advanced">
+                        <label for="diff-advanced">מתקדם - מילים מאתגרות</label>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Advanced Settings -->
+        <div class="settings-section protected-section" data-protected="true">
+            <h2><i class="fas fa-cogs"></i>הגדרות מתקדמות</h2>
+
+            <div class="setting-item">
+                <label class="setting-label">ערבוב משופר</label>
+                <p class="setting-description">שימוש באלגוריתם ערבוב משופר למגוון גדול יותר</p>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="enhanced-shuffle" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">מניעת קטגוריות רצופות</label>
+                <p class="setting-description">מבטיח שלא יהיו שתי מילים רצופות מאותה קטגוריה</p>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="prevent-consecutive" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">קונפטי בהצלחה</label>
+                <p class="setting-description">הצג אנימציית קונפטי כשמשיבים נכון</p>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="show-confetti" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">שמור התקדמות</label>
+                <p class="setting-description">שמור את ההתקדמות והציונים שלך</p>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="save-progress" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">התנהגות יציאה ממשחק</label>
+                <p class="setting-description">בחר מה יקרה כשיוצאים ממשחק באמצע</p>
+                <div class="radio-group" id="exit-behavior-group">
+                    <div class="radio-item" data-value="hybrid">
+                        <input type="radio" name="exitBehavior" value="hybrid" id="exit-hybrid">
+                        <label for="exit-hybrid">
+                            <strong>היברידי (מומלץ)</strong><br>
+                            <small>אישור מהיר בתחילה, שמירה אוטומטית אחרי 3 שאלות</small>
+                        </label>
+                    </div>
+                    <div class="radio-item" data-value="confirmation">
+                        <input type="radio" name="exitBehavior" value="confirmation" id="exit-confirmation">
+                        <label for="exit-confirmation">
+                            <strong>אישור תמיד</strong><br>
+                            <small>הצג חלון אישור עם אפשרות לשמור בכל יציאה</small>
+                        </label>
+                    </div>
+                    <div class="radio-item" data-value="autosave">
+                        <input type="radio" name="exitBehavior" value="autosave" id="exit-autosave">
+                        <label for="exit-autosave">
+                            <strong>שמירה אוטומטית</strong><br>
+                            <small>שמור אוטומטית ללא אישור, הצג הודעה קצרה</small>
+                        </label>
+                    </div>
+                    <div class="radio-item" data-value="smart">
+                        <input type="radio" name="exitBehavior" value="smart" id="exit-smart">
+                        <label for="exit-smart">
+                            <strong>חכם</strong><br>
+                            <small>שאלות 1-3: ללא אישור | 4+: אישור ושמירה | 8+: שמירה אוטומטית</small>
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">סף שאלות ליציאה</label>
+                <p class="setting-description">מספר השאלה שבה ההתנהגות משתנה (רלוונטי להיברידי וחכם)</p>
+                <input type="range" id="exit-threshold" min="1" max="9" value="3" class="slider">
+                <div class="slider-value">
+                    <span id="exit-threshold-value">3</span> שאלות
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">שמירה אוטומטית של התקדמות</label>
+                <p class="setting-description">שמור משחקים לא גמורים ואפשר המשך מאוחר יותר</p>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="auto-save-progress" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">הודעות יציאה</label>
+                <p class="setting-description">הצג הודעה קצרה כשיוצאים ושומרים משחק</p>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="show-exit-toast" checked>
+                    <span class="toggle-slider"></span>
+                </label>
+            </div>
+        </div>
+
+        <!-- User Management -->
+        <div class="settings-section protected-section" data-protected="true">
+            <h2><i class="fas fa-users"></i>ניהול משתמשים</h2>
+
+            <div class="setting-item">
+                <label class="setting-label">משתמשים רשומים</label>
+                <p class="setting-description">נהל משתמשים (נדרשת סיסמת מנהל לפתיחת הגדרות מוגנות)</p>
+
+                <div class="user-table-container">
+                    <table class="user-table" id="user-table">
+                        <thead>
+                            <tr>
+                                <th>שם משתמש</th>
+                                <th>תאריך יצירה</th>
+                                <th>התחברות אחרונה</th>
+                                <th>סטטוס סיסמה</th>
+                                <th>פעולות</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" id="add-user-btn" style="display: inline-flex;">
+                        <i class="fas fa-user-plus"></i>
+                        הוסף משתמש
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <div class="success-message" id="success-message">
+            <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <div>ההגדרות נשמרו בהצלחה!</div>
+        </div>
+    </div>
+
+    <!-- Password Modal -->
+    <div class="password-modal" id="password-modal">
+        <div class="password-dialog">
+            <h3><i class="fas fa-lock"></i> הזן סיסמת הורה</h3>
+            <p class="setting-description">סעיף זה מוגן. אנא הזן את סיסמת ההורה.</p>
+            <div class="password-error" id="password-error">
+                <i class="fas fa-exclamation-circle"></i> סיסמה שגויה!
+            </div>
+            <input type="password" id="password-input" placeholder="סיסמה">
+            <div class="button-group">
+                <button class="btn btn-primary" id="password-submit">אישור</button>
+                <button class="btn btn-secondary" id="password-cancel">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="auth.js?t=1762332862"></script>
+    <script src="settings.js?t=1762332862"></script>
+</body>
+</html>

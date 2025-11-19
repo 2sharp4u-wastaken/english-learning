@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Test - בדיקת תמונות</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            color: white;
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .stats {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .stats h2 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .category-section {
+            margin-bottom: 40px;
+        }
+
+        .category-title {
+            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+            color: white;
+            padding: 15px 25px;
+            border-radius: 10px;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            display: inline-block;
+        }
+
+        .words-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .word-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .word-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+
+        .picture-container {
+            width: 120px;
+            height: 120px;
+            margin: 0 auto 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #f7fafc;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .word-image {
+            width: 120px;
+            height: 120px;
+            object-fit: contain;
+        }
+
+        .picture-container.emoji {
+            font-size: 80px;
+        }
+
+        .word-english {
+            font-size: 1.5em;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .word-hebrew {
+            font-size: 1.2em;
+            color: #718096;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: inline-block;
+            padding: 5px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+
+        .status.success {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .status.fallback {
+            background: #fed7d7;
+            color: #742a2a;
+        }
+
+        .image-path {
+            font-size: 0.75em;
+            color: #a0aec0;
+            margin-top: 5px;
+            word-break: break-all;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 בדיקת תמונות - Image Test</h1>
+
+        <div class="stats">
+            <h2>סטטיסטיקה</h2>
+            <p>מילים עם תמונות: <strong id="image-count">0</strong></p>
+            <p>מילים עם אימוג'י: <strong id="emoji-count">0</strong></p>
+        </div>
+
+        <!-- Animals Section -->
+        <div class="category-section">
+            <div class="category-title">🐾 חיות - Animals</div>
+            <div class="words-grid" id="animals-grid"></div>
+        </div>
+
+        <!-- Body Section -->
+        <div class="category-section">
+            <div class="category-title">👤 גוף - Body</div>
+            <div class="words-grid" id="body-grid"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { animalsWords } from './data/categories/animals.js';
+        import { bodyWords } from './data/categories/body.js';
+
+        let imageCount = 0;
+        let emojiCount = 0;
+
+        function createWordCard(word) {
+            const card = document.createElement('div');
+            card.className = 'word-card';
+
+            const pictureContainer = document.createElement('div');
+            pictureContainer.className = 'picture-container';
+
+            let status = '';
+            let imagePath = '';
+
+            if (word.imageUrl) {
+                // Has image URL - try to load it
+                const img = document.createElement('img');
+                img.src = word.imageUrl;
+                img.alt = word.word;
+                img.className = 'word-image';
+
+                img.onload = () => {
+                    imageCount++;
+                    updateStats();
+                };
+
+                img.onerror = () => {
+                    // Image failed - show emoji
+                    pictureContainer.classList.add('emoji');
+                    pictureContainer.textContent = word.image;
+                    emojiCount++;
+                    updateStats();
+                };
+
+                pictureContainer.appendChild(img);
+                status = '<span class="status success">✅ תמונה</span>';
+                imagePath = word.imageUrl;
+            } else {
+                // No image URL - show emoji
+                pictureContainer.classList.add('emoji');
+                pictureContainer.textContent = word.image;
+                status = '<span class="status fallback">⚠️ אימוג\'י</span>';
+                emojiCount++;
+                updateStats();
+            }
+
+            card.innerHTML = `
+                ${pictureContainer.outerHTML}
+                <div class="word-english">${word.word}</div>
+                <div class="word-hebrew">${word.translation}</div>
+                ${status}
+                ${imagePath ? `<div class="image-path">${imagePath}</div>` : ''}
+            `;
+
+            return card;
+        }
+
+        function updateStats() {
+            document.getElementById('image-count').textContent = imageCount;
+            document.getElementById('emoji-count').textContent = emojiCount;
+        }
+
+        function renderCategories() {
+            const animalsGrid = document.getElementById('animals-grid');
+            const bodyGrid = document.getElementById('body-grid');
+
+            // Filter and display only words with imageUrl
+            const animalsWithImages = animalsWords.filter(w => w.imageUrl);
+            const bodyWithImages = bodyWords.filter(w => w.imageUrl);
+
+            // Animals
+            animalsWithImages.forEach(word => {
+                animalsGrid.appendChild(createWordCard(word));
+            });
+
+            // Body
+            bodyWithImages.forEach(word => {
+                bodyGrid.appendChild(createWordCard(word));
+            });
+
+            // If no words with images, show message
+            if (animalsWithImages.length === 0) {
+                animalsGrid.innerHTML = '<p style="color: white; text-align: center; padding: 20px;">אין מילים עם תמונות בקטגוריה זו</p>';
+            }
+            if (bodyWithImages.length === 0) {
+                bodyGrid.innerHTML = '<p style="color: white; text-align: center; padding: 20px;">אין מילים עם תמונות בקטגוריה זו</p>';
+            }
+        }
+
+        // Render on load
+        renderCategories();
+    </script>
+</body>
+</html>

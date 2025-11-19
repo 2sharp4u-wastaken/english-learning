@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>English Learning Games - לומדים אנגלית בכיף</title>
+    <link rel="stylesheet" href="styles.css?t=1762334400">
+    <link rel="stylesheet" href="game-completion-styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body>
+    <div class="app-layout">
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top Navigation Header -->
+            <header class="top-header" id="top-header" style="display: none;">
+                <div class="header-left">
+                    <div class="app-logo">
+                        <i class="fas fa-graduation-cap"></i>
+                        <span>לומדים אנגלית</span>
+                    </div>
+                    <nav class="top-game-nav">
+                        <button class="top-game-btn" data-game="vocabulary" title="בונה אוצר מילים">
+                            <i class="fas fa-book"></i>
+                            <span>אוצר מילים</span>
+                        </button>
+                        <button class="top-game-btn" data-game="grammar" title="תרגול דקדוק">
+                            <i class="fas fa-spell-check"></i>
+                            <span>דקדוק</span>
+                        </button>
+                        <button class="top-game-btn" data-game="pronunciation" title="הגייה">
+                            <i class="fas fa-microphone"></i>
+                            <span>הגייה</span>
+                        </button>
+                        <button class="top-game-btn" data-game="listening" title="הקשבה">
+                            <i class="fas fa-headphones"></i>
+                            <span>הקשבה</span>
+                        </button>
+                        <button class="top-game-btn" data-game="reading" title="איית אותי">
+                            <i class="fas fa-book-open"></i>
+                            <span>קריאה</span>
+                        </button>
+                    </nav>
+                </div>
+                <div class="header-right">
+                    <a href="stats.html" class="header-icon-btn" title="סטטיסטיקות">
+                        <i class="fas fa-chart-line"></i>
+                    </a>
+                    <a href="settings.html" class="header-icon-btn" title="הגדרות">
+                        <i class="fas fa-cog"></i>
+                    </a>
+                    <div class="header-user-info" id="header-user-info">
+                        <div class="header-user-avatar" id="header-user-avatar">O</div>
+                        <div class="header-user-details">
+                            <span class="header-user-name" id="header-user-name">User</span>
+                            <span class="header-score" id="header-score">ניקוד: <span id="current-score">0</span></span>
+                        </div>
+                    </div>
+                    <button class="header-icon-btn" id="header-logout-btn" title="התנתק">
+                        <i class="fas fa-sign-out-alt"></i>
+                    </button>
+                </div>
+            </header>
+
+            <main class="game-area">
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="game-content">
+                <div class="welcome-container">
+                    <h1 class="welcome-title">🎉 ברוך הבא לעולם האנגלית! 🎉</h1>
+                    <p class="welcome-subtitle">בחר משחק כדי להתחיל ללמוד!</p>
+
+                    <!-- Resume Games Section -->
+                    <div id="resume-games-section" class="resume-games-section" style="display: none;">
+                        <h2 class="resume-title"><i class="fas fa-history"></i> המשך משחקים קודמים</h2>
+                        <div id="resume-games-grid" class="resume-games-grid">
+                            <!-- Resume cards will be added here dynamically -->
+                        </div>
+                    </div>
+
+                    <h2 class="games-section-title">משחקים חדשים</h2>
+                    <div class="game-cards-grid">
+                        <div class="game-card" data-game="vocabulary">
+                            <div class="game-card-icon">📚</div>
+                            <h3>בונה אוצר מילים</h3>
+                            <p>למד מילים חדשות באנגלית</p>
+                        </div>
+
+                        <div class="game-card" data-game="grammar">
+                            <div class="game-card-icon">✏️</div>
+                            <h3>תרגול דקדוק</h3>
+                            <p>שפר את הדקדוק שלך</p>
+                        </div>
+
+                        <div class="game-card" data-game="pronunciation">
+                            <div class="game-card-icon">🎤</div>
+                            <h3>משחק הגייה</h3>
+                            <p>תרגל את ההגייה שלך</p>
+                        </div>
+
+                        <div class="game-card" data-game="listening">
+                            <div class="game-card-icon">👂</div>
+                            <h3>משחק הקשבה</h3>
+                            <p>שפר את ההקשבה שלך</p>
+                        </div>
+
+                        <div class="game-card" data-game="reading">
+                            <div class="game-card-icon">📖</div>
+                            <h3>משחק קריאה</h3>
+                            <p>למד לקרוא מילים באנגלית</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vocabulary Game -->
+            <div id="vocabulary-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">Question <span id="vocab-current-q">1</span> of <span id="vocab-total-q">10</span></span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="vocab-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="word-card">
+                        <div class="vocabulary-layout-vertical">
+                            <!-- Picture emoji at top, centered (hidden by default to encourage listening) -->
+                            <div class="picture-container" style="display: none;">
+                                <div class="word-picture" id="vocab-picture">🔤</div>
+                            </div>
+                            <!-- English word -->
+                            <div class="english-word" id="vocab-word">Loading...</div>
+                            <!-- Hebrew instruction below word -->
+                            <div class="hebrew-translation" id="vocab-hebrew"></div>
+                            <!-- Play button and plays remaining on same line -->
+                            <div class="controls-row">
+                                <button class="play-audio" id="vocab-audio" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="vocab-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="options-grid" id="vocab-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                    <div class="feedback" id="vocab-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Grammar Game -->
+            <div id="grammar-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">Question <span id="grammar-current-q">1</span> of <span id="grammar-total-q">10</span></span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="grammar-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="sentence-card">
+                        <div class="grammar-layout-vertical">
+                            <!-- Grammar sentence centered -->
+                            <div class="sentence" id="grammar-sentence">Loading...</div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="grammar-next" style="display: none;">
+                        <span>השאלה הבאה</span>
+                    </button>
+                    <div class="options-grid" id="grammar-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                    <div class="feedback" id="grammar-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Pronunciation Game -->
+            <div id="pronunciation-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">Question <span id="pronunciation-current-q">1</span> of <span id="pronunciation-total-q">10</span></span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="pronunciation-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="pronunciation-card">
+                        <div class="pronunciation-layout-vertical">
+                            <!-- Emoji at top, centered -->
+                            <div class="picture-container">
+                                <div class="word-picture" id="pronunciation-picture">🔤</div>
+                            </div>
+                            <!-- English and Hebrew words on same line -->
+                            <div class="words-row">
+                                <div class="target-word" id="pronunciation-word">Loading...</div>
+                                <div class="hebrew-translation" id="pronunciation-hebrew"></div>
+                            </div>
+                            <!-- Record button and plays remaining on same line -->
+                            <div class="controls-row">
+                                <button class="record-btn-icon" id="record-btn" aria-label="הקלט את ההגייה שלך">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button class="play-audio" id="pronunciation-listen" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="pronunciation-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="feedback" id="pronunciation-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Listening Game -->
+            <div id="listening-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">Question <span id="listening-current-q">1</span> of <span id="listening-total-q">10</span></span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="listening-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="listening-card">
+                        <div class="listening-layout-vertical">
+                            <!-- Emoji at top, centered -->
+                            <div class="picture-container">
+                                <div class="word-picture" id="listening-picture">🔤</div>
+                            </div>
+                            <!-- Hebrew translation centered -->
+                            <div class="hebrew-translation" id="listening-hebrew"></div>
+                            <!-- Play button and plays remaining on same line -->
+                            <div class="controls-row">
+                                <button class="play-audio" id="listening-audio" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="listening-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="options-grid" id="listening-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                    <div class="feedback" id="listening-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Children's Reading Game -->
+            <div id="reading-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">Question <span id="reading-current-q">1</span> of <span id="reading-total-q">10</span></span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="reading-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="reading-card">
+                        <div class="reading-layout-vertical">
+                            <!-- Emoji at top, centered -->
+                            <div class="picture-container">
+                                <div class="word-picture" id="reading-picture">🔤</div>
+                            </div>
+                            <!-- English and Hebrew words on same line -->
+                            <div class="words-row">
+                                <div class="target-word" id="reading-word">CAT</div>
+                                <div class="hebrew-translation" id="reading-hebrew"></div>
+                            </div>
+                            <!-- Play button and plays remaining on same line -->
+                            <div class="controls-row">
+                                <button class="play-audio" id="reading-audio" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                            </div>
+                            <!-- Built word area -->
+                            <div class="built-word" id="built-word">
+                                <!-- User's built word will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="reading-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="letter-bank" id="letter-bank">
+                        <!-- Available letters will be populated by JavaScript -->
+                    </div>
+                    <div class="action-buttons">
+                        <button class="game-btn clear-btn" id="clear-word">
+                            <span>נקה</span>
+                        </button>
+                        <button class="game-btn check-btn" id="check-word">
+                            <span>בדוק</span>
+                        </button>
+                    </div>
+                    <div class="feedback" id="reading-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="auth-modal">
+        <div class="auth-modal-content">
+            <div class="auth-header">
+                <i class="fas fa-graduation-cap auth-icon"></i>
+                <h2>English Learning Games</h2>
+                <p class="auth-subtitle">משחקים ללימוד אנגלית</p>
+            </div>
+
+            <!-- User Selection Screen -->
+            <div id="user-selection-screen" class="auth-screen">
+                <h3>Select User / בחר משתמש</h3>
+                <div class="user-selection-grid" id="user-selection-grid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Password Entry Screen -->
+            <div id="password-entry-screen" class="auth-screen" style="display: none;">
+                <button class="back-btn" id="back-to-selection">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <div class="user-login-info">
+                    <div class="login-avatar" id="login-avatar">O</div>
+                    <h3 id="login-user-name">User</h3>
+                </div>
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="password-input">Password / סיסמה</label>
+                        <div class="password-input-wrapper">
+                            <input
+                                type="password"
+                                id="password-input"
+                                class="password-input"
+                                placeholder="Enter password / הכנס סיסמה"
+                                autocomplete="current-password"
+                                required
+                            />
+                            <button type="button" class="toggle-password" id="toggle-password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <p class="password-hint" id="password-hint" style="display: none;">
+                            First time? Create a password to protect your account.
+                            <br>
+                            פעם ראשונה? צור סיסמה כדי להגן על החשבון שלך.
+                        </p>
+                    </div>
+                    <div class="auth-error" id="auth-error" style="display: none;"></div>
+                    <button type="submit" class="auth-btn" id="login-submit">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Login / התחבר</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exit Game Confirmation Modal -->
+    <div class="exit-modal" id="exit-modal">
+        <div class="exit-dialog">
+            <h3><i class="fas fa-exclamation-triangle"></i> משחק בתהליך</h3>
+            <div class="exit-info">
+                <p class="exit-score">ניקוד נוכחי: <span id="exit-current-score">0</span> נקודות</p>
+                <p class="exit-progress">שאלה: <span id="exit-current-question">0</span>/<span id="exit-total-questions">10</span></p>
+            </div>
+            <p class="exit-warning" id="exit-warning-message">הניקוד יישמר בסטטיסטיקות</p>
+            <div class="exit-buttons">
+                <button class="btn btn-primary" id="exit-and-save-btn">
+                    <i class="fas fa-save"></i>
+                    יציאה ושמירה
+                </button>
+                <button class="btn btn-secondary" id="exit-continue-btn">
+                    <i class="fas fa-play"></i>
+                    המשך משחק
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Exit Confirmation Bar -->
+    <div class="exit-bar" id="exit-bar">
+        <div class="exit-bar-content">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>לצאת ממשחק? ההתקדמות תאבד</span>
+            <div class="exit-bar-buttons">
+                <button class="exit-bar-btn exit-bar-confirm" id="exit-bar-confirm">יציאה</button>
+                <button class="exit-bar-btn exit-bar-cancel" id="exit-bar-cancel">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">Message</span>
+    </div>
+
+    <!-- Error Tracker - Load first to catch all errors -->
+    <script src="error-tracker.js"></script>
+
+    <script src="auth.js?t=1762332862"></script>
+    <script src="settings.js?t=1762332862"></script>
+    <script type="module" src="data/_loader.js?t=1762594745"></script>
+    <script src="speechSynthesis.js?t=1762610965"></script>
+    <script src="feedback.js"></script>
+    <script type="module" src="gameLogic.js?t=1762610965"></script>
+    <script src="app.js?t=1762332862"></script>
+
+    <script>
+        // Welcome Screen Handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const gameCards = document.querySelectorAll('.game-card');
+
+            // Function to apply game visibility based on settings
+            function applyGameVisibility() {
+                const settings = localStorage.getItem('englishLearningSettings');
+                if (!settings) return; // Use defaults if no settings
+
+                try {
+                    const parsed = JSON.parse(settings);
+                    const enabledGames = parsed.enabledGames || {
+                        vocabulary: true,
+                        listening: true,
+                        reading: true,
+                        pronunciation: true,
+                        grammar: true
+                    };
+
+                    Object.keys(enabledGames).forEach(gameType => {
+                        const isEnabled = enabledGames[gameType];
+
+                        // Show/hide game cards in welcome screen
+                        const gameCard = document.querySelector(`.game-card[data-game="${gameType}"]`);
+                        if (gameCard) {
+                            gameCard.style.display = isEnabled ? '' : 'none';
+                        }
+
+                        // Show/hide in top nav
+                        document.querySelectorAll(`.top-game-btn[data-game="${gameType}"]`).forEach(btn => {
+                            btn.style.display = isEnabled ? '' : 'none';
+                        });
+                    });
+                } catch (error) {
+                    console.error('Error applying game visibility:', error);
+                }
+            }
+
+            // Function to show welcome screen
+            function showWelcomeScreen() {
+                // Hide all game sections
+                document.querySelectorAll('.game-content').forEach(section => {
+                    section.classList.remove('active');
+                    section.style.display = 'none';
+                });
+
+                // Show welcome screen
+                welcomeScreen.classList.add('active');
+                welcomeScreen.style.display = 'block';
+
+                // Apply game visibility whenever welcome screen is shown
+                applyGameVisibility();
+            }
+
+            // Handle game card clicks
+            gameCards.forEach(card => {
+                card.addEventListener('click', () => {
+                    const gameType = card.dataset.game;
+
+                    // Validate game type before switching
+                    if (!gameType) {
+                        console.warn('Game card clicked without data-game attribute:', card);
+                        return;
+                    }
+
+                    // Wait for gameManager to be available
+                    const switchToGame = () => {
+                        if (window.gameManager) {
+                            // Hide welcome screen
+                            welcomeScreen.classList.remove('active');
+                            welcomeScreen.style.display = 'none';
+
+                            // Show selected game
+                            window.gameManager.switchGame(gameType);
+                        } else {
+                            console.log('Waiting for gameManager...');
+                            setTimeout(switchToGame, 100);
+                        }
+                    };
+
+                    switchToGame();
+                });
+            });
+
+            // Handle hash URLs (e.g., index.html#vocabulary)
+            function handleHashNavigation() {
+                const hash = window.location.hash.substring(1); // Remove the '#'
+                if (hash && typeof gameManager !== 'undefined') {
+                    // Hide welcome screen
+                    welcomeScreen.classList.remove('active');
+                    welcomeScreen.style.display = 'none';
+                    // Switch to the game specified in hash
+                    gameManager.switchGame(hash);
+                } else if (hash) {
+                    // gameManager not ready yet, wait and retry
+                    setTimeout(handleHashNavigation, 100);
+                }
+            }
+
+            // Check if we're coming from settings/stats (has referrer)
+            function isComingFromSettingsOrStats() {
+                return document.referrer && (
+                    document.referrer.includes('settings.html') ||
+                    document.referrer.includes('stats.html')
+                );
+            }
+
+            // Show welcome screen after login - ALWAYS clear hash on login
+            window.addEventListener('user-logged-in', () => {
+                // Clear hash to ensure welcome screen shows
+                if (window.location.hash) {
+                    history.replaceState(null, null, window.location.pathname);
+                }
+                setTimeout(showWelcomeScreen, 100);
+            });
+
+            // Show welcome screen if user is already logged in
+            if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
+                setTimeout(() => {
+                    // If coming from settings/stats, clear hash and show welcome screen
+                    if (isComingFromSettingsOrStats()) {
+                        if (window.location.hash) {
+                            history.replaceState(null, null, window.location.pathname);
+                        }
+                        showWelcomeScreen();
+                    }
+                    // If there's a hash from direct navigation, honor it
+                    else if (window.location.hash) {
+                        handleHashNavigation();
+                    }
+                    // Otherwise show welcome screen
+                    else {
+                        showWelcomeScreen();
+                    }
+                }, 200);
+            }
+
+            // Handle hash changes (when user clicks browser back/forward)
+            window.addEventListener('hashchange', handleHashNavigation);
+        });
+    </script>
+
+    <script>
+        // Top Header Handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const topHeader = document.getElementById('top-header');
+            const topGameBtns = document.querySelectorAll('.top-game-btn');
+            const headerLogoutBtn = document.getElementById('header-logout-btn');
+            const headerUserAvatar = document.getElementById('header-user-avatar');
+            const headerUserName = document.getElementById('header-user-name');
+
+            // Function to update header with user info
+            function updateHeaderUserInfo() {
+                if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
+                    const currentUser = authService.getCurrentUser();
+                    if (currentUser) {
+                        // Update avatar
+                        headerUserAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
+                        headerUserAvatar.style.background = currentUser.avatarColor ||
+                            'linear-gradient(135deg, #667eea, #764ba2)';
+
+                        // Update name
+                        headerUserName.textContent = currentUser.name;
+
+                        // Show header and enable header mode
+                        topHeader.style.display = 'flex';
+                        document.querySelector('.app-layout').classList.add('header-mode');
+                    }
+                }
+            }
+
+            // Handle top game navigation clicks
+            topGameBtns.forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const gameType = btn.dataset.game;
+
+                    // Validate game type before switching
+                    if (!gameType) {
+                        console.warn('Top game button clicked without data-game attribute:', btn);
+                        return;
+                    }
+
+                    const switchToGame = () => {
+                        if (window.gameManager) {
+                            // Update active states
+                            topGameBtns.forEach(b => b.classList.remove('active'));
+                            btn.classList.add('active');
+
+                            // Switch to game
+                            window.gameManager.switchGame(gameType);
+                        } else {
+                            setTimeout(switchToGame, 100);
+                        }
+                    };
+
+                    switchToGame();
+                });
+            });
+
+            // Handle app logo click to go to home page
+            const appLogo = document.querySelector('.app-logo');
+            if (appLogo) {
+                appLogo.addEventListener('click', () => {
+                    // Clear hash to show we're on welcome screen
+                    if (window.location.hash) {
+                        history.replaceState(null, null, window.location.pathname);
+                    }
+
+                    // Hide all game sections
+                    document.querySelectorAll('.game-content').forEach(section => {
+                        section.classList.remove('active');
+                        section.style.display = 'none';
+                    });
+
+                    // Show welcome screen
+                    const welcomeScreen = document.getElementById('welcome-screen');
+                    if (welcomeScreen) {
+                        welcomeScreen.classList.add('active');
+                        welcomeScreen.style.display = 'block';
+                    }
+
+                    // Remove active state from all top game buttons
+                    topGameBtns.forEach(btn => btn.classList.remove('active'));
+                });
+            }
+
+            // Handle header logout button
+            if (headerLogoutBtn) {
+                headerLogoutBtn.addEventListener('click', () => {
+                    if (typeof authService !== 'undefined') {
+                        // Clear hash before logout to ensure clean state
+                        if (window.location.hash) {
+                            history.replaceState(null, null, window.location.pathname);
+                        }
+                        authService.logout();
+                        topHeader.style.display = 'none';
+                        document.querySelector('.app-layout').classList.remove('header-mode');
+                    }
+                });
+            }
+
+            // Show header after login
+            window.addEventListener('user-logged-in', () => {
+                setTimeout(updateHeaderUserInfo, 100);
+            });
+
+            // Show header if user is already logged in
+            if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
+                setTimeout(updateHeaderUserInfo, 200);
+            }
+
+            // Sidebar removed - no sync needed
+        });
+    </script>
+</body>
+</html>

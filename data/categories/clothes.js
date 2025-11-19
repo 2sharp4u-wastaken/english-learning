@@ -1,0 +1,35 @@
+// Clothes vocabulary (30 words)
+// For Hebrew-speaking children aged 6-9
+
+export const clothesWords = [
+    { word: "Shirt", translation: "חולצה", category: "clothes", image: "👕" },
+    { word: "Pants", translation: "מכנסיים", category: "clothes", image: "👖" },
+    { word: "Dress", translation: "שמלה", category: "clothes", image: "👗" },
+    { word: "Shoes", translation: "נעליים", category: "clothes", image: "👞" },
+    { word: "Hat", translation: "כובע", category: "clothes", image: "👒" },
+    { word: "Socks", translation: "גרביים", category: "clothes", image: "🧦" },
+    { word: "Jacket", translation: "ז'קט", category: "clothes", image: "🧥" },
+    { word: "Coat", translation: "מעיל", category: "clothes", image: "🧥" },
+    { word: "Gloves", translation: "כפפות", category: "clothes", image: "🧤" },
+    { word: "Scarf", translation: "צעיף", category: "clothes", image: "🧣" },
+    { word: "Belt", translation: "חגורה", category: "clothes", image: "👜" },
+    { word: "Watch", translation: "שעון", category: "clothes", image: "⌚" },
+    { word: "Glasses", translation: "משקפיים", category: "clothes", image: "👓" },
+    { word: "Ring", translation: "טבעת", category: "clothes", image: "💍" },
+    { word: "Skirt", translation: "חצאית", category: "clothes", image: "👗" },
+    { word: "Sweater", translation: "סוודר", category: "clothes", image: "🧥" },
+    { word: "T-shirt", translation: "חוּלצַת טִי", category: "clothes", image: "👕" },
+    { word: "Jeans", translation: "ג'ינס", category: "clothes", image: "👖" },
+    { word: "Boots", translation: "מגפיים", category: "clothes", image: "🥾" },
+    { word: "Sandals", translation: "סנדלים", category: "clothes", image: "🩴" },
+    { word: "Underwear", translation: "תחתונים", category: "clothes", image: "👙" },
+    { word: "Pajamas", translation: "פיג'מה", category: "clothes", image: "🛌" },
+    { word: "Swimsuit", translation: "בגד ים", category: "clothes", image: "👙" },
+    { word: "Necklace", translation: "שרשרת", category: "clothes", image: "📿" },
+    { word: "Earrings", translation: "עגילים", category: "clothes", image: "💎" },
+    { word: "Bracelet", translation: "צמיד", category: "clothes", image: "💍" },
+    { word: "Wallet", translation: "ארנק", category: "clothes", image: "💳" },
+    { word: "Purse", translation: "תיק", category: "clothes", image: "👜" },
+    { word: "Suit", translation: "חליפה", category: "clothes", image: "👔" },
+    { word: "Tie", translation: "עניבה", category: "clothes", image: "👔" }
+];

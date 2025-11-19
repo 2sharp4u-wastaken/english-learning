@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>סטטיסטיקות - English Learning Games</title>
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        .stats-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .stats-header {
+            text-align: center;
+            margin-bottom: 40px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .stats-header h1 {
+            font-size: 2.8rem;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .stats-header h1 i {
+            color: #667eea;
+            margin-left: 15px;
+        }
+
+        .user-tabs {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-bottom: 40px;
+            flex-wrap: wrap;
+        }
+
+        .user-tab {
+            padding: 20px 40px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            backdrop-filter: blur(10px);
+            border: 3px solid rgba(255, 255, 255, 0.4);
+            border-radius: 50px;
+            font-size: 1.4rem;
+            font-weight: 800;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .user-tab:hover {
+            transform: translateY(-4px) scale(1.05);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+        }
+
+        .user-tab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-color: #fff;
+            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
+            transform: translateY(-4px) scale(1.08);
+        }
+
+        .user-stats-content {
+            display: none;
+        }
+
+        .user-stats-content.active {
+            display: block;
+            animation: fadeIn 0.5s ease;
+        }
+
+        .stats-overview {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 25px;
+            margin-bottom: 40px;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .stat-card i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .stat-card h3 {
+            font-size: 1.2rem;
+            color: #4a5568;
+            margin-bottom: 10px;
+        }
+
+        .stat-card .stat-value {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .games-stats-table {
+            background: rgba(255, 255, 255, 0.95);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 30px;
+        }
+
+        .games-stats-table h2 {
+            font-size: 2rem;
+            color: #667eea;
+            margin-bottom: 25px;
+            text-align: center;
+            padding-bottom: 15px;
+            border-bottom: 3px solid #e2e8f0;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        thead th {
+            padding: 20px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            text-align: center;
+        }
+
+        thead th:first-child {
+            border-radius: 15px 0 0 0;
+        }
+
+        thead th:last-child {
+            border-radius: 0 15px 0 0;
+        }
+
+        tbody tr {
+            border-bottom: 2px solid #e2e8f0;
+            transition: all 0.3s ease;
+        }
+
+        tbody tr:hover {
+            background: rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+
+        tbody tr:last-child {
+            border-bottom: none;
+        }
+
+        tbody td {
+            padding: 20px;
+            text-align: center;
+            font-size: 1.1rem;
+            color: #4a5568;
+        }
+
+        tbody td.game-name {
+            font-weight: 700;
+            text-align: right;
+            font-size: 1.3rem;
+        }
+
+        tbody td.game-icon {
+            font-size: 2rem;
+        }
+
+        tbody td.score {
+            font-weight: 800;
+            font-size: 1.5rem;
+        }
+
+        tbody td.top-score {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        tbody td.average-score {
+            color: #667eea;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 700;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+            margin-bottom: 30px;
+            display: inline-block;
+        }
+
+        .back-link:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        }
+
+        .back-link i {
+            font-size: 1.2rem;
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 60px 20px;
+            color: #718096;
+            font-size: 1.3rem;
+        }
+
+        .no-data i {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ========== Mobile Responsive ========== */
+        @media (max-width: 768px) {
+            html {
+                font-size: 16px; /* Prevent iOS zoom */
+            }
+
+            .stats-container {
+                padding: 20px 15px;
+            }
+
+            .stats-header {
+                padding: 25px 20px;
+            }
+
+            .stats-header h1 {
+                font-size: 1.8rem;
+            }
+
+            .back-link {
+                padding: 12px 20px;
+                font-size: 1rem;
+                min-height: 48px; /* Touch-friendly */
+            }
+
+            .user-tabs {
+                gap: 10px;
+                margin-bottom: 25px;
+            }
+
+            .user-tab {
+                padding: 15px 30px;
+                font-size: 1.2rem;
+                min-height: 48px; /* Touch-friendly */
+            }
+
+            .stats-overview {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .stat-card {
+                padding: 25px;
+            }
+
+            .stat-card i {
+                font-size: 2.5rem;
+            }
+
+            .stat-card .stat-value {
+                font-size: 2rem;
+            }
+
+            .games-stats-table {
+                padding: 25px 20px;
+                overflow-x: auto; /* Allow horizontal scroll for table */
+            }
+
+            .games-stats-table h2 {
+                font-size: 1.5rem;
+            }
+
+            table {
+                font-size: 0.9rem;
+            }
+
+            thead th {
+                padding: 15px 10px;
+                font-size: 0.95rem;
+            }
+
+            tbody td {
+                padding: 15px 10px;
+            }
+
+            /* Make table scrollable on small screens */
+            .games-stats-table {
+                -webkit-overflow-scrolling: touch;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .stats-container {
+                padding: 15px 10px;
+            }
+
+            .stats-header {
+                padding: 20px 15px;
+            }
+
+            .stats-header h1 {
+                font-size: 1.5rem;
+            }
+
+            .user-tab {
+                padding: 12px 24px;
+                font-size: 1.1rem;
+            }
+
+            .stat-card {
+                padding: 20px;
+            }
+
+            .stat-card i {
+                font-size: 2rem;
+            }
+
+            .stat-card h3 {
+                font-size: 1rem;
+            }
+
+            .stat-card .stat-value {
+                font-size: 1.8rem;
+            }
+
+            .games-stats-table {
+                padding: 20px 15px;
+            }
+
+            .games-stats-table h2 {
+                font-size: 1.3rem;
+            }
+
+            table {
+                font-size: 0.85rem;
+            }
+
+            thead th {
+                padding: 12px 8px;
+                font-size: 0.85rem;
+            }
+
+            tbody td {
+                padding: 12px 8px;
+            }
+
+            .back-link {
+                padding: 10px 18px;
+                font-size: 0.95rem;
+            }
+        }
+
+        /* Delete Stats Button Hover Effect */
+        #delete-stats-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 6px 20px rgba(245, 101, 101, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Header (same as main page) -->
+    <header class="top-header" style="display: flex; position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 1000;">
+        <div class="header-left">
+            <div class="app-logo" id="stats-home-btn" style="cursor: pointer;">
+                <i class="fas fa-graduation-cap"></i>
+                <span>לומדים אנגלית</span>
+            </div>
+            <nav class="top-game-nav">
+                <button class="top-game-btn" data-nav="vocabulary" title="בונה אוצר מילים">
+                    <i class="fas fa-book"></i>
+                    <span>אוצר מילים</span>
+                </button>
+                <button class="top-game-btn" data-nav="grammar" title="תרגול דקדוק">
+                    <i class="fas fa-spell-check"></i>
+                    <span>דקדוק</span>
+                </button>
+                <button class="top-game-btn" data-nav="pronunciation" title="הגייה">
+                    <i class="fas fa-microphone"></i>
+                    <span>הגייה</span>
+                </button>
+                <button class="top-game-btn" data-nav="listening" title="הקשבה">
+                    <i class="fas fa-headphones"></i>
+                    <span>הקשבה</span>
+                </button>
+                <button class="top-game-btn" data-nav="reading" title="איית אותי">
+                    <i class="fas fa-book-open"></i>
+                    <span>קריאה</span>
+                </button>
+            </nav>
+        </div>
+        <div class="header-right">
+            <a href="stats.html" class="header-icon-btn active" title="סטטיסטיקות">
+                <i class="fas fa-chart-line"></i>
+            </a>
+            <a href="settings.html" class="header-icon-btn" title="הגדרות">
+                <i class="fas fa-cog"></i>
+            </a>
+            <div class="header-user-info" id="header-user-info">
+                <div class="header-user-avatar" id="header-user-avatar">O</div>
+                <div class="header-user-details">
+                    <span class="header-user-name" id="header-user-name">User</span>
+                </div>
+            </div>
+            <button class="header-icon-btn" id="header-logout-btn" title="התנתק">
+                <i class="fas fa-sign-out-alt"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="stats-container" style="margin-top: 80px;">
+        <div class="stats-header">
+            <h1><i class="fas fa-chart-line"></i>סטטיסטיקות שחקנים</h1>
+            <p>עקוב אחר ההתקדמות וההישגים שלך</p>
+
+            <!-- Delete Stats Button -->
+            <div style="margin-top: 20px;">
+                <button class="btn btn-danger" id="delete-stats-btn" style="background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); color: white; padding: 12px 24px; border: none; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4); transition: all 0.3s ease;">
+                    <i class="fas fa-trash-alt"></i>
+                    מחק סטטיסטיקות
+                </button>
+            </div>
+        </div>
+
+        <!-- User Selection Tabs (populated dynamically by stats.js) -->
+        <div class="user-tabs">
+            <!-- Tabs will be populated by JavaScript -->
+        </div>
+
+        <!-- User Stats Content Areas (populated dynamically by stats.js) -->
+        <!-- Content areas will be created by JavaScript -->
+    </div>
+
+    <script src="auth.js?v=1"></script>
+    <script src="settings.js"></script>
+    <script src="stats.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Top Header User Info Initialization
+            const headerUserAvatar = document.getElementById('header-user-avatar');
+            const headerUserName = document.getElementById('header-user-name');
+            const headerLogoutBtn = document.getElementById('header-logout-btn');
+
+            // Function to update header with user info
+            function updateHeaderUserInfo() {
+                if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
+                    const currentUser = authService.getCurrentUser();
+                    if (currentUser) {
+                        // Update avatar
+                        headerUserAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
+                        headerUserAvatar.style.background = currentUser.avatarColor ||
+                            'linear-gradient(135deg, #667eea, #764ba2)';
+
+                        // Update name
+                        headerUserName.textContent = currentUser.name;
+                    }
+                }
+            }
+
+            // Handle home button
+            const homeBtn = document.getElementById('stats-home-btn');
+            if (homeBtn) {
+                homeBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    window.location.replace('index.html');
+                });
+            }
+
+            // Handle game navigation buttons
+            document.querySelectorAll('.top-game-btn[data-nav]').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const game = btn.dataset.nav;
+                    if (game) {
+                        window.location.replace(`index.html#${game}`);
+                    }
+                });
+            });
+
+            // Handle logout
+            if (headerLogoutBtn) {
+                headerLogoutBtn.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    if (typeof authService !== 'undefined') {
+                        authService.logout();
+                        window.location.replace('index.html');
+                    }
+                });
+            }
+
+            // Update header on load
+            updateHeaderUserInfo();
+
+            // Listen for auth state changes
+            window.addEventListener('userLoggedIn', updateHeaderUserInfo);
+
+            // Delete stats button handler
+            const deleteBtn = document.getElementById('delete-stats-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', () => {
+                    if (!confirm('האם אתה בטוח שברצונך למחוק את כל הסטטיסטיקות של כל המשתמשים? פעולה זו אינה הפיכה!')) {
+                        return;
+                    }
+
+                    const adminPassword = prompt('הזן סיסמת מנהל (password):');
+                    if (!adminPassword) return;
+
+                    // Verify admin password
+                    if (typeof authService !== 'undefined' && authService.verifyAdminPassword) {
+                        if (!authService.verifyAdminPassword(adminPassword)) {
+                            alert('סיסמת מנהל שגויה!');
+                            return;
+                        }
+                    }
+
+                    // Delete all stats directly without needing SettingsManager instance
+                    const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading'];
+
+                    // Get all users
+                    let userIds = [];
+                    if (typeof authService !== 'undefined' && authService.getUsers) {
+                        const allUsers = authService.getUsers();
+                        userIds = Object.keys(allUsers); // usernames like 'omer', 'zohar', etc.
+                    }
+
+                    // Delete user progress for each user
+                    userIds.forEach(userId => {
+                        localStorage.removeItem(`userProgress_${userId}`);
+                    });
+
+                    // Delete score history for each user and game (CORRECT FORMAT: username_gametype_history)
+                    userIds.forEach(userId => {
+                        gameTypes.forEach(game => {
+                            localStorage.removeItem(`${userId}_${game}_history`);
+                            // Also remove old format if it exists
+                            localStorage.removeItem(`scoreHistory_${userId}_${game}`);
+                        });
+                    });
+
+                    // Clear ALL stats-related keys by scanning localStorage
+                    const keysToRemove = [];
+                    for (let i = 0; i < localStorage.length; i++) {
+                        const key = localStorage.key(i);
+                        if (key && (
+                            key.startsWith('userProgress_') ||
+                            key.startsWith('scoreHistory_') ||
+                            key.includes('_history') || // Catches username_gametype_history
+                            key.includes('_score') ||
+                            key.includes('Stats')
+                        )) {
+                            keysToRemove.push(key);
+                        }
+                    }
+                    keysToRemove.forEach(key => localStorage.removeItem(key));
+
+                    alert('כל הסטטיסטיקות נמחקו בהצלחה!');
+
+                    // Reload stats page to show empty stats
+                    setTimeout(() => location.reload(), 500);
+                });
+            }
+        });
+    </script>
+</body>
+</html>

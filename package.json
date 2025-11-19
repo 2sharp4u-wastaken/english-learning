@@ -1,0 +1,13 @@
+{
+  "name": "english-learning-games",
+  "version": "1.0.0",
+  "scripts": {
+    "start": "npx http-server -p 3000 -c-1 --cors"
+  },
+  "devDependencies": {
+    "@tailwindcss/forms": "^0.5.10",
+    "autoprefixer": "^10.4.21",
+    "postcss": "^8.5.6",
+    "tailwindcss": "^4.1.16"
+  }
+}

@@ -1,0 +1,536 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>בדיקת קולות - Voice Testing</title>
+    <link rel="stylesheet" href="styles.css?v=24">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .voice-test-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+        }
+
+        .test-controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .test-btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .test-btn.primary {
+            background: #667eea;
+            color: white;
+        }
+
+        .test-btn.primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+
+        .test-btn.secondary {
+            background: #48bb78;
+            color: white;
+        }
+
+        .test-btn.secondary:hover {
+            background: #38a169;
+            transform: translateY(-2px);
+        }
+
+        .filter-section {
+            margin-bottom: 20px;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .filter-btn {
+            padding: 8px 16px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+        }
+
+        .filter-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .filter-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .voices-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .voice-card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 20px;
+            transition: all 0.3s;
+            border: 3px solid transparent;
+        }
+
+        .voice-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .voice-card.selected {
+            border-color: #48bb78;
+            background: #f0fdf4;
+        }
+
+        .voice-header {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 15px;
+        }
+
+        .voice-icon {
+            font-size: 2em;
+        }
+
+        .voice-name {
+            font-weight: 600;
+            font-size: 1.1em;
+            color: #333;
+        }
+
+        .voice-details {
+            margin-bottom: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .voice-detail-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+        }
+
+        .voice-actions {
+            display: flex;
+            gap: 10px;
+        }
+
+        .voice-btn {
+            flex: 1;
+            padding: 10px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-weight: 500;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .voice-btn.play {
+            background: #667eea;
+            color: white;
+        }
+
+        .voice-btn.play:hover {
+            background: #5568d3;
+        }
+
+        .voice-btn.select {
+            background: #48bb78;
+            color: white;
+        }
+
+        .voice-btn.select:hover {
+            background: #38a169;
+        }
+
+        .voice-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .selected-badge {
+            background: #48bb78;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85em;
+            font-weight: 600;
+            margin-right: auto;
+        }
+
+        .back-link {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            margin-bottom: 20px;
+            transition: all 0.3s;
+        }
+
+        .back-link:hover {
+            transform: translateX(5px);
+        }
+
+        .stats {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 0.95em;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        @media (max-width: 768px) {
+            .voices-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header h1 {
+                font-size: 1.8em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="voice-test-container">
+        <a href="settings.html" class="back-link">
+            <i class="fas fa-arrow-right"></i>
+            חזרה להגדרות
+        </a>
+
+        <div class="header">
+            <h1>🎤 בדיקת קולות זמינים</h1>
+            <p>בחר את הקול המועדף עליך לקריאת מילים באנגלית</p>
+        </div>
+
+        <div class="test-controls">
+            <button class="test-btn primary" id="test-all-btn">
+                <i class="fas fa-volume-up"></i>
+                נסה את כל הקולות
+            </button>
+            <button class="test-btn secondary" id="refresh-voices-btn">
+                <i class="fas fa-sync"></i>
+                רענן רשימת קולות
+            </button>
+        </div>
+
+        <div class="filter-section">
+            <span style="color: #666; font-weight: 600;">סנן לפי:</span>
+            <button class="filter-btn active" data-filter="all">הכל</button>
+            <button class="filter-btn" data-filter="en-US">🇺🇸 אמריקאי</button>
+            <button class="filter-btn" data-filter="en-GB">🇬🇧 בריטי</button>
+            <button class="filter-btn" data-filter="en">אנגלית אחרת</button>
+        </div>
+
+        <div class="stats" id="stats">
+            טוען קולות...
+        </div>
+
+        <div class="voices-grid" id="voices-container">
+            <div class="loading">
+                <i class="fas fa-spinner fa-spin" style="font-size: 2em; color: #667eea;"></i>
+                <p>טוען קולות זמינים...</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const SAMPLE_TEXT = "Hello! I am learning English. The cat is on the table.";
+        let voices = [];
+        let currentFilter = 'all';
+        let selectedVoiceURI = localStorage.getItem('preferredVoiceURI');
+
+        function loadVoices() {
+            voices = window.speechSynthesis.getVoices();
+            console.log('Loaded voices:', voices.length);
+
+            if (voices.length === 0) {
+                setTimeout(loadVoices, 100);
+                return;
+            }
+
+            renderVoices();
+        }
+
+        function renderVoices() {
+            const container = document.getElementById('voices-container');
+
+            // Filter voices
+            let filteredVoices = voices;
+            if (currentFilter !== 'all') {
+                if (currentFilter === 'en') {
+                    // Show all English except US and GB
+                    filteredVoices = voices.filter(v =>
+                        v.lang.startsWith('en') &&
+                        !v.lang.startsWith('en-US') &&
+                        !v.lang.startsWith('en-GB')
+                    );
+                } else {
+                    filteredVoices = voices.filter(v => v.lang.startsWith(currentFilter));
+                }
+            } else {
+                // Show only English voices when "all" is selected
+                filteredVoices = voices.filter(v => v.lang.startsWith('en'));
+            }
+
+            // Update stats
+            document.getElementById('stats').textContent =
+                `נמצאו ${filteredVoices.length} קולות מתוך ${voices.length} זמינים במערכת`;
+
+            if (filteredVoices.length === 0) {
+                container.innerHTML = '<div class="loading"><p>לא נמצאו קולות מתאימים</p></div>';
+                return;
+            }
+
+            container.innerHTML = filteredVoices.map(voice => {
+                const isSelected = voice.voiceURI === selectedVoiceURI;
+                const genderIcon = getGenderIcon(voice.name);
+
+                return `
+                    <div class="voice-card ${isSelected ? 'selected' : ''}" data-voice-uri="${voice.voiceURI}">
+                        <div class="voice-header">
+                            <span class="voice-icon">${genderIcon}</span>
+                            <div style="flex: 1;">
+                                <div class="voice-name">${voice.name}</div>
+                                ${isSelected ? '<span class="selected-badge">✓ נבחר</span>' : ''}
+                            </div>
+                        </div>
+                        <div class="voice-details">
+                            <div class="voice-detail-item">
+                                <span>שפה:</span>
+                                <strong>${getLanguageName(voice.lang)}</strong>
+                            </div>
+                            <div class="voice-detail-item">
+                                <span>מקומי:</span>
+                                <strong>${voice.localService ? 'כן' : 'לא'}</strong>
+                            </div>
+                        </div>
+                        <div class="voice-actions">
+                            <button class="voice-btn play" onclick="testVoice('${voice.voiceURI}')">
+                                <i class="fas fa-play"></i>
+                                נסה
+                            </button>
+                            <button class="voice-btn select" onclick="selectVoice('${voice.voiceURI}')">
+                                <i class="fas fa-check"></i>
+                                בחר
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function getGenderIcon(voiceName) {
+            const name = voiceName.toLowerCase();
+            const femaleIndicators = ['female', 'woman', 'zira', 'samantha', 'karen', 'victoria', 'fiona', 'moira', 'tessa', 'serena'];
+            const maleIndicators = ['male', 'man', 'david', 'alex', 'daniel', 'oliver', 'james', 'thomas'];
+
+            if (femaleIndicators.some(indicator => name.includes(indicator))) {
+                return '👩';
+            } else if (maleIndicators.some(indicator => name.includes(indicator))) {
+                return '👨';
+            }
+            return '🎙️';
+        }
+
+        function getLanguageName(lang) {
+            const langMap = {
+                'en-US': '🇺🇸 אנגלית אמריקאית',
+                'en-GB': '🇬🇧 אנגלית בריטית',
+                'en-AU': '🇦🇺 אנגלית אוסטרלית',
+                'en-CA': '🇨🇦 אנגלית קנדית',
+                'en-IN': '🇮🇳 אנגלית הודית',
+                'en-IE': '🇮🇪 אנגלית אירית',
+                'en-ZA': '🇿🇦 אנגלית דרום אפריקאית',
+            };
+            return langMap[lang] || `🌐 ${lang}`;
+        }
+
+        function testVoice(voiceURI) {
+            const voice = voices.find(v => v.voiceURI === voiceURI);
+            if (!voice) return;
+
+            // Cancel any ongoing speech
+            window.speechSynthesis.cancel();
+
+            const utterance = new SpeechSynthesisUtterance(SAMPLE_TEXT);
+            utterance.voice = voice;
+            utterance.rate = 0.9;
+            utterance.pitch = 1;
+            utterance.volume = 1;
+
+            console.log('Testing voice:', voice.name);
+            window.speechSynthesis.speak(utterance);
+
+            // Visual feedback
+            const card = document.querySelector(`[data-voice-uri="${voiceURI}"]`);
+            const playBtn = card.querySelector('.voice-btn.play');
+            playBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מדבר...';
+            playBtn.disabled = true;
+
+            utterance.onend = () => {
+                playBtn.innerHTML = '<i class="fas fa-play"></i> נסה';
+                playBtn.disabled = false;
+            };
+
+            utterance.onerror = () => {
+                playBtn.innerHTML = '<i class="fas fa-play"></i> נסה';
+                playBtn.disabled = false;
+                alert('שגיאה בהפעלת הקול');
+            };
+        }
+
+        function selectVoice(voiceURI) {
+            const voice = voices.find(v => v.voiceURI === voiceURI);
+            if (!voice) return;
+
+            selectedVoiceURI = voiceURI;
+            localStorage.setItem('preferredVoiceURI', voiceURI);
+
+            console.log('Selected voice:', voice.name);
+
+            // Update UI
+            renderVoices();
+
+            // Show confirmation
+            const card = document.querySelector(`[data-voice-uri="${voiceURI}"]`);
+            card.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            // Play confirmation
+            testVoice(voiceURI);
+        }
+
+        function testAllVoices() {
+            let filteredVoices = voices.filter(v => v.lang.startsWith('en'));
+            if (filteredVoices.length === 0) return;
+
+            const btn = document.getElementById('test-all-btn');
+            btn.disabled = true;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מדבר...';
+
+            let index = 0;
+
+            function speakNext() {
+                if (index >= filteredVoices.length) {
+                    btn.disabled = false;
+                    btn.innerHTML = '<i class="fas fa-volume-up"></i> נסה את כל הקולות';
+                    return;
+                }
+
+                const voice = filteredVoices[index];
+                const utterance = new SpeechSynthesisUtterance(`Hello, I am ${voice.name}`);
+                utterance.voice = voice;
+                utterance.rate = 1;
+
+                utterance.onend = () => {
+                    index++;
+                    setTimeout(speakNext, 500);
+                };
+
+                utterance.onerror = () => {
+                    index++;
+                    speakNext();
+                };
+
+                window.speechSynthesis.speak(utterance);
+            }
+
+            speakNext();
+        }
+
+        // Filter buttons
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                currentFilter = btn.dataset.filter;
+                renderVoices();
+            });
+        });
+
+        // Test all button
+        document.getElementById('test-all-btn').addEventListener('click', testAllVoices);
+
+        // Refresh voices button
+        document.getElementById('refresh-voices-btn').addEventListener('click', () => {
+            window.speechSynthesis.cancel();
+            loadVoices();
+        });
+
+        // Initialize
+        if (window.speechSynthesis.getVoices().length > 0) {
+            loadVoices();
+        } else {
+            window.speechSynthesis.onvoiceschanged = loadVoices;
+        }
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            window.speechSynthesis.cancel();
+        });
+    </script>
+</body>
+</html>

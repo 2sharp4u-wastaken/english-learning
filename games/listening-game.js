@@ -1,0 +1,171 @@
+// Listening Game Module
+// Handles listening comprehension with audio-first approach
+
+import { renderPicture } from '../utils/imageRenderer.js';
+
+export async function loadListeningQuestion(question) {
+    console.log('Loading listening question:', question);
+
+    // Cancel any ongoing speech from previous question
+    if (typeof speechManager !== 'undefined') {
+        speechManager.cancelSpeech();
+    }
+
+    // Clear feedback from previous question
+    const feedback = document.getElementById('listening-feedback');
+    if (feedback) {
+        feedback.textContent = '';
+        feedback.className = 'feedback';
+    }
+
+    // IMMEDIATELY clear previous Hebrew word display to prevent overlap
+    const hebrewElement = document.getElementById('listening-hebrew');
+    if (hebrewElement) {
+        hebrewElement.textContent = '';
+        hebrewElement.style.display = 'none';
+    }
+
+    const optionsContainer = document.getElementById('listening-options');
+    optionsContainer.innerHTML = '';
+
+    // Use pre-shuffled options from question data (no need to shuffle again!)
+    const options = question.options;
+    const correctIndex = question.correct;
+
+    // Safety check: ensure options exist
+    if (!options || !Array.isArray(options)) {
+        console.error('Listening question missing options:', question);
+        return;
+    }
+
+    options.forEach((option, index) => {
+        const button = document.createElement('button');
+        button.className = 'option-btn';
+        button.textContent = option;
+        button.setAttribute('role', 'button');
+        button.tabIndex = 0;
+        button.addEventListener('click', () => {
+            this.checkListeningAnswer(index, correctIndex);
+        });
+        button.addEventListener('keydown', (ev) => {
+            if (ev.key === 'Enter' || ev.key === ' ') {
+                ev.preventDefault();
+                button.click();
+            }
+        });
+        optionsContainer.appendChild(button);
+    });
+
+    // The old "playsRemaining" logic has been removed from here.
+
+    // Add picture and show Hebrew translation immediately
+    const pictureElement = document.getElementById('listening-picture');
+
+    // Render picture (image or emoji)
+    if (pictureElement) {
+        renderPicture(pictureElement, question);
+    }
+    if (hebrewElement) {
+        hebrewElement.textContent = question.hebrew || '';
+        hebrewElement.style.display = 'block'; // Show immediately
+    }
+
+    // Auto-play the word audio when question loads
+    try {
+        await speechManager.speakWord(question.word, '', 'listening');
+    } catch (error) {
+        console.error('Error playing word audio:', error);
+    }
+
+    // Reset feedback and next button
+    document.getElementById('listening-feedback').textContent = '';
+    document.getElementById('listening-feedback').className = 'feedback';
+    document.getElementById('listening-next').style.display = 'none';
+    // Focus first option
+    const firstListeningOption = optionsContainer.querySelector('.option-btn');
+    if (firstListeningOption) firstListeningOption.focus();
+
+    // Enable arrow-key navigation
+    this.enableOptionKeyboardNavigation('listening-options');
+
+    console.log('Listening question loaded successfully');
+}
+
+export function showListeningHebrew() {
+    const hebrewElement = document.getElementById('listening-hebrew');
+    if (hebrewElement && hebrewElement.textContent) {
+        hebrewElement.style.display = 'block';
+    }
+}
+
+export async function checkListeningAnswer(selectedIndex, correctIndex) {
+    const options = document.querySelectorAll('#listening-options .option-btn');
+    const feedback = document.getElementById('listening-feedback');
+
+    // Disable all options
+    options.forEach(btn => btn.disabled = true);
+
+    if (selectedIndex === correctIndex) {
+        options[selectedIndex].classList.add('correct');
+
+        // Trigger confetti if enabled
+        try {
+            const settings = typeof SettingsManager !== 'undefined' ? SettingsManager.getSettings() : null;
+            if (settings && settings.showConfetti && typeof confetti !== 'undefined') {
+                confetti({
+                    particleCount: 100,
+                    spread: 70,
+                    origin: { y: 0.6 },
+                    colors: ['#667eea', '#764ba2', '#4facfe', '#00f2fe', '#ffd700']
+                });
+            }
+        } catch (error) {
+            console.error('Error triggering confetti:', error);
+        }
+
+        // Get centralized feedback
+        const fbData = getFeedback('listening', 'correct');
+
+        feedback.textContent = fbData.text;
+        feedback.className = 'feedback correct';
+        this.scores.listening += 10;
+
+        // Audio feedback for correct answer
+        try {
+            if (fbData.audio) {
+                await speechManager.speak(fbData.audio);
+            }
+        } catch (error) {
+            console.error('Error playing audio feedback:', error);
+        }
+
+        setTimeout(() => {
+            this.nextQuestion('listening');
+        }, 1500);
+    } else {
+        options[selectedIndex].classList.add('incorrect');
+        options[correctIndex].classList.add('correct');
+
+        // Get centralized feedback
+        const fbData = getFeedback('listening', 'incorrect');
+
+        feedback.textContent = fbData.text;
+        feedback.className = 'feedback incorrect';
+
+        // Audio feedback for incorrect answer and play correct word
+        try {
+            if (fbData.audio) {
+                await speechManager.speak(fbData.audio);
+            }
+            // Play the correct word again immediately after feedback
+            const question = this.shuffledQuestions[this.currentQuestionIndex];
+            await speechManager.speakWord(question.word, '', 'listening');
+        } catch (error) {
+            console.error('Error playing audio feedback:', error);
+        }
+
+        document.getElementById('listening-next').style.display = 'block';
+    }
+
+    this.updateScore('listening');
+}

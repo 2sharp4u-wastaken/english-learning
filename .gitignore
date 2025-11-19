@@ -1,0 +1,55 @@
+# English Learning Games - Git Ignore File
+
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor directories and files
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Claude AI assistant
+.claude/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.swp
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node modules (if used in future)
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs (if build process added later)
+dist/
+build/
+*.min.js
+*.min.css
+
+# Testing
+coverage/
+.nyc_output/
+
+# Checkpoints (development documentation - can be excluded from git)
+CHECKPOINT_*.txt
+
+# Restructuring plan (development documentation)
+RESTRUCTURING_PLAN.md
