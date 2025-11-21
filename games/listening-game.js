@@ -102,6 +102,13 @@ export async function checkListeningAnswer(selectedIndex, correctIndex) {
     const options = document.querySelectorAll('#listening-options .option-btn');
     const feedback = document.getElementById('listening-feedback');
 
+    // Track word attempt immediately
+    const isCorrect = selectedIndex === correctIndex;
+    const question = this.shuffledQuestions[this.currentQuestionIndex];
+    if (question && question.word && question.category) {
+        this.recordWordAttempt(question.word, question.category, isCorrect, 0, 'listening');
+    }
+
     // Disable all options
     options.forEach(btn => btn.disabled = true);
 

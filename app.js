@@ -316,13 +316,32 @@ class AppManager {
 
         if (saved) {
             try {
-                return JSON.parse(saved);
+                const progress = JSON.parse(saved);
+                return this.migrateUserProgress(progress);
             } catch (error) {
                 console.error('Error loading user progress:', error);
                 return this.getDefaultProgress();
             }
         }
         return this.getDefaultProgress();
+    }
+
+    migrateUserProgress(oldProgress) {
+        // Migrate from version 1 (or unversioned) to version 2
+        if (oldProgress.version === 2) {
+            return oldProgress;  // Already migrated
+        }
+
+        console.log('Migrating user progress from v1 to v2...');
+
+        // Add new fields while preserving existing data
+        const migratedProgress = {
+            ...oldProgress,
+            wordMastery: oldProgress.wordMastery || {},
+            version: 2
+        };
+
+        return migratedProgress;
     }
 
     getDefaultProgress() {
@@ -339,7 +358,9 @@ class AppManager {
             streakDays: 0,
             lastPlayDate: null,
             totalCorrectAnswers: 0,
-            preferredDifficulty: 'beginner'
+            preferredDifficulty: 'beginner',
+            wordMastery: {},  // Track mastery per word: { "Dog": { totalAttempts, correctAttempts, ... } }
+            version: 2  // Data structure version for migrations
         };
     }
 
@@ -362,6 +383,57 @@ class AppManager {
         } catch (error) {
             console.error('Error saving user progress:', error);
         }
+    }
+
+    getWordStats(word, category) {
+        // Get statistics for a specific word
+        if (!this.userProgress || !this.userProgress.wordMastery) {
+            return null;
+        }
+
+        const wordKey = `${word}_${category}`;  // Use compound key to handle same word in different categories
+        return this.userProgress.wordMastery[wordKey] || null;
+    }
+
+    saveWordStats(word, category, stats) {
+        // Save statistics for a specific word
+        if (!this.userProgress) {
+            console.warn('Cannot save word stats: userProgress not initialized');
+            return;
+        }
+
+        if (!this.userProgress.wordMastery) {
+            this.userProgress.wordMastery = {};
+        }
+
+        const wordKey = `${word}_${category}`;
+        this.userProgress.wordMastery[wordKey] = stats;
+
+        // Save to localStorage immediately
+        this.saveUserProgress();
+    }
+
+    calculateMastery(wordStats) {
+        // Calculate mastery level (0-1) based on performance
+        // Criteria: 3 attempts, 90% accuracy, 2 consecutive correct
+        if (!wordStats || wordStats.totalAttempts === 0) {
+            return 0;
+        }
+
+        const accuracy = wordStats.correctAttempts / wordStats.totalAttempts;
+        const hasMinAttempts = wordStats.totalAttempts >= 3;
+        const hasHighAccuracy = accuracy >= 0.90;
+        const hasConsecutive = wordStats.consecutiveCorrect >= 2;
+
+        // Mastery is a weighted combination
+        let masteryLevel = accuracy;  // Base on accuracy
+
+        // Bonus for meeting all criteria
+        if (hasMinAttempts && hasHighAccuracy && hasConsecutive) {
+            masteryLevel = Math.min(1.0, masteryLevel + 0.1);  // Cap at 1.0
+        }
+
+        return Math.round(masteryLevel * 100) / 100;  // Round to 2 decimals
     }
 
     loadSettings() {

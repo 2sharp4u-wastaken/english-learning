@@ -189,6 +189,14 @@ export async function checkBuiltWord() {
     const feedback = document.getElementById('reading-feedback');
     const builtWordElement = document.getElementById('built-word');
 
+    const isCorrect = this.builtWord === this.currentTargetWord;
+
+    // Track word attempt immediately
+    const question = this.shuffledQuestions[this.currentQuestionIndex];
+    if (question && question.word && question.category) {
+        this.recordWordAttempt(question.word, question.category, isCorrect, 0, 'reading');
+    }
+
     if (this.builtWord === this.currentTargetWord) {
         // Correct!
         builtWordElement.classList.add('correct');

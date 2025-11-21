@@ -206,6 +206,12 @@ export async function checkVocabularyAnswer(selectedIndex, correctIndex) {
     const feedback = document.getElementById('vocab-feedback');
     const isCorrect = selectedIndex === correctIndex;
 
+    // Track word attempt immediately
+    const question = this.shuffledQuestions[this.currentQuestionIndex];
+    if (question && question.word && question.category) {
+        this.recordWordAttempt(question.word, question.category, isCorrect, 0, 'vocabulary');
+    }
+
     // Disable all buttons
     buttons.forEach(btn => btn.disabled = true);
 

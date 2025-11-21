@@ -182,6 +182,12 @@ export async function processPronunciationResult(result) {
 
     const comparison = speechManager.comparePronunciation(question.word, result.transcript);
 
+    // Track word attempt immediately
+    const isCorrect = comparison.accuracy >= 0.7;
+    if (question && question.word && question.category) {
+        this.recordWordAttempt(question.word, question.category, isCorrect, 0, 'pronunciation');
+    }
+
     // Display text feedback
     if (feedback) {
         feedback.textContent = comparison.feedback;

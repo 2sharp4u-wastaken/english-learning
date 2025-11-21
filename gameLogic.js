@@ -215,6 +215,68 @@ class GameManager {
         return savedGames;
     }
 
+    // ============================================
+    // WORD MASTERY TRACKING
+    // ============================================
+
+    recordWordAttempt(word, category, isCorrect, responseTime, gameType) {
+        // Track word attempt immediately (even if game exits early)
+        if (!window.app || !window.app.userProgress) {
+            console.warn('Cannot record word attempt: app not initialized');
+            return;
+        }
+
+        // Get existing stats or create new
+        let wordStats = window.app.getWordStats(word, category);
+
+        if (!wordStats) {
+            // First time seeing this word
+            wordStats = {
+                word: word,
+                category: category,
+                totalAttempts: 0,
+                correctAttempts: 0,
+                incorrectAttempts: 0,
+                consecutiveCorrect: 0,
+                lastSeen: null,
+                lastResult: null,
+                masteryLevel: 0,
+                gameTypeStats: {}
+            };
+        }
+
+        // Update attempts
+        wordStats.totalAttempts++;
+        if (isCorrect) {
+            wordStats.correctAttempts++;
+            wordStats.consecutiveCorrect++;
+        } else {
+            wordStats.incorrectAttempts++;
+            wordStats.consecutiveCorrect = 0;  // Reset streak on incorrect
+        }
+
+        // Update metadata
+        wordStats.lastSeen = new Date().toISOString();
+        wordStats.lastResult = isCorrect ? 'correct' : 'incorrect';
+
+        // Track per game type
+        if (!wordStats.gameTypeStats[gameType]) {
+            wordStats.gameTypeStats[gameType] = { correct: 0, total: 0 };
+        }
+        wordStats.gameTypeStats[gameType].total++;
+        if (isCorrect) {
+            wordStats.gameTypeStats[gameType].correct++;
+        }
+
+        // Calculate mastery level
+        wordStats.masteryLevel = window.app.calculateMastery(wordStats);
+
+        // Save immediately to localStorage
+        window.app.saveWordStats(word, category, wordStats);
+
+        console.log(`Word tracked: ${word} (${category}) - ${isCorrect ? 'Correct' : 'Incorrect'} - Mastery: ${(wordStats.masteryLevel * 100).toFixed(0)}%`);
+    }
+
     populateResumeGames() {
         const savedGames = this.getAllSavedGames();
         const resumeSection = document.getElementById('resume-games-section');
