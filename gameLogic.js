@@ -931,9 +931,9 @@ class GameManager {
                 return;
             }
 
-            // Improved shuffling for better variety across sessions
-            this.shuffledQuestions = this.improvedShuffle([...this.gameData[gameType]]);
-            console.log(`Shuffled ${this.shuffledQuestions.length} questions for ${gameType}:`, this.shuffledQuestions.slice(0, 5));
+            // Smart question selection based on mastery levels
+            this.shuffledQuestions = this.smartQuestionSelection([...this.gameData[gameType]]);
+            console.log(`Selected ${this.shuffledQuestions.length} questions for ${gameType} using smart selection:`, this.shuffledQuestions.slice(0, 5));
 
             this.updateScore(gameType);
             this.updateProgress(gameType);
@@ -941,6 +941,88 @@ class GameManager {
         } catch (error) {
             console.error(`Error starting ${gameType} game:`, error);
         }
+    }
+
+    smartQuestionSelection(array) {
+        // Smart question selection based on mastery levels
+        // Prioritizes words that need more practice while maintaining variety
+
+        const questions = [...array];
+
+        // Categorize words by mastery level
+        const categorized = {
+            new: [],          // Never seen before (mastery = 0)
+            struggling: [],   // Low mastery (0 < mastery < 0.5)
+            learning: [],     // Medium mastery (0.5 <= mastery < 0.8)
+            mastered: []      // High mastery (mastery >= 0.8)
+        };
+
+        questions.forEach(q => {
+            const wordKey = `${q.word}_${q.category}`;
+            const wordStats = window.app.getWordStats(q.word, q.category);
+            const mastery = wordStats.masteryLevel || 0;
+
+            // Store mastery level on the question object for later use
+            q.masteryLevel = mastery;
+
+            if (mastery === 0) {
+                categorized.new.push(q);
+            } else if (mastery < 0.5) {
+                categorized.struggling.push(q);
+            } else if (mastery < 0.8) {
+                categorized.learning.push(q);
+            } else {
+                categorized.mastered.push(q);
+            }
+        });
+
+        console.log('Word distribution by mastery:', {
+            new: categorized.new.length,
+            struggling: categorized.struggling.length,
+            learning: categorized.learning.length,
+            mastered: categorized.mastered.length
+        });
+
+        // Smart weighting: prioritize words that need practice
+        // 40% struggling, 30% new, 20% learning, 10% mastered
+        const selected = [];
+        const targetCount = Math.min(questions.length, 50); // Select up to 50 questions
+
+        const weights = {
+            struggling: 0.40,
+            new: 0.30,
+            learning: 0.20,
+            mastered: 0.10
+        };
+
+        // Calculate how many from each category
+        const counts = {
+            struggling: Math.ceil(targetCount * weights.struggling),
+            new: Math.ceil(targetCount * weights.new),
+            learning: Math.ceil(targetCount * weights.learning),
+            mastered: Math.ceil(targetCount * weights.mastered)
+        };
+
+        // Helper function to randomly select N items from array
+        const selectRandom = (arr, n) => {
+            const shuffled = [...arr].sort(() => Math.random() - 0.5);
+            return shuffled.slice(0, Math.min(n, arr.length));
+        };
+
+        // Select from each category
+        selected.push(...selectRandom(categorized.struggling, counts.struggling));
+        selected.push(...selectRandom(categorized.new, counts.new));
+        selected.push(...selectRandom(categorized.learning, counts.learning));
+        selected.push(...selectRandom(categorized.mastered, counts.mastered));
+
+        // If we don't have enough, fill with remaining words
+        if (selected.length < targetCount) {
+            const remaining = questions.filter(q => !selected.includes(q));
+            selected.push(...selectRandom(remaining, targetCount - selected.length));
+        }
+
+        // Now apply the improved shuffle with diversity constraints
+        return this.improvedShuffle(selected);
     }
 
     improvedShuffle(array) {
@@ -986,12 +1068,52 @@ class GameManager {
         return shuffled;
     }
 
+    updateMasteryIndicator(gameType, question) {
+        if (!question || !question.word || !question.category) return;
+
+        const indicator = document.getElementById(`${gameType}-mastery-indicator`);
+        if (!indicator) return;
+
+        // Get mastery level for current word
+        const wordStats = window.app.getWordStats(question.word, question.category);
+        const mastery = wordStats.masteryLevel || 0;
+
+        // Clear previous classes
+        indicator.className = 'mastery-indicator';
+
+        // Determine mastery level and set appropriate class and text
+        let masteryClass = '';
+        let masteryText = '';
+        let masteryIcon = '';
+
+        if (mastery === 0) {
+            masteryClass = 'mastery-new';
+            masteryText = 'חדש';
+            masteryIcon = '✨';
+        } else if (mastery < 0.5) {
+            masteryClass = 'mastery-struggling';
+            masteryText = 'נאבק';
+            masteryIcon = '⚠️';
+        } else if (mastery < 0.8) {
+            masteryClass = 'mastery-learning';
+            masteryText = 'לומד';
+            masteryIcon = '📈';
+        } else {
+            masteryClass = 'mastery-mastered';
+            masteryText = 'שליטה';
+            masteryIcon = '✅';
+        }
+
+        indicator.classList.add(masteryClass);
+        indicator.textContent = `${masteryIcon} ${masteryText}`;
+    }
+
     loadQuestion(gameType) {
         this.audioPlaysLeft = GAME_CONFIG.MAX_AUDIO_PLAYS;
         this.updateAllPlayCounters(gameType);
         try {
             console.log(`Loading question ${this.currentQuestionIndex + 1} for ${gameType}`);
-            
+
             if (this.currentQuestionIndex >= this.totalQuestions) {
                 this.endGame(gameType);
                 return;
@@ -1002,14 +1124,17 @@ class GameManager {
                 this.currentQuestionIndex = 0;
                 console.log('Cycling back to start of questions');
             }
-            
+
             const question = this.shuffledQuestions[this.currentQuestionIndex];
             console.log('Current question:', question);
-            
+
             if (!question) {
                 console.error('No question found at index:', this.currentQuestionIndex);
                 return;
             }
+
+            // Update mastery indicator
+            this.updateMasteryIndicator(gameType, question);
             
             switch (gameType) {
                 case 'vocabulary':

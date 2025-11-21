@@ -100,6 +100,50 @@ function getGamesPlayed(userName, gameType) {
     }
 }
 
+function getWordMasteryStats(userName) {
+    const progress = loadUserProgress(userName);
+    const wordMastery = progress.wordMastery || {};
+
+    const stats = {
+        total: 0,
+        new: 0,
+        struggling: [],
+        learning: [],
+        mastered: []
+    };
+
+    Object.entries(wordMastery).forEach(([wordKey, data]) => {
+        stats.total++;
+        const mastery = data.masteryLevel || 0;
+        const [word] = wordKey.split('_');
+
+        const wordInfo = {
+            word,
+            mastery,
+            attempts: data.totalAttempts,
+            accuracy: data.totalAttempts > 0 ? Math.round((data.correctAttempts / data.totalAttempts) * 100) : 0,
+            category: data.category || 'Unknown'
+        };
+
+        if (mastery === 0) {
+            stats.new++;
+        } else if (mastery < 0.5) {
+            stats.struggling.push(wordInfo);
+        } else if (mastery < 0.8) {
+            stats.learning.push(wordInfo);
+        } else {
+            stats.mastered.push(wordInfo);
+        }
+    });
+
+    // Sort by mastery level
+    stats.struggling.sort((a, b) => a.mastery - b.mastery);
+    stats.learning.sort((a, b) => a.mastery - b.mastery);
+    stats.mastered.sort((a, b) => b.mastery - a.mastery);
+
+    return stats;
+}
+
 function renderUserStats(userName) {
     const progress = loadUserProgress(userName);
     const container = document.getElementById(`stats-${userName}`);
@@ -116,6 +160,9 @@ function renderUserStats(userName) {
             return sum + calculateAverageScore(userName, gameType);
         }, 0) / Object.keys(gameNames).length
     );
+
+    // Get word mastery stats
+    const masteryStats = getWordMasteryStats(userName);
 
     // Build HTML
     let html = '';
@@ -198,6 +245,126 @@ function renderUserStats(userName) {
     }
 
     html += `</div>`;
+
+    // Word Mastery Section
+    if (masteryStats.total > 0) {
+        html += `
+            <div class="games-stats-table">
+                <h2><i class="fas fa-brain"></i> מצב שליטה במילים</h2>
+                <div class="stats-overview" style="margin-top: 20px;">
+                    <div class="stat-card">
+                        <i class="fas fa-book"></i>
+                        <h3>סה"כ מילים</h3>
+                        <div class="stat-value">${masteryStats.total}</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-star-half-alt" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                        <h3>נאבקים</h3>
+                        <div class="stat-value" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${masteryStats.struggling.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-chart-line" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                        <h3>בתהליך למידה</h3>
+                        <div class="stat-value" style="background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${masteryStats.learning.length}</div>
+                    </div>
+                    <div class="stat-card">
+                        <i class="fas fa-check-circle" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                        <h3>שליטה מלאה</h3>
+                        <div class="stat-value" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${masteryStats.mastered.length}</div>
+                    </div>
+                </div>
+        `;
+
+        // Show top struggling words
+        if (masteryStats.struggling.length > 0) {
+            html += `
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: #f59e0b;">
+                    <i class="fas fa-exclamation-triangle"></i> מילים הדורשות תשומת לב (${masteryStats.struggling.length})
+                </h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>מילה</th>
+                            <th>קטגוריה</th>
+                            <th>ניסיונות</th>
+                            <th>דיוק</th>
+                            <th>רמת שליטה</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            masteryStats.struggling.slice(0, 10).forEach(word => {
+                html += `
+                    <tr>
+                        <td class="game-name"><strong>${word.word}</strong></td>
+                        <td>${word.category}</td>
+                        <td>${word.attempts}</td>
+                        <td>${word.accuracy}%</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="flex: 1; background: #e5e7eb; border-radius: 10px; height: 20px; overflow: hidden;">
+                                    <div style="width: ${word.mastery * 100}%; background: linear-gradient(90deg, #f59e0b, #d97706); height: 100%;"></div>
+                                </div>
+                                <span style="font-weight: 600; color: #f59e0b;">${Math.round(word.mastery * 100)}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+        }
+
+        // Show recently mastered words
+        if (masteryStats.mastered.length > 0) {
+            html += `
+                <h3 style="margin-top: 30px; margin-bottom: 15px; color: #10b981;">
+                    <i class="fas fa-trophy"></i> מילים בשליטה מלאה (${masteryStats.mastered.length})
+                </h3>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>מילה</th>
+                            <th>קטגוריה</th>
+                            <th>ניסיונות</th>
+                            <th>דיוק</th>
+                            <th>רמת שליטה</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            masteryStats.mastered.slice(0, 10).forEach(word => {
+                html += `
+                    <tr>
+                        <td class="game-name"><strong>${word.word}</strong></td>
+                        <td>${word.category}</td>
+                        <td>${word.attempts}</td>
+                        <td>${word.accuracy}%</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="flex: 1; background: #e5e7eb; border-radius: 10px; height: 20px; overflow: hidden;">
+                                    <div style="width: ${word.mastery * 100}%; background: linear-gradient(90deg, #10b981, #059669); height: 100%;"></div>
+                                </div>
+                                <span style="font-weight: 600; color: #10b981;">${Math.round(word.mastery * 100)}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            });
+
+            html += `
+                    </tbody>
+                </table>
+            `;
+        }
+
+        html += `</div>`;
+    }
 
     // Overall Summary Row
     const totalOverall = Object.keys(gameNames).reduce((sum, gameType) => {

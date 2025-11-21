@@ -619,6 +619,43 @@ body::before {
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
+.mastery-indicator {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    margin: 5px auto 10px;
+    text-align: center;
+    color: white;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.mastery-indicator.mastery-new {
+    background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
+    box-shadow: 0 2px 8px rgba(156, 163, 175, 0.4);
+}
+
+.mastery-indicator.mastery-struggling {
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 2px 8px rgba(245, 158, 11, 0.4);
+}
+
+.mastery-indicator.mastery-learning {
+    background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+}
+
+.mastery-indicator.mastery-mastered {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 2px 8px rgba(16, 185, 129, 0.4);
+}
+
+.mastery-indicator:empty {
+    display: none;
+}
+
 .progress-bar {
     background: rgba(255, 255, 255, 0.1);
     height: 12px;
