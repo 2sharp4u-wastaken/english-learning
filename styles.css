@@ -508,6 +508,11 @@ body::before {
     position: relative;
 }
 
+/* Allow scrolling for welcome screen */
+#welcome-screen.active {
+    overflow-y: auto;
+}
+
 /* Hide sidebar when welcome screen is active - prevents sidebar flash on navigation */
 #welcome-screen.active ~ .sidebar,
 .app-layout:has(#welcome-screen.active) .sidebar {
@@ -1908,32 +1913,27 @@ body::before {
 }
 
 #reading-game .next-btn {
-    /* Overlay button positioned over the card content */
-    position: absolute;
-    top: 50%;
+    /* Button positioned below feedback message */
+    position: fixed;
+    top: 110px;
     left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
+    transform: translateX(-50%);
+    z-index: 999;
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    box-shadow: 0 6px 30px rgba(79, 172, 254, 0.6), 0 0 0 4px rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 20px rgba(79, 172, 254, 0.4);
     margin: 0;
-    padding: 20px 50px;
-    font-size: 1.5rem;
-    animation: pulseOverlay 1.5s ease-in-out infinite;
-}
-
-@keyframes pulseOverlay {
-    0%, 100% {
-        transform: translate(-50%, -50%) scale(1);
-    }
-    50% {
-        transform: translate(-50%, -50%) scale(1.05);
-    }
+    padding: 15px 40px;
+    font-size: 1.3rem;
+    max-width: 600px;
+    width: fit-content;
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(10px);
+    animation: slideIn 0.3s ease;
 }
 
 #reading-game .next-btn:hover {
-    transform: translate(-50%, -50%) scale(1.1);
-    box-shadow: 0 8px 35px rgba(79, 172, 254, 0.8), 0 0 0 5px rgba(255, 255, 255, 0.9);
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 6px 25px rgba(79, 172, 254, 0.5);
 }
 
 /* Apply overlay button style to all games */
@@ -1942,17 +1942,21 @@ body::before {
 #listening-game .next-btn,
 #grammar-game .next-btn,
 #sentence-game .next-btn {
-    position: absolute;
-    top: 50%;
+    position: fixed;
+    top: 110px;
     left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 100;
+    transform: translateX(-50%);
+    z-index: 999;
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    box-shadow: 0 6px 30px rgba(79, 172, 254, 0.6), 0 0 0 4px rgba(255, 255, 255, 0.8);
+    box-shadow: 0 4px 20px rgba(79, 172, 254, 0.4);
     margin: 0;
-    padding: 20px 50px;
-    font-size: 1.5rem;
-    animation: pulseOverlay 1.5s ease-in-out infinite;
+    padding: 15px 40px;
+    font-size: 1.3rem;
+    max-width: 600px;
+    width: fit-content;
+    border-radius: var(--radius-md);
+    backdrop-filter: blur(10px);
+    animation: slideIn 0.3s ease;
 }
 
 #vocabulary-game .next-btn:hover,
@@ -1960,8 +1964,8 @@ body::before {
 #listening-game .next-btn:hover,
 #grammar-game .next-btn:hover,
 #sentence-game .next-btn:hover {
-    transform: translate(-50%, -50%) scale(1.1);
-    box-shadow: 0 8px 35px rgba(79, 172, 254, 0.8), 0 0 0 5px rgba(255, 255, 255, 0.9);
+    transform: translateX(-50%) scale(1.05);
+    box-shadow: 0 6px 25px rgba(79, 172, 254, 0.5);
 }
 
 /* Letter tiles for spelling game - colorful and larger */
@@ -2801,10 +2805,11 @@ body::before {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    min-height: 70vh;
+    justify-content: flex-start;
     padding: 40px 20px;
     text-align: center;
+    overflow-y: auto;
+    max-height: 100%;
 }
 
 .welcome-title {
@@ -2833,16 +2838,23 @@ body::before {
 .game-card {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border-radius: 20px;
-    padding: 35px 25px;
-    cursor: pointer;
+    overflow: hidden;
     transition: all 0.3s ease;
     color: white;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    display: flex;
+    flex-direction: column;
 }
 
 .game-card:hover {
     transform: translateY(-10px) scale(1.05);
     box-shadow: 0 10px 30px rgba(102, 126, 234, 0.5);
+}
+
+.game-card-main {
+    padding: 35px 25px;
+    cursor: pointer;
+    flex: 1;
 }
 
 .game-card-icon {
@@ -2861,6 +2873,62 @@ body::before {
     font-size: 1em;
     opacity: 0.95;
     line-height: 1.4;
+}
+
+/* Dual Action Footer */
+.game-card-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 15px;
+    display: flex;
+    gap: 10px;
+    background: rgba(0, 0, 0, 0.15);
+}
+
+.game-action-btn {
+    flex: 1;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.95rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+}
+
+.start-new-btn {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.4);
+}
+
+.start-new-btn:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: scale(1.05);
+}
+
+.continue-btn {
+    background: rgba(255, 255, 255, 0.95);
+    color: #667eea;
+    font-weight: 700;
+}
+
+.continue-btn:hover {
+    background: white;
+    transform: scale(1.05);
+}
+
+.continue-btn i {
+    margin-right: 5px;
+}
+
+.continue-progress {
+    font-size: 0.8rem;
+    opacity: 0.8;
+    font-weight: 500;
 }
 
 @keyframes fadeInDown {
@@ -3428,146 +3496,10 @@ body::before {
     }
 }
 
-/* ============================================
-   RESUME GAMES SECTION
-   ============================================ */
-
-.resume-games-section {
-    margin-bottom: 40px;
-    padding: 30px;
-    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-    border-radius: 20px;
-    box-shadow: 0 4px 20px rgba(245, 158, 11, 0.2);
-}
-
-.resume-title {
-    margin: 0 0 20px 0;
-    color: #92400e;
-    font-size: 1.4rem;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-}
-
-.resume-title i {
-    color: #f59e0b;
-}
-
-.resume-games-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-    gap: 20px;
-}
-
-.resume-card {
-    background: white;
-    border-radius: 15px;
-    padding: 20px;
-    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    cursor: pointer;
-    transition: all 0.3s ease;
-    position: relative;
-    overflow: hidden;
-}
-
-.resume-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-}
-
-.resume-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, #f59e0b 0%, #d97706 100%);
-}
-
-.resume-card-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 15px;
-}
-
-.resume-card-title {
-    font-size: 1.2rem;
-    font-weight: 700;
-    color: #1f2937;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.resume-card-delete {
-    background: none;
-    border: none;
-    color: #9ca3af;
-    cursor: pointer;
-    font-size: 1.1rem;
-    padding: 5px;
-    border-radius: 5px;
-    transition: all 0.2s ease;
-}
-
-.resume-card-delete:hover {
-    background: #fee2e2;
-    color: #ef4444;
-}
-
-.resume-card-progress {
-    margin-bottom: 12px;
-}
-
-.resume-progress-text {
-    font-size: 0.9rem;
-    color: #6b7280;
-    margin-bottom: 8px;
-}
-
-.resume-progress-bar {
-    width: 100%;
-    height: 8px;
-    background: #e5e7eb;
-    border-radius: 10px;
-    overflow: hidden;
-}
-
-.resume-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-    border-radius: 10px;
-    transition: width 0.3s ease;
-}
-
-.resume-card-score {
-    font-size: 1.1rem;
-    font-weight: 600;
-    color: #667eea;
-    margin-bottom: 12px;
-}
-
-.resume-card-time {
-    font-size: 0.85rem;
-    color: #9ca3af;
-}
-
 .games-section-title {
     margin: 30px 0 20px 0;
     color: #1f2937;
     font-size: 1.3rem;
-}
-
-@media (max-width: 768px) {
-    .resume-games-section {
-        padding: 20px 15px;
-    }
-
-    .resume-games-grid {
-        grid-template-columns: 1fr;
-    }
 }
 
 /* ============================================
@@ -3634,3 +3566,43 @@ body::before {
         max-height: 120px;
     }
 }
+
+/* Reset Game Button */
+.reset-game-btn {
+    background: #ef4444;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-left: 10px;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+}
+
+.reset-game-btn:hover {
+    background: #dc2626;
+    transform: scale(1.1) rotate(90deg);
+    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.4);
+}
+
+.reset-game-btn:active {
+    transform: scale(0.95) rotate(90deg);
+}
+
+.reset-game-btn i {
+    font-size: 14px;
+}
+
+/* Make progress container flexbox to align reset button */
+.progress-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+

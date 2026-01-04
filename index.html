@@ -48,10 +48,10 @@
                     </nav>
                 </div>
                 <div class="header-right">
-                    <a href="stats.html" class="header-icon-btn" title="סטטיסטיקות">
+                    <a href="stats.html" class="header-icon-btn" id="stats-btn" title="סטטיסטיקות">
                         <i class="fas fa-chart-line"></i>
                     </a>
-                    <a href="settings.html" class="header-icon-btn" title="הגדרות">
+                    <a href="settings.html" class="header-icon-btn" id="settings-btn" title="הגדרות">
                         <i class="fas fa-cog"></i>
                     </a>
                     <div class="header-user-info" id="header-user-info">
@@ -74,44 +74,81 @@
                     <h1 class="welcome-title">🎉 ברוך הבא לעולם האנגלית! 🎉</h1>
                     <p class="welcome-subtitle">בחר משחק כדי להתחיל ללמוד!</p>
 
-                    <!-- Resume Games Section -->
-                    <div id="resume-games-section" class="resume-games-section" style="display: none;">
-                        <h2 class="resume-title"><i class="fas fa-history"></i> המשך משחקים קודמים</h2>
-                        <div id="resume-games-grid" class="resume-games-grid">
-                            <!-- Resume cards will be added here dynamically -->
-                        </div>
-                    </div>
-
-                    <h2 class="games-section-title">משחקים חדשים</h2>
+                    <h2 class="games-section-title">בחר משחק</h2>
                     <div class="game-cards-grid">
                         <div class="game-card" data-game="vocabulary">
-                            <div class="game-card-icon">📚</div>
-                            <h3>בונה אוצר מילים</h3>
-                            <p>למד מילים חדשות באנגלית</p>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">📚</div>
+                                <h3>בונה אוצר מילים</h3>
+                                <p>למד מילים חדשות באנגלית</p>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="game-card" data-game="grammar">
-                            <div class="game-card-icon">✏️</div>
-                            <h3>תרגול דקדוק</h3>
-                            <p>שפר את הדקדוק שלך</p>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">✏️</div>
+                                <h3>תרגול דקדוק</h3>
+                                <p>שפר את הדקדוק שלך</p>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="game-card" data-game="pronunciation">
-                            <div class="game-card-icon">🎤</div>
-                            <h3>משחק הגייה</h3>
-                            <p>תרגל את ההגייה שלך</p>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">🎤</div>
+                                <h3>משחק הגייה</h3>
+                                <p>תרגל את ההגייה שלך</p>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="game-card" data-game="listening">
-                            <div class="game-card-icon">👂</div>
-                            <h3>משחק הקשבה</h3>
-                            <p>שפר את ההקשבה שלך</p>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">👂</div>
+                                <h3>משחק הקשבה</h3>
+                                <p>שפר את ההקשבה שלך</p>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
                         </div>
 
                         <div class="game-card" data-game="reading">
-                            <div class="game-card-icon">📖</div>
-                            <h3>משחק קריאה</h3>
-                            <p>למד לקרוא מילים באנגלית</p>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">📖</div>
+                                <h3>משחק קריאה</h3>
+                                <p>למד לקרוא מילים באנגלית</p>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -122,6 +159,9 @@
                 <div class="progress-container">
                     <span class="question-counter">Question <span id="vocab-current-q">1</span> of <span id="vocab-total-q">10</span></span>
                     <span class="mastery-indicator" id="vocab-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="vocab-reset-btn" title="אפס משחק">
+                        <i class="fas fa-redo"></i>
+                    </button>
                     <div class="progress-bar">
                         <div class="progress-fill" id="vocab-progress-fill"></div>
                     </div>
@@ -161,6 +201,9 @@
                 <div class="progress-container">
                     <span class="question-counter">Question <span id="grammar-current-q">1</span> of <span id="grammar-total-q">10</span></span>
                     <span class="mastery-indicator" id="grammar-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="grammar-reset-btn" title="אפס משחק">
+                        <i class="fas fa-redo"></i>
+                    </button>
                     <div class="progress-bar">
                         <div class="progress-fill" id="grammar-progress-fill"></div>
                     </div>
@@ -187,6 +230,9 @@
                 <div class="progress-container">
                     <span class="question-counter">Question <span id="pronunciation-current-q">1</span> of <span id="pronunciation-total-q">10</span></span>
                     <span class="mastery-indicator" id="pronunciation-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="pronunciation-reset-btn" title="אפס משחק">
+                        <i class="fas fa-redo"></i>
+                    </button>
                     <div class="progress-bar">
                         <div class="progress-fill" id="pronunciation-progress-fill"></div>
                     </div>
@@ -227,6 +273,9 @@
                 <div class="progress-container">
                     <span class="question-counter">Question <span id="listening-current-q">1</span> of <span id="listening-total-q">10</span></span>
                     <span class="mastery-indicator" id="listening-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="listening-reset-btn" title="אפס משחק">
+                        <i class="fas fa-redo"></i>
+                    </button>
                     <div class="progress-bar">
                         <div class="progress-fill" id="listening-progress-fill"></div>
                     </div>
@@ -264,6 +313,9 @@
                 <div class="progress-container">
                     <span class="question-counter">Question <span id="reading-current-q">1</span> of <span id="reading-total-q">10</span></span>
                     <span class="mastery-indicator" id="reading-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="reading-reset-btn" title="אפס משחק">
+                        <i class="fas fa-redo"></i>
+                    </button>
                     <div class="progress-bar">
                         <div class="progress-fill" id="reading-progress-fill"></div>
                     </div>
@@ -475,51 +527,100 @@
                 welcomeScreen.classList.add('active');
                 welcomeScreen.style.display = 'block';
 
+                // Refresh resume cards to show updated progress
+                if (typeof gameManager !== 'undefined' && gameManager.populateResumeGames) {
+                    gameManager.populateResumeGames();
+                }
+
                 // Apply game visibility whenever welcome screen is shown
                 applyGameVisibility();
             }
 
             // Handle game card clicks
             gameCards.forEach(card => {
-                card.addEventListener('click', () => {
-                    const gameType = card.dataset.game;
+                const gameType = card.dataset.game;
 
-                    // Validate game type before switching
-                    if (!gameType) {
-                        console.warn('Game card clicked without data-game attribute:', card);
-                        return;
-                    }
+                // Click on main card body - auto-resume if saved game exists
+                const mainCard = card.querySelector('.game-card-main');
+                if (mainCard) {
+                    mainCard.addEventListener('click', (e) => {
+                        e.stopPropagation();
 
-                    // Wait for gameManager to be available
-                    const switchToGame = () => {
-                        if (window.gameManager) {
-                            // Hide welcome screen
-                            welcomeScreen.classList.remove('active');
-                            welcomeScreen.style.display = 'none';
-
-                            // Show selected game
-                            window.gameManager.switchGame(gameType);
-                        } else {
-                            console.log('Waiting for gameManager...');
-                            setTimeout(switchToGame, 100);
+                        if (!gameType) {
+                            console.warn('Game card clicked without data-game attribute:', card);
+                            return;
                         }
-                    };
 
-                    switchToGame();
-                });
+                        const switchToGame = () => {
+                            if (window.gameManager) {
+                                welcomeScreen.classList.remove('active');
+                                welcomeScreen.style.display = 'none';
+                                window.gameManager.switchGame(gameType);
+                            } else {
+                                console.log('Waiting for gameManager...');
+                                setTimeout(switchToGame, 100);
+                            }
+                        };
+
+                        switchToGame();
+                    });
+                }
+
+                // Click on "Start New" button - always start fresh
+                const startNewBtn = card.querySelector('.start-new-btn');
+                if (startNewBtn) {
+                    startNewBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        const startFresh = () => {
+                            if (window.gameManager) {
+                                // Delete saved game first
+                                window.gameManager.deleteGameState(gameType);
+
+                                welcomeScreen.classList.remove('active');
+                                welcomeScreen.style.display = 'none';
+                                window.gameManager.performGameSwitch(gameType);
+                            } else {
+                                setTimeout(startFresh, 100);
+                            }
+                        };
+
+                        startFresh();
+                    });
+                }
+
+                // Click on "Continue" button - resume saved game
+                const continueBtn = card.querySelector('.continue-btn');
+                if (continueBtn) {
+                    continueBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        const resumeSaved = () => {
+                            if (window.gameManager) {
+                                welcomeScreen.classList.remove('active');
+                                welcomeScreen.style.display = 'none';
+                                window.gameManager.resumeGame(gameType);
+                            } else {
+                                setTimeout(resumeSaved, 100);
+                            }
+                        };
+
+                        resumeSaved();
+                    });
+                }
             });
 
             // Handle hash URLs (e.g., index.html#vocabulary)
             function handleHashNavigation() {
                 const hash = window.location.hash.substring(1); // Remove the '#'
-                if (hash && typeof gameManager !== 'undefined') {
+                if (hash && typeof gameManager !== 'undefined' && typeof window.app !== 'undefined') {
                     // Hide welcome screen
                     welcomeScreen.classList.remove('active');
                     welcomeScreen.style.display = 'none';
                     // Switch to the game specified in hash
                     gameManager.switchGame(hash);
                 } else if (hash) {
-                    // gameManager not ready yet, wait and retry
+                    // gameManager or app not ready yet, wait and retry
                     setTimeout(handleHashNavigation, 100);
                 }
             }
@@ -628,6 +729,16 @@
             const appLogo = document.querySelector('.app-logo');
             if (appLogo) {
                 appLogo.addEventListener('click', () => {
+                    // Auto-save game if active (no modal, immediate navigation)
+                    if (typeof gameManager !== 'undefined' && gameManager.isGameActive) {
+                        const saved = gameManager.saveGameState();
+                        if (saved) {
+                            gameManager.showToast('המשחק נשמר בהצלחה');
+                        }
+                        // Mark game as inactive since we're leaving
+                        gameManager.isGameActive = false;
+                    }
+
                     // Clear hash to show we're on welcome screen
                     if (window.location.hash) {
                         history.replaceState(null, null, window.location.pathname);
@@ -644,6 +755,11 @@
                     if (welcomeScreen) {
                         welcomeScreen.classList.add('active');
                         welcomeScreen.style.display = 'block';
+                    }
+
+                    // Refresh resume cards to show updated progress
+                    if (typeof gameManager !== 'undefined' && gameManager.populateResumeGames) {
+                        gameManager.populateResumeGames();
                     }
 
                     // Remove active state from all top game buttons
@@ -665,6 +781,25 @@
                     }
                 });
             }
+
+            // Handle Stats and Settings buttons - auto-save without modal
+            const statsBtn = document.getElementById('stats-btn');
+            const settingsBtn = document.getElementById('settings-btn');
+
+            [statsBtn, settingsBtn].forEach(btn => {
+                if (btn) {
+                    btn.addEventListener('click', (e) => {
+                        // Auto-save game if active, then navigate
+                        if (typeof gameManager !== 'undefined' && gameManager.isGameActive) {
+                            const saved = gameManager.saveGameState();
+                            if (saved) {
+                                gameManager.showToast('המשחק נשמר בהצלחה');
+                            }
+                        }
+                        // Let the default link navigation happen
+                    });
+                }
+            });
 
             // Show header after login
             window.addEventListener('user-logged-in', () => {

@@ -11,6 +11,12 @@ export async function loadListeningQuestion(question) {
         speechManager.cancelSpeech();
     }
 
+    // Hide next button from previous question
+    const nextBtn = document.getElementById('listening-next');
+    if (nextBtn) {
+        nextBtn.style.display = 'none';
+    }
+
     // Clear feedback from previous question
     const feedback = document.getElementById('listening-feedback');
     if (feedback) {

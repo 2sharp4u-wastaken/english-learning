@@ -19,8 +19,6 @@ class SettingsManager {
             { id: 'roblox', name: '🎮 Roblox', wordCount: 20 }
         ];
 
-        // Parent password (simple for now)
-        this.parentPassword = '1234';
         this.isPasswordUnlocked = false;
 
         this.defaultSettings = {
@@ -199,7 +197,7 @@ class SettingsManager {
 
         // Submit password
         const checkPassword = () => {
-            if (passwordInput.value === this.parentPassword) {
+            if (typeof authService !== 'undefined' && authService.verifyAdminPassword(passwordInput.value)) {
                 this.isPasswordUnlocked = true;
                 modal.classList.remove('show');
 
@@ -343,67 +341,83 @@ class SettingsManager {
         return this.settings.selectedCategories.length < 5;
     }
 
-    requestPasswordForAction(callback, actionName) {
-        const modal = document.getElementById('password-modal');
-        const passwordInput = document.getElementById('password-input');
-        const submitBtn = document.getElementById('password-submit');
-        const cancelBtn = document.getElementById('password-cancel');
-        const errorDiv = document.getElementById('password-error');
-        const modalTitle = modal.querySelector('h3');
+    /**
+     * Shows admin password modal and returns a promise
+     * @param {string} title - Modal title (e.g., "אפס הגדרות")
+     * @returns {Promise<boolean>} - Resolves to true if password correct, false if cancelled
+     */
+    showAdminPasswordPrompt(title = 'אישור פעולה') {
+        return new Promise((resolve) => {
+            const modal = document.getElementById('password-modal');
+            const passwordInput = document.getElementById('password-input');
+            const submitBtn = document.getElementById('password-submit');
+            const cancelBtn = document.getElementById('password-cancel');
+            const errorDiv = document.getElementById('password-error');
+            const modalTitle = modal.querySelector('h3');
 
-        // Update modal title
-        modalTitle.innerHTML = `<i class="fas fa-lock"></i> ${actionName} - הזן סיסמה`;
-
-        // Show modal
-        modal.classList.add('show');
-        passwordInput.value = '';
-        errorDiv.classList.remove('show');
-        passwordInput.focus();
-
-        // One-time password check
-        const checkPasswordOnce = () => {
-            if (passwordInput.value === this.parentPassword) {
-                modal.classList.remove('show');
-                // Clean up listeners after successful password
-                cleanup();
-                callback(); // Execute the protected action
-            } else {
-                errorDiv.classList.add('show');
-                passwordInput.value = '';
-                passwordInput.focus();
+            if (!modal || !passwordInput || !submitBtn || !cancelBtn) {
+                // Fallback to browser prompt if modal not available
+                const password = prompt('הכנס סיסמת מנהל:');
+                if (!password) {
+                    resolve(false);
+                    return;
+                }
+                const isValid = typeof authService !== 'undefined' && authService.verifyAdminPassword(password);
+                resolve(isValid);
+                return;
             }
-        };
 
-        // Keypress handler for Enter key
-        const handleKeypress = (e) => {
-            if (e.key === 'Enter') checkPasswordOnce();
-        };
+            // Update modal title
+            modalTitle.innerHTML = `<i class="fas fa-lock"></i> ${title}`;
 
-        // Cleanup function to remove all listeners
-        const cleanup = () => {
-            newPasswordInput.removeEventListener('keypress', handleKeypress);
-        };
+            // Show modal and clear previous state
+            modal.classList.add('show');
+            passwordInput.value = '';
+            errorDiv.classList.remove('show');
+            passwordInput.focus();
 
-        // Remove old listeners by cloning all interactive elements
-        const newSubmitBtn = submitBtn.cloneNode(true);
-        const newCancelBtn = cancelBtn.cloneNode(true);
-        const newPasswordInput = passwordInput.cloneNode(true);
+            // Create new handler functions to avoid duplicates
+            const handleSubmit = () => {
+                const isValid = typeof authService !== 'undefined' && authService.verifyAdminPassword(passwordInput.value);
+                if (isValid) {
+                    cleanup();
+                    modal.classList.remove('show');
+                    resolve(true);
+                } else {
+                    errorDiv.classList.add('show');
+                    passwordInput.value = '';
+                    passwordInput.focus();
+                }
+            };
 
-        submitBtn.parentNode.replaceChild(newSubmitBtn, submitBtn);
-        cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-        passwordInput.parentNode.replaceChild(newPasswordInput, passwordInput);
+            const handleCancel = () => {
+                cleanup();
+                modal.classList.remove('show');
+                resolve(false);
+            };
 
-        // Add listeners to new elements
-        newSubmitBtn.addEventListener('click', checkPasswordOnce);
-        newPasswordInput.addEventListener('keypress', handleKeypress);
+            const handleKeypress = (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    handleSubmit();
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    handleCancel();
+                }
+            };
 
-        newCancelBtn.addEventListener('click', () => {
-            modal.classList.remove('show');
-            cleanup();
+            // Cleanup function to remove listeners
+            const cleanup = () => {
+                submitBtn.removeEventListener('click', handleSubmit);
+                cancelBtn.removeEventListener('click', handleCancel);
+                passwordInput.removeEventListener('keypress', handleKeypress);
+            };
+
+            // Add event listeners
+            submitBtn.addEventListener('click', handleSubmit);
+            cancelBtn.addEventListener('click', handleCancel);
+            passwordInput.addEventListener('keypress', handleKeypress);
         });
-
-        // Focus on the new input
-        newPasswordInput.focus();
     }
 
     deleteAllStats() {
@@ -644,14 +658,18 @@ class SettingsManager {
         // Reset button (top bar) - PASSWORD PROTECTED
         const resetBtn = document.getElementById('reset-settings-top');
         if (resetBtn) {
-            resetBtn.addEventListener('click', () => {
-                this.requestPasswordForAction(() => {
-                    if (confirm('האם אתה בטוח שברצונך לאפס את כל ההגדרות לברירת המחדל?')) {
-                        this.resetSettings();
-                        this.saveSettings();
-                        alert('ההגדרות אופסו לברירת המחדל!');
-                    }
-                }, 'אפס הגדרות');
+            resetBtn.addEventListener('click', async () => {
+                if (!confirm('האם אתה בטוח שברצונך לאפס את כל ההגדרות לברירת המחדל?')) {
+                    return;
+                }
+
+                // Show password modal
+                const isAuthorized = await this.showAdminPasswordPrompt('אפס הגדרות - הזן סיסמת מנהל');
+                if (isAuthorized) {
+                    this.resetSettings();
+                    this.saveSettings();
+                    alert('ההגדרות אופסו לברירת המחדל!');
+                }
             });
         }
     }
@@ -907,8 +925,8 @@ function resetUserPassword(userId) {
     let adminPassword;
 
     if (settingsManager && settingsManager.isPasswordUnlocked) {
-        // Already unlocked, use the stored password or default
-        adminPassword = settingsManager.parentPassword;
+        // Already unlocked, use the admin password
+        adminPassword = authService.ADMIN_PASSWORD;
     } else {
         // Not unlocked, ask for password
         adminPassword = prompt('הכנס סיסמת מנהל:');
@@ -945,8 +963,8 @@ function deleteUser(userId) {
     let adminPassword;
 
     if (settingsManager && settingsManager.isPasswordUnlocked) {
-        // Already unlocked, use the stored password or default
-        adminPassword = settingsManager.parentPassword;
+        // Already unlocked, use the admin password
+        adminPassword = authService.ADMIN_PASSWORD;
     } else {
         // Not unlocked, ask for password
         adminPassword = prompt('הכנס סיסמת מנהל:');
@@ -1002,8 +1020,8 @@ function addUser() {
     let adminPassword;
 
     if (settingsManager && settingsManager.isPasswordUnlocked) {
-        // Already unlocked, use the stored password
-        adminPassword = settingsManager.parentPassword;
+        // Already unlocked, use the admin password
+        adminPassword = authService.ADMIN_PASSWORD;
     } else {
         // Not unlocked, ask for password
         adminPassword = prompt('הכנס סיסמת מנהל:');

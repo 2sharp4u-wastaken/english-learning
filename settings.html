@@ -67,12 +67,6 @@
             display: block;
         }
 
-        .settings-container {
-            max-width: 1000px;
-            margin: 0 auto;
-            padding: 40px 20px;
-        }
-
         .protected-section {
             position: relative;
             transition: all 0.3s ease;
@@ -101,9 +95,15 @@
             opacity: 1;
         }
 
+        .settings-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 80px 40px 40px 40px;
+        }
+
         .settings-action-bar {
             position: sticky;
-            top: 0;
+            top: 70px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             padding: 20px;
             border-radius: 15px;
@@ -702,11 +702,12 @@
             }
 
             .settings-container {
-                padding: 20px 15px;
+                padding: 70px 15px 20px 15px;
             }
 
             .settings-action-bar {
                 padding: 15px;
+                top: 60px;
             }
 
             .settings-action-bar h1 {
@@ -774,7 +775,11 @@
 
         @media (max-width: 480px) {
             .settings-container {
-                padding: 15px 10px;
+                padding: 70px 10px 15px 10px;
+            }
+
+            .settings-action-bar {
+                top: 60px;
             }
 
             .settings-action-bar h1 {
@@ -848,7 +853,7 @@
 
     <div class="settings-container">
         <!-- Settings Action Buttons (beneath top bar) -->
-        <div class="settings-action-bar" style="margin-top: 80px;">
+        <div class="settings-action-bar">
             <h1>
                 <i class="fas fa-cog"></i>
                 הגדרות

@@ -590,4 +590,6 @@ class AppManager {
 let appManager;
 document.addEventListener('DOMContentLoaded', () => {
     appManager = new AppManager();
+    // Make it accessible as window.app for gameLogic.js
+    window.app = appManager;
 });

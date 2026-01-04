@@ -39,6 +39,7 @@ class GameManager {
             reading: 0
         };
         this.currentQuestionIndex = 0;
+        this.isResuming = false;  // Flag to track if we're resuming a saved game
 
         // Load settings
         this.loadSettings();
@@ -158,7 +159,16 @@ class GameManager {
     // ============================================
 
     saveGameState() {
-        if (!this.isGameActive || !this.currentGame) return;
+        if (!this.isGameActive || !this.currentGame) {
+            console.warn('Cannot save: isGameActive=', this.isGameActive, 'currentGame=', this.currentGame);
+            return false;
+        }
+
+        // Don't save if no progress made (still at question 0)
+        if (this.currentQuestionIndex === 0) {
+            console.log('No progress to save (still at question 0)');
+            return false;
+        }
 
         const userId = localStorage.getItem('currentUser') || 'default';
         const gameState = {
@@ -171,7 +181,8 @@ class GameManager {
         };
 
         localStorage.setItem(`savedGame_${userId}_${this.currentGame}`, JSON.stringify(gameState));
-        console.log('Game state saved:', gameState);
+        console.log('✅ Game state saved:', gameState);
+        return true;
     }
 
     loadGameState(gameType) {
@@ -198,6 +209,29 @@ class GameManager {
     deleteGameState(gameType) {
         const userId = localStorage.getItem('currentUser') || 'default';
         localStorage.removeItem(`savedGame_${userId}_${gameType}`);
+    }
+
+    resetCurrentGame() {
+        if (!this.isGameActive || !this.currentGame) {
+            console.warn('No active game to reset');
+            return;
+        }
+
+        const gameType = this.currentGame;
+
+        // Delete saved state
+        this.deleteGameState(gameType);
+
+        // Reset game state
+        this.currentQuestionIndex = 0;
+        this.scores[gameType] = 0;
+        this.isGameActive = false;
+
+        // Show toast and restart
+        this.showToast('המשחק אופס!');
+
+        // Restart the game fresh
+        this.switchGame(gameType);
     }
 
     getAllSavedGames() {
@@ -279,83 +313,50 @@ class GameManager {
 
     populateResumeGames() {
         const savedGames = this.getAllSavedGames();
-        const resumeSection = document.getElementById('resume-games-section');
-        const resumeGrid = document.getElementById('resume-games-grid');
 
-        if (!resumeSection || !resumeGrid) return;
+        // Update each game card footer based on saved game state
+        document.querySelectorAll('.game-card').forEach(card => {
+            const gameType = card.dataset.game;
+            const footer = card.querySelector('.game-card-footer');
+            const continueBtn = card.querySelector('.continue-btn');
+            const progressSpan = card.querySelector('.continue-progress');
 
-        if (savedGames.length === 0) {
-            resumeSection.style.display = 'none';
-            return;
-        }
+            if (!footer || !continueBtn || !progressSpan) return;
 
-        // Clear existing cards
-        resumeGrid.innerHTML = '';
+            // Check if there's a saved game for this game type
+            const savedGame = savedGames.find(g => g.gameType === gameType);
 
-        // Create resume cards
-        savedGames.forEach(gameState => {
-            const card = this.createResumeCard(gameState);
-            resumeGrid.appendChild(card);
-        });
-
-        resumeSection.style.display = 'block';
-    }
-
-    createResumeCard(gameState) {
-        const card = document.createElement('div');
-        card.className = 'resume-card';
-
-        const progress = ((gameState.currentQuestionIndex / gameState.totalQuestions) * 100).toFixed(0);
-        const timeAgo = this.getTimeAgo(gameState.timestamp);
-
-        card.innerHTML = `
-            <div class="resume-card-header">
-                <h3 class="resume-card-title">
-                    ${this.getGameIcon(gameState.gameType)}
-                    ${this.getGameName(gameState.gameType)}
-                </h3>
-                <button class="resume-card-delete" title="מחק משחק שמור">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-            <div class="resume-card-progress">
-                <div class="resume-progress-text">
-                    התקדמות: ${gameState.currentQuestionIndex}/${gameState.totalQuestions} שאלות
-                </div>
-                <div class="resume-progress-bar">
-                    <div class="resume-progress-fill" style="width: ${progress}%"></div>
-                </div>
-            </div>
-            <div class="resume-card-score">
-                ⭐ ניקוד: ${gameState.score} נקודות
-            </div>
-            <div class="resume-card-time">
-                🕒 ${timeAgo}
-            </div>
-        `;
-
-        // Add click handler to resume game
-        card.addEventListener('click', (e) => {
-            // Don't resume if clicking delete button
-            if (e.target.closest('.resume-card-delete')) return;
-            this.resumeGame(gameState);
-        });
-
-        // Add delete handler
-        const deleteBtn = card.querySelector('.resume-card-delete');
-        deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            if (confirm(`למחוק את משחק ${this.getGameName(gameState.gameType)}?`)) {
-                this.deleteGameState(gameState.gameType);
-                this.populateResumeGames(); // Refresh
+            if (savedGame) {
+                // Show footer with dual action buttons
+                footer.style.display = 'flex';
+                progressSpan.textContent = `שאלה ${savedGame.currentQuestionIndex + 1}/${savedGame.totalQuestions}`;
+            } else {
+                // Hide footer, clicking card will start new game
+                footer.style.display = 'none';
             }
         });
-
-        return card;
     }
 
-    resumeGame(gameState) {
+    resumeGame(gameStateOrType) {
+        // Support both old (object) and new (string) calling styles
+        let gameState;
+        if (typeof gameStateOrType === 'string') {
+            // Load fresh data from localStorage
+            gameState = this.loadGameState(gameStateOrType);
+            if (!gameState) {
+                console.error('No saved game found for:', gameStateOrType);
+                this.showToast('לא נמצא משחק שמור');
+                return;
+            }
+        } else {
+            // Legacy: object passed directly
+            gameState = gameStateOrType;
+        }
+
         console.log('Resuming game:', gameState);
+
+        // Set resuming flag to prevent startGame from resetting state
+        this.isResuming = true;
 
         // Restore game state
         this.currentGame = gameState.gameType;
@@ -462,8 +463,10 @@ class GameManager {
 
         if (uiType === 'toast') {
             // Auto-save and show toast
-            this.saveGameState();
-            this.showToast(`משחק ${this.getGameName(this.currentGame)} נשמר - ${this.currentQuestionIndex + 1}/${this.totalQuestions}`);
+            const saved = this.saveGameState();
+            if (saved) {
+                this.showToast(`משחק ${this.getGameName(this.currentGame)} נשמר - ${this.currentQuestionIndex + 1}/${this.totalQuestions}`);
+            }
             onConfirm();
             return;
         }
@@ -513,11 +516,12 @@ class GameManager {
 
         // Add new listeners
         newSaveBtn.addEventListener('click', () => {
+            let saved = false;
             if (settings.autoSaveProgress !== false) {
-                this.saveGameState();
+                saved = this.saveGameState();
             }
             modal.classList.remove('show');
-            if (settings.showExitToast !== false) {
+            if (settings.showExitToast !== false && saved) {
                 this.showToast('המשחק נשמר בהצלחה');
             }
             onConfirm();
@@ -729,6 +733,19 @@ class GameManager {
                 this.nextQuestion('reading');
             });
         }
+
+        // Reset game button events for all games
+        const gameTypes = ['vocab', 'grammar', 'pronunciation', 'listening', 'reading'];
+        gameTypes.forEach(gameType => {
+            const resetBtn = document.getElementById(`${gameType}-reset-btn`);
+            if (resetBtn) {
+                resetBtn.addEventListener('click', () => {
+                    if (confirm('האם אתה בטוח שברצונך לאפס את המשחק? כל ההתקדמות תאבד.')) {
+                        this.resetCurrentGame();
+                    }
+                });
+            }
+        });
     }
 
     loadGameData() {
@@ -847,21 +864,23 @@ class GameManager {
             return;
         }
 
-        // Check if we need to show exit confirmation
+        // Auto-save and show toast if switching from an active game
         if (this.isGameActive && gameType !== this.currentGame) {
-            const uiType = this.getExitUIType();
-            if (uiType !== 'none') {
-                // Show exit confirmation and wait for user response
-                this.showExitConfirmation(gameType, () => {
-                    // User confirmed exit, proceed with switch
-                    this.performGameSwitch(gameType);
-                });
-                return;
+            const saved = this.saveGameState();
+            if (saved) {
+                this.showToast('המשחק נשמר בהצלחה');
             }
         }
 
-        // No confirmation needed, switch directly
-        this.performGameSwitch(gameType);
+        // Check if there's a saved game to resume
+        const savedGame = this.loadGameState(gameType);
+        if (savedGame) {
+            console.log('Found saved game, auto-resuming:', savedGame);
+            this.resumeGame(gameType);  // Auto-resume!
+        } else {
+            // No saved game, start fresh
+            this.performGameSwitch(gameType);
+        }
     }
 
     performGameSwitch(gameType) {
@@ -921,8 +940,11 @@ class GameManager {
             // Set game context for speech manager
             speechManager.setGameContext(gameType);
 
-            this.currentQuestionIndex = 0;
-            this.scores[gameType] = 0;
+            // Only reset if NOT resuming a saved game
+            if (!this.isResuming) {
+                this.currentQuestionIndex = 0;
+                this.scores[gameType] = 0;
+            }
             this.isGameActive = true;
 
             // Check if game data exists
@@ -931,15 +953,24 @@ class GameManager {
                 return;
             }
 
-            // Smart question selection based on mastery levels
-            this.shuffledQuestions = this.smartQuestionSelection([...this.gameData[gameType]]);
-            console.log(`Selected ${this.shuffledQuestions.length} questions for ${gameType} using smart selection:`, this.shuffledQuestions.slice(0, 5));
+            // Only generate new questions if NOT resuming
+            if (!this.isResuming) {
+                // Smart question selection based on mastery levels
+                this.shuffledQuestions = this.smartQuestionSelection([...this.gameData[gameType]]);
+                console.log(`Selected ${this.shuffledQuestions.length} questions for ${gameType} using smart selection:`, this.shuffledQuestions.slice(0, 5));
+            } else {
+                console.log(`Resuming with ${this.shuffledQuestions.length} questions at index ${this.currentQuestionIndex}`);
+            }
 
             this.updateScore(gameType);
             this.updateProgress(gameType);
             this.loadQuestion(gameType);
+
+            // Reset resuming flag after game has started
+            this.isResuming = false;
         } catch (error) {
             console.error(`Error starting ${gameType} game:`, error);
+            this.isResuming = false;  // Reset flag even on error
         }
     }
 
@@ -960,7 +991,7 @@ class GameManager {
         questions.forEach(q => {
             const wordKey = `${q.word}_${q.category}`;
             const wordStats = window.app.getWordStats(q.word, q.category);
-            const mastery = wordStats.masteryLevel || 0;
+            const mastery = wordStats?.masteryLevel || 0;
 
             // Store mastery level on the question object for later use
             q.masteryLevel = mastery;
@@ -1071,12 +1102,15 @@ class GameManager {
     updateMasteryIndicator(gameType, question) {
         if (!question || !question.word || !question.category) return;
 
-        const indicator = document.getElementById(`${gameType}-mastery-indicator`);
+        // Convert gameType to element prefix (vocabulary -> vocab)
+        const elementPrefix = gameType === 'vocabulary' ? 'vocab' : gameType;
+
+        const indicator = document.getElementById(`${elementPrefix}-mastery-indicator`);
         if (!indicator) return;
 
         // Get mastery level for current word
         const wordStats = window.app.getWordStats(question.word, question.category);
-        const mastery = wordStats.masteryLevel || 0;
+        const mastery = wordStats?.masteryLevel || 0;
 
         // Clear previous classes
         indicator.className = 'mastery-indicator';
@@ -1197,12 +1231,29 @@ class GameManager {
 
     nextQuestion(gameType) {
         this.currentQuestionIndex++;
+
+        // Auto-save progress after each question
+        const saved = this.saveGameState();
+        if (!saved) {
+            console.error('Failed to auto-save after question', this.currentQuestionIndex);
+        }
+
+        // Hide the next button for this game
+        const nextBtn = document.getElementById(`${gameType}-next`);
+        if (nextBtn) {
+            nextBtn.style.display = 'none';
+        }
+
         this.loadQuestion(gameType);
     }
 
     async endGame(gameType) {
         try {
             console.log(`Ending ${gameType} game...`);
+
+            // Delete saved game state since game is completed
+            this.deleteGameState(gameType);
+
             const gameArea = document.querySelector(`#${gameType}-game .game-board`);
             const finalScore = this.scores[gameType];
             const percentage = Math.round((finalScore / (this.totalQuestions * 10)) * 100);
@@ -1425,23 +1476,26 @@ class GameManager {
         const container = document.getElementById(`${gameType}-game`);
         if (!container) return;
 
+        // Convert gameType to element prefix (vocabulary -> vocab)
+        const elementPrefix = gameType === 'vocabulary' ? 'vocab' : gameType;
+
         // Update progress bar fill
-        const fill = document.getElementById(`${gameType}-progress-fill`);
+        const fill = document.getElementById(`${elementPrefix}-progress-fill`);
         if (fill) fill.style.width = `${progress}%`;
 
         // Update question counter
-        const currentQ = document.getElementById(`${gameType}-current-q`);
-        const totalQ = document.getElementById(`${gameType}-total-q`);
+        const currentQ = document.getElementById(`${elementPrefix}-current-q`);
+        const totalQ = document.getElementById(`${elementPrefix}-total-q`);
         if (currentQ) currentQ.textContent = this.currentQuestionIndex + 1;
         if (totalQ) totalQ.textContent = this.totalQuestions;
 
         // Hide next button on last question (Q10)
         if (this.currentQuestionIndex === this.totalQuestions - 1) {
-            const nextBtn = document.getElementById(`${gameType}-next`);
+            const nextBtn = document.getElementById(`${elementPrefix}-next`);
             if (nextBtn) nextBtn.style.display = 'none';
         } else {
             // Show next button for other questions
-            const nextBtn = document.getElementById(`${gameType}-next`);
+            const nextBtn = document.getElementById(`${elementPrefix}-next`);
             if (nextBtn) nextBtn.style.display = '';
         }
     }

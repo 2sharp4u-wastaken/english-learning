@@ -487,6 +487,81 @@
     <script src="settings.js"></script>
     <script src="stats.js"></script>
     <script>
+        // Password modal helper function
+        function showPasswordModal(title = 'אישור פעולה') {
+            return new Promise((resolve) => {
+                const modal = document.getElementById('password-modal');
+                const passwordInput = document.getElementById('password-input');
+                const submitBtn = document.getElementById('password-submit');
+                const cancelBtn = document.getElementById('password-cancel');
+                const errorDiv = document.getElementById('password-error');
+                const modalTitle = modal.querySelector('h3');
+
+                if (!modal || !passwordInput || !submitBtn || !cancelBtn) {
+                    // Fallback to browser prompt
+                    const password = prompt('הכנס סיסמת מנהל:');
+                    if (!password) {
+                        resolve(false);
+                        return;
+                    }
+                    const isValid = typeof authService !== 'undefined' && authService.verifyAdminPassword(password);
+                    if (!isValid) {
+                        alert('סיסמה שגויה!');
+                    }
+                    resolve(isValid);
+                    return;
+                }
+
+                // Update title
+                modalTitle.innerHTML = `<i class="fas fa-lock"></i> ${title}`;
+
+                // Show modal
+                modal.style.display = 'flex';
+                passwordInput.value = '';
+                errorDiv.style.display = 'none';
+                passwordInput.focus();
+
+                const handleSubmit = () => {
+                    const isValid = typeof authService !== 'undefined' && authService.verifyAdminPassword(passwordInput.value);
+                    if (isValid) {
+                        cleanup();
+                        modal.style.display = 'none';
+                        resolve(true);
+                    } else {
+                        errorDiv.style.display = 'block';
+                        passwordInput.value = '';
+                        passwordInput.focus();
+                    }
+                };
+
+                const handleCancel = () => {
+                    cleanup();
+                    modal.style.display = 'none';
+                    resolve(false);
+                };
+
+                const handleKeypress = (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        handleSubmit();
+                    } else if (e.key === 'Escape') {
+                        e.preventDefault();
+                        handleCancel();
+                    }
+                };
+
+                const cleanup = () => {
+                    submitBtn.removeEventListener('click', handleSubmit);
+                    cancelBtn.removeEventListener('click', handleCancel);
+                    passwordInput.removeEventListener('keypress', handleKeypress);
+                };
+
+                submitBtn.addEventListener('click', handleSubmit);
+                cancelBtn.addEventListener('click', handleCancel);
+                passwordInput.addEventListener('keypress', handleKeypress);
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', () => {
             // Top Header User Info Initialization
             const headerUserAvatar = document.getElementById('header-user-avatar');
@@ -549,20 +624,15 @@
             // Delete stats button handler
             const deleteBtn = document.getElementById('delete-stats-btn');
             if (deleteBtn) {
-                deleteBtn.addEventListener('click', () => {
+                deleteBtn.addEventListener('click', async () => {
                     if (!confirm('האם אתה בטוח שברצונך למחוק את כל הסטטיסטיקות של כל המשתמשים? פעולה זו אינה הפיכה!')) {
                         return;
                     }
 
-                    const adminPassword = prompt('הזן סיסמת מנהל (password):');
-                    if (!adminPassword) return;
-
-                    // Verify admin password
-                    if (typeof authService !== 'undefined' && authService.verifyAdminPassword) {
-                        if (!authService.verifyAdminPassword(adminPassword)) {
-                            alert('סיסמת מנהל שגויה!');
-                            return;
-                        }
+                    // Show password modal
+                    const isAuthorized = await showPasswordModal('מחק סטטיסטיקות - הזן סיסמת מנהל');
+                    if (!isAuthorized) {
+                        return;
                     }
 
                     // Delete all stats directly without needing SettingsManager instance
@@ -613,5 +683,21 @@
             }
         });
     </script>
+
+    <!-- Password Modal -->
+    <div class="password-modal" id="password-modal" style="display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0, 0, 0, 0.7); z-index: 10000; align-items: center; justify-content: center;">
+        <div class="password-dialog" style="background: white; padding: 40px; border-radius: 20px; max-width: 500px; width: 90%; text-align: center; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);">
+            <h3 style="margin: 0 0 15px 0; color: #667eea; font-size: 1.5rem;"><i class="fas fa-lock"></i> הזן סיסמת מנהל</h3>
+            <p style="color: #666; margin-bottom: 20px;">סעיף זה מוגן. אנא הזן את סיסמת המנהל.</p>
+            <div class="password-error" id="password-error" style="display: none; background: #fee2e2; color: #dc2626; padding: 12px; border-radius: 10px; margin-bottom: 15px;">
+                <i class="fas fa-exclamation-circle"></i> סיסמה שגויה!
+            </div>
+            <input type="password" id="password-input" placeholder="סיסמה" style="width: 100%; padding: 15px; border: 2px solid #e2e8f0; border-radius: 10px; font-size: 1rem; margin-bottom: 20px; box-sizing: border-box;">
+            <div class="button-group" style="display: flex; gap: 10px; justify-content: center;">
+                <button class="btn btn-primary" id="password-submit" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px 30px; border: none; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer;">אישור</button>
+                <button class="btn btn-secondary" id="password-cancel" style="background: #e2e8f0; color: #4a5568; padding: 12px 30px; border: none; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer;">ביטול</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
