@@ -182,6 +182,7 @@ class GameManager {
 
         localStorage.setItem(`savedGame_${userId}_${this.currentGame}`, JSON.stringify(gameState));
         console.log('✅ Game state saved:', gameState);
+        this.updateHomeNotification();
         return true;
     }
 
@@ -209,6 +210,7 @@ class GameManager {
     deleteGameState(gameType) {
         const userId = localStorage.getItem('currentUser') || 'default';
         localStorage.removeItem(`savedGame_${userId}_${gameType}`);
+        this.updateHomeNotification();
     }
 
     resetCurrentGame() {
@@ -247,6 +249,18 @@ class GameManager {
         });
 
         return savedGames;
+    }
+
+    updateHomeNotification() {
+        const notificationDot = document.getElementById('home-notification-dot');
+        if (!notificationDot) return;
+
+        const savedGames = this.getAllSavedGames();
+        if (savedGames.length > 0) {
+            notificationDot.classList.add('show');
+        } else {
+            notificationDot.classList.remove('show');
+        }
     }
 
     // ============================================
@@ -335,6 +349,9 @@ class GameManager {
                 footer.style.display = 'none';
             }
         });
+
+        // Update home button notification
+        this.updateHomeNotification();
     }
 
     resumeGame(gameStateOrType) {

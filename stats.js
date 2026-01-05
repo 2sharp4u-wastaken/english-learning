@@ -436,7 +436,40 @@ function initializeStatsPage() {
     });
 }
 
+// Function to update home notification dot
+function updateHomeNotificationDot() {
+    const notificationDot = document.getElementById('home-notification-dot');
+    if (!notificationDot) return;
+
+    const userId = localStorage.getItem('currentUser') || 'default';
+    const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading'];
+    let hasSavedGames = false;
+
+    for (const gameType of gameTypes) {
+        const saved = localStorage.getItem(`savedGame_${userId}_${gameType}`);
+        if (saved) {
+            try {
+                const gameState = JSON.parse(saved);
+                const ageHours = (Date.now() - gameState.timestamp) / (1000 * 60 * 60);
+                if (ageHours <= 24) {
+                    hasSavedGames = true;
+                    break;
+                }
+            } catch (error) {
+                console.error('Error checking saved game:', error);
+            }
+        }
+    }
+
+    if (hasSavedGames) {
+        notificationDot.classList.add('show');
+    } else {
+        notificationDot.classList.remove('show');
+    }
+}
+
 // Initialize stats for all users on page load
 document.addEventListener('DOMContentLoaded', () => {
     initializeStatsPage();
+    updateHomeNotificationDot();
 });
