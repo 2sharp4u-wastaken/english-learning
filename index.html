@@ -49,6 +49,11 @@
                     </nav>
                 </div>
                 <div class="header-right">
+                    <div class="streak-widget">
+                        <div class="streak-flame">🔥</div>
+                        <div class="streak-count" id="streak-count">0</div>
+                        <div class="streak-label">ימים ברצף</div>
+                    </div>
                     <a href="stats.html" class="header-icon-btn" id="stats-btn" title="סטטיסטיקות">
                         <i class="fas fa-chart-line"></i>
                     </a>
@@ -78,10 +83,23 @@
                     <h2 class="games-section-title">בחר משחק</h2>
                     <div class="game-cards-grid">
                         <div class="game-card" data-game="vocabulary">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">📚</div>
                                 <h3>בונה אוצר מילים</h3>
                                 <p>למד מילים חדשות באנגלית</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
+                                </div>
                             </div>
                             <div class="game-card-footer" style="display: none;">
                                 <button class="game-action-btn start-new-btn">משחק חדש</button>
@@ -93,10 +111,23 @@
                         </div>
 
                         <div class="game-card" data-game="grammar">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">✏️</div>
                                 <h3>תרגול דקדוק</h3>
                                 <p>שפר את הדקדוק שלך</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
+                                </div>
                             </div>
                             <div class="game-card-footer" style="display: none;">
                                 <button class="game-action-btn start-new-btn">משחק חדש</button>
@@ -108,10 +139,23 @@
                         </div>
 
                         <div class="game-card" data-game="pronunciation">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">🎤</div>
                                 <h3>משחק הגייה</h3>
                                 <p>תרגל את ההגייה שלך</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
+                                </div>
                             </div>
                             <div class="game-card-footer" style="display: none;">
                                 <button class="game-action-btn start-new-btn">משחק חדש</button>
@@ -123,10 +167,23 @@
                         </div>
 
                         <div class="game-card" data-game="listening">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">👂</div>
                                 <h3>משחק הקשבה</h3>
                                 <p>שפר את ההקשבה שלך</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
+                                </div>
                             </div>
                             <div class="game-card-footer" style="display: none;">
                                 <button class="game-action-btn start-new-btn">משחק חדש</button>
@@ -138,10 +195,23 @@
                         </div>
 
                         <div class="game-card" data-game="reading">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">📖</div>
                                 <h3>משחק קריאה</h3>
                                 <p>למד לקרוא מילים באנגלית</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
+                                </div>
                             </div>
                             <div class="game-card-footer" style="display: none;">
                                 <button class="game-action-btn start-new-btn">משחק חדש</button>
@@ -473,6 +543,8 @@
     <script type="module" src="data/_loader.js?t=1762594745"></script>
     <script src="speechSynthesis.js?t=1762610965"></script>
     <script src="feedback.js"></script>
+    <script src="audio-effects.js"></script>
+    <script src="gamification.js"></script>
     <script type="module" src="gameLogic.js?t=1762610965"></script>
     <script src="app.js?t=1762332862"></script>
 

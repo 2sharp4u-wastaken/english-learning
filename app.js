@@ -592,4 +592,11 @@ document.addEventListener('DOMContentLoaded', () => {
     appManager = new AppManager();
     // Make it accessible as window.app for gameLogic.js
     window.app = appManager;
+
+    // Initialize gamification features after a short delay to ensure all data is loaded
+    setTimeout(() => {
+        if (window.gamificationManager) {
+            window.gamificationManager.init();
+        }
+    }, 500);
 });
