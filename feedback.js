@@ -149,6 +149,15 @@ function getFeedback(game, type, includeExplanation = null) {
         text = `<strong>${feedbackData.text}</strong><br>${includeExplanation}`;
     }
 
+    // Play sound effects for correct/incorrect answers
+    if (window.audioEffects) {
+        if (type === 'correct' || type === 'excellent' || type === 'good') {
+            window.audioEffects.playCorrect().catch(() => {});
+        } else if (type === 'incorrect' || type === 'needsWork' || type === 'tryAgain') {
+            window.audioEffects.playWrong().catch(() => {});
+        }
+    }
+
     return {
         text: text,
         audio: feedbackData.audio

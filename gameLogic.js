@@ -41,6 +41,10 @@ class GameManager {
         this.currentQuestionIndex = 0;
         this.isResuming = false;  // Flag to track if we're resuming a saved game
 
+        // Session streak tracking for mascot encouragement
+        this.sessionCorrectStreak = 0;
+        this.sessionFirstCorrect = false;
+
         // Load settings
         this.loadSettings();
 
@@ -298,9 +302,31 @@ class GameManager {
         if (isCorrect) {
             wordStats.correctAttempts++;
             wordStats.consecutiveCorrect++;
+
+            // Track session streak for mascot encouragement
+            this.sessionCorrectStreak++;
+
+            // First correct answer in session
+            if (!this.sessionFirstCorrect) {
+                this.sessionFirstCorrect = true;
+                if (window.gamificationManager?.mascot) {
+                    window.gamificationManager.mascot.showMessage('firstCorrect');
+                }
+            }
+            // Streak milestones
+            else if (this.sessionCorrectStreak === 3) {
+                if (window.gamificationManager?.mascot) {
+                    window.gamificationManager.mascot.showMessage('streak3');
+                }
+            } else if (this.sessionCorrectStreak === 5) {
+                if (window.gamificationManager?.mascot) {
+                    window.gamificationManager.mascot.showMessage('streak5');
+                }
+            }
         } else {
             wordStats.incorrectAttempts++;
             wordStats.consecutiveCorrect = 0;  // Reset streak on incorrect
+            this.sessionCorrectStreak = 0;  // Reset session streak
         }
 
         // Update metadata
@@ -317,10 +343,30 @@ class GameManager {
         }
 
         // Calculate mastery level
+        const previousMastery = wordStats.masteryLevel || 0;
         wordStats.masteryLevel = window.app.calculateMastery(wordStats);
+
+        // Check for mastery level-up milestone
+        if (previousMastery < 0.8 && wordStats.masteryLevel >= 0.8) {
+            // Word just became mastered!
+            if (window.audioEffects) {
+                window.audioEffects.playLevelUp().catch(() => {});
+            }
+            if (window.gamificationManager?.mascot) {
+                window.gamificationManager.mascot.showMessage('mastered', `שלטת במילה "${word}"! 👑`);
+            }
+            if (typeof confetti !== 'undefined') {
+                window.confettiManager?.celebrateMastery();
+            }
+        }
 
         // Save immediately to localStorage
         window.app.saveWordStats(word, category, wordStats);
+
+        // Update game card progress indicators
+        if (window.gamificationManager && gameType) {
+            window.gamificationManager.updateGameCardProgress(gameType);
+        }
 
         console.log(`Word tracked: ${word} (${category}) - ${isCorrect ? 'Correct' : 'Incorrect'} - Mastery: ${(wordStats.masteryLevel * 100).toFixed(0)}%`);
     }
@@ -961,6 +1007,11 @@ class GameManager {
             if (!this.isResuming) {
                 this.currentQuestionIndex = 0;
                 this.scores[gameType] = 0;
+
+                // Show mascot welcome message for new games
+                if (window.gamificationManager?.mascot) {
+                    window.gamificationManager.mascot.showMessage('welcome');
+                }
             }
             this.isGameActive = true;
 
@@ -1277,6 +1328,31 @@ class GameManager {
 
             // Save game score to history for statistics
             this.saveGameScoreToHistory(gameType, percentage);
+
+            // Play victory sound and show celebration
+            if (window.audioEffects) {
+                window.audioEffects.playVictory().catch(() => {});
+            }
+
+            // Show confetti based on performance
+            if (percentage === 100 && typeof confetti !== 'undefined') {
+                // Perfect game - big celebration!
+                window.confettiManager?.celebratePerfectGame();
+            } else if (percentage >= 80 && typeof confetti !== 'undefined') {
+                // Good performance
+                window.confettiManager?.celebrateAchievement();
+            }
+
+            // Mascot congratulations
+            if (window.gamificationManager?.mascot) {
+                if (percentage === 100) {
+                    window.gamificationManager.mascot.showMessage('gameComplete', 'מושלם! 100%! אתה אלוף! 👑');
+                } else if (percentage >= 80) {
+                    window.gamificationManager.mascot.showMessage('gameComplete', 'עבודה נהדרת! המשך ככה! 🌟');
+                } else {
+                    window.gamificationManager.mascot.showMessage('gameComplete', 'סיימת! תמשיך להתאמן! 💪');
+                }
+            }
 
             if (!gameArea) {
                 console.error(`Game area not found for ${gameType}`);
