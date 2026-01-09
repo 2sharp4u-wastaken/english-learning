@@ -312,6 +312,10 @@ export async function checkBuiltWord() {
             }
         }
 
+        // Increment question index and save immediately to prevent retry exploit
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         // Show overlay Next button - disable retry to prevent getting points after wrong answer
         document.getElementById('reading-next').style.display = 'block';
 

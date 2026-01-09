@@ -716,7 +716,7 @@ class GameManager {
         const vocabNextElement = document.getElementById('vocab-next');
         if (vocabNextElement) {
             vocabNextElement.addEventListener('click', () => {
-                this.nextQuestion('vocabulary');
+                this.loadQuestion('vocabulary');
             });
         }
 
@@ -724,7 +724,7 @@ class GameManager {
         const grammarNextElement = document.getElementById('grammar-next');
         if (grammarNextElement) {
             grammarNextElement.addEventListener('click', () => {
-                this.nextQuestion('grammar');
+                this.loadQuestion('grammar');
             });
         }
 
@@ -746,7 +746,7 @@ class GameManager {
         const pronunciationNextElement = document.getElementById('pronunciation-next');
         if (pronunciationNextElement) {
             pronunciationNextElement.addEventListener('click', () => {
-                this.nextQuestion('pronunciation');
+                this.loadQuestion('pronunciation');
             });
         }
 
@@ -761,7 +761,7 @@ class GameManager {
         const listeningNextElement = document.getElementById('listening-next');
         if (listeningNextElement) {
             listeningNextElement.addEventListener('click', () => {
-                this.nextQuestion('listening');
+                this.loadQuestion('listening');
             });
         }
 
@@ -793,7 +793,7 @@ class GameManager {
         const readingNextElement = document.getElementById('reading-next');
         if (readingNextElement) {
             readingNextElement.addEventListener('click', () => {
-                this.nextQuestion('reading');
+                this.loadQuestion('reading');
             });
         }
 

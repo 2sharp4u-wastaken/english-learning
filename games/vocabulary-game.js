@@ -276,6 +276,10 @@ export async function checkVocabularyAnswer(selectedIndex, correctIndex) {
             console.error('Error playing audio feedback:', error);
         }
 
+        // Increment question index and save immediately to prevent retry exploit
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         // Show Next button for manual advancement on wrong answers
         document.getElementById('vocab-next').style.display = 'block';
     }

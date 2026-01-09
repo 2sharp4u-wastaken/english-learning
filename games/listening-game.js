@@ -177,6 +177,10 @@ export async function checkListeningAnswer(selectedIndex, correctIndex) {
             console.error('Error playing audio feedback:', error);
         }
 
+        // Increment question index and save immediately to prevent retry exploit
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         document.getElementById('listening-next').style.display = 'block';
     }
 

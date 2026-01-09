@@ -133,6 +133,10 @@ export async function checkGrammarAnswer(selectedIndex, correctIndex, question) 
             console.error('Error playing audio feedback:', error);
         }
 
+        // Increment question index and save immediately to prevent retry exploit
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         document.getElementById('grammar-next').style.display = 'block';
     }
 

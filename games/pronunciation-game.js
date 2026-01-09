@@ -247,6 +247,10 @@ export async function processPronunciationResult(result) {
 
         this.updateScore('pronunciation');
 
+        // Increment question index and save immediately to prevent retry exploit
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         // Show overlay Next button and disable retry to prevent getting points after wrong answer
         document.getElementById('pronunciation-next').style.display = 'block';
 
