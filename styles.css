@@ -864,7 +864,8 @@ body::before {
 .listening-layout-vertical,
 .reading-layout-vertical,
 .vocabulary-layout-vertical,
-.grammar-layout-vertical {
+.grammar-layout-vertical,
+.practice-layout-vertical {
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -872,11 +873,12 @@ body::before {
     padding: 0; /* Remove padding for maximum space */
 }
 
-/* Reading, vocabulary, pronunciation, listening layouts - no spacing between elements */
+/* Reading, vocabulary, pronunciation, listening, practice layouts - no spacing between elements */
 .reading-layout-vertical,
 .vocabulary-layout-vertical,
 .pronunciation-layout-vertical,
-.listening-layout-vertical {
+.listening-layout-vertical,
+.practice-layout-vertical {
     gap: 0;
     padding: 5px 0;
 }
@@ -4174,6 +4176,193 @@ body::before {
 
     .streak-label {
         font-size: 0.75rem;
+    }
+}
+
+/* ============================================
+   PRACTICE MODE STYLES
+   ============================================ */
+
+/* Practice mode card styling */
+.practice-mode-card {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.practice-mode-card .game-card-icon {
+    font-size: 3em;
+}
+
+.practice-mode-stats {
+    margin-top: 12px;
+    text-align: center;
+}
+
+.practice-mode-stats .stat-struggling-count {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.95);
+}
+
+/* Practice layout picture container */
+.practice-layout-vertical .picture-container {
+    margin: 0;
+}
+
+/* Comparison area - side-by-side pronunciation comparison */
+.comparison-area {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    padding: 25px;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+    margin: 20px 0;
+    animation: fadeIn 0.3s ease;
+    width: 100%;
+    max-width: 600px;
+}
+
+.comparison-row {
+    display: flex;
+    gap: 20px;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.comparison-column {
+    flex: 1;
+    text-align: center;
+}
+
+.comparison-label {
+    display: block;
+    font-size: 0.85em;
+    opacity: 0.7;
+    margin-bottom: 8px;
+    font-weight: 500;
+}
+
+.comparison-word {
+    display: block;
+    font-size: 1.8em;
+    font-weight: 700;
+    padding: 15px 20px;
+    border-radius: 12px;
+    border: 2px solid;
+    word-break: break-word;
+}
+
+.comparison-word.target {
+    background: rgba(102, 126, 234, 0.3);
+    border-color: rgba(102, 126, 234, 0.5);
+}
+
+.comparison-word.user {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.3);
+}
+
+.comparison-word.match {
+    background: rgba(72, 187, 120, 0.3);
+    border-color: rgba(72, 187, 120, 0.5);
+}
+
+.comparison-word.mismatch {
+    background: rgba(245, 87, 108, 0.3);
+    border-color: rgba(245, 87, 108, 0.5);
+}
+
+/* Accuracy score display */
+.accuracy-score {
+    text-align: center;
+    padding: 15px;
+}
+
+.accuracy-score .score-percentage {
+    display: block;
+    font-size: 2.5em;
+    font-weight: 800;
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+.accuracy-score .score-label {
+    display: block;
+    font-size: 0.9em;
+    opacity: 0.7;
+    margin-top: 5px;
+}
+
+/* Controls row for practice mode */
+.controls-row {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin: 20px 0;
+    flex-wrap: wrap;
+}
+
+.record-btn-icon {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    color: white;
+    font-size: 2em;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+}
+
+.record-btn-icon:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+}
+
+.record-btn-icon.recording {
+    background: linear-gradient(135deg, #f5576c 0%, #e74c3c 100%);
+    animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+    0%, 100% {
+        box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+    }
+    50% {
+        box-shadow: 0 4px 25px rgba(245, 87, 108, 0.8);
+    }
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+    .comparison-row {
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .comparison-area {
+        padding: 20px;
+        margin: 15px 0;
+    }
+
+    .comparison-word {
+        font-size: 1.5em;
+        padding: 12px 15px;
+    }
+
+    .accuracy-score .score-percentage {
+        font-size: 2em;
+    }
+
+    .record-btn-icon {
+        width: 70px;
+        height: 70px;
+        font-size: 1.8em;
+    }
+
+    .controls-row {
+        gap: 10px;
     }
 }
 

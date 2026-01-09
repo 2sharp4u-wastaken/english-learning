@@ -28,9 +28,13 @@ class GamificationManager {
     }
 
     updateAllGameCards() {
-        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading'];
+        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading', 'practice'];
         gameTypes.forEach(gameType => {
-            this.updateGameCardProgress(gameType);
+            if (gameType === 'practice') {
+                this.updatePracticeModeCard();
+            } else {
+                this.updateGameCardProgress(gameType);
+            }
         });
     }
 
@@ -116,6 +120,47 @@ class GamificationManager {
             newWords,
             averageMastery
         };
+    }
+
+    updatePracticeModeCard() {
+        if (!window.app || !window.app.userProgress) return;
+
+        const card = document.querySelector('.practice-mode-card');
+        if (!card) return;
+
+        const wordMastery = window.app.userProgress.wordMastery || {};
+        let strugglingCount = 0;
+
+        // Count words with mastery < 0.5 and attempts > 0
+        Object.values(wordMastery).forEach(stats => {
+            if (stats && stats.totalAttempts > 0 && stats.masteryLevel < 0.5) {
+                strugglingCount++;
+            }
+        });
+
+        // Update card text
+        const countElement = card.querySelector('.stat-struggling-count');
+        if (countElement) {
+            if (strugglingCount === 0) {
+                countElement.textContent = 'אין מילים לתרגול! 🎉';
+                countElement.style.color = '#10b981';
+            } else {
+                countElement.textContent = `${strugglingCount} מילים לתרגול`;
+                countElement.style.color = '';
+            }
+        }
+
+        // Update progress ring (percentage of struggling words that have improved)
+        const ring = card.querySelector('.progress-ring-fill');
+        const percentage = card.querySelector('.progress-percentage');
+        if (ring && percentage) {
+            // Show 0% if there are struggling words, 100% if none
+            const progress = strugglingCount === 0 ? 1.0 : 0;
+            const circumference = 2 * Math.PI * 26;
+            const offset = circumference - (progress * circumference);
+            ring.style.strokeDashoffset = offset;
+            percentage.textContent = `${Math.round(progress * 100)}%`;
+        }
     }
 }
 

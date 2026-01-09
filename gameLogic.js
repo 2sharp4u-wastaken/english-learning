@@ -7,6 +7,7 @@ import * as GrammarGame from './games/grammar-game.js?t=1762595926';
 import * as ListeningGame from './games/listening-game.js?t=1762609545';
 import * as PronunciationGame from './games/pronunciation-game.js?t=1762610965';
 import * as ReadingGame from './games/reading-game.js?t=1762608590';
+import * as PracticeGame from './games/practice-game.js';
 
 // Game Logic for English Learning Games
 
@@ -36,7 +37,8 @@ class GameManager {
             grammar: 0,
             pronunciation: 0,
             listening: 0,
-            reading: 0
+            reading: 0,
+            practice: 0
         };
         this.currentQuestionIndex = 0;
         this.isResuming = false;  // Flag to track if we're resuming a saved game
@@ -88,6 +90,11 @@ class GameManager {
         this.addLetterToWord = ReadingGame.addLetterToWord.bind(this);
         this.clearBuiltWord = ReadingGame.clearBuiltWord.bind(this);
         this.checkBuiltWord = ReadingGame.checkBuiltWord.bind(this);
+        this.loadPracticeQuestion = PracticeGame.loadPracticeQuestion.bind(this);
+        this.togglePracticeRecording = PracticeGame.togglePracticeRecording.bind(this);
+        this.processPracticeResult = PracticeGame.processPracticeResult.bind(this);
+        this.playNativePronunciation = PracticeGame.playNativePronunciation.bind(this);
+        this.playUserPronunciation = PracticeGame.playUserPronunciation.bind(this);
 
         // Initialize the game after all bindings are set up
         this.initializeGame();
@@ -449,7 +456,8 @@ class GameManager {
             grammar: '✏️',
             pronunciation: '🎤',
             listening: '👂',
-            reading: '📖'
+            reading: '📖',
+            practice: '🎯'
         };
         return icons[gameType] || '🎮';
     }
@@ -662,7 +670,8 @@ class GameManager {
             grammar: 'דקדוק',
             pronunciation: 'הגייה',
             listening: 'הקשבה',
-            reading: 'קריאה'
+            reading: 'קריאה',
+            practice: 'מצב תרגול'
         };
         return names[gameType] || gameType;
     }
@@ -797,8 +806,37 @@ class GameManager {
             });
         }
 
+        // Practice game events
+        const practiceRecordBtn = document.getElementById('practice-record-btn');
+        if (practiceRecordBtn) {
+            practiceRecordBtn.addEventListener('click', () => {
+                this.togglePracticeRecording();
+            });
+        }
+
+        const practiceListenNative = document.getElementById('practice-listen-native');
+        if (practiceListenNative) {
+            practiceListenNative.addEventListener('click', () => {
+                this.playNativePronunciation();
+            });
+        }
+
+        const practiceListenUser = document.getElementById('practice-listen-user');
+        if (practiceListenUser) {
+            practiceListenUser.addEventListener('click', () => {
+                this.playUserPronunciation();
+            });
+        }
+
+        const practiceNext = document.getElementById('practice-next');
+        if (practiceNext) {
+            practiceNext.addEventListener('click', () => {
+                this.loadQuestion('practice');
+            });
+        }
+
         // Reset game button events for all games
-        const gameTypes = ['vocab', 'grammar', 'pronunciation', 'listening', 'reading'];
+        const gameTypes = ['vocab', 'grammar', 'pronunciation', 'listening', 'reading', 'practice'];
         gameTypes.forEach(gameType => {
             const resetBtn = document.getElementById(`${gameType}-reset-btn`);
             if (resetBtn) {
@@ -996,6 +1034,43 @@ class GameManager {
         this.startGame(gameType);
     }
 
+    generatePracticeWords() {
+        // Generate list of struggling words for practice mode
+        const allWords = this.gameData.vocabulary || [];
+        const wordMastery = window.app.userProgress.wordMastery || {};
+
+        console.log('Generating practice words from', allWords.length, 'total words');
+
+        // Filter: mastery < 0.5 (struggling words only)
+        const strugglingWords = allWords.filter(word => {
+            const key = `${word.word}_${word.category}`;
+            const stats = wordMastery[key];
+            const hasAttempts = stats && stats.totalAttempts > 0;
+            const isStruggling = stats && stats.masteryLevel < 0.5;
+            return hasAttempts && isStruggling;
+        });
+
+        console.log('Found', strugglingWords.length, 'struggling words');
+
+        // Sort by accuracy (lowest first - most incorrect)
+        strugglingWords.sort((a, b) => {
+            const keyA = `${a.word}_${a.category}`;
+            const keyB = `${b.word}_${b.category}`;
+            const statsA = wordMastery[keyA];
+            const statsB = wordMastery[keyB];
+            const accuracyA = statsA.totalAttempts > 0 ? statsA.correctAttempts / statsA.totalAttempts : 0;
+            const accuracyB = statsB.totalAttempts > 0 ? statsB.correctAttempts / statsB.totalAttempts : 0;
+            return accuracyA - accuracyB; // Lowest accuracy first
+        });
+
+        console.log('Practice words sorted by accuracy. First 5:', strugglingWords.slice(0, 5).map(w => ({
+            word: w.word,
+            accuracy: wordMastery[`${w.word}_${w.category}`].correctAttempts / wordMastery[`${w.word}_${w.category}`].totalAttempts
+        })));
+
+        return strugglingWords;
+    }
+
     startGame(gameType) {
         try {
             console.log(`Starting ${gameType} game...`);
@@ -1015,19 +1090,36 @@ class GameManager {
             }
             this.isGameActive = true;
 
-            // Check if game data exists
-            if (!this.gameData[gameType] || this.gameData[gameType].length === 0) {
-                console.error(`No data found for game type: ${gameType}`);
-                return;
-            }
-
-            // Only generate new questions if NOT resuming
-            if (!this.isResuming) {
-                // Smart question selection based on mastery levels
-                this.shuffledQuestions = this.smartQuestionSelection([...this.gameData[gameType]]);
-                console.log(`Selected ${this.shuffledQuestions.length} questions for ${gameType} using smart selection:`, this.shuffledQuestions.slice(0, 5));
+            // Special handling for practice mode
+            if (gameType === 'practice') {
+                // Only generate new questions if NOT resuming
+                if (!this.isResuming) {
+                    const practiceWords = this.generatePracticeWords();
+                    if (practiceWords.length === 0) {
+                        alert('אין מילים לתרגול! המשך לשחק משחקים אחרים כדי לצבור מילים לתרגול.');
+                        this.isGameActive = false;
+                        return;
+                    }
+                    // Store practice words in gameData and use them
+                    this.gameData.practice = practiceWords;
+                    this.shuffledQuestions = practiceWords.slice(0, Math.min(10, practiceWords.length));
+                    console.log(`Selected ${this.shuffledQuestions.length} practice words (struggling)`, this.shuffledQuestions);
+                }
             } else {
-                console.log(`Resuming with ${this.shuffledQuestions.length} questions at index ${this.currentQuestionIndex}`);
+                // Check if game data exists
+                if (!this.gameData[gameType] || this.gameData[gameType].length === 0) {
+                    console.error(`No data found for game type: ${gameType}`);
+                    return;
+                }
+
+                // Only generate new questions if NOT resuming
+                if (!this.isResuming) {
+                    // Smart question selection based on mastery levels
+                    this.shuffledQuestions = this.smartQuestionSelection([...this.gameData[gameType]]);
+                    console.log(`Selected ${this.shuffledQuestions.length} questions for ${gameType} using smart selection:`, this.shuffledQuestions.slice(0, 5));
+                } else {
+                    console.log(`Resuming with ${this.shuffledQuestions.length} questions at index ${this.currentQuestionIndex}`);
+                }
             }
 
             this.updateScore(gameType);
@@ -1253,6 +1345,9 @@ class GameManager {
                     break;
                 case 'reading':
                     this.loadReadingQuestion(question);
+                    break;
+                case 'practice':
+                    this.loadPracticeQuestion(question);
                     break;
                 default:
                     console.error('Unknown game type:', gameType);

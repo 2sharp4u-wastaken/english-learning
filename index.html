@@ -46,6 +46,10 @@
                             <i class="fas fa-book-open"></i>
                             <span>קריאה</span>
                         </button>
+                        <button class="top-game-btn" data-game="practice" title="מצב תרגול">
+                            <i class="fas fa-bullseye"></i>
+                            <span>תרגול</span>
+                        </button>
                     </nav>
                 </div>
                 <div class="header-right">
@@ -211,6 +215,32 @@
                                     <span class="stat-mastered">0 🌟</span>
                                     <span class="stat-learning">0 📚</span>
                                     <span class="stat-struggling">0 ⚠️</span>
+                                </div>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="game-card practice-mode-card" data-game="practice">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">🎯</div>
+                                <h3>מצב תרגול</h3>
+                                <p>תרגל מילים שקשות לך</p>
+                                <div class="practice-mode-stats">
+                                    <span class="stat-struggling-count">0 מילים לתרגול</span>
                                 </div>
                             </div>
                             <div class="game-card-footer" style="display: none;">
@@ -431,6 +461,70 @@
                         </button>
                     </div>
                     <div class="feedback" id="reading-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Practice Mode -->
+            <div id="practice-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">Word <span id="practice-current-q">1</span> of <span id="practice-total-q">10</span></span>
+                    <span class="mastery-indicator" id="practice-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="practice-reset-btn" title="אפס משחק">
+                        <i class="fas fa-redo"></i>
+                    </button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="practice-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="practice-card">
+                        <div class="practice-layout-vertical">
+                            <!-- Picture at top -->
+                            <div class="picture-container">
+                                <div class="word-picture" id="practice-picture">🔤</div>
+                            </div>
+                            <!-- English and Hebrew words -->
+                            <div class="words-row">
+                                <div class="target-word" id="practice-word">Loading...</div>
+                                <div class="hebrew-translation" id="practice-hebrew"></div>
+                            </div>
+
+                            <!-- Comparison Area (hidden until after recording) -->
+                            <div class="comparison-area" id="comparison-area" style="display: none;">
+                                <div class="comparison-row">
+                                    <div class="comparison-column">
+                                        <span class="comparison-label">Target:</span>
+                                        <span class="comparison-word target" id="comparison-target">cat</span>
+                                    </div>
+                                    <div class="comparison-column">
+                                        <span class="comparison-label">You said:</span>
+                                        <span class="comparison-word user" id="comparison-user">cat</span>
+                                    </div>
+                                </div>
+                                <div class="accuracy-score" id="accuracy-score">
+                                    <span class="score-percentage">85%</span>
+                                    <span class="score-label">Accuracy</span>
+                                </div>
+                            </div>
+
+                            <!-- Control buttons -->
+                            <div class="controls-row">
+                                <button class="record-btn-icon" id="practice-record-btn" aria-label="הקלט את עצמך">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button class="play-audio" id="practice-listen-native" aria-label="השמע הגייה נכונה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <button class="play-audio" id="practice-listen-user" style="display: none;" aria-label="השמע את ההקלטה שלך">
+                                    <i class="fas fa-headphones"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="practice-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="feedback" id="practice-feedback" aria-live="polite"></div>
                 </div>
             </div>
             </main>
