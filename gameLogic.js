@@ -175,6 +175,12 @@ class GameManager {
             return false;
         }
 
+        // Don't save practice mode sessions
+        if (this.currentGame === 'practice') {
+            console.log('Practice mode sessions are not saved');
+            return false;
+        }
+
         // Don't save if no progress made (still at question 0)
         if (this.currentQuestionIndex === 0) {
             console.log('No progress to save (still at question 0)');
@@ -198,6 +204,11 @@ class GameManager {
     }
 
     loadGameState(gameType) {
+        // Practice mode doesn't use save/resume
+        if (gameType === 'practice') {
+            return null;
+        }
+
         const userId = localStorage.getItem('currentUser') || 'default';
         const saved = localStorage.getItem(`savedGame_${userId}_${gameType}`);
 
@@ -478,6 +489,9 @@ class GameManager {
 
     shouldShowExitConfirmation() {
         if (!this.isGameActive) return false;
+
+        // Practice mode exits immediately without confirmation
+        if (this.currentGame === 'practice') return false;
 
         const settings = this.settings || {};
         const exitBehavior = settings.exitBehavior || 'hybrid';
@@ -1414,10 +1428,69 @@ class GameManager {
         try {
             console.log(`Ending ${gameType} game...`);
 
+            const gameArea = document.querySelector(`#${gameType}-game .game-board`);
+
+            // Special handling for practice mode
+            if (gameType === 'practice') {
+                // Practice mode: session-based, no scoring, option to continue
+                if (!gameArea) {
+                    console.error(`Game area not found for practice`);
+                    return;
+                }
+
+                // Hide all existing game elements
+                const existingElements = gameArea.children;
+                for (let i = 0; i < existingElements.length; i++) {
+                    existingElements[i].style.display = 'none';
+                }
+
+                // Create practice session completion screen
+                const completionDiv = document.createElement('div');
+                completionDiv.className = 'game-complete';
+                completionDiv.innerHTML = `
+                    <div class="completion-content">
+                        <h2><i class="fas fa-check-circle"></i> סיימת סבב תרגול!</h2>
+                        <div class="practice-summary">
+                            <p>תרגלת ${this.totalQuestions} מילים</p>
+                            <p>רוצה להמשיך לתרגל?</p>
+                        </div>
+                        <div class="completion-actions">
+                            <button class="continue-practice-btn">
+                                <i class="fas fa-redo"></i> המשך לתרגל
+                            </button>
+                            <button class="choose-game-btn">
+                                <i class="fas fa-home"></i> חזור לדף הבית
+                            </button>
+                        </div>
+                    </div>
+                `;
+
+                gameArea.appendChild(completionDiv);
+
+                // Add event listeners
+                const continueBtn = completionDiv.querySelector('.continue-practice-btn');
+                const homeBtn = completionDiv.querySelector('.choose-game-btn');
+
+                if (continueBtn) {
+                    continueBtn.addEventListener('click', () => {
+                        // Restart practice with new set of struggling words
+                        this.restartGame('practice');
+                    });
+                }
+
+                if (homeBtn) {
+                    homeBtn.addEventListener('click', () => {
+                        this.showWelcomeScreen();
+                    });
+                }
+
+                return; // Exit early for practice mode
+            }
+
+            // Regular game completion logic below
             // Delete saved game state since game is completed
             this.deleteGameState(gameType);
 
-            const gameArea = document.querySelector(`#${gameType}-game .game-board`);
             const finalScore = this.scores[gameType];
             const percentage = Math.round((finalScore / (this.totalQuestions * 10)) * 100);
 
@@ -1453,13 +1526,13 @@ class GameManager {
                 console.error(`Game area not found for ${gameType}`);
                 return;
             }
-            
+
             // Hide all existing game elements instead of destroying them
             const existingElements = gameArea.children;
             for (let i = 0; i < existingElements.length; i++) {
                 existingElements[i].style.display = 'none';
             }
-            
+
             // Create completion message as a new element
             const completionDiv = document.createElement('div');
             completionDiv.className = 'game-complete';
@@ -1648,7 +1721,13 @@ class GameManager {
             const headerScoreElement = document.getElementById('current-score');
 
             if (headerScoreElement) {
-                headerScoreElement.textContent = this.scores[gameType];
+                // Hide score for practice mode (just tracks mastery, no points)
+                if (gameType === 'practice') {
+                    headerScoreElement.style.display = 'none';
+                } else {
+                    headerScoreElement.style.display = '';
+                    headerScoreElement.textContent = this.scores[gameType];
+                }
             } else {
                 console.error(`Header score element not found`);
             }
