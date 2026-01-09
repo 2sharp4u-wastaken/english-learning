@@ -3684,15 +3684,16 @@ body::before {
     gap: 8px;
     justify-content: center;
     margin-top: 10px;
-    font-size: 0.85rem;
-    opacity: 0.95;
+    font-size: 0.9rem;
+    opacity: 1;
 }
 
 .game-card-stats span {
-    background: rgba(255, 255, 255, 0.15);
-    padding: 4px 8px;
+    background: rgba(255, 255, 255, 0.3);
+    padding: 6px 10px;
     border-radius: 12px;
-    font-weight: 600;
+    font-weight: 700;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 /* Mascot Character */
