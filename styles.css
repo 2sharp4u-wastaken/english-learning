@@ -4203,6 +4203,14 @@ body::before {
     color: rgba(255, 255, 255, 0.95);
 }
 
+/* Practice card - light green background to distinguish from games */
+.practice-card {
+    background: linear-gradient(145deg, rgba(220, 255, 220, 0.35) 0%, rgba(200, 255, 200, 0.25) 100%) !important;
+    backdrop-filter: blur(15px);
+    border: 2px solid rgba(180, 255, 180, 0.3);
+    box-shadow: 0 8px 32px 0 rgba(144, 238, 144, 0.2);
+}
+
 /* Practice layout picture container */
 .practice-layout-vertical .picture-container {
     margin: 0;
@@ -4212,12 +4220,12 @@ body::before {
 .comparison-area {
     background: rgba(255, 255, 255, 0.1);
     border-radius: 20px;
-    padding: 25px;
+    padding: 20px;
     border: 2px solid rgba(255, 255, 255, 0.2);
-    margin: 20px 0;
+    margin: 15px auto 0 auto;
     animation: fadeIn 0.3s ease;
     width: 100%;
-    max-width: 600px;
+    max-width: 500px;
 }
 
 .comparison-row {
@@ -4294,11 +4302,11 @@ body::before {
 }
 
 /* Controls row for practice mode */
-.controls-row {
+#practice-game .controls-row {
     display: flex;
     gap: 15px;
     justify-content: center;
-    margin: 20px 0;
+    margin: 10px 0;
     flex-wrap: wrap;
 }
 

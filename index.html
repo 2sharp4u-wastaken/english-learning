@@ -489,6 +489,19 @@
                                 <div class="hebrew-translation" id="practice-hebrew"></div>
                             </div>
 
+                            <!-- Control buttons -->
+                            <div class="controls-row">
+                                <button class="record-btn-icon" id="practice-record-btn" aria-label="הקלט את ההגייה שלך">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button class="play-audio" id="practice-listen-native" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <button class="play-audio" id="practice-listen-user" style="display: none;" aria-label="השמע את ההקלטה שלך">
+                                    <i class="fas fa-headphones"></i>
+                                </button>
+                            </div>
+
                             <!-- Comparison Area (hidden until after recording) -->
                             <div class="comparison-area" id="comparison-area" style="display: none;">
                                 <div class="comparison-row">
@@ -505,19 +518,6 @@
                                     <span class="score-percentage">85%</span>
                                     <span class="score-label">Accuracy</span>
                                 </div>
-                            </div>
-
-                            <!-- Control buttons -->
-                            <div class="controls-row">
-                                <button class="record-btn-icon" id="practice-record-btn" aria-label="הקלט את עצמך">
-                                    <i class="fas fa-microphone"></i>
-                                </button>
-                                <button class="play-audio" id="practice-listen-native" aria-label="השמע הגייה נכונה">
-                                    <i class="fas fa-volume-up"></i>
-                                </button>
-                                <button class="play-audio" id="practice-listen-user" style="display: none;" aria-label="השמע את ההקלטה שלך">
-                                    <i class="fas fa-headphones"></i>
-                                </button>
                             </div>
                         </div>
                     </div>
