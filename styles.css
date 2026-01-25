@@ -970,6 +970,7 @@ body::before {
     font-size: 1rem;
     font-weight: 600;
     color: rgba(255, 255, 255, 0.9);
+    direction: rtl;
 }
 
 /* Icon-only recording button (underneath word) */
@@ -1252,7 +1253,7 @@ body::before {
     font-size: 1.2rem;
     font-weight: 600;
     text-align: center;
-    direction: ltr;
+    direction: rtl;
     unicode-bidi: embed;
     backdrop-filter: blur(10px);
     animation: feedbackReveal 0.3s ease;
@@ -1310,6 +1311,7 @@ body::before {
     margin: 20px auto;
     width: fit-content;
     animation: slideIn 0.3s ease;
+    direction: rtl;
 }
 
 .next-btn[style*="display: block"] {
@@ -2871,6 +2873,7 @@ body::before {
     color: #667eea;
     margin-bottom: 15px;
     animation: fadeInDown 0.6s ease;
+    direction: rtl;
 }
 
 .welcome-subtitle {
@@ -2878,6 +2881,7 @@ body::before {
     color: #666;
     margin-bottom: 50px;
     animation: fadeIn 0.8s ease;
+    direction: rtl;
 }
 
 .game-cards-grid {
@@ -2909,6 +2913,7 @@ body::before {
     padding: 35px 25px;
     cursor: pointer;
     flex: 1;
+    direction: rtl;
 }
 
 .game-card-icon {
@@ -2951,6 +2956,7 @@ body::before {
     flex-direction: column;
     align-items: center;
     gap: 3px;
+    direction: rtl;
 }
 
 .start-new-btn {
