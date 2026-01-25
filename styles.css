@@ -4272,6 +4272,20 @@ body::before {
 /* Practice layout picture container */
 .practice-layout-vertical .picture-container {
     margin: 0;
+    flex-shrink: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Practice game picture styles - match other games */
+#practice-game .word-picture {
+    font-size: 8rem !important;
+    display: block;
+    text-align: center;
+    margin: 10px auto;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
+    animation: pictureBounce 2s ease-in-out infinite;
 }
 
 /* Comparison area - side-by-side pronunciation comparison */
