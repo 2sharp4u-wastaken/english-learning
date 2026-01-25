@@ -117,7 +117,7 @@ export async function loadVocabularyQuestion(question) {
 
             // Show prompt for remaining plays
             if (feedback) {
-                feedback.textContent = `מצוין! עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}...`;
+                feedback.textContent = `השמע את המילה עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}...`;
                 feedback.className = 'feedback vocab-prompt';
             }
         } catch (error) {

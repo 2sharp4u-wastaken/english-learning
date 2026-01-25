@@ -37,18 +37,13 @@ class SettingsManager {
                 grammar: true
             },
 
-            // Audio settings
-            autoPlay: true,
-
             // Game settings
             questionsPerGame: 10,
             clickRepeatCount: 3,
             audioPlaysAllowed: 8,
             difficulty: 'beginner',
 
-            // Theme settings
-            theme: 'classic',
-            animationSpeed: 1.0,
+            // Display settings (hidden from UI)
             showPictures: false,
 
             // Advanced settings

@@ -1475,7 +1475,7 @@ class GameManager {
                             // Still need more plays - update feedback
                             console.log('📢 [AUDIO] Need', clicksLeft, 'more plays');
                             if (feedback) {
-                                feedback.textContent = `מצוין! עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}...`;
+                                feedback.textContent = `השמע את המילה עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}...`;
                                 feedback.className = 'feedback vocab-prompt';
                             }
                         } else {
@@ -1614,8 +1614,10 @@ class GameManager {
             // Delete saved game state since game is completed
             this.deleteGameState(gameType);
 
-            const finalScore = this.scores[gameType];
-            const percentage = Math.round((finalScore / (this.totalQuestions * 10)) * 100);
+            // Cap the score to prevent display bugs (e.g., 130%)
+            const maxPossibleScore = this.totalQuestions * 10;
+            const finalScore = Math.min(this.scores[gameType], maxPossibleScore);
+            const percentage = Math.round((finalScore / maxPossibleScore) * 100);
 
             // Save game score to history for statistics
             this.saveGameScoreToHistory(gameType, percentage);

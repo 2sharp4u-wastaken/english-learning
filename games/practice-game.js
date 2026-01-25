@@ -277,10 +277,8 @@ export async function processPracticeResult(result) {
 
         this.updateScore('practice');
 
-        // Auto-advance on correct pronunciation after 2 seconds
-        setTimeout(() => {
-            this.loadQuestion('practice');
-        }, 2000);
+        // Show Next button instead of auto-advancing so user can review their pronunciation
+        document.getElementById('practice-next').style.display = 'block';
 
     } else {
         if (feedback) feedback.className = 'feedback incorrect';

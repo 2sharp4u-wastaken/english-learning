@@ -114,9 +114,8 @@ export async function checkGrammarAnswer(selectedIndex, correctIndex, question) 
             console.error('Error playing audio feedback:', error);
         }
 
-        setTimeout(() => {
-            this.loadQuestion('grammar');
-        }, 1500);
+        // Show Next button instead of auto-advancing so user can read the explanation
+        document.getElementById('grammar-next').style.display = 'block';
     } else {
         options[selectedIndex].classList.add('incorrect');
         options[correctIndex].classList.add('correct');
