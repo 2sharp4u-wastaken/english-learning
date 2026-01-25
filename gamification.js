@@ -161,6 +161,19 @@ class GamificationManager {
             ring.style.strokeDashoffset = offset;
             percentage.textContent = `${Math.round(progress * 100)}%`;
         }
+
+        // Hide/show practice button in top nav based on struggling count
+        const practiceNavBtn = document.querySelector('.top-game-btn[data-game="practice"]');
+        if (practiceNavBtn) {
+            practiceNavBtn.style.display = strugglingCount === 0 ? 'none' : '';
+        }
+
+        // Hide/show practice card in welcome screen
+        if (strugglingCount === 0) {
+            card.style.display = 'none';
+        } else {
+            card.style.display = '';
+        }
     }
 }
 

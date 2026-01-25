@@ -1997,6 +1997,7 @@ body::before {
 #pronunciation-game .next-btn,
 #listening-game .next-btn,
 #grammar-game .next-btn,
+#practice-game .next-btn,
 #sentence-game .next-btn {
     position: fixed;
     top: 110px;
@@ -2019,6 +2020,7 @@ body::before {
 #pronunciation-game .next-btn:hover,
 #listening-game .next-btn:hover,
 #grammar-game .next-btn:hover,
+#practice-game .next-btn:hover,
 #sentence-game .next-btn:hover {
     transform: translateX(-50%) scale(1.05);
     box-shadow: 0 6px 25px rgba(79, 172, 254, 0.5);

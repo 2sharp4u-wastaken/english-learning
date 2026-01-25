@@ -1116,8 +1116,12 @@ class GameManager {
                     }
                     // Store practice words in gameData and use them
                     this.gameData.practice = practiceWords;
-                    this.shuffledQuestions = practiceWords.slice(0, Math.min(10, practiceWords.length));
-                    console.log(`Selected ${this.shuffledQuestions.length} practice words (struggling)`, this.shuffledQuestions);
+                    // Use only the actual number of struggling words (up to 10)
+                    const actualPracticeCount = Math.min(10, practiceWords.length);
+                    this.shuffledQuestions = practiceWords.slice(0, actualPracticeCount);
+                    // Set totalQuestions to match actual practice words available
+                    this.totalQuestions = actualPracticeCount;
+                    console.log(`Selected ${this.shuffledQuestions.length} practice words (struggling), totalQuestions set to ${this.totalQuestions}`, this.shuffledQuestions);
                 }
             } else {
                 // Check if game data exists
