@@ -1430,6 +1430,41 @@ class GameManager {
                         console.log('📢 [AUDIO] Subsequent audio play - options already revealed');
                     }
                 }
+
+                // In vocabulary game: reveal options after audio plays (same mechanism)
+                if (this.currentGame === 'vocabulary') {
+                    console.log('📢 [AUDIO] Audio finished playing for vocabulary game');
+                    console.log('📢 [AUDIO] vocabularyAudioPlayed flag is:', this.vocabularyAudioPlayed);
+
+                    // Reveal options after first audio play
+                    if (!this.vocabularyAudioPlayed) {
+                        console.log('📢 [AUDIO] First audio play - revealing vocabulary options now');
+                        const optionsContainer = document.getElementById('vocab-options');
+                        const optionButtons = optionsContainer?.querySelectorAll('.option-btn');
+                        console.log('📢 [AUDIO] Found', optionButtons?.length || 0, 'option buttons to reveal');
+                        optionButtons?.forEach((btn, i) => {
+                            btn.classList.remove('vocab-option-hidden');
+                            btn.disabled = false;
+                            console.log('📢 [AUDIO] Option', i, 'revealed - disabled:', btn.disabled);
+                        });
+
+                        // Clear the vocab prompt
+                        const feedback = document.getElementById('vocab-feedback');
+                        if (feedback) {
+                            feedback.textContent = '';
+                            feedback.className = 'feedback';
+                        }
+
+                        // Focus first option after reveal
+                        const firstVocabOption = optionsContainer?.querySelector('.option-btn');
+                        if (firstVocabOption) firstVocabOption.focus();
+
+                        this.vocabularyAudioPlayed = true;
+                        console.log('📢 [AUDIO] vocabularyAudioPlayed flag set to TRUE');
+                    } else {
+                        console.log('📢 [AUDIO] Subsequent audio play - vocabulary options already revealed');
+                    }
+                }
             } catch (error) {
                 console.warn('Could not play audio:', error);
             }
