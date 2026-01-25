@@ -1431,36 +1431,59 @@ class GameManager {
                     }
                 }
 
-                // In vocabulary game: reveal options after audio plays (same mechanism)
+                // In vocabulary game: reveal options after 3 audio plays
                 if (this.currentGame === 'vocabulary') {
+                    // Increment play count
+                    this.vocabPlayCount = (this.vocabPlayCount || 0) + 1;
+                    const requiredClicks = this.vocabRequiredClicks || 3;
+                    const clicksLeft = requiredClicks - this.vocabPlayCount;
+
                     console.log('📢 [AUDIO] Audio finished playing for vocabulary game');
-                    console.log('📢 [AUDIO] vocabularyAudioPlayed flag is:', this.vocabularyAudioPlayed);
+                    console.log('📢 [AUDIO] vocabPlayCount:', this.vocabPlayCount, '/', requiredClicks);
 
-                    // Reveal options after first audio play
+                    const feedback = document.getElementById('vocab-feedback');
+
+                    // Check if we've reached required plays
                     if (!this.vocabularyAudioPlayed) {
-                        console.log('📢 [AUDIO] First audio play - revealing vocabulary options now');
-                        const optionsContainer = document.getElementById('vocab-options');
-                        const optionButtons = optionsContainer?.querySelectorAll('.option-btn');
-                        console.log('📢 [AUDIO] Found', optionButtons?.length || 0, 'option buttons to reveal');
-                        optionButtons?.forEach((btn, i) => {
-                            btn.classList.remove('vocab-option-hidden');
-                            btn.disabled = false;
-                            console.log('📢 [AUDIO] Option', i, 'revealed - disabled:', btn.disabled);
-                        });
+                        if (clicksLeft > 0) {
+                            // Still need more plays - update feedback
+                            console.log('📢 [AUDIO] Need', clicksLeft, 'more plays');
+                            if (feedback) {
+                                feedback.textContent = `מצוין! עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}...`;
+                                feedback.className = 'feedback vocab-prompt';
+                            }
+                        } else {
+                            // Reached required plays - reveal options
+                            console.log('📢 [AUDIO] Required plays reached - revealing vocabulary options now');
 
-                        // Clear the vocab prompt
-                        const feedback = document.getElementById('vocab-feedback');
-                        if (feedback) {
-                            feedback.textContent = '';
-                            feedback.className = 'feedback';
+                            if (feedback) {
+                                feedback.textContent = 'כל הכבוד! עכשיו בחר את התרגום הנכון:';
+                                feedback.className = 'feedback vocab-prompt';
+                                // Clear after a moment
+                                setTimeout(() => {
+                                    if (feedback.textContent === 'כל הכבוד! עכשיו בחר את התרגום הנכון:') {
+                                        feedback.textContent = '';
+                                        feedback.className = 'feedback';
+                                    }
+                                }, 1500);
+                            }
+
+                            const optionsContainer = document.getElementById('vocab-options');
+                            const optionButtons = optionsContainer?.querySelectorAll('.option-btn');
+                            console.log('📢 [AUDIO] Found', optionButtons?.length || 0, 'option buttons to reveal');
+                            optionButtons?.forEach((btn, i) => {
+                                btn.classList.remove('vocab-option-hidden');
+                                btn.disabled = false;
+                                console.log('📢 [AUDIO] Option', i, 'revealed - disabled:', btn.disabled);
+                            });
+
+                            // Focus first option after reveal
+                            const firstVocabOption = optionsContainer?.querySelector('.option-btn');
+                            if (firstVocabOption) firstVocabOption.focus();
+
+                            this.vocabularyAudioPlayed = true;
+                            console.log('📢 [AUDIO] vocabularyAudioPlayed flag set to TRUE');
                         }
-
-                        // Focus first option after reveal
-                        const firstVocabOption = optionsContainer?.querySelector('.option-btn');
-                        if (firstVocabOption) firstVocabOption.focus();
-
-                        this.vocabularyAudioPlayed = true;
-                        console.log('📢 [AUDIO] vocabularyAudioPlayed flag set to TRUE');
                     } else {
                         console.log('📢 [AUDIO] Subsequent audio play - vocabulary options already revealed');
                     }

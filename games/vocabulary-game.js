@@ -89,16 +89,19 @@ export async function loadVocabularyQuestion(question) {
             optionsContainer.appendChild(button);
         });
 
-        // Show prompt to click play button (same as listening game)
+        // Show prompt to click play button 3 times
+        const requiredClicks = this.clickRepeatCount || 3;
         if (feedback) {
-            feedback.textContent = '🔊 לחץ על כפתור ההשמעה כדי לשמוע את המילה';
+            feedback.textContent = `🔊 לחץ על כפתור ההשמעה ${requiredClicks} פעמים כדי לשמוע את המילה ולחשוף את התשובות`;
             feedback.className = 'feedback vocab-prompt';
         }
 
-        // Store question data and flag for audio playback
+        // Store question data and initialize play count
         this.currentVocabularyQuestion = question;
+        this.vocabPlayCount = 0;
+        this.vocabRequiredClicks = requiredClicks;
         this.vocabularyAudioPlayed = false;
-        console.log('📢 [VOCABULARY] vocabularyAudioPlayed flag set to FALSE - options hidden until audio plays');
+        console.log('📢 [VOCABULARY] vocabPlayCount set to 0 - need', requiredClicks, 'plays to reveal options');
 
         // Don't auto-play audio - wait for user to click play button
         // Reset next button
