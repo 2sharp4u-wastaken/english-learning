@@ -80,19 +80,9 @@ export async function loadListeningQuestion(question) {
         hebrewElement.style.display = 'block'; // Show immediately
     }
 
-    // Show prompt to click play button (no auto-play due to browser restrictions)
-    if (feedback) {
-        feedback.textContent = '🔊 לחץ על כפתור ההשמעה כדי לשמוע את המילה';
-        feedback.className = 'feedback listening-prompt';
-    }
-
-    // Store question data for manual playback
+    // Store question data for playback
     this.currentListeningQuestion = question;
     this.listeningAudioPlayed = false;
-    console.log('📢 [LISTENING] listeningAudioPlayed flag set to FALSE - options hidden until audio plays');
-
-    // Don't auto-play audio (Chrome blocks it) - wait for user to click play button
-    // Audio will play when user clicks the listening-audio button
 
     // Reset next button
     document.getElementById('listening-next').style.display = 'none';
@@ -100,7 +90,40 @@ export async function loadListeningQuestion(question) {
     // Enable arrow-key navigation
     this.enableOptionKeyboardNavigation('listening-options');
 
-    console.log('📢 [LISTENING] Question loaded - waiting for user to click play button');
+    // Auto-play the word audio when question loads (consistent with other games)
+    console.log('📢 [LISTENING] Auto-playing word on question load');
+    try {
+        await speechManager.speakWord(question.word, '', 'listening');
+
+        // After auto-play, reveal options
+        console.log('📢 [LISTENING] Auto-play complete - revealing options');
+        const optionButtons = optionsContainer?.querySelectorAll('.option-btn');
+        optionButtons?.forEach((btn, i) => {
+            btn.classList.remove('listening-option-hidden');
+            btn.disabled = false;
+        });
+
+        // Clear any prompt and focus first option
+        if (feedback) {
+            feedback.textContent = '';
+            feedback.className = 'feedback';
+        }
+        const firstOption = optionsContainer?.querySelector('.option-btn');
+        if (firstOption) firstOption.focus();
+
+        this.listeningAudioPlayed = true;
+        this.audioPlaysLeft--;
+        this.updateAllPlayCounters('listening');
+    } catch (error) {
+        console.error('Error auto-playing word audio:', error);
+        // If auto-play fails, show prompt to click play button
+        if (feedback) {
+            feedback.textContent = '🔊 לחץ על כפתור ההשמעה כדי לשמוע את המילה';
+            feedback.className = 'feedback listening-prompt';
+        }
+    }
+
+    console.log('📢 [LISTENING] Question loaded successfully');
 }
 
 export function showListeningHebrew() {

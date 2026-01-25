@@ -89,28 +89,47 @@ export async function loadVocabularyQuestion(question) {
             optionsContainer.appendChild(button);
         });
 
-        // Show prompt to click play button 3 times
-        const requiredClicks = this.clickRepeatCount || 3;
-        if (feedback) {
-            feedback.textContent = `🔊 לחץ על כפתור ההשמעה ${requiredClicks} פעמים כדי לשמוע את המילה ולחשוף את התשובות`;
-            feedback.className = 'feedback vocab-prompt';
-        }
-
         // Store question data and initialize play count
+        const requiredClicks = this.clickRepeatCount || 3;
         this.currentVocabularyQuestion = question;
         this.vocabPlayCount = 0;
         this.vocabRequiredClicks = requiredClicks;
         this.vocabularyAudioPlayed = false;
-        console.log('📢 [VOCABULARY] vocabPlayCount set to 0 - need', requiredClicks, 'plays to reveal options');
 
-        // Don't auto-play audio - wait for user to click play button
         // Reset next button
         document.getElementById('vocab-next').style.display = 'none';
 
         // Enable arrow-key navigation (will work once options are revealed)
         this.enableOptionKeyboardNavigation('vocab-options');
 
-        console.log('📢 [VOCABULARY] Question loaded - waiting for user to click play button');
+        // Auto-play the word audio when question loads (consistent with other games)
+        console.log('📢 [VOCABULARY] Auto-playing word on question load');
+        try {
+            await speechManager.speakWord(question.word, '', 'vocabulary');
+
+            // Count auto-play as first play
+            this.vocabPlayCount = 1;
+            this.audioPlaysLeft--;
+            this.updateAllPlayCounters('vocabulary');
+
+            const clicksLeft = requiredClicks - 1;
+            console.log('📢 [VOCABULARY] Auto-play complete - need', clicksLeft, 'more plays');
+
+            // Show prompt for remaining plays
+            if (feedback) {
+                feedback.textContent = `מצוין! עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}...`;
+                feedback.className = 'feedback vocab-prompt';
+            }
+        } catch (error) {
+            console.error('Error auto-playing word audio:', error);
+            // If auto-play fails, show full prompt
+            if (feedback) {
+                feedback.textContent = `🔊 לחץ על כפתור ההשמעה ${requiredClicks} פעמים כדי לשמוע את המילה ולחשוף את התשובות`;
+                feedback.className = 'feedback vocab-prompt';
+            }
+        }
+
+        console.log('📢 [VOCABULARY] Question loaded successfully');
     } catch (error) {
         console.error('Error loading vocabulary question:', error);
     }
