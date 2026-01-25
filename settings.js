@@ -672,6 +672,18 @@ class SettingsManager {
                 }
             });
         }
+
+        // Download logs button (top bar)
+        const downloadLogsBtn = document.getElementById('download-logs-btn');
+        if (downloadLogsBtn) {
+            downloadLogsBtn.addEventListener('click', () => {
+                if (window.consoleLogger && typeof window.consoleLogger.downloadLogs === 'function') {
+                    window.consoleLogger.downloadLogs();
+                } else {
+                    alert('לוגר לא זמין - נסה לרענן את הדף');
+                }
+            });
+        }
     }
 
     updateAllValues() {

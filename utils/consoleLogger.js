@@ -15,7 +15,7 @@ class ConsoleLogger {
         };
 
         this.initializeInterceptors();
-        this.addDownloadButton();
+        // Download button moved to settings page - use window.consoleLogger.downloadLogs()
 
         console.log('🔍 Console logger initialized - all logs will be captured');
     }
