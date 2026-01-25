@@ -271,11 +271,15 @@ export async function processPracticeResult(result) {
             console.error('Error triggering confetti:', error);
         }
 
+        // Save progress immediately to prevent loss if user navigates away
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         this.updateScore('practice');
 
         // Auto-advance on correct pronunciation after 2 seconds
         setTimeout(() => {
-            this.nextQuestion('practice');
+            this.loadQuestion('practice');
         }, 2000);
 
     } else {

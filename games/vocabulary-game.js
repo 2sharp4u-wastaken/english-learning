@@ -159,6 +159,10 @@ export async function checkVocabularyAnswer(selectedIndex, correctIndex) {
             feedback.className = 'feedback correct';
         }
 
+        // Save progress immediately to prevent loss if user navigates away
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         // Audio feedback
         try {
             if (fbData.audio) {
@@ -170,7 +174,7 @@ export async function checkVocabularyAnswer(selectedIndex, correctIndex) {
 
         // Auto-advance only on correct answers after 1.5 seconds
         setTimeout(() => {
-            this.nextQuestion('vocabulary');
+            this.loadQuestion('vocabulary');
         }, 1500);
     } else {
         buttons[selectedIndex].classList.add('incorrect');

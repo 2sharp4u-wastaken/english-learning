@@ -212,6 +212,10 @@ export async function processPronunciationResult(result) {
             console.error('Error triggering confetti:', error);
         }
 
+        // Save progress immediately to prevent loss if user navigates away
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         // Play audio feedback for correct answer
         try {
             if (comparison.audioFeedback) {
@@ -225,7 +229,7 @@ export async function processPronunciationResult(result) {
 
         // Auto-advance on correct pronunciation after 1.5 seconds (consistent with other games)
         setTimeout(() => {
-            this.nextQuestion('pronunciation');
+            this.loadQuestion('pronunciation');
         }, 1500);
 
     } else {

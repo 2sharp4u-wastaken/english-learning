@@ -234,6 +234,10 @@ export async function checkBuiltWord() {
 
         // Don't show Next button - will auto-advance after feedback (consistent with other games)
 
+        // Save progress immediately to prevent loss if user navigates away
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         // Audio feedback
         try {
             if (fbData.audio) {
@@ -248,7 +252,7 @@ export async function checkBuiltWord() {
         // Auto-advance after 1.5 seconds (consistent with other games)
         this.readingAutoAdvanceTimer = setTimeout(() => {
             this.readingAutoAdvanceTimer = null;
-            this.nextQuestion('reading');
+            this.loadQuestion('reading');
         }, 1500);
     } else {
         // Incorrect - increment attempts and redisplay word

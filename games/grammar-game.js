@@ -101,6 +101,10 @@ export async function checkGrammarAnswer(selectedIndex, correctIndex, question) 
         feedback.className = 'feedback correct';
         this.scores.grammar += 10;
 
+        // Save progress immediately to prevent loss if user navigates away
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         // Audio feedback for correct answer
         try {
             if (fbData.audio) {
@@ -111,7 +115,7 @@ export async function checkGrammarAnswer(selectedIndex, correctIndex, question) 
         }
 
         setTimeout(() => {
-            this.nextQuestion('grammar');
+            this.loadQuestion('grammar');
         }, 1500);
     } else {
         options[selectedIndex].classList.add('incorrect');

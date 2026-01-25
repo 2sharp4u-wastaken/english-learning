@@ -151,6 +151,10 @@ export async function checkListeningAnswer(selectedIndex, correctIndex) {
         this.scores.listening += 10;
         console.log('🏆 [LISTENING] After score increment:', this.scores.listening);
 
+        // Save progress immediately to prevent loss if user navigates away
+        this.currentQuestionIndex++;
+        this.saveGameState();
+
         // Audio feedback for correct answer
         try {
             if (fbData.audio) {
@@ -161,7 +165,7 @@ export async function checkListeningAnswer(selectedIndex, correctIndex) {
         }
 
         setTimeout(() => {
-            this.nextQuestion('listening');
+            this.loadQuestion('listening');
         }, 1500);
     } else {
         options[selectedIndex].classList.add('incorrect');
