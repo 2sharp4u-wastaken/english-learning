@@ -221,14 +221,13 @@ export async function processPracticeResult(result) {
     }
     if (userEl) {
         userEl.textContent = result.transcript || '(not recognized)';
-        // Color-code based on accuracy
+        // Color-code based on accuracy - aligned with recording threshold (0.7)
         userEl.classList.remove('match', 'mismatch');
-        if (comparison.accuracy >= 0.9) {
-            userEl.classList.add('match'); // Green for excellent match
-        } else if (comparison.accuracy < 0.7) {
-            userEl.classList.add('mismatch'); // Red for poor match
+        if (comparison.accuracy >= 0.7) {
+            userEl.classList.add('match'); // Green for correct (matches recording threshold)
+        } else {
+            userEl.classList.add('mismatch'); // Red for incorrect
         }
-        // Default styling (no class) for intermediate accuracy
     }
     if (scoreEl) {
         scoreEl.textContent = `${Math.round(comparison.accuracy * 100)}%`;
