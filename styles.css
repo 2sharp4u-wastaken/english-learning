@@ -3671,10 +3671,10 @@ body::before {
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
-    margin-left: 10px;
     box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
     direction: rtl;
     white-space: nowrap;
+    z-index: 10;
 }
 
 .reset-game-btn:hover {
@@ -3693,6 +3693,16 @@ body::before {
     align-items: center;
     gap: 10px;
     flex-wrap: wrap;
+    position: relative;
+}
+
+/* Position reset button absolutely on the left side */
+.progress-container .reset-game-btn {
+    position: absolute;
+    left: 10px;
+    top: 50%;
+    transform: translateY(-50%);
+    margin-left: 0;
 }
 
 /* ============================================
