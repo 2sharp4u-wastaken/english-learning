@@ -1,6 +1,8 @@
 // Data transformation functions to convert vocabulary into game-specific formats
 // These functions prepare the data for different game types
 
+import { selectDistractors } from './phonetics.js';
+
 // Function to generate Hebrew options for vocabulary questions
 function generateHebrewOptions(correctTranslation, category, vocabularyBank) {
     // Prefer same category, fallback to all, ensure uniqueness and no collisions
@@ -71,16 +73,39 @@ export function convertToPronunciation(vocabularyBank) {
 
 // Convert for listening game - show English words as options
 export function convertToListening(vocabularyBank) {
+    console.log('📋 [CONVERTER] convertToListening() called at', new Date().toISOString());
+    console.log('📋 [CONVERTER] Converting', vocabularyBank.length, 'words for listening game');
     return vocabularyBank.map(item => {
-        // Generate English word options from same category; ensure uniqueness
-        const pool = vocabularyBank.filter(w => w.category === item.category && w.word !== item.word);
-        const seen = new Set();
-        const wrongOptions = [];
-        for (const w of pool.sort(() => Math.random() - 0.5)) {
-            if (wrongOptions.length === 3) break;
-            if (!seen.has(w.word)) { seen.add(w.word); wrongOptions.push(w.word); }
+        // Get mastery level for adaptive difficulty
+        const masteryKey = `${item.word}_${item.category}`;
+        const wordMastery = window.app?.userProgress?.wordMastery || {};
+        const masteryLevel = wordMastery[masteryKey]?.masteryLevel || 0;
+
+        // Generate phonetically similar distractors based on mastery
+        let distractors = selectDistractors(item.word, masteryLevel, vocabularyBank);
+
+        // Ensure we have exactly 3 distractors
+        // If phonetic selection returned fewer, pad with category-based fallback
+        if (distractors.length < 3) {
+            console.warn(`[CONVERTER] Only ${distractors.length} distractors for "${item.word}", padding with category fallback`);
+
+            const pool = vocabularyBank.filter(w =>
+                w.category === item.category &&
+                w.word !== item.word &&
+                !distractors.includes(w.word)
+            );
+
+            const shuffled = pool.sort(() => Math.random() - 0.5);
+            const needed = 3 - distractors.length;
+            const extras = shuffled.slice(0, needed).map(w => w.word);
+            distractors = [...distractors, ...extras];
         }
-        const optionSet = new Set([item.word, ...wrongOptions]);
+
+        // Take only first 3 distractors (in case we got more)
+        distractors = distractors.slice(0, 3);
+
+        // Shuffle all options and find correct index
+        const optionSet = new Set([item.word, ...distractors]);
         const options = Array.from(optionSet).sort(() => Math.random() - 0.5);
         const correct = options.indexOf(item.word);
 
@@ -92,7 +117,8 @@ export function convertToListening(vocabularyBank) {
             options: options,
             correct: correct,
             difficulty: "beginner",
-            category: item.category // Preserve category for filtering
+            category: item.category, // Preserve category for filtering
+            masteryLevel: masteryLevel // Store for debugging
         };
     });
 }

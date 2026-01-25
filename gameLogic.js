@@ -1395,9 +1395,40 @@ class GameManager {
                 this.audioPlaysLeft--;
                 this.updateAllPlayCounters(this.currentGame);
 
-                // Show Hebrew translation in listening game after audio plays
+                // In listening game: reveal options after audio plays
                 if (this.currentGame === 'listening') {
+                    console.log('📢 [AUDIO] Audio finished playing for listening game');
+                    console.log('📢 [AUDIO] listeningAudioPlayed flag is:', this.listeningAudioPlayed);
                     this.showListeningHebrew();
+
+                    // Reveal options after first audio play
+                    if (!this.listeningAudioPlayed) {
+                        console.log('📢 [AUDIO] First audio play - revealing options now');
+                        const optionsContainer = document.getElementById('listening-options');
+                        const optionButtons = optionsContainer?.querySelectorAll('.option-btn');
+                        console.log('📢 [AUDIO] Found', optionButtons?.length || 0, 'option buttons to reveal');
+                        optionButtons?.forEach((btn, i) => {
+                            btn.classList.remove('listening-option-hidden');
+                            btn.disabled = false;
+                            console.log('📢 [AUDIO] Option', i, 'revealed - disabled:', btn.disabled);
+                        });
+
+                        // Clear the listening prompt
+                        const feedback = document.getElementById('listening-feedback');
+                        if (feedback) {
+                            feedback.textContent = '';
+                            feedback.className = 'feedback';
+                        }
+
+                        // Focus first option after reveal
+                        const firstListeningOption = optionsContainer?.querySelector('.option-btn');
+                        if (firstListeningOption) firstListeningOption.focus();
+
+                        this.listeningAudioPlayed = true;
+                        console.log('📢 [AUDIO] listeningAudioPlayed flag set to TRUE');
+                    } else {
+                        console.log('📢 [AUDIO] Subsequent audio play - options already revealed');
+                    }
                 }
             } catch (error) {
                 console.warn('Could not play audio:', error);
@@ -1719,6 +1750,11 @@ class GameManager {
         try {
             // Update the header score (unified across all games)
             const headerScoreElement = document.getElementById('current-score');
+            const scoreValue = this.scores[gameType];
+
+            console.log(`🏆 [SCORE] updateScore("${gameType}") called`);
+            console.log(`🏆 [SCORE] scores object:`, JSON.stringify(this.scores));
+            console.log(`🏆 [SCORE] score value for ${gameType}: ${scoreValue} (type: ${typeof scoreValue})`);
 
             if (headerScoreElement) {
                 // Hide score for practice mode (just tracks mastery, no points)
@@ -1726,15 +1762,16 @@ class GameManager {
                     headerScoreElement.style.display = 'none';
                 } else {
                     headerScoreElement.style.display = '';
-                    headerScoreElement.textContent = this.scores[gameType];
+                    headerScoreElement.textContent = scoreValue;
+                    console.log(`🏆 [SCORE] Updated DOM element to: "${headerScoreElement.textContent}"`);
                 }
             } else {
-                console.error(`Header score element not found`);
+                console.error(`🏆 [SCORE] Header score element not found`);
             }
 
-            console.log(`Updated ${gameType} score to:`, this.scores[gameType]);
+            console.log(`🏆 [SCORE] Updated ${gameType} score to: ${scoreValue}`);
         } catch (error) {
-            console.error(`Error updating score for ${gameType}:`, error);
+            console.error(`🏆 [SCORE] Error updating score for ${gameType}:`, error);
         }
     }
 

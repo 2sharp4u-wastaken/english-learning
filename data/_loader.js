@@ -28,6 +28,9 @@ import {
     convertToListening
 } from './converters.js?t=1762593312';
 
+// Import phonetics system
+import { initializePhonetics } from './phonetics.js';
+
 // Combine all vocabulary into single bank
 const vocabularyBank = [
     ...animalsWords,    // 60 words
@@ -88,5 +91,15 @@ console.log('Game data loaded successfully:', {
 // Make gameData and difficultyLevels available globally
 window.gameData = gameData;
 window.difficultyLevels = difficultyLevels;
+window.vocabularyBank = vocabularyBank; // Make vocabulary accessible for phonetics
 
 console.log('Global gameData and difficultyLevels set successfully');
+
+// Initialize phonetic distractor system (async, progressive enhancement)
+console.log('🎯 Loading phonetic distractor system...');
+initializePhonetics().then(() => {
+    console.log('✅ Phonetic system ready - future listening games will use adaptive distractors');
+}).catch((error) => {
+    console.warn('⚠️  Phonetic system failed to initialize:', error);
+    console.warn('⚠️  Falling back to category-based distractors');
+});

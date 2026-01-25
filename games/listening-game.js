@@ -4,7 +4,8 @@
 import { renderPicture } from '../utils/imageRenderer.js';
 
 export async function loadListeningQuestion(question) {
-    console.log('Loading listening question:', question);
+    console.log('📢 [LISTENING] loadListeningQuestion called');
+    console.log('📢 [LISTENING] Question:', question.word, '| Options:', question.options);
 
     // Cancel any ongoing speech from previous question
     if (typeof speechManager !== 'undefined') {
@@ -44,12 +45,15 @@ export async function loadListeningQuestion(question) {
         return;
     }
 
+    console.log('📢 [LISTENING] Creating', options.length, 'option buttons (hidden initially)');
     options.forEach((option, index) => {
         const button = document.createElement('button');
-        button.className = 'option-btn';
+        button.className = 'option-btn listening-option-hidden'; // Hidden initially
         button.textContent = option;
         button.setAttribute('role', 'button');
         button.tabIndex = 0;
+        button.disabled = true; // Disabled until audio finishes
+        console.log('📢 [LISTENING] Option', index, ':', option, '- disabled:', button.disabled);
         button.addEventListener('click', () => {
             this.checkListeningAnswer(index, correctIndex);
         });
@@ -76,25 +80,27 @@ export async function loadListeningQuestion(question) {
         hebrewElement.style.display = 'block'; // Show immediately
     }
 
-    // Auto-play the word audio when question loads
-    try {
-        await speechManager.speakWord(question.word, '', 'listening');
-    } catch (error) {
-        console.error('Error playing word audio:', error);
+    // Show prompt to click play button (no auto-play due to browser restrictions)
+    if (feedback) {
+        feedback.textContent = '🔊 לחץ על כפתור ההשמעה כדי לשמוע את המילה';
+        feedback.className = 'feedback listening-prompt';
     }
 
-    // Reset feedback and next button
-    document.getElementById('listening-feedback').textContent = '';
-    document.getElementById('listening-feedback').className = 'feedback';
+    // Store question data for manual playback
+    this.currentListeningQuestion = question;
+    this.listeningAudioPlayed = false;
+    console.log('📢 [LISTENING] listeningAudioPlayed flag set to FALSE - options hidden until audio plays');
+
+    // Don't auto-play audio (Chrome blocks it) - wait for user to click play button
+    // Audio will play when user clicks the listening-audio button
+
+    // Reset next button
     document.getElementById('listening-next').style.display = 'none';
-    // Focus first option
-    const firstListeningOption = optionsContainer.querySelector('.option-btn');
-    if (firstListeningOption) firstListeningOption.focus();
 
     // Enable arrow-key navigation
     this.enableOptionKeyboardNavigation('listening-options');
 
-    console.log('Listening question loaded successfully');
+    console.log('📢 [LISTENING] Question loaded - waiting for user to click play button');
 }
 
 export function showListeningHebrew() {
@@ -141,7 +147,9 @@ export async function checkListeningAnswer(selectedIndex, correctIndex) {
 
         feedback.textContent = fbData.text;
         feedback.className = 'feedback correct';
+        console.log('🏆 [LISTENING] Before score increment:', this.scores.listening);
         this.scores.listening += 10;
+        console.log('🏆 [LISTENING] After score increment:', this.scores.listening);
 
         // Audio feedback for correct answer
         try {
