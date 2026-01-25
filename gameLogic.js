@@ -1388,10 +1388,36 @@ class GameManager {
             return;
         }
 
+        // Prevent rapid clicking - wait for current audio to finish
+        if (this.isPlayingAudio) {
+            console.log('📢 [AUDIO] Audio already playing, ignoring click');
+            return;
+        }
+
         const question = this.shuffledQuestions[this.currentQuestionIndex];
         if (question && speechManager.isSpeechSynthesisSupported()) {
             try {
+                // Lock audio playback and disable play button
+                this.isPlayingAudio = true;
+                const playButton = document.getElementById(`${this.currentGame === 'vocabulary' ? 'vocab' : this.currentGame}-audio`);
+                if (playButton) {
+                    playButton.disabled = true;
+                    playButton.style.opacity = '0.5';
+                    playButton.style.cursor = 'wait';
+                }
+                console.log('📢 [AUDIO] Starting audio playback, button locked');
+
                 await speechManager.speakWord(question.word, '', this.currentGame);
+
+                // Re-enable play button after audio completes
+                if (playButton) {
+                    playButton.disabled = false;
+                    playButton.style.opacity = '1';
+                    playButton.style.cursor = 'pointer';
+                }
+                this.isPlayingAudio = false;
+                console.log('📢 [AUDIO] Audio playback complete, button unlocked');
+
                 this.audioPlaysLeft--;
                 this.updateAllPlayCounters(this.currentGame);
 
@@ -1490,6 +1516,14 @@ class GameManager {
                 }
             } catch (error) {
                 console.warn('Could not play audio:', error);
+                // Reset lock on error so button can be clicked again
+                this.isPlayingAudio = false;
+                const playButton = document.getElementById(`${this.currentGame === 'vocabulary' ? 'vocab' : this.currentGame}-audio`);
+                if (playButton) {
+                    playButton.disabled = false;
+                    playButton.style.opacity = '1';
+                    playButton.style.cursor = 'pointer';
+                }
             }
         }
     }
