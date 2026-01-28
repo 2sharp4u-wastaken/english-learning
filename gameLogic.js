@@ -678,6 +678,56 @@ class GameManager {
         }, 3000);
     }
 
+    showPracticeEmptyMessage() {
+        // Show a friendly message when there are no words to practice
+        // This is shown as an overlay on the practice game screen
+        const gameArea = document.querySelector('#practice-game .game-board');
+        if (!gameArea) return;
+
+        // Hide normal game elements
+        Array.from(gameArea.children).forEach(child => {
+            child.style.display = 'none';
+        });
+
+        // Create and show the empty message
+        const emptyMessage = document.createElement('div');
+        emptyMessage.className = 'practice-empty-message';
+        emptyMessage.innerHTML = `
+            <div class="empty-content">
+                <div class="empty-icon">🎉</div>
+                <h2>כל הכבוד!</h2>
+                <p>אין לך מילים לתרגול כרגע.</p>
+                <p>המשך לשחק במשחקים האחרים, ומילים שתתקשה בהן יופיעו כאן לתרגול.</p>
+                <button class="back-home-btn" onclick="gameManager.showWelcomeScreen()">
+                    <i class="fas fa-home"></i> חזור לדף הבית
+                </button>
+            </div>
+        `;
+        gameArea.appendChild(emptyMessage);
+    }
+
+    showWelcomeScreen() {
+        // Hide all game screens
+        document.querySelectorAll('.game-content').forEach(content => {
+            content.classList.remove('active');
+            content.style.display = 'none';
+        });
+
+        // Show welcome screen
+        const welcome = document.getElementById('welcome-screen');
+        if (welcome) {
+            welcome.classList.add('active');
+            welcome.style.display = 'flex';
+        }
+
+        // Update URL hash
+        history.replaceState(null, null, '#');
+
+        // Reset game state
+        this.isGameActive = false;
+        this.currentGame = null;
+    }
+
     getGameName(gameType) {
         const names = {
             vocabulary: 'אוצר מילים',
@@ -849,8 +899,8 @@ class GameManager {
             });
         }
 
-        // Reset game button events for all games
-        const gameTypes = ['vocab', 'grammar', 'pronunciation', 'listening', 'reading', 'practice'];
+        // Reset game button events for all games (except practice which has exit button)
+        const gameTypes = ['vocab', 'grammar', 'pronunciation', 'listening', 'reading'];
         gameTypes.forEach(gameType => {
             const resetBtn = document.getElementById(`${gameType}-reset-btn`);
             if (resetBtn) {
@@ -861,6 +911,14 @@ class GameManager {
                 });
             }
         });
+
+        // Practice mode exit button
+        const practiceExitBtn = document.getElementById('practice-exit-btn');
+        if (practiceExitBtn) {
+            practiceExitBtn.addEventListener('click', () => {
+                this.showWelcomeScreen();
+            });
+        }
     }
 
     loadGameData() {
@@ -1110,18 +1168,22 @@ class GameManager {
                 if (!this.isResuming) {
                     const practiceWords = this.generatePracticeWords();
                     if (practiceWords.length === 0) {
-                        alert('אין מילים לתרגול! המשך לשחק משחקים אחרים כדי לצבור מילים לתרגול.');
+                        // This shouldn't happen as the card should prevent entry, but handle gracefully
+                        this.showPracticeEmptyMessage();
                         this.isGameActive = false;
                         return;
                     }
                     // Store practice words in gameData and use them
                     this.gameData.practice = practiceWords;
-                    // Use only the actual number of struggling words (up to 10)
-                    const actualPracticeCount = Math.min(10, practiceWords.length);
-                    this.shuffledQuestions = practiceWords.slice(0, actualPracticeCount);
-                    // Set totalQuestions to match actual practice words available
-                    this.totalQuestions = actualPracticeCount;
-                    console.log(`Selected ${this.shuffledQuestions.length} practice words (struggling), totalQuestions set to ${this.totalQuestions}`, this.shuffledQuestions);
+                    // Use ALL struggling words (no limit)
+                    this.shuffledQuestions = practiceWords;
+                    // Practice mode: 2 cycles through all words
+                    this.practiceWordsCount = practiceWords.length;
+                    this.practiceCycle = 1;
+                    this.practiceWordIndex = 0;
+                    // Total questions = words × 2 cycles
+                    this.totalQuestions = practiceWords.length * 2;
+                    console.log(`Practice mode: ${this.practiceWordsCount} words × 2 cycles = ${this.totalQuestions} total`, this.shuffledQuestions);
                 }
             } else {
                 // Check if game data exists
@@ -1331,13 +1393,23 @@ class GameManager {
                 return;
             }
 
-            // If we've reached the end of questions, cycle back to start
-            if (this.currentQuestionIndex >= this.shuffledQuestions.length) {
-                this.currentQuestionIndex = 0;
-                console.log('Cycling back to start of questions');
+            // Special handling for practice mode 2-cycle logic
+            if (gameType === 'practice') {
+                // Calculate which word and cycle we're on
+                this.practiceWordIndex = this.currentQuestionIndex % this.practiceWordsCount;
+                this.practiceCycle = Math.floor(this.currentQuestionIndex / this.practiceWordsCount) + 1;
+                console.log(`Practice: Word ${this.practiceWordIndex + 1}/${this.practiceWordsCount}, Cycle ${this.practiceCycle}/2`);
+            } else {
+                // For other games: cycle back to start if needed
+                if (this.currentQuestionIndex >= this.shuffledQuestions.length) {
+                    this.currentQuestionIndex = 0;
+                    console.log('Cycling back to start of questions');
+                }
             }
 
-            const question = this.shuffledQuestions[this.currentQuestionIndex];
+            // For practice, use practiceWordIndex; for others, use currentQuestionIndex
+            const questionIndex = gameType === 'practice' ? this.practiceWordIndex : this.currentQuestionIndex;
+            const question = this.shuffledQuestions[questionIndex];
             console.log('Current question:', question);
 
             if (!question) {
@@ -1576,10 +1648,11 @@ class GameManager {
                 completionDiv.className = 'game-complete';
                 completionDiv.innerHTML = `
                     <div class="completion-content">
-                        <h2><i class="fas fa-check-circle"></i> סיימת סבב תרגול!</h2>
+                        <div class="completion-icon">🎯</div>
+                        <h2>סיימת את סבב התרגול!</h2>
                         <div class="practice-summary">
-                            <p>תרגלת ${this.totalQuestions} מילים</p>
-                            <p>רוצה להמשיך לתרגל?</p>
+                            <p>תרגלת ${this.practiceWordsCount} מילים ב-2 סיבובים</p>
+                            <p class="practice-encouragement">המשך לתרגל כדי לשפר את השליטה במילים!</p>
                         </div>
                         <div class="completion-actions">
                             <button class="continue-practice-btn">
@@ -1593,6 +1666,13 @@ class GameManager {
                 `;
 
                 gameArea.appendChild(completionDiv);
+
+                // Update gamification card (words may have improved)
+                if (window.gamificationManager) {
+                    window.gamificationManager.updatePracticeModeCard();
+                }
+
+                this.isGameActive = false;
 
                 // Add event listeners
                 const continueBtn = completionDiv.querySelector('.continue-practice-btn');
@@ -1885,13 +1965,26 @@ class GameManager {
         const fill = document.getElementById(`${elementPrefix}-progress-fill`);
         if (fill) fill.style.width = `${progress}%`;
 
-        // Update question counter
-        const currentQ = document.getElementById(`${elementPrefix}-current-q`);
-        const totalQ = document.getElementById(`${elementPrefix}-total-q`);
-        if (currentQ) currentQ.textContent = this.currentQuestionIndex + 1;
-        if (totalQ) totalQ.textContent = this.totalQuestions;
+        // Special handling for practice mode - show word/cycle info
+        if (gameType === 'practice') {
+            const wordCounter = document.getElementById('practice-word-counter');
+            const cycleCounter = document.getElementById('practice-cycle-counter');
 
-        // Hide next button on last question (Q10)
+            if (wordCounter) {
+                wordCounter.textContent = `מילה ${this.practiceWordIndex + 1} מתוך ${this.practiceWordsCount}`;
+            }
+            if (cycleCounter) {
+                cycleCounter.textContent = `סיבוב ${this.practiceCycle}/2`;
+            }
+        } else {
+            // Update question counter for non-practice games
+            const currentQ = document.getElementById(`${elementPrefix}-current-q`);
+            const totalQ = document.getElementById(`${elementPrefix}-total-q`);
+            if (currentQ) currentQ.textContent = this.currentQuestionIndex + 1;
+            if (totalQ) totalQ.textContent = this.totalQuestions;
+        }
+
+        // Hide next button on last question
         if (this.currentQuestionIndex === this.totalQuestions - 1) {
             const nextBtn = document.getElementById(`${elementPrefix}-next`);
             if (nextBtn) nextBtn.style.display = 'none';

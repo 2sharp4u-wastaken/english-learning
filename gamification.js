@@ -138,16 +138,36 @@ class GamificationManager {
             }
         });
 
-        // Update card text
+        // Store struggling count for click handler access
+        this.practiceWordCount = strugglingCount;
+
+        // Update card text and appearance based on word count
         const countElement = card.querySelector('.stat-struggling-count');
-        if (countElement) {
-            if (strugglingCount === 0) {
-                countElement.textContent = 'אין מילים לתרגול! 🎉';
+        const cardMain = card.querySelector('.game-card-main');
+        const cardDescription = card.querySelector('.game-card-main p');
+
+        if (strugglingCount === 0) {
+            // No words to practice - show success state
+            if (countElement) {
+                countElement.textContent = 'כל הכבוד! אין מילים לתרגול';
                 countElement.style.color = '#10b981';
-            } else {
+            }
+            if (cardDescription) {
+                cardDescription.textContent = 'המשך לשחק ומילים קשות יופיעו כאן';
+            }
+            card.classList.add('practice-complete');
+            card.classList.remove('practice-available');
+        } else {
+            // Words available for practice
+            if (countElement) {
                 countElement.textContent = `${strugglingCount} מילים לתרגול`;
                 countElement.style.color = '';
             }
+            if (cardDescription) {
+                cardDescription.textContent = 'תרגל מילים שקשות לך';
+            }
+            card.classList.remove('practice-complete');
+            card.classList.add('practice-available');
         }
 
         // Update progress ring (percentage of struggling words that have improved)
@@ -168,12 +188,12 @@ class GamificationManager {
             practiceNavBtn.style.display = strugglingCount === 0 ? 'none' : '';
         }
 
-        // Hide/show practice card in welcome screen
-        if (strugglingCount === 0) {
-            card.style.display = 'none';
-        } else {
-            card.style.display = '';
-        }
+        // Always show the practice card (don't hide when 0 words)
+        card.style.display = '';
+    }
+
+    getPracticeWordCount() {
+        return this.practiceWordCount || 0;
     }
 }
 

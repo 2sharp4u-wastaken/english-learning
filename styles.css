@@ -4458,3 +4458,193 @@ body::before {
     }
 }
 
+/* Practice Mode Progress Container */
+.practice-progress {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 15px;
+}
+
+.practice-counters {
+    display: flex;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.practice-word-counter,
+.practice-cycle-counter {
+    background: rgba(102, 126, 234, 0.15);
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-weight: 600;
+    color: #667eea;
+    font-size: 0.95em;
+}
+
+.practice-cycle-counter {
+    background: rgba(118, 75, 162, 0.15);
+    color: #764ba2;
+}
+
+.exit-practice-btn {
+    background: linear-gradient(135deg, #f5af19 0%, #f12711 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 0.9em;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.exit-practice-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(241, 39, 17, 0.3);
+}
+
+/* Practice Empty Message */
+.practice-empty-message {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    text-align: center;
+}
+
+.practice-empty-message .empty-content {
+    background: rgba(255, 255, 255, 0.95);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+    max-width: 400px;
+}
+
+.practice-empty-message .empty-icon {
+    font-size: 4em;
+    margin-bottom: 20px;
+}
+
+.practice-empty-message h2 {
+    color: #10b981;
+    margin-bottom: 15px;
+    font-size: 1.8em;
+}
+
+.practice-empty-message p {
+    color: #666;
+    margin-bottom: 10px;
+    line-height: 1.6;
+}
+
+.practice-empty-message .back-home-btn {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    padding: 12px 24px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 1em;
+    margin-top: 20px;
+    transition: all 0.3s ease;
+}
+
+.practice-empty-message .back-home-btn:hover {
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Practice completion screen adjustments */
+#practice-game .game-complete .completion-icon {
+    font-size: 4em;
+    margin-bottom: 15px;
+}
+
+#practice-game .game-complete .practice-encouragement {
+    color: #667eea;
+    font-weight: 500;
+    margin-top: 10px;
+}
+
+/* Mobile responsive for practice mode */
+@media (max-width: 768px) {
+    .practice-counters {
+        justify-content: center;
+        width: 100%;
+    }
+
+    .practice-word-counter,
+    .practice-cycle-counter {
+        font-size: 0.85em;
+        padding: 6px 12px;
+    }
+
+    .exit-practice-btn {
+        font-size: 0.85em;
+        padding: 6px 12px;
+    }
+
+    .practice-empty-message .empty-content {
+        padding: 25px;
+        margin: 10px;
+    }
+
+    .practice-empty-message .empty-icon {
+        font-size: 3em;
+    }
+}
+
+/* Practice Mode Card States */
+.practice-mode-card.practice-complete {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%) !important;
+    cursor: default;
+}
+
+.practice-mode-card.practice-complete .game-card-icon {
+    opacity: 0.9;
+}
+
+.practice-mode-card.practice-complete .game-card-main h3 {
+    color: white;
+}
+
+.practice-mode-card.practice-complete .game-card-main p {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.practice-mode-card.practice-complete .stat-struggling-count {
+    color: white !important;
+    font-weight: 600;
+}
+
+.practice-mode-card.practice-complete .progress-percentage {
+    color: white;
+}
+
+.practice-mode-card.practice-complete .progress-ring-fill {
+    stroke: rgba(255, 255, 255, 0.9);
+}
+
+.practice-mode-card.practice-complete .progress-ring-bg {
+    stroke: rgba(255, 255, 255, 0.3);
+}
+
+.practice-mode-card.practice-available {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%) !important;
+}
+
+.practice-mode-card.practice-available .game-card-main h3,
+.practice-mode-card.practice-available .game-card-main p {
+    color: white;
+}
+
+.practice-mode-card.practice-available .stat-struggling-count {
+    color: white !important;
+    font-weight: 600;
+}
+

@@ -253,7 +253,7 @@ export async function processPracticeResult(result) {
 
     if (comparison.accuracy >= 0.7) {
         if (feedback) feedback.className = 'feedback correct';
-        this.scores.practice += Math.round(comparison.accuracy * 10);
+        // Practice mode: no score tracking, just mastery improvement
 
         // Trigger confetti if enabled
         try {
@@ -270,28 +270,22 @@ export async function processPracticeResult(result) {
             console.error('Error triggering confetti:', error);
         }
 
-        // Save progress immediately to prevent loss if user navigates away
+        // Move to next word
         this.currentQuestionIndex++;
-        this.saveGameState();
 
-        this.updateScore('practice');
-
-        // Show Next button instead of auto-advancing so user can review their pronunciation
+        // Show Next button so user can review their pronunciation
         document.getElementById('practice-next').style.display = 'block';
 
     } else {
         if (feedback) feedback.className = 'feedback incorrect';
 
-        this.updateScore('practice');
-
-        // Increment question index and save immediately to prevent retry exploit
+        // Move to next word even on incorrect (practice mode cycles through all words)
         this.currentQuestionIndex++;
-        this.saveGameState();
 
-        // Show overlay Next button and disable retry to prevent getting points after wrong answer
+        // Show Next button
         document.getElementById('practice-next').style.display = 'block';
 
-        // Disable record button to prevent retry
+        // Disable record button to prevent retry on this word
         const recordBtn = document.getElementById('practice-record-btn');
         if (recordBtn) {
             recordBtn.disabled = true;

@@ -456,10 +456,15 @@
 
             <!-- Practice Mode -->
             <div id="practice-game" class="game-content">
-                <div class="progress-container">
-                    <span class="question-counter">Word <span id="practice-current-q">1</span> of <span id="practice-total-q">10</span></span>
+                <div class="progress-container practice-progress">
+                    <div class="practice-counters">
+                        <span class="practice-word-counter" id="practice-word-counter">מילה 1 מתוך 5</span>
+                        <span class="practice-cycle-counter" id="practice-cycle-counter">סיבוב 1/2</span>
+                    </div>
                     <span class="mastery-indicator" id="practice-mastery-indicator"></span>
-                    <button class="reset-game-btn" id="practice-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <button class="exit-practice-btn" id="practice-exit-btn" title="חזור לדף הבית">
+                        <i class="fas fa-home"></i> יציאה
+                    </button>
                     <div class="progress-bar">
                         <div class="progress-fill" id="practice-progress-fill"></div>
                     </div>
@@ -707,6 +712,22 @@
                         if (!gameType) {
                             console.warn('Game card clicked without data-game attribute:', card);
                             return;
+                        }
+
+                        // Special handling for practice mode - check if there are words to practice
+                        if (gameType === 'practice') {
+                            const practiceWordCount = window.gamificationManager?.getPracticeWordCount() || 0;
+                            if (practiceWordCount === 0) {
+                                // Show toast message instead of entering game
+                                if (window.gameManager) {
+                                    window.gameManager.showToast(
+                                        'אין מילים לתרגול! המשך לשחק במשחקים אחרים',
+                                        'fa-info-circle',
+                                        '#10b981'
+                                    );
+                                }
+                                return;
+                            }
                         }
 
                         const switchToGame = () => {
