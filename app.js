@@ -1,5 +1,16 @@
 // Main Application File - English Learning Games
 
+// Import Manager Classes
+import { ScoreManager } from './managers/ScoreManager.js';
+import { ProgressManager } from './managers/ProgressManager.js';
+import { GameRegistry, gameRegistry } from './managers/GameRegistry.js';
+import { CourseManager } from './managers/CourseManager.js';
+import { CertificateManager } from './managers/CertificateManager.js';
+import { CoinManager } from './managers/CoinManager.js';
+
+// Import Course Data
+import { allCourses } from './data/courses/index.js';
+
 class AppManager {
     constructor() {
         // Wait for auth to be ready before initializing
@@ -7,6 +18,13 @@ class AppManager {
         this.userProgress = null;
         this.settings = this.loadSettings();
         this.achievements = [];
+
+        // Manager instances (will be initialized after userProgress is loaded)
+        this.scoreManager = null;
+        this.progressManager = null;
+        this.courseManager = null;
+        this.certificateManager = null;
+        this.coinManager = null;
 
         this.initializeApp();
     }
@@ -46,6 +64,7 @@ class AppManager {
         if (userId) {
             this.currentUser = userId;
             this.userProgress = this.loadUserProgress();
+            this.initializeManagers();
             console.log(`App initialized for user: ${userId}`);
         } else {
             console.log('No authenticated user, waiting for login');
@@ -56,6 +75,46 @@ class AppManager {
     setupLegacyMode() {
         // Old user selector logic (fallback)
         this.setupUserSelector();
+        this.userProgress = this.loadUserProgress();
+        this.initializeManagers();
+    }
+
+    initializeManagers() {
+        if (!this.userProgress) {
+            console.error('Cannot initialize managers: userProgress not loaded');
+            return;
+        }
+
+        console.log('[AppManager] Initializing managers...');
+
+        // Initialize managers in dependency order
+        this.scoreManager = new ScoreManager(this.userProgress);
+        this.progressManager = new ProgressManager(this.userProgress);
+        this.courseManager = new CourseManager(this.userProgress, this.progressManager);
+        this.certificateManager = new CertificateManager(this.userProgress);
+        this.coinManager = new CoinManager(this.userProgress);
+
+        // Initialize each manager
+        this.scoreManager.initialize();
+        this.progressManager.initialize();
+        this.courseManager.initialize();
+        this.certificateManager.initialize();
+        this.coinManager.initialize();
+
+        // Register all courses
+        allCourses.forEach(course => {
+            this.courseManager.registerCourse(course);
+        });
+
+        // Export managers globally for access from other modules
+        window.scoreManager = this.scoreManager;
+        window.progressManager = this.progressManager;
+        window.courseManager = this.courseManager;
+        window.certificateManager = this.certificateManager;
+        window.coinManager = this.coinManager;
+        window.gameRegistry = gameRegistry;
+
+        console.log('[AppManager] All managers initialized successfully');
     }
 
     updatePracticeModeIndicator() {
@@ -118,6 +177,9 @@ class AppManager {
 
         // Reload user progress
         this.userProgress = this.loadUserProgress();
+
+        // Reinitialize managers with new user's progress
+        this.initializeManagers();
 
         console.log(`Switched to user: ${userName}`);
 
@@ -327,20 +389,40 @@ class AppManager {
     }
 
     migrateUserProgress(oldProgress) {
-        // Migrate from version 1 (or unversioned) to version 2
-        if (oldProgress.version === 2) {
-            return oldProgress;  // Already migrated
+        // Migrate to latest version (version 3 - with course system)
+        if (oldProgress.version === 3) {
+            return oldProgress;  // Already latest
         }
 
-        console.log('Migrating user progress from v1 to v2...');
+        console.log(`Migrating user progress from v${oldProgress.version || 1} to v3...`);
 
-        // Add new fields while preserving existing data
-        const migratedProgress = {
-            ...oldProgress,
-            wordMastery: oldProgress.wordMastery || {},
-            version: 2
-        };
+        // Start with existing data
+        let migratedProgress = { ...oldProgress };
 
+        // Migrate v1 → v2 (word mastery)
+        if (!migratedProgress.version || migratedProgress.version < 2) {
+            migratedProgress.wordMastery = migratedProgress.wordMastery || {};
+        }
+
+        // Migrate v2 → v3 (course system)
+        if (migratedProgress.version < 3) {
+            migratedProgress.courses = migratedProgress.courses || {};
+            migratedProgress.topicProgress = migratedProgress.topicProgress || {};
+            migratedProgress.certificates = migratedProgress.certificates || [];
+            migratedProgress.coins = migratedProgress.coins || 0;
+            migratedProgress.totalCoinsEarned = migratedProgress.totalCoinsEarned || 0;
+            migratedProgress.coinHistory = migratedProgress.coinHistory || [];
+            migratedProgress.lastLoginDate = migratedProgress.lastLoginDate || null;
+            migratedProgress.studentName = migratedProgress.studentName || null;
+        }
+
+        migratedProgress.version = 3;
+
+        // Save migrated progress
+        this.userProgress = migratedProgress;
+        this.saveUserProgress();
+
+        console.log('Migration complete to v3');
         return migratedProgress;
     }
 
@@ -360,7 +442,22 @@ class AppManager {
             totalCorrectAnswers: 0,
             preferredDifficulty: 'beginner',
             wordMastery: {},  // Track mastery per word: { "Dog": { totalAttempts, correctAttempts, ... } }
-            version: 2  // Data structure version for migrations
+
+            // Course system (v3)
+            courses: {},  // { courseId: { unlocked, startedDate, currentUnit, currentTopic } }
+            topicProgress: {},  // { topicId: { unlocked, started, mastery, completedActivities, certificateEarned } }
+            certificates: [],  // [{ id, topicId, topicName, earnedDate, score }]
+
+            // Coins economy
+            coins: 0,
+            totalCoinsEarned: 0,
+            coinHistory: [],  // [{ amount, reason, timestamp, date, balance }]
+            lastLoginDate: null,
+
+            // User profile
+            studentName: null,
+
+            version: 3  // Data structure version for migrations
         };
     }
 
