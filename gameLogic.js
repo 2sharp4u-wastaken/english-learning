@@ -1515,14 +1515,15 @@ class GameManager {
     generatePracticeWords() {
         // Generate list of struggling words for practice mode
         const allWords = this.gameData.vocabulary || [];
-        const wordMastery = window.app.userProgress.wordMastery || {};
 
         console.log('Generating practice words from', allWords.length, 'total words');
 
         // Filter: mastery < 0.5 (struggling words only)
         const strugglingWords = allWords.filter(word => {
-            const key = `${word.word}_${word.category}`;
-            const stats = wordMastery[key];
+            // Use ProgressManager if available, fallback to window.app
+            const stats = this.progressManager
+                ? this.progressManager.getWordStats(word.word, word.category)
+                : window.app?.getWordStats(word.word, word.category);
             const hasAttempts = stats && stats.totalAttempts > 0;
             const isStruggling = stats && stats.masteryLevel < 0.5;
             return hasAttempts && isStruggling;
@@ -1532,19 +1533,26 @@ class GameManager {
 
         // Sort by accuracy (lowest first - most incorrect)
         strugglingWords.sort((a, b) => {
-            const keyA = `${a.word}_${a.category}`;
-            const keyB = `${b.word}_${b.category}`;
-            const statsA = wordMastery[keyA];
-            const statsB = wordMastery[keyB];
-            const accuracyA = statsA.totalAttempts > 0 ? statsA.correctAttempts / statsA.totalAttempts : 0;
-            const accuracyB = statsB.totalAttempts > 0 ? statsB.correctAttempts / statsB.totalAttempts : 0;
+            const statsA = this.progressManager
+                ? this.progressManager.getWordStats(a.word, a.category)
+                : window.app?.getWordStats(a.word, a.category);
+            const statsB = this.progressManager
+                ? this.progressManager.getWordStats(b.word, b.category)
+                : window.app?.getWordStats(b.word, b.category);
+            const accuracyA = statsA && statsA.totalAttempts > 0 ? statsA.correctAttempts / statsA.totalAttempts : 0;
+            const accuracyB = statsB && statsB.totalAttempts > 0 ? statsB.correctAttempts / statsB.totalAttempts : 0;
             return accuracyA - accuracyB; // Lowest accuracy first
         });
 
-        console.log('Practice words sorted by accuracy. First 5:', strugglingWords.slice(0, 5).map(w => ({
-            word: w.word,
-            accuracy: wordMastery[`${w.word}_${w.category}`].correctAttempts / wordMastery[`${w.word}_${w.category}`].totalAttempts
-        })));
+        console.log('Practice words sorted by accuracy. First 5:', strugglingWords.slice(0, 5).map(w => {
+            const stats = this.progressManager
+                ? this.progressManager.getWordStats(w.word, w.category)
+                : window.app?.getWordStats(w.word, w.category);
+            return {
+                word: w.word,
+                accuracy: stats && stats.totalAttempts > 0 ? stats.correctAttempts / stats.totalAttempts : 0
+            };
+        }));
 
         return strugglingWords;
     }
@@ -1706,7 +1714,10 @@ class GameManager {
 
         questions.forEach(q => {
             const wordKey = `${q.word}_${q.category}`;
-            const wordStats = window.app.getWordStats(q.word, q.category);
+            // Use ProgressManager if available, fallback to window.app
+            const wordStats = this.progressManager
+                ? this.progressManager.getWordStats(q.word, q.category)
+                : window.app?.getWordStats(q.word, q.category);
             const mastery = wordStats?.masteryLevel || 0;
 
             // Store mastery level on the question object for later use
@@ -1825,7 +1836,9 @@ class GameManager {
         if (!indicator) return;
 
         // Get mastery level for current word
-        const wordStats = window.app.getWordStats(question.word, question.category);
+        const wordStats = this.progressManager
+            ? this.progressManager.getWordStats(question.word, question.category)
+            : window.app?.getWordStats(question.word, question.category);
         const mastery = wordStats?.masteryLevel || 0;
 
         // Clear previous classes
