@@ -17,8 +17,14 @@ import { minecraftWords } from './categories/minecraft.js';
 import { gamingWords } from './categories/gaming.js';
 import { robloxWords } from './categories/roblox.js';
 
-// Import grammar questions
-import { grammarQuestions } from './grammarQuestions.js';
+// Import grammar questions and categories
+import { grammarQuestions, grammarCategories } from './grammarQuestions.js';
+
+// Import grammar beginner data (audio-visual grammar for non-readers)
+import { generateGrammarBeginnerQuestions } from './grammarBeginnerData.js';
+
+// Import ABC alphabet data
+import { alphabet, generateABCQuestions } from './abcData.js';
 
 // Import converter functions
 import {
@@ -49,19 +55,41 @@ const vocabularyBank = [
     ...robloxWords      // 40 words
 ];
 
+// Make vocabulary accessible for phonetics BEFORE initialization
+window.vocabularyBank = vocabularyBank;
+
+// Initialize phonetic distractor system BEFORE converting listening data
+console.log('🎯 Loading phonetic distractor system...');
+try {
+    await initializePhonetics();
+    console.log('✅ Phonetic system ready - listening games will use phonetic distractors');
+} catch (error) {
+    console.warn('⚠️  Phonetic system failed to initialize:', error);
+    console.warn('⚠️  Falling back to category-based distractors');
+}
+
 // Apply converters to create game-specific data formats
+// Note: convertToListening now runs AFTER phonetics is initialized
 const convertedVocabulary = convertToVocabulary(vocabularyBank);
 const convertedReading = convertToReading(vocabularyBank);
 const convertedPronunciation = convertToPronunciation(vocabularyBank);
 const convertedListening = convertToListening(vocabularyBank);
 
+// Generate ABC questions
+const abcQuestions = generateABCQuestions(30); // Generate pool of 30 questions
+
+// Generate grammar beginner questions (audio-visual for non-readers)
+const grammarBeginnerQuestions = generateGrammarBeginnerQuestions(15);
+
 // Main game data structure
 const gameData = {
     vocabulary: convertedVocabulary,
     grammar: grammarQuestions,
+    'grammar-beginner': grammarBeginnerQuestions,
     pronunciation: convertedPronunciation,
     listening: convertedListening,
-    reading: convertedReading
+    reading: convertedReading,
+    abc: abcQuestions
 };
 
 // Difficulty levels for adaptive learning
@@ -85,21 +113,15 @@ console.log('Game data loaded successfully:', {
     grammar: gameData.grammar.length,
     pronunciation: gameData.pronunciation.length,
     listening: gameData.listening.length,
-    reading: gameData.reading.length
+    reading: gameData.reading.length,
+    abc: gameData.abc.length
 });
 
-// Make gameData and difficultyLevels available globally
+// Make gameData and difficultyLevels available globally and for ES module import
 window.gameData = gameData;
 window.difficultyLevels = difficultyLevels;
-window.vocabularyBank = vocabularyBank; // Make vocabulary accessible for phonetics
+window.grammarCategories = grammarCategories;
+export { gameData, difficultyLevels, grammarCategories };
+// vocabularyBank already set above before phonetics initialization
 
 console.log('Global gameData and difficultyLevels set successfully');
-
-// Initialize phonetic distractor system (async, progressive enhancement)
-console.log('🎯 Loading phonetic distractor system...');
-initializePhonetics().then(() => {
-    console.log('✅ Phonetic system ready - future listening games will use adaptive distractors');
-}).catch((error) => {
-    console.warn('⚠️  Phonetic system failed to initialize:', error);
-    console.warn('⚠️  Falling back to category-based distractors');
-});

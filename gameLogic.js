@@ -4,10 +4,14 @@
 // Import game modules
 import * as VocabularyGame from './games/vocabulary-game.js?t=1762595926';
 import * as GrammarGame from './games/grammar-game.js?t=1762595926';
+import * as GrammarBeginnerGame from './games/grammar-beginner-game.js';
 import * as ListeningGame from './games/listening-game.js?t=1762609545';
 import * as PronunciationGame from './games/pronunciation-game.js?t=1762610965';
 import * as ReadingGame from './games/reading-game.js?t=1762608590';
 import * as PracticeGame from './games/practice-game.js';
+import * as ABCGame from './games/abc-game.js';
+import { generateABCQuestions, areAllLettersMastered, getUnmasteredLetterCount } from './data/abcData.js';
+import { generateGrammarBeginnerQuestions } from './data/grammarBeginnerData.js';
 
 // Game Logic for English Learning Games
 
@@ -35,13 +39,19 @@ class GameManager {
         this.scores = {
             vocabulary: 0,
             grammar: 0,
+            'grammar-beginner': 0,
             pronunciation: 0,
             listening: 0,
             reading: 0,
-            practice: 0
+            practice: 0,
+            abc: 0
         };
         this.currentQuestionIndex = 0;
         this.isResuming = false;  // Flag to track if we're resuming a saved game
+
+        // In-game timer: total elapsed while playing (ms). Only shown on game completion.
+        this.gameElapsedMs = 0;
+        this.gameSessionStartAt = null;  // When current session started (leave/resume resets)
 
         // Session streak tracking for mascot encouragement
         this.sessionCorrectStreak = 0;
@@ -61,6 +71,9 @@ class GameManager {
         this.pendingNavigation = null; // Stores pending navigation target during exit confirmation
         this.exitCallbacks = {}; // Stores callbacks for exit actions
         this.wordDisplayTimer = null; // Track word display timer
+
+        // Grammar topic selector
+        this.selectedGrammarCategory = 'all'; // Default to all topics
         this.i18n = {
             en: {
                 listening_great: 'Great listening!',
@@ -79,6 +92,8 @@ class GameManager {
         this.checkVocabularyAnswer = VocabularyGame.checkVocabularyAnswer.bind(this);
         this.loadGrammarQuestion = GrammarGame.loadGrammarQuestion.bind(this);
         this.checkGrammarAnswer = GrammarGame.checkGrammarAnswer.bind(this);
+        this.loadGrammarBeginnerQuestion = GrammarBeginnerGame.loadGrammarBeginnerQuestion.bind(this);
+        this.checkGrammarBeginnerAnswer = GrammarBeginnerGame.checkGrammarBeginnerAnswer.bind(this);
         this.loadListeningQuestion = ListeningGame.loadListeningQuestion.bind(this);
         this.showListeningHebrew = ListeningGame.showListeningHebrew.bind(this);
         this.checkListeningAnswer = ListeningGame.checkListeningAnswer.bind(this);
@@ -90,11 +105,25 @@ class GameManager {
         this.addLetterToWord = ReadingGame.addLetterToWord.bind(this);
         this.clearBuiltWord = ReadingGame.clearBuiltWord.bind(this);
         this.checkBuiltWord = ReadingGame.checkBuiltWord.bind(this);
+        this.toggleReadingCase = ReadingGame.toggleReadingCase.bind(this);
         this.loadPracticeQuestion = PracticeGame.loadPracticeQuestion.bind(this);
         this.togglePracticeRecording = PracticeGame.togglePracticeRecording.bind(this);
         this.processPracticeResult = PracticeGame.processPracticeResult.bind(this);
         this.playNativePronunciation = PracticeGame.playNativePronunciation.bind(this);
         this.playUserPronunciation = PracticeGame.playUserPronunciation.bind(this);
+        this.loadABCQuestion = ABCGame.loadABCQuestion.bind(this);
+        this.checkABCAnswer = ABCGame.checkABCAnswer.bind(this);
+        this.loadMatchCaseQuestion = ABCGame.loadMatchCaseQuestion.bind(this);
+        this.loadLetterSoundQuestion = ABCGame.loadLetterSoundQuestion.bind(this);
+        this.loadIdentifyCaseQuestion = ABCGame.loadIdentifyCaseQuestion.bind(this);
+        this.loadSayLetterQuestion = ABCGame.loadSayLetterQuestion.bind(this);
+        this.loadAlphabetOrderQuestion = ABCGame.loadAlphabetOrderQuestion.bind(this);
+        this.toggleABCRecording = ABCGame.toggleABCRecording.bind(this);
+        this.processABCSpeechResult = ABCGame.processABCSpeechResult.bind(this);
+        this.createABCOptions = ABCGame.createABCOptions.bind(this);
+        this.playABCLetterAudio = ABCGame.playABCLetterAudio.bind(this);
+        this.loadWordPictureQuestion = ABCGame.loadWordPictureQuestion.bind(this);
+        this.resetABCMastery = ABCGame.resetABCMastery.bind(this);
 
         // Initialize the game after all bindings are set up
         this.initializeGame();
@@ -188,13 +217,19 @@ class GameManager {
         }
 
         const userId = localStorage.getItem('currentUser') || 'default';
+        const sessionElapsed = this.gameSessionStartAt ? (Date.now() - this.gameSessionStartAt) : 0;
+        const totalElapsed = (this.gameElapsedMs || 0) + sessionElapsed;
+        this.gameElapsedMs = totalElapsed;
+        this.gameSessionStartAt = null;
+
         const gameState = {
             gameType: this.currentGame,
             currentQuestionIndex: this.currentQuestionIndex,
             score: this.scores[this.currentGame],
             totalQuestions: this.totalQuestions,
             timestamp: Date.now(),
-            shuffledQuestions: this.shuffledQuestions
+            shuffledQuestions: this.shuffledQuestions,
+            gameElapsedMs: totalElapsed
         };
 
         localStorage.setItem(`savedGame_${userId}_${this.currentGame}`, JSON.stringify(gameState));
@@ -261,7 +296,7 @@ class GameManager {
     getAllSavedGames() {
         const userId = localStorage.getItem('currentUser') || 'default';
         const savedGames = [];
-        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading'];
+        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading', 'abc'];
 
         gameTypes.forEach(gameType => {
             const state = this.loadGameState(gameType);
@@ -382,8 +417,12 @@ class GameManager {
         window.app.saveWordStats(word, category, wordStats);
 
         // Update game card progress indicators
-        if (window.gamificationManager && gameType) {
-            window.gamificationManager.updateGameCardProgress(gameType);
+        if (window.gamificationManager) {
+            if (gameType) {
+                window.gamificationManager.updateGameCardProgress(gameType);
+            }
+            // ALSO update practice mode card since struggling words may have changed
+            window.gamificationManager.updatePracticeModeCard();
         }
 
         console.log(`Word tracked: ${word} (${category}) - ${isCorrect ? 'Correct' : 'Incorrect'} - Mastery: ${(wordStats.masteryLevel * 100).toFixed(0)}%`);
@@ -445,6 +484,8 @@ class GameManager {
         this.scores[gameState.gameType] = gameState.score;
         this.shuffledQuestions = gameState.shuffledQuestions;
         this.totalQuestions = gameState.totalQuestions;
+        this.gameElapsedMs = gameState.gameElapsedMs || 0;
+        this.gameSessionStartAt = Date.now();
         this.isGameActive = true;
 
         // Switch to the game
@@ -465,10 +506,12 @@ class GameManager {
         const icons = {
             vocabulary: '📚',
             grammar: '✏️',
+            'grammar-beginner': '🔊',
             pronunciation: '🎤',
             listening: '👂',
             reading: '📖',
-            practice: '🎯'
+            practice: '🎯',
+            abc: '🔤'
         };
         return icons[gameType] || '🎮';
     }
@@ -481,6 +524,16 @@ class GameManager {
         if (hours < 24) return `לפני ${hours} שעות`;
         const days = Math.floor(hours / 24);
         return `לפני ${days} ימים`;
+    }
+
+    /** Format total game time (ms) for completion screen. Only shown when game is fully complete. */
+    formatGameTime(ms) {
+        if (ms == null || ms < 0) return '';
+        const totalSec = Math.floor(ms / 1000);
+        const min = Math.floor(totalSec / 60);
+        const sec = totalSec % 60;
+        if (min > 0) return `${min} דקות ו־${sec} שניות`;
+        return `${sec} שניות`;
     }
 
     // ============================================
@@ -684,6 +737,18 @@ class GameManager {
         const gameArea = document.querySelector('#practice-game .game-board');
         if (!gameArea) return;
 
+        // Reset practice counters to avoid showing stale data
+        this.practiceWordsCount = 0;
+        this.practiceWordIndex = 0;
+        this.practiceCycle = 1;
+        this.totalQuestions = 0;
+
+        // Hide the progress counters in the UI
+        const wordCounter = document.getElementById('practice-word-counter');
+        const cycleCounter = document.getElementById('practice-cycle-counter');
+        if (wordCounter) wordCounter.textContent = '';
+        if (cycleCounter) cycleCounter.textContent = '';
+
         // Hide normal game elements
         Array.from(gameArea.children).forEach(child => {
             child.style.display = 'none';
@@ -704,6 +769,64 @@ class GameManager {
             </div>
         `;
         gameArea.appendChild(emptyMessage);
+    }
+
+    // Show ABC all letters mastered congratulations screen
+    showABCMasteryComplete() {
+        // Hide all game screens first
+        document.querySelectorAll('.game-content').forEach(content => {
+            content.classList.remove('active');
+            content.style.display = 'none';
+        });
+
+        // Show ABC game container
+        const abcGame = document.getElementById('abc-game');
+        if (abcGame) {
+            abcGame.classList.add('active');
+            abcGame.style.display = 'flex';
+        }
+
+        // Hide game board and progress, show completion message
+        const gameBoard = abcGame?.querySelector('.game-board');
+        const progressContainer = abcGame?.querySelector('.progress-container');
+
+        if (gameBoard) gameBoard.style.display = 'none';
+        if (progressContainer) progressContainer.style.display = 'none';
+
+        // Create and show completion message
+        let completionMessage = abcGame?.querySelector('.abc-completion-message');
+        if (!completionMessage) {
+            completionMessage = document.createElement('div');
+            completionMessage.className = 'abc-completion-message';
+            abcGame?.appendChild(completionMessage);
+        }
+
+        completionMessage.innerHTML = `
+            <div class="completion-content">
+                <div class="completion-icon">🎓</div>
+                <h2>!מדהים</h2>
+                <h3>!למדת את כל 26 האותיות</h3>
+                <p>את/ה מכיר/ה עכשיו את כל האותיות הגדולות והקטנות באנגלית.</p>
+                <div class="completion-buttons">
+                    <button class="reset-mastery-btn-large" onclick="gameManager.resetABCMastery(); gameManager.startGame('abc');">
+                        <i class="fas fa-redo"></i> התחל מחדש
+                    </button>
+                    <button class="back-home-btn" onclick="gameManager.showWelcomeScreen()">
+                        <i class="fas fa-home"></i> חזור לדף הבית
+                    </button>
+                </div>
+            </div>
+        `;
+        completionMessage.style.display = 'flex';
+
+        // Trigger confetti
+        if (this.settings?.confetti !== false && typeof window.confetti !== 'undefined') {
+            window.confetti({
+                particleCount: 200,
+                spread: 100,
+                origin: { y: 0.6 }
+            });
+        }
     }
 
     showWelcomeScreen() {
@@ -732,10 +855,12 @@ class GameManager {
         const names = {
             vocabulary: 'אוצר מילים',
             grammar: 'דקדוק',
+            'grammar-beginner': 'דקדוק למתחילים',
             pronunciation: 'הגייה',
             listening: 'הקשבה',
             reading: 'קריאה',
-            practice: 'מצב תרגול'
+            practice: 'מצב תרגול',
+            abc: 'ABC אותיות'
         };
         return names[gameType] || gameType;
     }
@@ -798,6 +923,17 @@ class GameManager {
         if (grammarNextElement) {
             grammarNextElement.addEventListener('click', () => {
                 this.loadQuestion('grammar');
+            });
+        }
+
+        // Grammar topic selector - initialize tabs
+        this.initGrammarTopicSelector();
+
+        // Grammar Beginner game events
+        const grammarBeginnerNextElement = document.getElementById('grammar-beginner-next');
+        if (grammarBeginnerNextElement) {
+            grammarBeginnerNextElement.addEventListener('click', () => {
+                this.loadQuestion('grammar-beginner');
             });
         }
 
@@ -899,8 +1035,23 @@ class GameManager {
             });
         }
 
+        // ABC game events
+        const abcAudioBtn = document.getElementById('abc-audio');
+        if (abcAudioBtn) {
+            abcAudioBtn.addEventListener('click', () => {
+                this.playABCLetterAudio();
+            });
+        }
+
+        const abcNextBtn = document.getElementById('abc-next');
+        if (abcNextBtn) {
+            abcNextBtn.addEventListener('click', () => {
+                this.loadQuestion('abc');
+            });
+        }
+
         // Reset game button events for all games (except practice which has exit button)
-        const gameTypes = ['vocab', 'grammar', 'pronunciation', 'listening', 'reading'];
+        const gameTypes = ['vocab', 'grammar', 'pronunciation', 'listening', 'reading', 'abc'];
         gameTypes.forEach(gameType => {
             const resetBtn = document.getElementById(`${gameType}-reset-btn`);
             if (resetBtn) {
@@ -911,6 +1062,26 @@ class GameManager {
                 });
             }
         });
+
+        // ABC mastery reset button
+        const abcMasteryResetBtn = document.getElementById('abc-reset-mastery-btn');
+        if (abcMasteryResetBtn) {
+            abcMasteryResetBtn.addEventListener('click', () => {
+                if (confirm('האם אתה בטוח שברצונך לאפס את השליטה בכל האותיות? תצטרך ללמוד אותן מחדש.')) {
+                    this.resetABCMastery();
+                    // Restart the game with fresh questions
+                    this.resetCurrentGame();
+                }
+            });
+        }
+
+        // Reading game case toggle
+        const readingCaseToggle = document.getElementById('reading-case-toggle');
+        if (readingCaseToggle) {
+            readingCaseToggle.addEventListener('click', () => {
+                this.toggleReadingCase();
+            });
+        }
 
         // Practice mode exit button
         const practiceExitBtn = document.getElementById('practice-exit-btn');
@@ -935,11 +1106,17 @@ class GameManager {
         // Filter vocabulary by selected categories
         let filteredVocabulary = gameData.vocabulary;
 
+        console.log(`[Category Filter] Selected categories:`, this.selectedCategories);
+
         if (this.selectedCategories && this.selectedCategories.length > 0) {
             filteredVocabulary = gameData.vocabulary.filter(item =>
                 this.selectedCategories.includes(item.category)
             );
-            console.log(`Filtered vocabulary to ${filteredVocabulary.length} words from ${this.selectedCategories.length} categories`);
+            console.log(`[Category Filter] Filtered vocabulary to ${filteredVocabulary.length} words from categories: ${this.selectedCategories.join(', ')}`);
+            // Log sample of filtered words
+            console.log(`[Category Filter] Sample words:`, filteredVocabulary.slice(0, 5).map(w => `${w.word} (${w.category})`));
+        } else {
+            console.log(`[Category Filter] No categories selected, using all ${filteredVocabulary.length} words`);
         }
 
         // Apply difficulty filter to vocabulary (based on word length since no difficulty property)
@@ -1010,7 +1187,8 @@ class GameManager {
             grammar: filteredGrammar,
             pronunciation: difficultyFilteredPronunciation,
             listening: difficultyFilteredListening,
-            reading: difficultyFilteredReading
+            reading: difficultyFilteredReading,
+            abc: gameData.abc || []
         };
 
         console.log('Game data loaded with filtered categories and difficulty:', {
@@ -1019,8 +1197,91 @@ class GameManager {
             grammar: this.gameData.grammar.length,
             pronunciation: this.gameData.pronunciation.length,
             listening: this.gameData.listening.length,
-            reading: this.gameData.reading.length
+            reading: this.gameData.reading.length,
+            abc: this.gameData.abc.length
         });
+    }
+
+    initGrammarTopicSelector() {
+        const tabsContainer = document.getElementById('grammar-topic-tabs');
+        if (!tabsContainer) {
+            console.warn('Grammar topic tabs container not found');
+            return;
+        }
+
+        // Get categories from global grammarCategories
+        const categories = window.grammarCategories || {
+            'all': { name: 'הכל', icon: '📚' },
+            'verb-to-be': { name: 'I am / She is', icon: '🔵' },
+            'verb-to-be-negative': { name: 'I am not', icon: '🚫' },
+            'verb-to-be-question': { name: 'Is she...?', icon: '❓' }
+        };
+
+        // Count questions per category
+        const questionCounts = {};
+        const grammarQuestions = window.gameData?.grammar || [];
+        grammarQuestions.forEach(q => {
+            const cat = q.category || 'other';
+            questionCounts[cat] = (questionCounts[cat] || 0) + 1;
+        });
+        questionCounts['all'] = grammarQuestions.length;
+
+        // Clear existing tabs
+        tabsContainer.innerHTML = '';
+
+        // Create tabs for each category
+        Object.entries(categories).forEach(([key, value]) => {
+            // Only show categories that have questions
+            if (key !== 'all' && !questionCounts[key]) return;
+
+            const tab = document.createElement('button');
+            tab.className = 'topic-tab' + (key === this.selectedGrammarCategory ? ' active' : '');
+            tab.dataset.category = key;
+
+            const count = questionCounts[key] || 0;
+            tab.innerHTML = `
+                <span class="topic-icon">${value.icon}</span>
+                <span class="topic-name">${value.name}</span>
+                <span class="topic-count">${count}</span>
+            `;
+
+            tab.addEventListener('click', () => {
+                this.selectGrammarCategory(key);
+            });
+
+            tabsContainer.appendChild(tab);
+        });
+
+        console.log('[Grammar] Topic selector initialized with categories:', Object.keys(categories));
+    }
+
+    selectGrammarCategory(category) {
+        this.selectedGrammarCategory = category;
+
+        // Update active state on tabs
+        document.querySelectorAll('.topic-tab').forEach(tab => {
+            tab.classList.toggle('active', tab.dataset.category === category);
+        });
+
+        console.log('[Grammar] Selected category:', category);
+
+        // If a grammar game is active, restart with new category
+        if (this.currentGame === 'grammar' && this.isGameActive) {
+            // Reset game with new category filter
+            this.currentQuestionIndex = 0;
+            this.scores.grammar = 0;
+            this.startGame('grammar');
+        }
+    }
+
+    getFilteredGrammarQuestions() {
+        const allQuestions = this.gameData.grammar || [];
+
+        if (this.selectedGrammarCategory === 'all') {
+            return allQuestions;
+        }
+
+        return allQuestions.filter(q => q.category === this.selectedGrammarCategory);
     }
 
     switchGame(gameType) {
@@ -1154,10 +1415,20 @@ class GameManager {
             if (!this.isResuming) {
                 this.currentQuestionIndex = 0;
                 this.scores[gameType] = 0;
+                this.gameElapsedMs = 0;
+                this.gameSessionStartAt = null; // Reset so we get a fresh start time
 
                 // Show mascot welcome message for new games
                 if (window.gamificationManager?.mascot) {
                     window.gamificationManager.mascot.showMessage('welcome');
+                }
+            }
+            // Start timing for non-practice games
+            if (gameType !== 'practice') {
+                // If resuming, gameSessionStartAt was set in resumeGame()
+                // If fresh game, gameSessionStartAt was just set to null above
+                if (!this.gameSessionStartAt) {
+                    this.gameSessionStartAt = Date.now();
                 }
             }
             this.isGameActive = true;
@@ -1168,7 +1439,7 @@ class GameManager {
                 if (!this.isResuming) {
                     const practiceWords = this.generatePracticeWords();
                     if (practiceWords.length === 0) {
-                        // This shouldn't happen as the card should prevent entry, but handle gracefully
+                        // This shouldn't happen as the practice button is hidden when no words, but handle gracefully
                         this.showPracticeEmptyMessage();
                         this.isGameActive = false;
                         return;
@@ -1184,6 +1455,66 @@ class GameManager {
                     // Total questions = words × 2 cycles
                     this.totalQuestions = practiceWords.length * 2;
                     console.log(`Practice mode: ${this.practiceWordsCount} words × 2 cycles = ${this.totalQuestions} total`, this.shuffledQuestions);
+                }
+            } else if (gameType === 'abc') {
+                // Hide completion message if visible from previous mastery completion
+                const abcGame = document.getElementById('abc-game');
+                const completionMessage = abcGame?.querySelector('.abc-completion-message');
+                const gameBoard = abcGame?.querySelector('.game-board');
+                const progressContainer = abcGame?.querySelector('.progress-container');
+
+                if (completionMessage) completionMessage.style.display = 'none';
+                if (gameBoard) gameBoard.style.display = '';
+                if (progressContainer) progressContainer.style.display = '';
+
+                // Special handling for ABC game - regenerate questions fresh each time
+                // This ensures mastery-based selection uses current mastery levels
+                // ABC game uses 20 questions per session (6 types × ~3 rounds each)
+                if (!this.isResuming) {
+                    const freshQuestions = generateABCQuestions(20);
+
+                    // Check if all letters are mastered
+                    if (freshQuestions.length === 0) {
+                        console.log('[ABC] All letters mastered! Showing congratulations.');
+                        this.showABCMasteryComplete();
+                        return;
+                    }
+
+                    this.gameData.abc = freshQuestions;
+                    // Don't shuffle ABC questions - they're already ordered to avoid repetition
+                    this.shuffledQuestions = [...freshQuestions];
+                    this.totalQuestions = Math.min(20, freshQuestions.length);
+                    console.log(`ABC game: ${this.shuffledQuestions.length} questions (ordered for variety)`, this.shuffledQuestions.slice(0, 5).map(q => `${q.word}-${q.type}`));
+                }
+            } else if (gameType === 'grammar') {
+                // Special handling for grammar - filter by selected topic
+                const filteredGrammar = this.getFilteredGrammarQuestions();
+                if (!filteredGrammar || filteredGrammar.length === 0) {
+                    console.error('No grammar questions found for selected category:', this.selectedGrammarCategory);
+                    return;
+                }
+
+                // Only generate new questions if NOT resuming
+                if (!this.isResuming) {
+                    this.shuffledQuestions = this.smartQuestionSelection([...filteredGrammar]);
+                    console.log(`Grammar game: ${this.shuffledQuestions.length} questions for category "${this.selectedGrammarCategory}"`, this.shuffledQuestions.slice(0, 5));
+                } else {
+                    console.log(`Resuming grammar with ${this.shuffledQuestions.length} questions at index ${this.currentQuestionIndex}`);
+                }
+            } else if (gameType === 'grammar-beginner') {
+                // Special handling for grammar beginner - regenerate fresh questions each time
+                if (!this.isResuming) {
+                    const freshQuestions = generateGrammarBeginnerQuestions(10);
+                    if (!freshQuestions || freshQuestions.length === 0) {
+                        console.error('Failed to generate grammar beginner questions');
+                        return;
+                    }
+                    this.gameData['grammar-beginner'] = freshQuestions;
+                    this.shuffledQuestions = [...freshQuestions];
+                    this.totalQuestions = freshQuestions.length;
+                    console.log(`Grammar Beginner: ${this.shuffledQuestions.length} questions generated`);
+                } else {
+                    console.log(`Resuming grammar beginner with ${this.shuffledQuestions.length} questions at index ${this.currentQuestionIndex}`);
                 }
             } else {
                 // Check if game data exists
@@ -1427,6 +1758,9 @@ class GameManager {
                 case 'grammar':
                     this.loadGrammarQuestion(question);
                     break;
+                case 'grammar-beginner':
+                    this.loadGrammarBeginnerQuestion(question);
+                    break;
                 case 'pronunciation':
                     this.loadPronunciationQuestion(question);
                     break;
@@ -1438,6 +1772,9 @@ class GameManager {
                     break;
                 case 'practice':
                     this.loadPracticeQuestion(question);
+                    break;
+                case 'abc':
+                    this.loadABCQuestion(question);
                     break;
                 default:
                     console.error('Unknown game type:', gameType);
@@ -1695,6 +2032,12 @@ class GameManager {
             }
 
             // Regular game completion logic below
+            // Total time: elapsed from saved sessions + current session
+            const sessionElapsed = this.gameSessionStartAt ? (Date.now() - this.gameSessionStartAt) : 0;
+            const totalGameTimeMs = (this.gameElapsedMs || 0) + sessionElapsed;
+            this.gameElapsedMs = 0;
+            this.gameSessionStartAt = null;
+
             // Delete saved game state since game is completed
             this.deleteGameState(gameType);
 
@@ -1745,6 +2088,7 @@ class GameManager {
             // Create completion message as a new element
             const completionDiv = document.createElement('div');
             completionDiv.className = 'game-complete';
+            const timeText = this.formatGameTime(totalGameTimeMs);
             completionDiv.innerHTML = `
                 <div class="completion-content">
                     <h2><i class="fas fa-trophy"></i> משחק הושלם!</h2>
@@ -1755,6 +2099,7 @@ class GameManager {
                         </div>
                         <div class="score-details">
                             <p><strong>ניקוד סופי:</strong> ${finalScore}/${this.totalQuestions * 10}</p>
+                            ${timeText ? `<p class="game-time"><strong>זמן כולל:</strong> ${timeText}</p>` : ''}
                         </div>
                     </div>
                     <div class="completion-actions">

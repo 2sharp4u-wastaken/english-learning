@@ -35,6 +35,10 @@
                             <i class="fas fa-spell-check"></i>
                             <span>דקדוק</span>
                         </button>
+                        <button class="top-game-btn" data-game="grammar-beginner" title="דקדוק למתחילים - למידה בהאזנה">
+                            <i class="fas fa-volume-up"></i>
+                            <span>דקדוק+</span>
+                        </button>
                         <button class="top-game-btn" data-game="pronunciation" title="הגייה">
                             <i class="fas fa-microphone"></i>
                             <span>הגייה</span>
@@ -47,9 +51,14 @@
                             <i class="fas fa-book-open"></i>
                             <span>קריאה</span>
                         </button>
-                        <button class="top-game-btn" data-game="practice" title="מצב תרגול">
+                        <button class="top-game-btn" data-game="abc" title="ABC אותיות">
+                            <i class="fas fa-font"></i>
+                            <span>ABC</span>
+                        </button>
+                        <button class="top-game-btn" data-game="practice" id="practice-top-btn" title="מצב תרגול" style="display: none;">
                             <i class="fas fa-bullseye"></i>
                             <span>תרגול</span>
+                            <span class="practice-badge" id="practice-badge"></span>
                         </button>
                     </nav>
                 </div>
@@ -127,6 +136,34 @@
                                 <div class="game-card-icon">✏️</div>
                                 <h3>תרגול דקדוק</h3>
                                 <p>שפר את הדקדוק שלך</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
+                                </div>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="game-card" data-game="grammar-beginner">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">🔊</div>
+                                <h3>דקדוק למתחילים</h3>
+                                <p>למד דקדוק בהאזנה</p>
                                 <div class="game-card-stats">
                                     <span class="stat-mastered">0 🌟</span>
                                     <span class="stat-learning">0 📚</span>
@@ -226,7 +263,7 @@
                             </div>
                         </div>
 
-                        <div class="game-card practice-mode-card" data-game="practice">
+                        <div class="game-card" data-game="abc">
                             <div class="game-card-progress-badge">
                                 <svg class="progress-ring" width="60" height="60">
                                     <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
@@ -236,11 +273,13 @@
                                 <div class="progress-percentage">0%</div>
                             </div>
                             <div class="game-card-main">
-                                <div class="game-card-icon">🎯</div>
-                                <h3>מצב תרגול</h3>
-                                <p>תרגל מילים שקשות לך</p>
-                                <div class="practice-mode-stats">
-                                    <span class="stat-struggling-count">0 מילים לתרגול</span>
+                                <div class="game-card-icon">🔤</div>
+                                <h3>ABC אותיות</h3>
+                                <p>למד אותיות גדולות וקטנות</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
                                 </div>
                             </div>
                             <div class="game-card-footer" style="display: none;">
@@ -305,6 +344,13 @@
                         <div class="progress-fill" id="grammar-progress-fill"></div>
                     </div>
                 </div>
+                <!-- Grammar Topic Selector -->
+                <div class="grammar-topic-selector" id="grammar-topic-selector">
+                    <div class="topic-selector-label">בחר נושא:</div>
+                    <div class="topic-tabs" id="grammar-topic-tabs">
+                        <!-- Topics will be populated by JavaScript -->
+                    </div>
+                </div>
                 <div class="game-board">
                     <div class="sentence-card">
                         <div class="grammar-layout-vertical">
@@ -320,6 +366,25 @@
                     </div>
                     <div class="feedback" id="grammar-feedback" aria-live="polite"></div>
                 </div>
+            </div>
+
+            <!-- Grammar Beginner Game (Audio-Visual) -->
+            <div id="grammar-beginner-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="grammar-beginner-current-q">1</span> מתוך <span id="grammar-beginner-total-q">10</span></span>
+                    <span class="mastery-indicator" id="grammar-beginner-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="grammar-beginner-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="grammar-beginner-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <!-- Content will be populated by JavaScript based on question type -->
+                </div>
+                <button class="next-btn" id="grammar-beginner-next" style="display: none;">
+                    <span>השאלה הבאה</span>
+                </button>
+                <div class="score-display">ניקוד: <span id="grammar-beginner-score">0</span></div>
             </div>
 
             <!-- Pronunciation Game -->
@@ -353,6 +418,23 @@
                                     <i class="fas fa-volume-up"></i>
                                 </button>
                                 <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                            </div>
+                            <!-- Comparison area showing target vs user pronunciation -->
+                            <div class="comparison-area" id="pronunciation-comparison-area" style="display: none;">
+                                <div class="comparison-row">
+                                    <div class="comparison-column">
+                                        <span class="comparison-label">Target:</span>
+                                        <span class="comparison-word target" id="pronunciation-comparison-target">word</span>
+                                    </div>
+                                    <div class="comparison-column">
+                                        <span class="comparison-label">You said:</span>
+                                        <span class="comparison-word user" id="pronunciation-comparison-user">word</span>
+                                    </div>
+                                </div>
+                                <div class="accuracy-score">
+                                    <span class="score-percentage" id="pronunciation-accuracy-score">0%</span>
+                                    <span class="score-label">Accuracy</span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -406,7 +488,10 @@
                 <div class="progress-container">
                     <span class="question-counter">Question <span id="reading-current-q">1</span> of <span id="reading-total-q">10</span></span>
                     <span class="mastery-indicator" id="reading-mastery-indicator"></span>
-                    <button class="reset-game-btn" id="reading-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <button class="case-toggle-btn" id="reading-case-toggle" title="החלף רישיות">
+                        <span class="case-upper">ABC</span>
+                        <span class="case-lower">abc</span>
+                    </button>
                     <div class="progress-bar">
                         <div class="progress-fill" id="reading-progress-fill"></div>
                     </div>
@@ -518,6 +603,45 @@
                         <span>המילה הבאה</span>
                     </button>
                     <div class="feedback" id="practice-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- ABC Letters Game -->
+            <div id="abc-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">Question <span id="abc-current-q">1</span> of <span id="abc-total-q">10</span></span>
+                    <span class="mastery-indicator" id="abc-mastery-indicator"></span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="abc-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="abc-card">
+                        <div class="abc-layout-vertical">
+                            <!-- Picture container for word-picture questions -->
+                            <div class="abc-picture-container" id="abc-picture-container" style="display: none;">
+                                <div class="word-picture" id="abc-picture">🍎</div>
+                                <div class="abc-word-display" id="abc-word-display">Apple</div>
+                            </div>
+                            <!-- Large letter display -->
+                            <div class="abc-letter-display" id="abc-letter-display">A</div>
+                            <!-- Instruction text -->
+                            <div class="abc-instruction" id="abc-instruction">מצא את האות הקטנה</div>
+                            <!-- Audio button (for letter-sound questions) -->
+                            <div class="controls-row">
+                                <button class="play-audio" id="abc-audio" aria-label="השמע אות" style="display: none;">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="abc-next" style="display: none;">
+                        <span>השאלה הבאה</span>
+                    </button>
+                    <div class="options-grid" id="abc-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                    <div class="feedback" id="abc-feedback" aria-live="polite"></div>
                 </div>
             </div>
             </main>
@@ -656,7 +780,8 @@
                         listening: true,
                         reading: true,
                         pronunciation: true,
-                        grammar: true
+                        grammar: true,
+                        abc: true
                     };
 
                     Object.keys(enabledGames).forEach(gameType => {
