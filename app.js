@@ -88,7 +88,7 @@ class AppManager {
         console.log('[AppManager] Initializing managers...');
 
         // Initialize managers in dependency order
-        this.scoreManager = new ScoreManager(this.userProgress);
+        this.scoreManager = new ScoreManager(); // ScoreManager doesn't need userProgress
         this.progressManager = new ProgressManager(this.userProgress);
         this.courseManager = new CourseManager(this.userProgress, this.progressManager);
         this.certificateManager = new CertificateManager(this.userProgress);
