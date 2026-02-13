@@ -82,31 +82,39 @@ index.html - Changed app.js to type="module"
 
 ---
 
-### 1.4 GameManager Refactor ❌ NOT STARTED
-**Depends on:** 1.3 App Integration
+### 1.4 GameManager Refactor 🔄 IN PROGRESS
+**Depends on:** 1.3 App Integration (✅ Complete)
 
 #### Subtasks:
-- ❌ Replace direct scoring with ScoreManager calls
-- ❌ Replace mastery tracking with ProgressManager calls
-- ❌ Register all existing games with GameRegistry:
-  - vocabulary
-  - grammar
-  - grammar-beginner
-  - pronunciation
-  - listening
-  - reading
-  - practice
-  - abc
-- ❌ Update game initialization to use GameRegistry.createInstance()
-- ❌ Remove duplicate code now handled by managers
-- ❌ Test all existing games still work
+- 🔄 Replace direct scoring with ScoreManager calls (partial - architecture in place)
+- ✅ Replace mastery tracking with ProgressManager calls (using trackWord method)
+- ✅ Register all existing games with GameRegistry:
+  - ✅ vocabulary
+  - ✅ grammar
+  - ✅ grammar-beginner
+  - ✅ pronunciation
+  - ✅ listening
+  - ✅ reading
+  - ✅ practice
+  - ✅ abc
+- ❌ Update game initialization to use GameRegistry.createInstance() (deferred - existing pattern works)
+- 🔄 Remove duplicate code now handled by managers (partial - word tracking done)
+- ⏸️ Test all existing games still work (needs testing)
 
-**Files to Modify:**
+**Files Modified:**
 ```
-gameLogic.js - Major refactor (reduce from 2400 to ~1500 lines)
+gameLogic.js - Added 198 lines, removed 53 lines (net +145)
+  - Added initializeManagers() method
+  - Added registerGames() method
+  - Updated recordWordAttempt() to use ProgressManager
+  - Added legacy fallback for backwards compatibility
+  - Manager references stored in constructor
 ```
 
-**Estimated Lines:** -900 lines (removal), +200 lines (new integration)
+**Status:** Core integration complete, scoring delegation partial, testing needed
+
+**Note:** Full score delegation deferred - kept legacy this.scores for backwards compat.
+Will complete in follow-up iteration if needed.
 
 ---
 

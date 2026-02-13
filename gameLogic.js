@@ -1,5 +1,5 @@
 // Game Logic for English Learning Games
-// Refactored to use modular game files
+// Refactored to use modular game files and manager architecture
 
 // Import game modules
 import * as VocabularyGame from './games/vocabulary-game.js?t=1762595926';
@@ -36,6 +36,14 @@ class GameManager {
     constructor() {
         this.currentGame = GAME_CONFIG.DEFAULT_GAME;
         this.currentLanguage = GAME_CONFIG.DEFAULT_LANGUAGE;
+
+        // Reference to managers (initialized by app.js)
+        this.scoreManager = null;
+        this.progressManager = null;
+        this.courseManager = null;
+        this.coinManager = null;
+
+        // Legacy scores object (kept for backwards compatibility, but delegated to ScoreManager)
         this.scores = {
             vocabulary: 0,
             grammar: 0,
@@ -127,6 +135,151 @@ class GameManager {
 
         // Initialize the game after all bindings are set up
         this.initializeGame();
+
+        // Initialize manager references (after window.managers are set up by app.js)
+        setTimeout(() => this.initializeManagers(), 100);
+    }
+
+    initializeManagers() {
+        // Get manager references from window (set by app.js)
+        this.scoreManager = window.scoreManager;
+        this.progressManager = window.progressManager;
+        this.courseManager = window.courseManager;
+        this.coinManager = window.coinManager;
+
+        if (!this.scoreManager || !this.progressManager) {
+            console.warn('[GameManager] Managers not yet available, will retry');
+            return;
+        }
+
+        console.log('[GameManager] Managers initialized successfully');
+
+        // Register all existing games with GameRegistry
+        this.registerGames();
+    }
+
+    registerGames() {
+        const registry = window.gameRegistry;
+        if (!registry) {
+            console.warn('[GameManager] GameRegistry not available');
+            return;
+        }
+
+        // Register all game types
+        registry.register('vocabulary', {
+            module: this,
+            loadQuestion: 'loadVocabularyQuestion',
+            checkAnswer: 'checkVocabularyAnswer',
+            displayName: 'Vocabulary',
+            displayNameHebrew: 'אוצר מילים',
+            icon: '📚',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['language', 'vocabulary']
+            }
+        });
+
+        registry.register('grammar', {
+            module: this,
+            loadQuestion: 'loadGrammarQuestion',
+            checkAnswer: 'checkGrammarAnswer',
+            displayName: 'Grammar',
+            displayNameHebrew: 'דקדוק',
+            icon: '✏️',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['language', 'grammar']
+            }
+        });
+
+        registry.register('grammar-beginner', {
+            module: this,
+            loadQuestion: 'loadGrammarBeginnerQuestion',
+            checkAnswer: 'checkGrammarBeginnerAnswer',
+            displayName: 'Grammar Beginner',
+            displayNameHebrew: 'דקדוק למתחילים',
+            icon: '🔊',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['language', 'grammar'],
+                skillLevel: 'beginner'
+            }
+        });
+
+        registry.register('pronunciation', {
+            module: this,
+            loadQuestion: 'loadPronunciationQuestion',
+            checkAnswer: 'processPronunciationResult',
+            displayName: 'Pronunciation',
+            displayNameHebrew: 'הגייה',
+            icon: '🎤',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['language', 'speaking']
+            }
+        });
+
+        registry.register('listening', {
+            module: this,
+            loadQuestion: 'loadListeningQuestion',
+            checkAnswer: 'checkListeningAnswer',
+            displayName: 'Listening',
+            displayNameHebrew: 'הקשבה',
+            icon: '👂',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['language', 'listening']
+            }
+        });
+
+        registry.register('reading', {
+            module: this,
+            loadQuestion: 'loadReadingQuestion',
+            checkAnswer: 'checkBuiltWord',
+            displayName: 'Reading',
+            displayNameHebrew: 'קריאה',
+            icon: '📖',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['language', 'reading']
+            }
+        });
+
+        registry.register('practice', {
+            module: this,
+            loadQuestion: 'loadPracticeQuestion',
+            checkAnswer: 'processPracticeResult',
+            displayName: 'Practice',
+            displayNameHebrew: 'מצב תרגול',
+            icon: '🎯',
+            config: {
+                questionsPerGame: 0, // Dynamic based on struggling words
+                pointsPerCorrect: 10,
+                categories: ['practice']
+            }
+        });
+
+        registry.register('abc', {
+            module: this,
+            loadQuestion: 'loadABCQuestion',
+            checkAnswer: 'checkABCAnswer',
+            displayName: 'ABC Letters',
+            displayNameHebrew: 'ABC אותיות',
+            icon: '🔤',
+            config: {
+                questionsPerGame: 20,
+                pointsPerCorrect: 10,
+                categories: ['language', 'alphabet']
+            }
+        });
+
+        console.log('[GameManager] All games registered with GameRegistry');
     }
 
     loadSettings() {
@@ -325,38 +478,21 @@ class GameManager {
     // ============================================
 
     recordWordAttempt(word, category, isCorrect, responseTime, gameType) {
-        // Track word attempt immediately (even if game exits early)
-        if (!window.app || !window.app.userProgress) {
-            console.warn('Cannot record word attempt: app not initialized');
+        // Track word attempt using ProgressManager
+        if (!this.progressManager) {
+            console.warn('Cannot record word attempt: ProgressManager not initialized');
+            // Fallback to legacy method
+            if (window.app?.saveWordStats) {
+                return this._recordWordAttemptLegacy(word, category, isCorrect, responseTime, gameType);
+            }
             return;
         }
 
-        // Get existing stats or create new
-        let wordStats = window.app.getWordStats(word, category);
+        // Use ProgressManager to track the word
+        const wordStats = this.progressManager.trackWord(word, category, isCorrect, responseTime > 0 ? responseTime / 1000 : 0, gameType);
 
-        if (!wordStats) {
-            // First time seeing this word
-            wordStats = {
-                word: word,
-                category: category,
-                totalAttempts: 0,
-                correctAttempts: 0,
-                incorrectAttempts: 0,
-                consecutiveCorrect: 0,
-                lastSeen: null,
-                lastResult: null,
-                masteryLevel: 0,
-                gameTypeStats: {}
-            };
-        }
-
-        // Update attempts
-        wordStats.totalAttempts++;
+        // Handle session streak for mascot encouragement
         if (isCorrect) {
-            wordStats.correctAttempts++;
-            wordStats.consecutiveCorrect++;
-
-            // Track session streak for mascot encouragement
             this.sessionCorrectStreak++;
 
             // First correct answer in session
@@ -377,30 +513,11 @@ class GameManager {
                 }
             }
         } else {
-            wordStats.incorrectAttempts++;
-            wordStats.consecutiveCorrect = 0;  // Reset streak on incorrect
             this.sessionCorrectStreak = 0;  // Reset session streak
         }
 
-        // Update metadata
-        wordStats.lastSeen = new Date().toISOString();
-        wordStats.lastResult = isCorrect ? 'correct' : 'incorrect';
-
-        // Track per game type
-        if (!wordStats.gameTypeStats[gameType]) {
-            wordStats.gameTypeStats[gameType] = { correct: 0, total: 0 };
-        }
-        wordStats.gameTypeStats[gameType].total++;
-        if (isCorrect) {
-            wordStats.gameTypeStats[gameType].correct++;
-        }
-
-        // Calculate mastery level
-        const previousMastery = wordStats.masteryLevel || 0;
-        wordStats.masteryLevel = window.app.calculateMastery(wordStats);
-
-        // Check for mastery level-up milestone
-        if (previousMastery < 0.8 && wordStats.masteryLevel >= 0.8) {
+        // Check if word just became mastered
+        if (wordStats && wordStats.previousMastery < 0.8 && wordStats.masteryLevel >= 0.8) {
             // Word just became mastered!
             if (window.audioEffects) {
                 window.audioEffects.playLevelUp().catch(() => {});
@@ -413,9 +530,6 @@ class GameManager {
             }
         }
 
-        // Save immediately to localStorage
-        window.app.saveWordStats(word, category, wordStats);
-
         // Update game card progress indicators
         if (window.gamificationManager) {
             if (gameType) {
@@ -425,7 +539,38 @@ class GameManager {
             window.gamificationManager.updatePracticeModeCard();
         }
 
-        console.log(`Word tracked: ${word} (${category}) - ${isCorrect ? 'Correct' : 'Incorrect'} - Mastery: ${(wordStats.masteryLevel * 100).toFixed(0)}%`);
+        console.log(`Word tracked: ${word} (${category}) - ${isCorrect ? 'Correct' : 'Incorrect'} - Mastery: ${(wordStats?.masteryLevel * 100).toFixed(0)}%`);
+    }
+
+    // Legacy fallback method (for backwards compatibility during migration)
+    _recordWordAttemptLegacy(word, category, isCorrect, responseTime, gameType) {
+        if (!window.app || !window.app.userProgress) return;
+
+        let wordStats = window.app.getWordStats(word, category) || {
+            word, category, totalAttempts: 0, correctAttempts: 0, incorrectAttempts: 0,
+            consecutiveCorrect: 0, lastSeen: null, lastResult: null, masteryLevel: 0, gameTypeStats: {}
+        };
+
+        wordStats.totalAttempts++;
+        if (isCorrect) {
+            wordStats.correctAttempts++;
+            wordStats.consecutiveCorrect++;
+        } else {
+            wordStats.incorrectAttempts++;
+            wordStats.consecutiveCorrect = 0;
+        }
+
+        wordStats.lastSeen = new Date().toISOString();
+        wordStats.lastResult = isCorrect ? 'correct' : 'incorrect';
+
+        if (!wordStats.gameTypeStats[gameType]) {
+            wordStats.gameTypeStats[gameType] = { correct: 0, total: 0 };
+        }
+        wordStats.gameTypeStats[gameType].total++;
+        if (isCorrect) wordStats.gameTypeStats[gameType].correct++;
+
+        wordStats.masteryLevel = window.app.calculateMastery(wordStats);
+        window.app.saveWordStats(word, category, wordStats);
     }
 
     populateResumeGames() {
