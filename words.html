@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>מילון מילים - English Learning</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        /* Word Gallery Specific Styles */
+        .words-page {
+            min-height: 100vh;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            padding-top: 70px;
+        }
+
+        .words-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            padding: 15px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .words-header h1 {
+            color: white;
+            font-size: 1.5rem;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .back-btn {
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .back-btn:hover {
+            background: rgba(255, 255, 255, 0.3);
+            transform: translateX(5px);
+        }
+
+        .search-container {
+            padding: 15px 20px;
+            position: sticky;
+            top: 60px;
+            z-index: 50;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .search-box {
+            width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+            display: block;
+            padding: 12px 20px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 25px;
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            font-size: 1.1rem;
+            outline: none;
+            transition: all 0.3s ease;
+        }
+
+        .search-box::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .search-box:focus {
+            background: rgba(255, 255, 255, 0.25);
+            border-color: rgba(255, 255, 255, 0.5);
+        }
+
+        .category-tabs {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            padding: 15px 20px;
+            justify-content: center;
+            position: sticky;
+            top: 120px;
+            z-index: 40;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+
+        .category-tab {
+            background: rgba(255, 255, 255, 0.15);
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.3s ease;
+            white-space: nowrap;
+        }
+
+        .category-tab:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .category-tab.active {
+            background: white;
+            color: #667eea;
+            border-color: white;
+            font-weight: 600;
+        }
+
+        .word-count {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.8);
+            padding: 10px;
+            font-size: 1rem;
+        }
+
+        .words-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+            gap: 15px;
+            padding: 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .word-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 15px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .word-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+        }
+
+        .word-card:active {
+            transform: scale(0.95);
+        }
+
+        .word-picture {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            display: block;
+        }
+
+        .word-picture img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+        }
+
+        .word-english {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 5px;
+        }
+
+        .word-hebrew {
+            font-size: 0.95rem;
+            color: #666;
+            direction: rtl;
+        }
+
+        .word-category-badge {
+            display: inline-block;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            font-size: 0.7rem;
+            padding: 3px 8px;
+            border-radius: 10px;
+            margin-top: 8px;
+        }
+
+        .category-section {
+            margin-bottom: 30px;
+        }
+
+        .category-title {
+            color: white;
+            font-size: 1.3rem;
+            padding: 10px 20px;
+            margin: 0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .category-title .count {
+            background: rgba(255, 255, 255, 0.2);
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.9rem;
+        }
+
+        .no-results {
+            text-align: center;
+            color: white;
+            padding: 40px;
+            font-size: 1.2rem;
+        }
+
+        .no-results i {
+            font-size: 3rem;
+            margin-bottom: 15px;
+            display: block;
+            opacity: 0.7;
+        }
+
+        /* Mobile adjustments */
+        @media (max-width: 480px) {
+            .words-grid {
+                grid-template-columns: repeat(2, 1fr);
+                gap: 10px;
+                padding: 10px;
+            }
+
+            .word-card {
+                padding: 12px;
+            }
+
+            .word-picture {
+                font-size: 2.5rem;
+            }
+
+            .category-tabs {
+                padding: 10px;
+                gap: 8px;
+            }
+
+            .category-tab {
+                padding: 6px 12px;
+                font-size: 0.8rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="words-page">
+        <header class="words-header">
+            <h1><i class="fas fa-book-open"></i> מילון מילים</h1>
+            <button class="back-btn" onclick="window.location.href='settings.html'">
+                <i class="fas fa-arrow-right"></i>
+                חזרה
+            </button>
+        </header>
+
+        <div class="search-container">
+            <input type="text" class="search-box" id="search-input" placeholder="חיפוש מילה...">
+        </div>
+
+        <div class="category-tabs" id="category-tabs">
+            <button class="category-tab active" data-category="all">הכל</button>
+            <!-- Categories will be added dynamically -->
+        </div>
+
+        <div class="word-count" id="word-count"></div>
+
+        <div id="words-container">
+            <!-- Words will be loaded here -->
+        </div>
+    </div>
+
+    <!-- Load vocabulary data -->
+    <script type="module">
+        // Import data - this is synchronous after module loads
+        import { gameData } from './data/_loader.js';
+
+        const categoryNames = {
+            'animals': 'חיות',
+            'colors': 'צבעים',
+            'numbers': 'מספרים',
+            'food': 'אוכל',
+            'body': 'גוף',
+            'family': 'משפחה',
+            'clothes': 'בגדים',
+            'home': 'בית',
+            'actions': 'פעולות',
+            'nature': 'טבע',
+            'school': 'בית ספר',
+            'minecraft': 'Minecraft',
+            'gaming': 'משחקים',
+            'roblox': 'Roblox'
+        };
+
+        let allWords = [];
+        let currentCategory = 'all';
+        let searchTerm = '';
+
+        function init() {
+            console.log('Initializing words page...');
+            console.log('gameData:', gameData);
+
+            // Get all vocabulary words
+            if (!gameData || !gameData.vocabulary) {
+                console.error('gameData.vocabulary not available!');
+                document.getElementById('words-container').innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        שגיאה בטעינת המילים
+                    </div>
+                `;
+                return;
+            }
+
+            allWords = gameData.vocabulary || [];
+            console.log(`Loaded ${allWords.length} words`);
+
+            // Build category tabs
+            buildCategoryTabs();
+
+            // Render words
+            renderWords();
+
+            // Setup event listeners
+            setupEventListeners();
+        }
+
+        function buildCategoryTabs() {
+            const tabsContainer = document.getElementById('category-tabs');
+            const categories = [...new Set(allWords.map(w => w.category))];
+
+            categories.forEach(cat => {
+                const tab = document.createElement('button');
+                tab.className = 'category-tab';
+                tab.dataset.category = cat;
+                tab.textContent = categoryNames[cat] || cat;
+                tabsContainer.appendChild(tab);
+            });
+        }
+
+        function setupEventListeners() {
+            // Category tabs
+            document.getElementById('category-tabs').addEventListener('click', (e) => {
+                if (e.target.classList.contains('category-tab')) {
+                    document.querySelectorAll('.category-tab').forEach(t => t.classList.remove('active'));
+                    e.target.classList.add('active');
+                    currentCategory = e.target.dataset.category;
+                    renderWords();
+                }
+            });
+
+            // Search
+            document.getElementById('search-input').addEventListener('input', (e) => {
+                searchTerm = e.target.value.trim().toLowerCase();
+                renderWords();
+            });
+
+            // Word card click - play audio
+            document.getElementById('words-container').addEventListener('click', (e) => {
+                const card = e.target.closest('.word-card');
+                if (card) {
+                    const word = card.dataset.word;
+                    speakWord(word);
+                }
+            });
+        }
+
+        function speakWord(word) {
+            if ('speechSynthesis' in window) {
+                speechSynthesis.cancel();
+                const utterance = new SpeechSynthesisUtterance(word);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.85;
+                speechSynthesis.speak(utterance);
+            }
+        }
+
+        function filterWords() {
+            let filtered = allWords;
+
+            // Filter by category
+            if (currentCategory !== 'all') {
+                filtered = filtered.filter(w => w.category === currentCategory);
+            }
+
+            // Filter by search (converted vocabulary uses .hebrew)
+            if (searchTerm) {
+                const t = (w) => (w.hebrew || w.translation || '');
+                filtered = filtered.filter(w =>
+                    w.word.toLowerCase().includes(searchTerm) ||
+                    t(w).includes(searchTerm)
+                );
+            }
+
+            return filtered;
+        }
+
+        function renderWords() {
+            const container = document.getElementById('words-container');
+            const filtered = filterWords();
+
+            // Update count
+            document.getElementById('word-count').textContent = `${filtered.length} מילים`;
+
+            if (filtered.length === 0) {
+                container.innerHTML = `
+                    <div class="no-results">
+                        <i class="fas fa-search"></i>
+                        לא נמצאו מילים
+                    </div>
+                `;
+                return;
+            }
+
+            // Group by category if showing all
+            if (currentCategory === 'all' && !searchTerm) {
+                const grouped = {};
+                filtered.forEach(w => {
+                    if (!grouped[w.category]) grouped[w.category] = [];
+                    grouped[w.category].push(w);
+                });
+
+                container.innerHTML = Object.entries(grouped).map(([cat, words]) => `
+                    <div class="category-section">
+                        <h2 class="category-title">
+                            ${categoryNames[cat] || cat}
+                            <span class="count">${words.length}</span>
+                        </h2>
+                        <div class="words-grid">
+                            ${words.map(w => renderWordCard(w)).join('')}
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.innerHTML = `
+                    <div class="words-grid">
+                        ${filtered.map(w => renderWordCard(w)).join('')}
+                    </div>
+                `;
+            }
+        }
+
+        function renderWordCard(word) {
+            // Converter uses .picture (emoji), .imageUrl (image path); category data uses .image
+            const emoji = word.picture || word.image || '📝';
+            const picture = word.imageUrl
+                ? `<img src="${word.imageUrl}" alt="${word.word}" onerror="this.parentElement.textContent='${(emoji).replace(/'/g, "\\'")}'">`
+                : emoji;
+            const hebrew = word.hebrew || word.translation || '';
+
+            return `
+                <div class="word-card" data-word="${word.word}">
+                    <span class="word-picture">${picture}</span>
+                    <div class="word-english">${word.word}</div>
+                    <div class="word-hebrew">${hebrew}</div>
+                </div>
+            `;
+        }
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init);
+        } else {
+            init();
+        }
+    </script>
+</body>
+</html>
