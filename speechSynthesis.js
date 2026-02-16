@@ -222,10 +222,14 @@ class SpeechManager {
     }
 
     async speak(text, options = {}) {
-        // Cancel any ongoing speech to prevent queuing/doubling
-        // Unless allowOverlap is set to true (for rapid clicking in vocabulary game)
+        // CHROME BUG WORKAROUND: Calling cancel() corrupts Chrome's speech engine
+        // New approach: Don't cancel - just skip if already speaking
         if (!options.allowOverlap) {
-            this.synthesis.cancel();
+            // If already speaking, just return immediately
+            if (this.synthesis.speaking) {
+                console.log('[Speech] Skipping - already speaking');
+                return Promise.resolve();
+            }
         }
 
         const utterance = new SpeechSynthesisUtterance(text);
@@ -259,6 +263,10 @@ class SpeechManager {
 
     async speakWord(word, phonetic = '', gameContext = null, allowOverlap = false) {
         try {
+            if (!word) {
+                console.warn('speakWord called with undefined/null word');
+                return;
+            }
             const cleanWord = word.replace(/[-\s]/g, '');
             await this.speak(cleanWord, { gameContext, allowOverlap });
         } catch (error) {
@@ -385,12 +393,10 @@ class SpeechManager {
     }
 
     cancelSpeech() {
-        try {
-            this.synthesis.cancel();
-            this.currentGameContext = null;
-        } catch (error) {
-            console.warn('Error canceling speech:', error);
-        }
+        // DISABLED: cancel() corrupts Chrome's speech engine
+        // Let speech finish naturally instead
+        console.log('[Speech] cancelSpeech() called but DISABLED to prevent Chrome corruption');
+        this.currentGameContext = null;
     }
 
     setGameContext(gameType) {
@@ -399,21 +405,34 @@ class SpeechManager {
     }
 
     comparePronunciation(target, spoken) {
-        const targetWords = target.toLowerCase().split(' ');
-        const spokenWords = spoken.toLowerCase().split(' ');
+        const targetLower = target.toLowerCase().trim();
+        const spokenLower = spoken.toLowerCase().trim();
+
+        console.log(`🎤 [COMPARE] Target: "${targetLower}" vs Spoken: "${spokenLower}"`);
+
+        // Exact match check first
+        if (targetLower === spokenLower) {
+            console.log('🎤 [COMPARE] Exact match!');
+            return { accuracy: 1.0, feedback: 'Excellent pronunciation!', audioFeedback: 'Excellent pronunciation!' };
+        }
+
+        const targetWords = targetLower.split(' ');
+        const spokenWords = spokenLower.split(' ');
 
         if (targetWords.length !== spokenWords.length) {
-            return { accuracy: 0.3, feedback: 'Word count mismatch' };
+            console.log('🎤 [COMPARE] Word count mismatch');
+            return { accuracy: 0.3, feedback: 'Word count mismatch', audioFeedback: 'Try again!' };
         }
 
-        let matches = 0;
+        let totalAccuracy = 0;
         for (let i = 0; i < targetWords.length; i++) {
-            if (this.calculateSimilarity(targetWords[i], spokenWords[i]) > 0.7) {
-                matches++;
-            }
+            const wordAccuracy = this.calculateWordSimilarity(targetWords[i], spokenWords[i]);
+            totalAccuracy += wordAccuracy;
+            console.log(`🎤 [COMPARE] Word "${targetWords[i]}" vs "${spokenWords[i]}": ${(wordAccuracy * 100).toFixed(0)}%`);
         }
 
-        const accuracy = matches / targetWords.length;
+        const accuracy = totalAccuracy / targetWords.length;
+        console.log(`🎤 [COMPARE] Final accuracy: ${(accuracy * 100).toFixed(0)}%`);
 
         let feedback = '';
         let audioFeedback = '';
@@ -433,6 +452,34 @@ class SpeechManager {
         }
 
         return { accuracy, feedback, audioFeedback };
+    }
+
+    calculateWordSimilarity(target, spoken) {
+        // Exact match
+        if (target === spoken) return 1.0;
+        if (!target || !spoken) return 0.0;
+
+        // CRITICAL: First letter must match for pronunciation
+        // If user says "boot" instead of "root", it's wrong even though they're similar
+        if (target.charAt(0) !== spoken.charAt(0)) {
+            console.log(`🎤 [SIMILARITY] First letter mismatch: "${target[0]}" vs "${spoken[0]}" - penalizing heavily`);
+            // Heavy penalty for first letter mismatch (max 40% accuracy)
+            const baseSimilarity = this.calculateSimilarity(target, spoken);
+            return Math.min(baseSimilarity * 0.5, 0.4);
+        }
+
+        // For short words (4 letters or less), be stricter
+        // because one character = 25%+ of the word
+        const baseAccuracy = this.calculateSimilarity(target, spoken);
+        if (target.length <= 4) {
+            // For short words, require higher base similarity
+            // If base is 0.75, scaled becomes 0.75 * 0.9 = 0.675 (fails 0.7 threshold)
+            const scaled = baseAccuracy * 0.9;
+            console.log(`🎤 [SIMILARITY] Short word adjustment: ${(baseAccuracy * 100).toFixed(0)}% -> ${(scaled * 100).toFixed(0)}%`);
+            return scaled;
+        }
+
+        return baseAccuracy;
     }
 
     calculateSimilarity(str1, str2) {
@@ -484,3 +531,6 @@ class SpeechManager {
 
 const speechManager = new SpeechManager();
 window.speechManager = speechManager; // Make globally accessible for game modules
+
+// Verification log - check this appears in console to confirm new code is loaded
+console.log('%c[Speech Fix v3] Loaded - NO CANCEL, skip if speaking', 'color: cyan; font-weight: bold');

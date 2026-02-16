@@ -353,7 +353,8 @@ class AppManager {
         if (speechManager.isRecording) {
             speechManager.stopRecording();
         }
-        speechManager.synthesis.cancel();
+        // DON'T cancel - it corrupts Chrome's speech engine
+        // Let speech finish naturally
     }
 
     resumeGame() {

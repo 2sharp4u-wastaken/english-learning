@@ -42,6 +42,7 @@ class GameManager {
         this.progressManager = null;
         this.courseManager = null;
         this.coinManager = null;
+        this.managerInitRetries = 0;
 
         // Legacy scores object (kept for backwards compatibility, but delegated to ScoreManager)
         this.scores = {
@@ -148,7 +149,13 @@ class GameManager {
         this.coinManager = window.coinManager;
 
         if (!this.scoreManager || !this.progressManager) {
-            console.warn('[GameManager] Managers not yet available, will retry');
+            this.managerInitRetries++;
+            if (this.managerInitRetries > 20) {
+                console.error('[GameManager] Managers failed to initialize after 20 retries. Check app.js initialization.');
+                return;
+            }
+            console.warn(`[GameManager] Managers not yet available, retrying in 200ms... (attempt ${this.managerInitRetries}/20)`);
+            setTimeout(() => this.initializeManagers(), 200);
             return;
         }
 
@@ -489,7 +496,7 @@ class GameManager {
         }
 
         // Use ProgressManager to track the word
-        const wordStats = this.progressManager.trackWord(word, category, isCorrect, responseTime > 0 ? responseTime / 1000 : 0, gameType);
+        const wordStats = this.progressManager.recordWordAttempt(word, category, isCorrect, gameType, responseTime > 0 ? responseTime / 1000 : 0);
 
         // Handle session streak for mascot encouragement
         if (isCorrect) {
