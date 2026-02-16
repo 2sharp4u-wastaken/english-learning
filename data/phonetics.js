@@ -129,39 +129,40 @@ export function selectDistractors(targetWord, masteryLevel = 0, vocabularyBank) 
   let difficultyTier = 'UNKNOWN';
 
   // Tier 1: New words (mastery === 0 or undefined)
+  // Use SAME initial sounds so user can't guess by matching first letter to what they heard
   if (!masteryLevel || masteryLevel === 0) {
-    // EASY: Similar initial sound only
+    // All distractors start with same sound - user must know the actual word
     candidatePool = [...metadata.similarInitial];
-    difficultyTier = 'EASY (Initial Sound)';
+    difficultyTier = 'NEW (Same Initial Sound - Prevents First-Letter Guessing)';
   }
   // Tier 2: Struggling (0 < mastery < 0.5)
   else if (masteryLevel < 0.5) {
-    // MEDIUM: Rhyming words
-    candidatePool = [...metadata.similarRhyme];
-    difficultyTier = 'MEDIUM (Rhyming)';
+    // Still use same initial sounds - user is struggling, needs to learn properly
+    candidatePool = [
+      ...metadata.similarInitial,
+      ...metadata.phoneticNeighbors.slice(0, 3).map(n => n.word)
+    ];
+    difficultyTier = 'STRUGGLING (Same Initial + Neighbors)';
   }
   // Tier 3: Learning (0.5 <= mastery < 0.8)
   else if (masteryLevel < 0.8) {
-    // HARD: Vowel pattern + complex rhymes (different starting sound)
+    // Mix of similar initial and some rhymes - moderate difficulty
     candidatePool = [
-      ...metadata.similarVowel,
-      ...metadata.similarRhyme.filter(w => {
-        const wMeta = phoneticIndex[w.toLowerCase()];
-        return wMeta && wMeta.initialSound !== metadata.initialSound;
-      })
+      ...metadata.similarInitial.slice(0, 2),
+      ...metadata.similarRhyme,
+      ...metadata.similarVowel.slice(0, 2)
     ];
-    difficultyTier = 'HARD (Vowel + Complex Rhyme)';
+    difficultyTier = 'LEARNING (Mixed - Initial + Rhyme + Vowel)';
   }
   // Tier 4: Mastered (mastery >= 0.8)
   else {
-    // MIXED: Combine all phonetic patterns for variety
+    // User knows word well - can use more varied distractors
     candidatePool = [
-      ...metadata.phoneticNeighbors.slice(0, 5).map(n => n.word),
-      ...metadata.similarInitial.slice(0, 3),
-      ...metadata.similarRhyme.slice(0, 3),
-      ...metadata.similarVowel.slice(0, 3)
+      ...metadata.similarRhyme,
+      ...metadata.similarVowel,
+      ...metadata.phoneticNeighbors.slice(0, 3).map(n => n.word)
     ];
-    difficultyTier = 'MASTERED (Mixed Patterns)';
+    difficultyTier = 'MASTERED (Varied - Rhyme + Vowel + Neighbors)';
   }
 
   // Remove duplicates and the target word itself

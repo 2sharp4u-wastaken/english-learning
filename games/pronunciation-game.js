@@ -59,6 +59,12 @@ export async function loadPronunciationQuestion(question) {
         hebrewElement.style.display = 'block';
     }
 
+    // Hide comparison area from previous question
+    const comparisonArea = document.getElementById('pronunciation-comparison-area');
+    if (comparisonArea) {
+        comparisonArea.style.display = 'none';
+    }
+
     // Reset recording state
     const recordBtn = document.getElementById('record-btn');
     const nextBtn = document.getElementById('pronunciation-next');
@@ -186,6 +192,32 @@ export async function processPronunciationResult(result) {
     const isCorrect = comparison.accuracy >= 0.7;
     if (question && question.word && question.category) {
         this.recordWordAttempt(question.word, question.category, isCorrect, 0, 'pronunciation');
+    }
+
+    // Show comparison area with target vs user pronunciation
+    const comparisonArea = document.getElementById('pronunciation-comparison-area');
+    const targetEl = document.getElementById('pronunciation-comparison-target');
+    const userEl = document.getElementById('pronunciation-comparison-user');
+    const scoreEl = document.getElementById('pronunciation-accuracy-score');
+
+    if (comparisonArea) {
+        comparisonArea.style.display = 'block';
+    }
+    if (targetEl) {
+        targetEl.textContent = question.word;
+    }
+    if (userEl) {
+        userEl.textContent = result.transcript || '(not recognized)';
+        // Color-code based on accuracy
+        userEl.classList.remove('match', 'mismatch');
+        if (comparison.accuracy >= 0.7) {
+            userEl.classList.add('match');
+        } else {
+            userEl.classList.add('mismatch');
+        }
+    }
+    if (scoreEl) {
+        scoreEl.textContent = `${Math.round(comparison.accuracy * 100)}%`;
     }
 
     // Display text feedback

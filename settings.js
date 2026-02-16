@@ -34,7 +34,8 @@ class SettingsManager {
                 listening: true,
                 reading: true,
                 pronunciation: true,
-                grammar: true
+                grammar: true,
+                abc: true
             },
 
             // Game settings

@@ -11,15 +11,15 @@ export const schoolWords = [
     { word: "Scissors", translation: "מספריים", category: "school", image: "✂️" },
     { word: "Glue", translation: "דבק", category: "school", image: "🧴" , imageUrl: "img/icons/school/glue.png"},
     { word: "Crayon", translation: "צבע", category: "school", image: "🖍️" },
-    { word: "Blackboard", translation: "לוח", category: "school", image: "📋" },
+    { word: "Blackboard", translation: "לוח", category: "school", image: "📋", imageUrl: "img/icons/school/blackboard.png" },
     { word: "Book", translation: "ספר", category: "school", image: "📚" },
     { word: "Notebook", translation: "מחברת", category: "school", image: "📓" },
     { word: "Eraser", translation: "מחק", category: "school", image: "🧽" , imageUrl: "img/icons/school/eraser.png"},
     { word: "Ruler", translation: "סרגל", category: "school", image: "📏" },
-    { word: "Calculator", translation: "מחשבון", category: "school", image: "🧮" },
-    { word: "Library", translation: "ספרייה", category: "school", image: "📚" },
-    { word: "Classroom", translation: "כיתה", category: "school", image: "🏛️" },
+    { word: "Calculator", translation: "מחשבון", category: "school", image: "🧮", imageUrl: "img/icons/school/calculator.png" },
+    { word: "Library", translation: "ספרייה", category: "school", image: "📚", imageUrl: "img/icons/school/library.png" },
+    { word: "Classroom", translation: "כיתה", category: "school", image: "🏛️", imageUrl: "img/icons/school/classroom.png" },
     { word: "Homework", translation: "שיעורי בית", category: "school", image: "📝" },
-    { word: "Test", translation: "מבחן", category: "school", image: "📄" },
-    { word: "Grade", translation: "צִיוּן", category: "school", image: "📊" , imageUrl: "img/icons/school/grade.png"}
+    { word: "Test", translation: "מבחן", category: "school", image: "📄", imageUrl: "img/icons/school/test.png" },
+    { word: "Grade", translation: "צִיוּן", category: "school", image: "📊", imageUrl: "img/icons/school/grade.png" }
 ];

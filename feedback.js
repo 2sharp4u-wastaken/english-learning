@@ -112,6 +112,18 @@ const GameFeedback = {
         }
     },
 
+    // ABC Letters game specific
+    abc: {
+        correct: {
+            text: 'Excellent! You know your letters!',
+            audio: 'Excellent!'
+        },
+        incorrect: {
+            text: 'Not quite. Try the next one!',
+            audio: 'Try again!'
+        }
+    },
+
     // Error messages
     errors: {
         speechNotSupported: {

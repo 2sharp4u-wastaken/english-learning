@@ -3,6 +3,43 @@
 
 import { renderPicture } from '../utils/imageRenderer.js';
 
+// State for case mode (uppercase by default)
+let useLowercaseMode = false;
+
+// Toggle between uppercase and lowercase display
+export function toggleReadingCase() {
+    useLowercaseMode = !useLowercaseMode;
+
+    // Update toggle button visual state
+    const toggleBtn = document.getElementById('reading-case-toggle');
+    if (toggleBtn) {
+        toggleBtn.classList.toggle('lowercase-mode', useLowercaseMode);
+    }
+
+    // Add/remove lowercase-mode class to containers (for CSS text-transform override)
+    const letterBank = document.getElementById('letter-bank');
+    const builtWord = document.getElementById('built-word');
+    if (letterBank) letterBank.classList.toggle('lowercase-mode', useLowercaseMode);
+    if (builtWord) builtWord.classList.toggle('lowercase-mode', useLowercaseMode);
+
+    // Update all visible letters
+    document.querySelectorAll('#letter-bank .letter-btn, #built-word .letter-btn').forEach(btn => {
+        const originalLetter = btn.dataset.letter;
+        if (originalLetter) {
+            btn.textContent = useLowercaseMode ? originalLetter.toLowerCase() : originalLetter.toUpperCase();
+        }
+        // Set inline style to override CSS text-transform
+        btn.style.textTransform = useLowercaseMode ? 'none' : '';
+    });
+
+    console.log(`[Reading] Case mode: ${useLowercaseMode ? 'lowercase' : 'uppercase'}`);
+}
+
+// Get display letter based on case mode
+function getDisplayLetter(letter) {
+    return useLowercaseMode ? letter.toLowerCase() : letter.toUpperCase();
+}
+
 export async function loadReadingQuestion(question) {
     console.log('Loading reading question:', question);
 
@@ -121,8 +158,8 @@ export function createLetterBank(question) {
     shuffledLetters.forEach((letter, index) => {
         const button = document.createElement('button');
         button.className = 'letter-btn';
-        button.textContent = letter;
-        button.dataset.letter = letter;
+        button.textContent = getDisplayLetter(letter);
+        button.dataset.letter = letter; // Store original letter for case toggling
         button.dataset.index = index;
         button.id = `letter-${index}`; // Unique ID for each button
         button.setAttribute('aria-label', `Choose letter ${letter}`);
@@ -149,8 +186,13 @@ export function addLetterToWord(letter, button) {
     const builtWordElement = document.getElementById('built-word');
     const letterBtn = document.createElement('button');
     letterBtn.className = 'letter-btn';
-    letterBtn.textContent = letter;
+    letterBtn.textContent = getDisplayLetter(letter);
+    letterBtn.dataset.letter = letter; // Store original for case toggling
     letterBtn.style.pointerEvents = 'none';
+    // Override CSS text-transform when in lowercase mode
+    if (useLowercaseMode) {
+        letterBtn.style.textTransform = 'none';
+    }
     builtWordElement.appendChild(letterBtn);
 
     // Mark button as used

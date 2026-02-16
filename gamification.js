@@ -28,7 +28,7 @@ class GamificationManager {
     }
 
     updateAllGameCards() {
-        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading', 'practice'];
+        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading', 'practice', 'abc'];
         gameTypes.forEach(gameType => {
             if (gameType === 'practice') {
                 this.updatePracticeModeCard();
@@ -82,7 +82,7 @@ class GamificationManager {
         let totalMastery = 0;
 
         // Get all words from vocabulary data
-        const allWords = window.vocabularyData || [];
+        const allWords = window.vocabularyBank || [];
 
         allWords.forEach(wordObj => {
             // Skip if word's category is not selected
@@ -125,71 +125,55 @@ class GamificationManager {
     updatePracticeModeCard() {
         if (!window.app || !window.app.userProgress) return;
 
-        const card = document.querySelector('.practice-mode-card');
-        if (!card) return;
-
         const wordMastery = window.app.userProgress.wordMastery || {};
+        const settings = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
+        const selectedCategories = settings.selectedCategories || [];
         let strugglingCount = 0;
 
-        // Count words with mastery < 0.5 and attempts > 0
-        Object.values(wordMastery).forEach(stats => {
-            if (stats && stats.totalAttempts > 0 && stats.masteryLevel < 0.5) {
+        // Use the SAME logic as generatePracticeWords() in gameLogic.js
+        // Get vocabulary data (same source as practice mode uses)
+        const allWords = window.vocabularyBank || [];
+
+        // Filter by selected categories (same as gameLogic.loadGameData does)
+        const filteredWords = selectedCategories.length > 0
+            ? allWords.filter(word => selectedCategories.includes(word.category))
+            : allWords;
+
+        // Count struggling words (same criteria as generatePracticeWords)
+        filteredWords.forEach(word => {
+            const key = `${word.word}_${word.category}`;
+            const stats = wordMastery[key];
+            const hasAttempts = stats && stats.totalAttempts > 0;
+            const isStruggling = stats && stats.masteryLevel < 0.5;
+            if (hasAttempts && isStruggling) {
                 strugglingCount++;
             }
         });
 
+        console.log(`📊 [PRACTICE] Counted ${strugglingCount} struggling words from ${filteredWords.length} filtered words (${selectedCategories.length} categories selected)`);
+
         // Store struggling count for click handler access
         this.practiceWordCount = strugglingCount;
 
-        // Update card text and appearance based on word count
-        const countElement = card.querySelector('.stat-struggling-count');
-        const cardMain = card.querySelector('.game-card-main');
-        const cardDescription = card.querySelector('.game-card-main p');
-
-        if (strugglingCount === 0) {
-            // No words to practice - show success state
-            if (countElement) {
-                countElement.textContent = 'כל הכבוד! אין מילים לתרגול';
-                countElement.style.color = '#10b981';
-            }
-            if (cardDescription) {
-                cardDescription.textContent = 'המשך לשחק ומילים קשות יופיעו כאן';
-            }
-            card.classList.add('practice-complete');
-            card.classList.remove('practice-available');
-        } else {
-            // Words available for practice
-            if (countElement) {
-                countElement.textContent = `${strugglingCount} מילים לתרגול`;
-                countElement.style.color = '';
-            }
-            if (cardDescription) {
-                cardDescription.textContent = 'תרגל מילים שקשות לך';
-            }
-            card.classList.remove('practice-complete');
-            card.classList.add('practice-available');
-        }
-
-        // Update progress ring (percentage of struggling words that have improved)
-        const ring = card.querySelector('.progress-ring-fill');
-        const percentage = card.querySelector('.progress-percentage');
-        if (ring && percentage) {
-            // Show 0% if there are struggling words, 100% if none
-            const progress = strugglingCount === 0 ? 1.0 : 0;
-            const circumference = 2 * Math.PI * 26;
-            const offset = circumference - (progress * circumference);
-            ring.style.strokeDashoffset = offset;
-            percentage.textContent = `${Math.round(progress * 100)}%`;
-        }
-
-        // Hide/show practice button in top nav based on struggling count
+        // Update practice button in top nav - only show when there are words to practice
         const practiceNavBtn = document.querySelector('.top-game-btn[data-game="practice"]');
         if (practiceNavBtn) {
-            practiceNavBtn.style.display = strugglingCount === 0 ? 'none' : '';
-        }
+            if (strugglingCount === 0) {
+                // Hide practice button when no words to practice
+                practiceNavBtn.style.display = 'none';
+                practiceNavBtn.classList.remove('has-words');
+            } else {
+                // Show practice button with badge
+                practiceNavBtn.style.display = '';
+                practiceNavBtn.classList.add('has-words');
 
-        // Always show the practice card (don't hide when 0 words)
-        card.style.display = '';
+                // Update badge with count
+                const badge = practiceNavBtn.querySelector('.practice-badge');
+                if (badge) {
+                    badge.textContent = strugglingCount;
+                }
+            }
+        }
     }
 
     getPracticeWordCount() {
@@ -456,7 +440,7 @@ class CollectionManager {
     }
 
     getWordsForCollection(gameType) {
-        const allWords = window.vocabularyData || [];
+        const allWords = window.vocabularyBank || [];
         const masteryData = window.app?.userProgress?.wordMastery || {};
         const settings = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
         const selectedCategories = settings.selectedCategories || [];

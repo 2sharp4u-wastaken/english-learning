@@ -238,24 +238,16 @@ export async function processPracticeResult(result) {
         feedback.textContent = comparison.feedback;
     }
 
-    // Auto-play native pronunciation after showing comparison
-    try {
-        await speechManager.speakWord(question.word, '', 'practice');
-    } catch (error) {
-        console.error('Error playing native pronunciation:', error);
-    }
-
-    // Enable "Listen to Your Recording" button
-    const listenUserBtn = document.getElementById('practice-listen-user');
-    if (listenUserBtn) {
-        listenUserBtn.style.display = 'inline-block';
-    }
-
-    if (comparison.accuracy >= 0.7) {
+    // Play success/fail sound effect FIRST
+    if (isCorrect) {
         if (feedback) feedback.className = 'feedback correct';
-        // Practice mode: no score tracking, just mastery improvement
 
-        // Trigger confetti if enabled
+        // Play success sound
+        if (typeof audioEffects !== 'undefined') {
+            await audioEffects.playCorrect();
+        }
+
+        // Trigger confetti AFTER sound effect
         try {
             const settings = typeof SettingsManager !== 'undefined' ? SettingsManager.getSettings() : null;
             if (settings && settings.showConfetti && typeof confetti !== 'undefined') {
@@ -269,21 +261,13 @@ export async function processPracticeResult(result) {
         } catch (error) {
             console.error('Error triggering confetti:', error);
         }
-
-        // Move to next word
-        this.currentQuestionIndex++;
-
-        // Show Next button so user can review their pronunciation
-        document.getElementById('practice-next').style.display = 'block';
-
     } else {
         if (feedback) feedback.className = 'feedback incorrect';
 
-        // Move to next word even on incorrect (practice mode cycles through all words)
-        this.currentQuestionIndex++;
-
-        // Show Next button
-        document.getElementById('practice-next').style.display = 'block';
+        // Play fail sound
+        if (typeof audioEffects !== 'undefined') {
+            await audioEffects.playWrong();
+        }
 
         // Disable record button to prevent retry on this word
         const recordBtn = document.getElementById('practice-record-btn');
@@ -292,6 +276,43 @@ export async function processPracticeResult(result) {
             recordBtn.style.opacity = '0.5';
             recordBtn.style.cursor = 'not-allowed';
         }
+    }
+
+    // Auto-play native pronunciation after sound effect
+    try {
+        await speechManager.speakWord(question.word, '', 'practice');
+    } catch (error) {
+        console.error('Error playing native pronunciation:', error);
+    }
+
+    // Enable "Listen to Your Recording" button
+    const listenUserBtn = document.getElementById('practice-listen-user');
+    if (listenUserBtn) {
+        listenUserBtn.style.display = 'inline-block';
+    }
+
+    // Play audio feedback (Hebrew TTS)
+    try {
+        if (comparison.audioFeedback) {
+            await speechManager.speak(comparison.audioFeedback);
+        }
+    } catch (error) {
+        console.error('Error playing audio feedback:', error);
+    }
+
+    // Move to next word
+    this.currentQuestionIndex++;
+
+    // Check if this was the last question - show completion instead of next button
+    if (this.currentQuestionIndex >= this.totalQuestions) {
+        console.log('Practice mode complete - showing end screen');
+        // Short delay to let user see the feedback, then end game
+        setTimeout(() => {
+            this.endGame('practice');
+        }, 2000);
+    } else {
+        // Show Next button so user can review their pronunciation
+        document.getElementById('practice-next').style.display = 'block';
     }
 }
 

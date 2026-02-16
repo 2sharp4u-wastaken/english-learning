@@ -29,6 +29,23 @@
             display: flex;
         }
 
+        /* Clickable section title for word gallery */
+        .clickable-title {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+
+        .clickable-title:hover {
+            color: #4facfe;
+            transform: translateX(-5px);
+        }
+
+        .clickable-title:hover i.fa-external-link-alt {
+            opacity: 1 !important;
+        }
+
         .password-dialog {
             background: white;
             padding: 40px;
@@ -832,6 +849,10 @@
                     <i class="fas fa-book-open"></i>
                     <span>קריאה</span>
                 </button>
+                <button class="top-game-btn" data-nav="abc" title="ABC אותיות">
+                    <i class="fas fa-font"></i>
+                    <span>ABC</span>
+                </button>
             </nav>
         </div>
         <div class="header-right">
@@ -882,7 +903,10 @@
 
         <!-- Vocabulary Categories -->
         <div class="settings-section">
-            <h2><i class="fas fa-book"></i>קטגוריות אוצר מילים</h2>
+            <h2 class="clickable-title" onclick="window.location.href='words.html'" title="לחץ לצפייה בכל המילים">
+                <i class="fas fa-book"></i>קטגוריות אוצר מילים
+                <i class="fas fa-external-link-alt" style="font-size: 0.7em; margin-right: 10px; opacity: 0.6;"></i>
+            </h2>
             <div class="setting-item">
                 <label class="setting-label">בחר קטגוריות <span class="category-count" id="selected-count">0/13</span></label>
                 <p class="setting-description">בחר מאילו קטגוריות תרצה ללמוד מילים. מומלץ לבחור לפחות 5 קטגוריות כדי לשמור על מגוון ולהתחרות בציונים.</p>
@@ -955,6 +979,16 @@
                             <label class="setting-label">📝 משחק דקדוק (Grammar)</label>
                             <label class="toggle-switch">
                                 <input type="checkbox" id="game-grammar" checked>
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="setting-item">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <label class="setting-label">🔤 משחק ABC אותיות (Letters)</label>
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="game-abc" checked>
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>

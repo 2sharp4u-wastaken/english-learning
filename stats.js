@@ -5,7 +5,8 @@ const gameNames = {
     grammar: { name: 'תרגול דקדוק', icon: '✍️' },
     pronunciation: { name: 'הגייה', icon: '🎤' },
     listening: { name: 'הקשבה', icon: '🎧' },
-    reading: { name: 'איות', icon: '🔤' }
+    reading: { name: 'איות', icon: '🔤' },
+    abc: { name: 'ABC אותיות', icon: '🔠' }
 };
 
 // Get users dynamically from authService
@@ -59,7 +60,8 @@ function getDefaultProgress() {
             grammar: 0,
             pronunciation: 0,
             listening: 0,
-            reading: 0
+            reading: 0,
+            abc: 0
         },
         streakDays: 0,
         lastPlayDate: null,
@@ -442,7 +444,7 @@ function updateHomeNotificationDot() {
     if (!notificationDot) return;
 
     const userId = localStorage.getItem('currentUser') || 'default';
-    const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading'];
+    const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading', 'abc'];
     let hasSavedGames = false;
 
     for (const gameType of gameTypes) {

@@ -5506,3 +5506,23 @@ body::before {
     }
 }
 
+
+/* Fix Speech Button - Chrome Bug Workaround */
+#fix-speech-btn {
+    animation: pulse-red 2s infinite;
+    color: #ff4444 !important;
+}
+
+#fix-speech-btn:hover {
+    background-color: #ff4444 !important;
+    color: white !important;
+}
+
+@keyframes pulse-red {
+    0%, 100% {
+        opacity: 1;
+    }
+    50% {
+        opacity: 0.6;
+    }
+}

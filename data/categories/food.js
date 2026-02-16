@@ -46,7 +46,7 @@ export const foodWords = [
     { word: "Lettuce", translation: "חסה", category: "food", image: "🥬" },
     { word: "Spinach", translation: "תרד", category: "food", image: "🌿" , imageUrl: "img/icons/food/spinach.png"},
     { word: "Broccoli", translation: "ברוקולי", category: "food", image: "🥦" },
-    { word: "Cauliflower", translation: "כרובית", category: "food", image: "🥦" },
+    { word: "Cauliflower", translation: "כרובית", category: "food", image: "🥦", imageUrl: "img/icons/food/cauliflower.png" },
     { word: "Onion", translation: "בצל", category: "food", image: "🧅" },
     { word: "Garlic", translation: "שום", category: "food", image: "🧄" },
     { word: "Pepper", translation: "פלפל", category: "food", image: "🌶️" },
@@ -62,5 +62,5 @@ export const foodWords = [
     { word: "Butter", translation: "חמאה", category: "food", image: "🧈" },
     { word: "Honey", translation: "דבש", category: "food", image: "🍯" },
     { word: "Jam", translation: "ריבה", category: "food", image: "🫐" , imageUrl: "img/icons/food/jam.png"},
-    { word: "Roll", translation: "לחמניה", category: "food", image: "🥖" }
+    { word: "Roll", translation: "לחמניה", category: "food", image: "🥖", imageUrl: "img/icons/food/roll.png" }
 ];
