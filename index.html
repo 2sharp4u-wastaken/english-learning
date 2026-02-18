@@ -55,6 +55,18 @@
                             <i class="fas fa-font"></i>
                             <span>ABC</span>
                         </button>
+                        <button class="top-game-btn" data-game="memory" title="זיכרון - מצא את הזוגות">
+                            <i class="fas fa-th"></i>
+                            <span>זיכרון</span>
+                        </button>
+                        <button class="top-game-btn" data-game="scramble" title="סידור משפטים">
+                            <i class="fas fa-random"></i>
+                            <span>סידור</span>
+                        </button>
+                        <button class="top-game-btn" data-game="fill-blanks" title="השלם את המשפט">
+                            <i class="fas fa-fill-drip"></i>
+                            <span>השלמה</span>
+                        </button>
                         <button class="top-game-btn" data-game="practice" id="practice-top-btn" title="מצב תרגול" style="display: none;">
                             <i class="fas fa-bullseye"></i>
                             <span>תרגול</span>
@@ -276,6 +288,90 @@
                                 <div class="game-card-icon">🔤</div>
                                 <h3>ABC אותיות</h3>
                                 <p>למד אותיות גדולות וקטנות</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
+                                </div>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="game-card" data-game="memory">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">🃏</div>
+                                <h3>משחק זיכרון</h3>
+                                <p>מצא זוגות של מילים ותמונות</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
+                                </div>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="game-card" data-game="scramble">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">🔀</div>
+                                <h3>סידור משפטים</h3>
+                                <p>סדר את המילים לכדי משפט נכון</p>
+                                <div class="game-card-stats">
+                                    <span class="stat-mastered">0 🌟</span>
+                                    <span class="stat-learning">0 📚</span>
+                                    <span class="stat-struggling">0 ⚠️</span>
+                                </div>
+                            </div>
+                            <div class="game-card-footer" style="display: none;">
+                                <button class="game-action-btn start-new-btn">משחק חדש</button>
+                                <button class="game-action-btn continue-btn">
+                                    המשך <i class="fas fa-arrow-left"></i>
+                                    <span class="continue-progress"></span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="game-card" data-game="fill-blanks">
+                            <div class="game-card-progress-badge">
+                                <svg class="progress-ring" width="60" height="60">
+                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
+                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
+                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
+                                </svg>
+                                <div class="progress-percentage">0%</div>
+                            </div>
+                            <div class="game-card-main">
+                                <div class="game-card-icon">✍️</div>
+                                <h3>השלם את המשפט</h3>
+                                <p>בחר את המילה הנכונה להשלמת המשפט</p>
                                 <div class="game-card-stats">
                                     <span class="stat-mastered">0 🌟</span>
                                     <span class="stat-learning">0 📚</span>
@@ -643,6 +739,110 @@
                     </div>
                     <div class="feedback" id="abc-feedback" aria-live="polite"></div>
                 </div>
+            </div>
+
+            <!-- Fill in the Blanks Game -->
+            <div id="fill-blanks-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="fill-blanks-current-q">1</span> מתוך <span id="fill-blanks-total-q">10</span></span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="fill-blanks-progress-fill"></div>
+                    </div>
+                </div>
+
+                <div id="fill-blanks-container" style="display: none;">
+                    <!-- Theme and Hint -->
+                    <div class="scramble-meta">
+                        <span class="scramble-theme-badge" id="fill-blanks-theme"></span>
+                        <div class="scramble-hint" id="fill-blanks-hint"></div>
+                    </div>
+
+                    <!-- Sentence with blank -->
+                    <div class="fill-blanks-sentence-card">
+                        <div id="fill-blanks-sentence" class="fill-blanks-sentence">
+                            <!-- Sentence with blank slot will be populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Multiple choice options -->
+                    <div id="fill-blanks-options" class="fill-blanks-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="feedback" id="fill-blanks-feedback" aria-live="polite" style="display: none;"></div>
+                <button class="next-btn" id="fill-blanks-next" style="display: none;">
+                    <span>השאלה הבאה ➡️</span>
+                </button>
+                <button class="next-btn" id="fill-blanks-play-again" style="display: none;">
+                    <span>שחק שוב</span>
+                </button>
+                <div class="score-display">ניקוד: <span id="fill-blanks-score">0</span></div>
+            </div>
+
+            <!-- Sentence Scramble Game -->
+            <div id="scramble-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">משפט <span id="scramble-current-q">1</span> מתוך <span id="scramble-total-q">10</span></span>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="scramble-progress-fill"></div>
+                    </div>
+                </div>
+
+                <div id="scramble-game-container" style="display: none;">
+                    <!-- Theme indicator and Hebrew hint -->
+                    <div class="scramble-meta">
+                        <span class="scramble-theme-badge" id="scramble-theme"></span>
+                        <div class="scramble-hint" id="scramble-hint"></div>
+                    </div>
+
+                    <!-- Answer zone - where selected words go -->
+                    <div class="scramble-zone-label">בנה את המשפט:</div>
+                    <div id="scramble-answer-zone" class="scramble-answer-zone">
+                        <div class="answer-placeholder">הקלק על מילה כדי להוסיף אותה</div>
+                    </div>
+
+                    <!-- Word bank - scrambled words -->
+                    <div class="scramble-zone-label">בחר מילים:</div>
+                    <div id="scramble-word-bank" class="scramble-word-bank">
+                        <!-- Words will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="scramble-actions">
+                        <button class="next-btn" id="scramble-check">
+                            <span>בדוק תשובה</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="feedback" id="scramble-feedback" aria-live="polite" style="display: none;"></div>
+                <button class="next-btn" id="scramble-next" style="display: none;">
+                    <span>המשפט הבא ➡️</span>
+                </button>
+                <button class="next-btn" id="scramble-play-again" style="display: none;">
+                    <span>שחק שוב</span>
+                </button>
+                <div class="score-display">ניקוד: <span id="scramble-score">0</span></div>
+            </div>
+
+            <!-- Memory/Matching Game -->
+            <div id="memory-game" class="game-content">
+                <div class="progress-container">
+                    <span class="memory-stats">
+                        Moves: <span id="memory-moves">0</span> |
+                        Pairs: <span id="memory-pairs">0 / 0</span>
+                    </span>
+                </div>
+                <div id="memory-game-container" style="display: none;">
+                    <div id="memory-grid" class="memory-grid">
+                        <!-- Cards will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="feedback" id="memory-feedback" aria-live="polite" style="display: none;"></div>
+                <button class="next-btn" id="memory-play-again" style="display: none;">
+                    <span>שחק שוב</span>
+                </button>
             </div>
             </main>
         </div>

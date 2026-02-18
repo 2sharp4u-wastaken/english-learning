@@ -286,6 +286,48 @@ class GameManager {
             }
         });
 
+        registry.register('memory', {
+            module: window.memoryGame,
+            loadQuestion: 'startGame',
+            checkAnswer: 'handleCardClick',
+            displayName: 'Memory / Matching',
+            displayNameHebrew: 'משחק זיכרון',
+            icon: '🃏',
+            config: {
+                questionsPerGame: 6,
+                pointsPerCorrect: 15,
+                categories: ['vocabulary']
+            }
+        });
+
+        registry.register('scramble', {
+            module: window.scrambleGame,
+            loadQuestion: 'loadSentence',
+            checkAnswer: 'checkAnswer',
+            displayName: 'Sentence Scramble',
+            displayNameHebrew: 'סידור משפטים',
+            icon: '🔀',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 15,
+                categories: ['sentences']
+            }
+        });
+
+        registry.register('fill-blanks', {
+            module: window.fillBlanksGame,
+            loadQuestion: 'loadSentence',
+            checkAnswer: 'selectAnswer',
+            displayName: 'Fill in the Blanks',
+            displayNameHebrew: 'השלם את המשפט',
+            icon: '✍️',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['sentences']
+            }
+        });
+
         console.log('[GameManager] All games registered with GameRegistry');
     }
 
@@ -1646,6 +1688,43 @@ class GameManager {
                     this.totalQuestions = Math.min(20, freshQuestions.length);
                     console.log(`ABC game: ${this.shuffledQuestions.length} questions (ordered for variety)`, this.shuffledQuestions.slice(0, 5).map(q => `${q.word}-${q.type}`));
                 }
+            } else if (gameType === 'memory') {
+                // Memory game - delegate to MemoryGame class entirely
+                if (window.memoryGame) {
+                    // Get words from vocabulary data (animals, food, etc.)
+                    const allWords = this.gameData.vocabulary || [];
+                    const pairCount = 6; // Default 6 pairs for beginners
+                    window.memoryGame.startGame(allWords, pairCount);
+                    // Memory game handles its own UI, reset standard question flow
+                    this.isGameActive = false;
+                    this.isResuming = false;
+                } else {
+                    console.error('[Memory] memoryGame instance not initialized. Check app.js import.');
+                }
+                return; // Skip standard question flow
+            } else if (gameType === 'scramble') {
+                // Sentence Scramble game - delegate to SentenceScrambleGame class
+                if (window.scrambleGame) {
+                    // Determine difficulty from settings
+                    const difficulty = this.settings?.difficulty || 'beginner';
+                    window.scrambleGame.startGame(difficulty, null, 10);
+                    this.isGameActive = false;
+                    this.isResuming = false;
+                } else {
+                    console.error('[Scramble] scrambleGame instance not initialized. Check app.js import.');
+                }
+                return; // Skip standard question flow
+            } else if (gameType === 'fill-blanks') {
+                // Fill-in-the-Blanks game - delegate to FillBlanksGame class
+                if (window.fillBlanksGame) {
+                    const difficulty = this.settings?.difficulty || 'beginner';
+                    window.fillBlanksGame.startGame(difficulty, null, 10);
+                    this.isGameActive = false;
+                    this.isResuming = false;
+                } else {
+                    console.error('[FillBlanks] fillBlanksGame instance not initialized. Check app.js import.');
+                }
+                return; // Skip standard question flow
             } else if (gameType === 'grammar') {
                 // Special handling for grammar - filter by selected topic
                 const filteredGrammar = this.getFilteredGrammarQuestions();

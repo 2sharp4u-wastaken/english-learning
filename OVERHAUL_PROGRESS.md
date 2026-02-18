@@ -1,8 +1,8 @@
 # English Learning Game - Overhaul Implementation Progress
 
-**Last Updated:** 2026-02-17
-**Current Phase:** Phase 1 - Foundation & Architecture (COMPLETE)
-**Overall Completion:** 75%
+**Last Updated:** 2026-02-18
+**Current Phase:** Phase 3 - UI Overhaul (NOT STARTED)
+**Overall Completion:** 40%
 
 ---
 
@@ -122,101 +122,110 @@ abc-game.js - Added safety check for undefined questions
 **Next Phase:** Phase 2 - New Game Types (Sentence games)
 
 #### Subtasks:
-- ❌ Create `data/sentences.js`
-- ❌ Add 50+ beginner sentences with Hebrew translations
-- ❌ Add 30+ intermediate sentences
-- ❌ Structure for scramble game
-- ❌ Structure for fill-blanks game
+- ✅ Create `data/sentences.js`
+- ✅ Add 50+ beginner sentences with Hebrew translations (60 total)
+- ✅ Add 30+ intermediate sentences (30 total)
+- ✅ Structure for scramble game
+- ✅ Structure for fill-blanks game
 
-**Files to Create:**
+**Files Created:**
 ```
-data/sentences.js
+data/sentences.js (586 lines)
 ```
 
-**Estimated Lines:** ~200 lines
+**Actual Lines:** 586 lines (90 sentences with helper functions)
 
 ---
 
-## Phase 2: New Game Types (0% Complete)
+## Phase 2: New Game Types ✅ COMPLETE (100%)
 
-### 2.1 Memory/Matching Game ❌ NOT STARTED
-**Depends on:** Phase 1 complete
-
-#### Subtasks:
-- ❌ Create `games/memory-game.js` class
-- ❌ Implement card grid generation
-- ❌ Implement flip animation
-- ❌ Implement match detection logic
-- ❌ Implement scoring (fewer flips = more points)
-- ❌ Add audio on card flip
-- ❌ Register with GameRegistry
-- ❌ Add HTML container to index.html
-- ❌ Add CSS styles
-- ❌ Test with 6, 8, 10 pairs
-
-**Files to Create:**
-```
-games/memory-game.js (~300 lines)
-```
-
-**Files to Modify:**
-```
-index.html - Add memory-game container
-styles.css - Add memory game styles
-```
-
----
-
-### 2.2 Sentence Scramble Game ❌ NOT STARTED
-**Depends on:** 1.5 Sentence Data, Phase 1 complete
+### 2.1 Memory/Matching Game ✅ COMPLETE
+**Completed:** Feb 18, 2026
 
 #### Subtasks:
-- ❌ Create `games/sentence-scramble-game.js` class
-- ❌ Implement word drag-and-drop OR tap-to-arrange
-- ❌ Implement sentence validation
-- ❌ Show Hebrew hint
-- ❌ Play audio of correct sentence
-- ❌ Register with GameRegistry
-- ❌ Add HTML container to index.html
-- ❌ Add CSS styles with drag animations
-- ❌ Test with 10+ sentences
+- ✅ Create `games/memory-game.js` class (310 lines)
+- ✅ Implement card grid generation (3/4/5 columns based on pair count)
+- ✅ Implement flip animation (CSS 3D transform with perspective)
+- ✅ Implement match detection logic
+- ✅ Implement scoring (fewer flips = more points + speed bonus)
+- ✅ Add audio on card flip + match + celebration
+- ✅ Register with GameRegistry
+- ✅ Add HTML container to index.html
+- ✅ Add CSS styles (responsive, mobile-friendly)
+- ✅ Wired into gameLogic.js startGame special case
+- ✅ Imported and initialized in app.js
 
-**Files to Create:**
+**Files Created:**
 ```
-games/sentence-scramble-game.js (~350 lines)
+games/memory-game.js (310 lines) - MemoryGame class
 ```
 
-**Files to Modify:**
+**Files Modified:**
 ```
-index.html - Add scramble-game container
-styles.css - Add scramble game styles
+index.html - Added memory-game container + card in welcome screen + nav button
+styles.css - Added ~200 lines of memory game CSS
+app.js - Import MemoryGame, initialize in initializeManagers(), expose globally
+gameLogic.js - Added memory special case in startGame(), registered with GameRegistry
 ```
 
 ---
 
-### 2.3 Fill-in-the-Blanks Game ❌ NOT STARTED
-**Depends on:** 1.5 Sentence Data, Phase 1 complete
+### 2.2 Sentence Scramble Game ✅ COMPLETE
+**Completed:** Feb 18, 2026
 
 #### Subtasks:
-- ❌ Create `games/fill-blanks-game.js` class
-- ❌ Implement sentence display with blanks
-- ❌ Implement multiple choice options
-- ❌ Implement answer checking
-- ❌ Show context image/emoji
-- ❌ Register with GameRegistry
-- ❌ Add HTML container to index.html
-- ❌ Add CSS styles
-- ❌ Test with 10+ sentences
+- ✅ Create `games/sentence-scramble-game.js` class (290 lines)
+- ✅ Implement tap-to-arrange (tap word to select, tap chip to deselect)
+- ✅ Implement sentence validation (string comparison)
+- ✅ Show Hebrew hint (translation displayed above word bank)
+- ✅ Play audio of correct sentence (speech synthesis)
+- ✅ Register with GameRegistry
+- ✅ Add HTML container to index.html
+- ✅ Add CSS styles with pop-in animations
+- ✅ Wired into gameLogic.js startGame special case
+- ✅ Wired buttons in app.js (check, next, play again)
 
-**Files to Create:**
+**Files Created:**
 ```
-games/fill-blanks-game.js (~280 lines)
+games/sentence-scramble-game.js (290 lines)
 ```
 
-**Files to Modify:**
+**Files Modified:**
 ```
-index.html - Add fill-blanks container
-styles.css - Add fill-blanks styles
+index.html - Added scramble-game container + welcome card + nav button
+styles.css - Added ~180 lines of scramble CSS
+app.js - Import SentenceScrambleGame, init, expose, wire buttons
+gameLogic.js - Added scramble special case + registered with GameRegistry
+```
+
+---
+
+### 2.3 Fill-in-the-Blanks Game ✅ COMPLETE
+**Completed:** Feb 18, 2026
+
+#### Subtasks:
+- ✅ Create `games/fill-blanks-game.js` class (270 lines)
+- ✅ Implement sentence display with blank slot (_____)
+- ✅ Implement multiple choice options (3 options per sentence)
+- ✅ Implement answer checking (immediate visual feedback)
+- ✅ Show Hebrew translation as hint
+- ✅ Register with GameRegistry
+- ✅ Add HTML container to index.html
+- ✅ Add CSS styles with bounce/shake animations
+- ✅ Wired into gameLogic.js startGame special case
+- ✅ Wired buttons in app.js (next, play again)
+
+**Files Created:**
+```
+games/fill-blanks-game.js (270 lines)
+```
+
+**Files Modified:**
+```
+index.html - Added fill-blanks-game container + welcome card + nav button
+styles.css - Added ~150 lines of fill-blanks CSS
+app.js - Import FillBlanksGame, init, expose, wire buttons
+gameLogic.js - Added fill-blanks special case + registered with GameRegistry
 ```
 
 ---
@@ -478,6 +487,26 @@ app.js - Add video player logic
 
 ## Session History
 
+### Session 3: Feb 18-19, 2026 (Phase 2 Complete)
+**Completed:**
+- `data/sentences.js` - 90 sentences (60 beginner + 30 intermediate) with Hebrew translations
+- `games/memory-game.js` - Memory/Matching card flip game
+- `games/sentence-scramble-game.js` - Tap-to-arrange sentence game
+- `games/fill-blanks-game.js` - Multiple choice fill-in-the-blank game
+
+**Modified:**
+- `app.js` - Imported + initialized all 3 new games, wired buttons, exposed globally
+- `gameLogic.js` - Added special cases in startGame() + registered all 3 games in GameRegistry
+- `index.html` - Added 3 new game containers, welcome cards (10 total now), nav buttons
+- `styles.css` - Added ~550 lines of new CSS for 3 games
+
+**Next Session Should Start With:**
+1. Read OVERHAUL_PROGRESS.md
+2. Start Phase 3.1 - Course Selection Screen
+3. Read app.js, index.html, CourseManager.js before implementing
+
+---
+
 ### Session 1: Feb 13, 2026 (Phase 1 Start)
 **Created:**
 - All 6 manager classes (2,239 total lines)
@@ -506,10 +535,11 @@ app.js - Add video player logic
 6. Update this file with ✅ and commit
 
 ### Current Next Action:
-**Task 1.3: App Integration**
-- File: `app.js`
-- Action: Import managers, initialize, extend userProgress schema
-- Estimated: ~150 lines of code
+**Phase 3.1: Course Selection Screen**
+- Files: `index.html`, `styles.css`, `app.js`
+- Action: Add HTML courses-screen section, CSS grid styles, JS rendering logic
+- Depends on: CourseManager (✅ done), course data (✅ done)
+- See Phase 3.1 section below for full subtask list
 
 ---
 

@@ -11,6 +11,11 @@ import { CoinManager } from './managers/CoinManager.js';
 // Import Course Data
 import { allCourses } from './data/courses/index.js';
 
+// Import Game Classes
+import { MemoryGame } from './games/memory-game.js';
+import { SentenceScrambleGame } from './games/sentence-scramble-game.js';
+import { FillBlanksGame } from './games/fill-blanks-game.js';
+
 class AppManager {
     constructor() {
         // Wait for auth to be ready before initializing
@@ -106,6 +111,11 @@ class AppManager {
             this.courseManager.registerCourse(course);
         });
 
+        // Initialize game instances (gameManager looked up lazily from window)
+        this.memoryGame = new MemoryGame(null, this.scoreManager, this.progressManager);
+        this.scrambleGame = new SentenceScrambleGame(this.scoreManager, this.progressManager);
+        this.fillBlanksGame = new FillBlanksGame(this.scoreManager, this.progressManager);
+
         // Export managers globally for access from other modules
         window.scoreManager = this.scoreManager;
         window.progressManager = this.progressManager;
@@ -113,6 +123,54 @@ class AppManager {
         window.certificateManager = this.certificateManager;
         window.coinManager = this.coinManager;
         window.gameRegistry = gameRegistry;
+        window.memoryGame = this.memoryGame;
+        window.scrambleGame = this.scrambleGame;
+        window.fillBlanksGame = this.fillBlanksGame;
+
+        // Wire up memory play-again button
+        const memoryPlayAgainBtn = document.getElementById('memory-play-again');
+        if (memoryPlayAgainBtn) {
+            memoryPlayAgainBtn.addEventListener('click', () => {
+                if (window.memoryGame) window.memoryGame.playAgain();
+            });
+        }
+
+        // Wire up scramble game buttons
+        const scrambleCheckBtn = document.getElementById('scramble-check');
+        if (scrambleCheckBtn) {
+            scrambleCheckBtn.addEventListener('click', () => {
+                if (window.scrambleGame) window.scrambleGame.checkAnswer();
+            });
+        }
+
+        const scrambleNextBtn = document.getElementById('scramble-next');
+        if (scrambleNextBtn) {
+            scrambleNextBtn.addEventListener('click', () => {
+                if (window.scrambleGame) window.scrambleGame.nextSentence();
+            });
+        }
+
+        const scramblePlayAgainBtn = document.getElementById('scramble-play-again');
+        if (scramblePlayAgainBtn) {
+            scramblePlayAgainBtn.addEventListener('click', () => {
+                if (window.scrambleGame) window.scrambleGame.playAgain();
+            });
+        }
+
+        // Wire up fill-blanks game buttons
+        const fillBlanksNextBtn = document.getElementById('fill-blanks-next');
+        if (fillBlanksNextBtn) {
+            fillBlanksNextBtn.addEventListener('click', () => {
+                if (window.fillBlanksGame) window.fillBlanksGame.nextSentence();
+            });
+        }
+
+        const fillBlanksPlayAgainBtn = document.getElementById('fill-blanks-play-again');
+        if (fillBlanksPlayAgainBtn) {
+            fillBlanksPlayAgainBtn.addEventListener('click', () => {
+                if (window.fillBlanksGame) window.fillBlanksGame.playAgain();
+            });
+        }
 
         console.log('[AppManager] All managers initialized successfully');
     }

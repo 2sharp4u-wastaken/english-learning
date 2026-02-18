@@ -5526,3 +5526,662 @@ body::before {
         opacity: 0.6;
     }
 }
+
+
+/* ==================== Memory Game Styles ==================== */
+
+/* Memory Stats */
+.memory-stats {
+    font-size: 1.1em;
+    font-weight: 600;
+    color: var(--primary-color);
+    display: inline-block;
+    padding: 10px 20px;
+    background: rgba(52, 152, 219, 0.1);
+    border-radius: 8px;
+}
+
+/* Memory Grid Layout */
+.memory-grid {
+    display: grid;
+    gap: 15px;
+    padding: 20px;
+    max-width: 800px;
+    margin: 0 auto;
+    perspective: 1000px;
+}
+
+/* Memory Card */
+.memory-card {
+    aspect-ratio: 3/4;
+    cursor: pointer;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.3s ease;
+}
+
+.memory-card:hover:not(.flipped):not(.matched) {
+    transform: scale(1.05);
+}
+
+.memory-card:active:not(.flipped):not(.matched) {
+    transform: scale(0.95);
+}
+
+/* Card Inner Container - handles flip */
+.memory-card-inner {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
+}
+
+.memory-card.flipped .memory-card-inner {
+    transform: rotateY(180deg);
+}
+
+/* Card Faces */
+.memory-card-front,
+.memory-card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5em;
+    font-weight: 600;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    border: 3px solid #fff;
+}
+
+/* Card Back (shown initially) */
+.memory-card-back {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: rotateY(0deg);
+}
+
+.card-pattern {
+    font-size: 3em;
+    opacity: 0.8;
+}
+
+/* Card Front (revealed when flipped) */
+.memory-card-front {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    transform: rotateY(180deg);
+    padding: 15px;
+    text-align: center;
+    word-wrap: break-word;
+}
+
+.memory-card-image {
+    font-size: 3em;
+    animation: bounce-in 0.4s ease;
+}
+
+/* Matched Cards */
+.memory-card.matched .memory-card-front {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    animation: match-pulse 0.6s ease;
+}
+
+.memory-card.matched {
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+/* Animations */
+@keyframes bounce-in {
+    0% {
+        transform: scale(0);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+@keyframes match-pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+/* Memory Feedback */
+#memory-feedback {
+    text-align: center;
+    margin-top: 20px;
+    padding: 15px 30px;
+    border-radius: 12px;
+    font-size: 1.3em;
+    font-weight: 600;
+    animation: slide-down 0.4s ease;
+}
+
+#memory-feedback.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(17, 153, 142, 0.3);
+}
+
+/* Play Again Button */
+#memory-play-again {
+    margin-top: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+
+#memory-play-again:hover {
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Responsive Grid Sizes */
+@media (max-width: 768px) {
+    .memory-grid {
+        gap: 10px;
+        padding: 15px;
+    }
+
+    .memory-card-front,
+    .memory-card-back {
+        font-size: 1.2em;
+        border: 2px solid #fff;
+    }
+
+    .memory-card-image {
+        font-size: 2.5em;
+    }
+
+    .card-pattern {
+        font-size: 2.5em;
+    }
+
+    .memory-stats {
+        font-size: 1em;
+        padding: 8px 15px;
+    }
+}
+
+@media (max-width: 480px) {
+    .memory-grid {
+        gap: 8px;
+        padding: 10px;
+    }
+
+    .memory-card-front,
+    .memory-card-back {
+        font-size: 1em;
+        border-radius: 8px;
+    }
+
+    .memory-card-image {
+        font-size: 2em;
+    }
+
+    .card-pattern {
+        font-size: 2em;
+    }
+
+    #memory-feedback {
+        font-size: 1.1em;
+        padding: 12px 20px;
+    }
+}
+
+/* Animation for slide down */
+@keyframes slide-down {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+
+/* ==================== Sentence Scramble Game Styles ==================== */
+
+/* Meta info (theme + hint) */
+.scramble-meta {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 15px;
+}
+
+.scramble-theme-badge {
+    display: inline-block;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 5px 15px;
+    border-radius: 20px;
+    font-size: 0.9em;
+    font-weight: 600;
+    text-transform: capitalize;
+}
+
+.scramble-hint {
+    font-size: 1.3em;
+    font-weight: 600;
+    color: #555;
+    direction: rtl;
+    padding: 10px 20px;
+    background: rgba(102, 126, 234, 0.1);
+    border-radius: 10px;
+    width: 100%;
+    text-align: center;
+    max-width: 500px;
+}
+
+/* Zone Labels */
+.scramble-zone-label {
+    font-size: 1em;
+    font-weight: 600;
+    color: #777;
+    text-align: right;
+    direction: rtl;
+    margin-top: 15px;
+    margin-bottom: 8px;
+}
+
+/* Answer Zone */
+.scramble-answer-zone {
+    min-height: 70px;
+    border: 3px dashed #667eea;
+    border-radius: 12px;
+    padding: 12px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    align-items: center;
+    background: rgba(102, 126, 234, 0.05);
+    margin-bottom: 10px;
+    transition: border-color 0.3s;
+    direction: ltr;
+}
+
+.scramble-answer-zone:has(.scramble-answer-chip) {
+    border-style: solid;
+    border-color: #764ba2;
+}
+
+.answer-placeholder {
+    color: #bbb;
+    font-size: 0.95em;
+    direction: rtl;
+    width: 100%;
+    text-align: center;
+}
+
+/* Answer Word Chips */
+.scramble-answer-chip {
+    display: inline-block;
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    animation: pop-in 0.2s ease;
+    font-family: inherit;
+}
+
+.scramble-answer-chip:hover {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    transform: scale(1.05);
+}
+
+.scramble-answer-chip.correct {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    cursor: default;
+}
+
+.scramble-answer-chip.incorrect {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    cursor: default;
+}
+
+/* Word Bank */
+.scramble-word-bank {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.03);
+    border-radius: 12px;
+    min-height: 70px;
+    direction: ltr;
+}
+
+/* Word Bank Buttons */
+.scramble-word-btn {
+    display: inline-block;
+    background: white;
+    color: #333;
+    border: 2px solid #667eea;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 1.1em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+}
+
+.scramble-word-btn:hover:not(:disabled) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: scale(1.05);
+}
+
+.scramble-word-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.scramble-word-btn.used {
+    opacity: 0.3;
+    cursor: not-allowed;
+    transform: none;
+}
+
+/* Action Buttons */
+.scramble-actions {
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+    margin-top: 20px;
+}
+
+/* Scramble Feedback */
+#scramble-feedback {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1em;
+}
+
+#scramble-feedback.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
+#scramble-feedback.error {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    direction: ltr;
+    text-align: left;
+}
+
+.game-complete-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Animations */
+@keyframes pop-in {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    70% {
+        transform: scale(1.1);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+    .scramble-word-btn,
+    .scramble-answer-chip {
+        font-size: 1em;
+        padding: 8px 12px;
+    }
+
+    .scramble-hint {
+        font-size: 1.1em;
+    }
+
+    .scramble-answer-zone {
+        min-height: 60px;
+        padding: 10px;
+    }
+}
+
+
+/* ==================== Fill in the Blanks Game Styles ==================== */
+
+/* Sentence Card */
+.fill-blanks-sentence-card {
+    background: linear-gradient(135deg, #f8f9ff 0%, #e8f4fd 100%);
+    border: 2px solid #667eea;
+    border-radius: 16px;
+    padding: 25px 30px;
+    margin: 15px auto;
+    max-width: 600px;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15);
+}
+
+.fill-blanks-sentence {
+    font-size: 1.5em;
+    font-weight: 600;
+    color: #333;
+    direction: ltr;
+    text-align: left;
+    line-height: 2;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    align-items: center;
+}
+
+/* Individual words in sentence */
+.fill-word {
+    display: inline-block;
+    color: #333;
+}
+
+/* Blank slot */
+.fill-blank-slot {
+    display: inline-block;
+    min-width: 80px;
+    border-bottom: 3px solid #667eea;
+    color: #667eea;
+    font-weight: 700;
+    text-align: center;
+    padding: 0 8px;
+    transition: all 0.3s ease;
+}
+
+.fill-blank-slot.revealed {
+    border-bottom: none;
+    border-radius: 6px;
+    padding: 2px 10px;
+    font-size: 0.9em;
+    animation: reveal-word 0.4s ease;
+}
+
+.fill-blank-slot.revealed.correct {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
+.fill-blank-slot.revealed.incorrect {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+}
+
+/* Multiple Choice Options */
+.fill-blanks-options {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+    gap: 15px;
+    max-width: 500px;
+    margin: 20px auto;
+    padding: 10px;
+}
+
+.fill-blanks-option {
+    padding: 15px 20px;
+    font-size: 1.2em;
+    font-weight: 600;
+    background: white;
+    color: #333;
+    border: 2px solid #667eea;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: inherit;
+    text-align: center;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.fill-blanks-option:hover:not(:disabled) {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    transform: translateY(-3px);
+    box-shadow: 0 6px 15px rgba(102, 126, 234, 0.4);
+}
+
+.fill-blanks-option:active:not(:disabled) {
+    transform: translateY(0);
+}
+
+.fill-blanks-option.correct {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+    border-color: #11998e;
+    animation: correct-bounce 0.5s ease;
+}
+
+.fill-blanks-option.incorrect {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+    border-color: #e74c3c;
+    animation: wrong-shake 0.5s ease;
+}
+
+.fill-blanks-option:disabled {
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+}
+
+/* Fill Blanks Feedback */
+#fill-blanks-feedback {
+    margin-top: 15px;
+    padding: 15px;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 600;
+    font-size: 1.1em;
+    max-width: 500px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#fill-blanks-feedback.success {
+    background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+    color: white;
+}
+
+#fill-blanks-feedback.error {
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    color: white;
+}
+
+/* Animations */
+@keyframes reveal-word {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+    }
+    60% {
+        transform: scale(1.2);
+    }
+    100% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+@keyframes correct-bounce {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.1);
+    }
+}
+
+@keyframes wrong-shake {
+    0%, 100% {
+        transform: translateX(0);
+    }
+    25% {
+        transform: translateX(-8px);
+    }
+    75% {
+        transform: translateX(8px);
+    }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .fill-blanks-sentence {
+        font-size: 1.3em;
+    }
+
+    .fill-blanks-option {
+        font-size: 1.1em;
+        padding: 12px 15px;
+    }
+
+    .fill-blanks-sentence-card {
+        padding: 20px;
+    }
+}
+
+@media (max-width: 480px) {
+    .fill-blanks-sentence {
+        font-size: 1.1em;
+    }
+
+    .fill-blanks-options {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 10px;
+    }
+
+    .fill-blanks-option {
+        font-size: 1em;
+        padding: 10px 8px;
+    }
+
+    .fill-blanks-sentence-card {
+        padding: 15px;
+    }
+}
