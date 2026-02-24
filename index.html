@@ -14,7 +14,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 </head>
-<body>
+<body class="home-compact">
     <div class="app-layout">
         <!-- Main Content Area -->
         <div class="main-content">
@@ -25,18 +25,17 @@
             <div id="welcome-screen" class="game-content">
                 <div class="welcome-container">
                     <h1 class="welcome-title">🎉 ברוך הבא לעולם האנגלית! 🎉</h1>
-                    <p class="welcome-subtitle">בחר משחק כדי להתחיל ללמוד!</p>
+                    <div class="home-hero-row">
+                        <p class="welcome-subtitle">בחר משחק כדי להתחיל ללמוד!</p>
+                        <div class="home-streak-widget" id="home-streak-widget">
+                            <div class="home-streak-flame">🔥</div>
+                            <div class="home-streak-count" id="streak-count">0</div>
+                            <div class="home-streak-label">ימים ברצף</div>
+                        </div>
+                    </div>
 
                     <div class="game-cards-grid">
                         <div class="game-card" data-game="vocabulary">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">📚</div>
                                 <h3>בונה אוצר מילים</h3>
@@ -57,14 +56,6 @@
                         </div>
 
                         <div class="game-card" data-game="grammar">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">✏️</div>
                                 <h3>תרגול דקדוק</h3>
@@ -85,14 +76,6 @@
                         </div>
 
                         <div class="game-card" data-game="grammar-beginner">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">🔊</div>
                                 <h3>דקדוק למתחילים</h3>
@@ -113,14 +96,6 @@
                         </div>
 
                         <div class="game-card" data-game="pronunciation">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">🎤</div>
                                 <h3>משחק הגייה</h3>
@@ -141,14 +116,6 @@
                         </div>
 
                         <div class="game-card" data-game="listening">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">👂</div>
                                 <h3>משחק הקשבה</h3>
@@ -169,14 +136,6 @@
                         </div>
 
                         <div class="game-card" data-game="reading">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">📖</div>
                                 <h3>משחק קריאה</h3>
@@ -197,14 +156,6 @@
                         </div>
 
                         <div class="game-card" data-game="abc">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">🔤</div>
                                 <h3>ABC אותיות</h3>
@@ -225,14 +176,6 @@
                         </div>
 
                         <div class="game-card" data-game="memory">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">🃏</div>
                                 <h3>משחק זיכרון</h3>
@@ -253,14 +196,6 @@
                         </div>
 
                         <div class="game-card" data-game="scramble">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">🔀</div>
                                 <h3>סידור משפטים</h3>
@@ -281,14 +216,6 @@
                         </div>
 
                         <div class="game-card" data-game="fill-blanks">
-                            <div class="game-card-progress-badge">
-                                <svg class="progress-ring" width="60" height="60">
-                                    <circle class="progress-ring-bg" cx="30" cy="30" r="26" />
-                                    <circle class="progress-ring-fill" cx="30" cy="30" r="26"
-                                            stroke-dasharray="163.36" stroke-dashoffset="163.36" />
-                                </svg>
-                                <div class="progress-percentage">0%</div>
-                            </div>
                             <div class="game-card-main">
                                 <div class="game-card-icon">✍️</div>
                                 <h3>השלם את המשפט</h3>
@@ -314,7 +241,7 @@
             <!-- Vocabulary Game -->
             <div id="vocabulary-game" class="game-content">
                 <div class="progress-container">
-                    <span class="question-counter">Question <span id="vocab-current-q">1</span> of <span id="vocab-total-q">10</span></span>
+                    <span class="question-counter">שאלה <span id="vocab-current-q">1</span> מתוך <span id="vocab-total-q">10</span></span>
                     <span class="mastery-indicator" id="vocab-mastery-indicator"></span>
                     <button class="reset-game-btn" id="vocab-reset-btn" title="אפס משחק">אפס משחק</button>
                     <div class="progress-bar">
@@ -337,6 +264,7 @@
                                 <button class="play-audio" id="vocab-audio" aria-label="השמע מילה">
                                     <i class="fas fa-volume-up"></i>
                                 </button>
+                                <span id="vocab-audio-hint" class="audio-hint-callout" hidden></span>
                                 <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
                             </div>
                         </div>
@@ -354,7 +282,7 @@
             <!-- Grammar Game -->
             <div id="grammar-game" class="game-content">
                 <div class="progress-container">
-                    <span class="question-counter">Question <span id="grammar-current-q">1</span> of <span id="grammar-total-q">10</span></span>
+                    <span class="question-counter">שאלה <span id="grammar-current-q">1</span> מתוך <span id="grammar-total-q">10</span></span>
                     <span class="mastery-indicator" id="grammar-mastery-indicator"></span>
                     <button class="reset-game-btn" id="grammar-reset-btn" title="אפס משחק">אפס משחק</button>
                     <div class="progress-bar">
@@ -406,7 +334,7 @@
             <!-- Pronunciation Game -->
             <div id="pronunciation-game" class="game-content">
                 <div class="progress-container">
-                    <span class="question-counter">Question <span id="pronunciation-current-q">1</span> of <span id="pronunciation-total-q">10</span></span>
+                    <span class="question-counter">שאלה <span id="pronunciation-current-q">1</span> מתוך <span id="pronunciation-total-q">10</span></span>
                     <span class="mastery-indicator" id="pronunciation-mastery-indicator"></span>
                     <button class="reset-game-btn" id="pronunciation-reset-btn" title="אפס משחק">אפס משחק</button>
                     <div class="progress-bar">
@@ -464,7 +392,7 @@
             <!-- Listening Game -->
             <div id="listening-game" class="game-content">
                 <div class="progress-container">
-                    <span class="question-counter">Question <span id="listening-current-q">1</span> of <span id="listening-total-q">10</span></span>
+                    <span class="question-counter">שאלה <span id="listening-current-q">1</span> מתוך <span id="listening-total-q">10</span></span>
                     <span class="mastery-indicator" id="listening-mastery-indicator"></span>
                     <button class="reset-game-btn" id="listening-reset-btn" title="אפס משחק">אפס משחק</button>
                     <div class="progress-bar">
@@ -502,12 +430,15 @@
             <!-- Children's Reading Game -->
             <div id="reading-game" class="game-content">
                 <div class="progress-container">
-                    <span class="question-counter">Question <span id="reading-current-q">1</span> of <span id="reading-total-q">10</span></span>
-                    <span class="mastery-indicator" id="reading-mastery-indicator"></span>
-                    <button class="case-toggle-btn" id="reading-case-toggle" title="החלף רישיות">
-                        <span class="case-upper">ABC</span>
-                        <span class="case-lower">abc</span>
-                    </button>
+                    <span class="question-counter">שאלה <span id="reading-current-q">1</span> מתוך <span id="reading-total-q">10</span></span>
+                    <div class="progress-center-controls">
+                        <span class="mastery-indicator" id="reading-mastery-indicator"></span>
+                        <button class="case-toggle-btn" id="reading-case-toggle" title="החלף רישיות">
+                            <span class="case-upper">ABC</span>
+                            <span class="case-lower">abc</span>
+                        </button>
+                    </div>
+                    <button class="reset-game-btn" id="reading-reset-btn" title="אפס משחק">אפס משחק</button>
                     <div class="progress-bar">
                         <div class="progress-fill" id="reading-progress-fill"></div>
                     </div>
@@ -558,10 +489,8 @@
             <!-- Practice Mode -->
             <div id="practice-game" class="game-content">
                 <div class="progress-container practice-progress">
-                    <div class="practice-counters">
-                        <span class="practice-word-counter" id="practice-word-counter">מילה 1 מתוך 5</span>
-                        <span class="practice-cycle-counter" id="practice-cycle-counter">סיבוב 1/2</span>
-                    </div>
+                    <span class="question-counter" id="practice-word-counter">שאלה 1 מתוך 5</span>
+                    <span class="progress-secondary" id="practice-cycle-counter">סיבוב 1 מתוך 2</span>
                     <span class="mastery-indicator" id="practice-mastery-indicator"></span>
                     <button class="exit-practice-btn" id="practice-exit-btn" title="חזור לדף הבית">
                         <i class="fas fa-home"></i> יציאה
@@ -625,8 +554,9 @@
             <!-- ABC Letters Game -->
             <div id="abc-game" class="game-content">
                 <div class="progress-container">
-                    <span class="question-counter">Question <span id="abc-current-q">1</span> of <span id="abc-total-q">10</span></span>
+                    <span class="question-counter">שאלה <span id="abc-current-q">1</span> מתוך <span id="abc-total-q">10</span></span>
                     <span class="mastery-indicator" id="abc-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="abc-reset-btn" title="אפס משחק">אפס משחק</button>
                     <div class="progress-bar">
                         <div class="progress-fill" id="abc-progress-fill"></div>
                     </div>
@@ -702,7 +632,7 @@
             <!-- Sentence Scramble Game -->
             <div id="scramble-game" class="game-content">
                 <div class="progress-container">
-                    <span class="question-counter">משפט <span id="scramble-current-q">1</span> מתוך <span id="scramble-total-q">10</span></span>
+                    <span class="question-counter">שאלה <span id="scramble-current-q">1</span> מתוך <span id="scramble-total-q">10</span></span>
                     <div class="progress-bar">
                         <div class="progress-fill" id="scramble-progress-fill"></div>
                     </div>
@@ -747,11 +677,23 @@
             <!-- Memory/Matching Game -->
             <div id="memory-game" class="game-content">
                 <div class="progress-container">
-                    <span class="memory-stats">
-                        Moves: <span id="memory-moves">0</span> |
-                        Pairs: <span id="memory-pairs">0 / 0</span>
-                    </span>
+                    <div class="memory-progress-top">
+                        <span class="question-counter">שאלה <span id="memory-current-q">0</span> מתוך <span id="memory-total-q">0</span></span>
+                        <span class="memory-stats progress-secondary">
+                            <span class="memory-stat-item">רמה <span id="memory-level">1/3</span></span>
+                            <span class="memory-stat-separator">|</span>
+                            <span class="memory-stat-item">מהלכים <span id="memory-moves">0</span></span>
+                            <span class="memory-stat-separator">|</span>
+                            <span class="memory-stat-item">זוגות <span id="memory-pairs">0 מתוך 0</span></span>
+                        </span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="memory-progress-fill"></div>
+                    </div>
                 </div>
+                <button class="next-btn" id="memory-finish-btn" style="display: none;">
+                    <span>סיום משחק</span>
+                </button>
                 <div id="memory-game-container" style="display: none;">
                     <div id="memory-grid" class="memory-grid">
                         <!-- Cards will be populated by JavaScript -->
@@ -993,11 +935,11 @@
     <script src="audio-effects.js"></script>
     <script src="gamification.js"></script>
     <script type="module">
-        import { initTopHeader } from './components/top-header.js?t=1771279200';
+        import { initTopHeader } from './components/top-header.js?t=1774902001';
         initTopHeader({ activePage: 'home' });
     </script>
-    <script type="module" src="gameLogic.js?t=1762610965"></script>
-    <script type="module" src="app.js?t=1762332862"></script>
+    <script type="module" src="gameLogic.js?t=1774903001"></script>
+    <script type="module" src="app.js?t=1774903001"></script>
 
     <script>
         // Welcome Screen Handler
@@ -1078,7 +1020,7 @@
 
                         // Special handling for practice mode - check if there are words to practice
                         if (gameType === 'practice') {
-                            const practiceWordCount = window.gamificationManager?.getPracticeWordCount() || 0;
+                            const practiceWordCount = window.gamificationManager?.getPracticeWordCount(true) || 0;
                             if (practiceWordCount === 0) {
                                 // Show toast message instead of entering game
                                 if (window.gameManager) {
@@ -1154,16 +1096,31 @@
             // Handle hash URLs (e.g., index.html#vocabulary)
             function handleHashNavigation() {
                 const hash = window.location.hash.substring(1); // Remove the '#'
-                if (hash && typeof gameManager !== 'undefined' && typeof window.app !== 'undefined') {
-                    // Hide welcome screen
-                    welcomeScreen.classList.remove('active');
-                    welcomeScreen.style.display = 'none';
-                    // Switch to the game specified in hash
-                    gameManager.switchGame(hash);
-                } else if (hash) {
-                    // gameManager or app not ready yet, wait and retry
+                if (!hash) return;
+
+                if (typeof window.app === 'undefined' || typeof gameManager === 'undefined') {
                     setTimeout(handleHashNavigation, 100);
+                    return;
                 }
+
+                // Hide welcome screen for navigation targets
+                welcomeScreen.classList.remove('active');
+                welcomeScreen.style.display = 'none';
+
+                if (hash === 'courses') {
+                    window.app.renderCoursesScreen();
+                    window.app.showScreen('courses-screen');
+                    return;
+                }
+
+                if (hash === 'profile') {
+                    window.app.renderProfileScreen();
+                    window.app.showScreen('profile-screen');
+                    return;
+                }
+
+                // Switch to the game specified in hash
+                gameManager.switchGame(hash);
             }
 
             // Show welcome screen after login - ALWAYS clear hash on login

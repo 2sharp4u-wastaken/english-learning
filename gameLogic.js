@@ -6,7 +6,7 @@ import * as VocabularyGame from './games/vocabulary-game.js?t=1762595926';
 import * as GrammarGame from './games/grammar-game.js?t=1762595926';
 import * as GrammarBeginnerGame from './games/grammar-beginner-game.js';
 import * as ListeningGame from './games/listening-game.js?t=1762609545';
-import * as PronunciationGame from './games/pronunciation-game.js?t=1762610965';
+import * as PronunciationGame from './games/pronunciation-game.js?t=1771785500';
 import * as ReadingGame from './games/reading-game.js?t=1762608590';
 import * as PracticeGame from './games/practice-game.js';
 import * as ABCGame from './games/abc-game.js';
@@ -62,9 +62,10 @@ class GameManager {
         this.gameElapsedMs = 0;
         this.gameSessionStartAt = null;  // When current session started (leave/resume resets)
 
-        // Session streak tracking for mascot encouragement
+        // Session streak tracking for morale feedback
         this.sessionCorrectStreak = 0;
         this.sessionFirstCorrect = false;
+        this.moraleBoostTimer = null;
 
         // Load settings
         this.loadSettings();
@@ -412,9 +413,9 @@ class GameManager {
             return false;
         }
 
-        // Don't save if no progress made (still at question 0)
-        if (this.currentQuestionIndex === 0) {
-            console.log('No progress to save (still at question 0)');
+        // Don't save if questions haven't been loaded yet
+        if (!this.shuffledQuestions || this.shuffledQuestions.length === 0) {
+            console.log('No questions loaded, nothing to save');
             return false;
         }
 
@@ -496,11 +497,11 @@ class GameManager {
     }
 
     getAllSavedGames() {
-        const userId = localStorage.getItem('currentUser') || 'default';
         const savedGames = [];
-        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading', 'abc'];
 
-        gameTypes.forEach(gameType => {
+        // Derive game types from DOM cards — any new card added to HTML is automatically included
+        document.querySelectorAll('.game-card[data-game]').forEach(card => {
+            const gameType = card.dataset.game;
             const state = this.loadGameState(gameType);
             if (state) {
                 savedGames.push(state);
@@ -540,30 +541,15 @@ class GameManager {
         // Use ProgressManager to track the word
         const wordStats = this.progressManager.recordWordAttempt(word, category, isCorrect, gameType, responseTime > 0 ? responseTime / 1000 : 0);
 
-        // Handle session streak for mascot encouragement
-        if (isCorrect) {
-            this.sessionCorrectStreak++;
-
-            // First correct answer in session
-            if (!this.sessionFirstCorrect) {
-                this.sessionFirstCorrect = true;
-                if (window.gamificationManager?.mascot) {
-                    window.gamificationManager.mascot.showMessage('firstCorrect');
-                }
+        // Persist immediately so practice data survives page navigation/reload.
+        if (window.app?.userProgress) {
+            window.app.userProgress.wordMastery = this.progressManager.wordMastery;
+            if (window.app.saveUserProgress) {
+                window.app.saveUserProgress();
             }
-            // Streak milestones
-            else if (this.sessionCorrectStreak === 3) {
-                if (window.gamificationManager?.mascot) {
-                    window.gamificationManager.mascot.showMessage('streak3');
-                }
-            } else if (this.sessionCorrectStreak === 5) {
-                if (window.gamificationManager?.mascot) {
-                    window.gamificationManager.mascot.showMessage('streak5');
-                }
-            }
-        } else {
-            this.sessionCorrectStreak = 0;  // Reset session streak
         }
+
+        this.handleMoraleAnswerResult(isCorrect);
 
         // Check if word just became mastered
         if (wordStats && wordStats.previousMastery < 0.8 && wordStats.masteryLevel >= 0.8) {
@@ -571,9 +557,7 @@ class GameManager {
             if (window.audioEffects) {
                 window.audioEffects.playLevelUp().catch(() => {});
             }
-            if (window.gamificationManager?.mascot) {
-                window.gamificationManager.mascot.showMessage('mastered', `שלטת במילה "${word}"! 👑`);
-            }
+            this.showMoraleFeedback(`שלטת במילה "${word}"! 👑`, 'fa-trophy');
             if (typeof confetti !== 'undefined') {
                 window.confettiManager?.celebrateMastery();
             }
@@ -925,6 +909,72 @@ class GameManager {
         }, 3000);
     }
 
+    showMoraleFeedback(message, icon = 'fa-star') {
+        this.showMoraleBoost(message, icon);
+    }
+
+    handleMoraleAnswerResult(isCorrect) {
+        if (isCorrect) {
+            this.sessionCorrectStreak++;
+
+            if (!this.sessionFirstCorrect) {
+                this.sessionFirstCorrect = true;
+                this.showMoraleFeedback('כל הכבוד! תשובה ראשונה נכונה! ⭐', 'fa-star');
+            } else if (this.sessionCorrectStreak === 3) {
+                this.showMoraleFeedback('וואו! 3 תשובות נכונות ברצף! 🔥', 'fa-fire');
+            } else if (this.sessionCorrectStreak === 5) {
+                this.showMoraleFeedback('5 ברצף! פשוט מדהים! 👑', 'fa-crown');
+            }
+        } else {
+            this.sessionCorrectStreak = 0;
+        }
+    }
+
+    getMoraleEmoji(icon) {
+        const map = {
+            'fa-star': '🌟',
+            'fa-fire': '🔥',
+            'fa-crown': '👑',
+            'fa-trophy': '🏆',
+            'fa-heart': '💪'
+        };
+        return map[icon] || '🌟';
+    }
+
+    showMoraleBoost(message, icon = 'fa-star', duration = 1400) {
+        if (!document.body) return;
+
+        let moraleBoost = document.getElementById('morale-boost-fx');
+        if (!moraleBoost) {
+            moraleBoost = document.createElement('div');
+            moraleBoost.id = 'morale-boost-fx';
+            moraleBoost.className = 'morale-boost-fx';
+            moraleBoost.innerHTML = `
+                <div class="morale-boost-backdrop"></div>
+                <div class="morale-boost-card">
+                    <span class="morale-boost-icon"></span>
+                    <span class="morale-boost-text"></span>
+                </div>
+            `;
+            document.body.appendChild(moraleBoost);
+        }
+
+        const iconEl = moraleBoost.querySelector('.morale-boost-icon');
+        const textEl = moraleBoost.querySelector('.morale-boost-text');
+        if (iconEl) iconEl.textContent = this.getMoraleEmoji(icon);
+        if (textEl) textEl.textContent = message;
+
+        moraleBoost.classList.remove('show');
+        void moraleBoost.offsetWidth;
+        moraleBoost.classList.add('show');
+
+        if (this.moraleBoostTimer) clearTimeout(this.moraleBoostTimer);
+        this.moraleBoostTimer = setTimeout(() => {
+            moraleBoost.classList.remove('show');
+            this.moraleBoostTimer = null;
+        }, duration);
+    }
+
     showPracticeEmptyMessage() {
         // Show a friendly message when there are no words to practice
         // This is shown as an overlay on the practice game screen
@@ -1101,6 +1151,9 @@ class GameManager {
         const vocabAudioElement = document.getElementById('vocab-audio');
         if (vocabAudioElement) {
             vocabAudioElement.addEventListener('click', () => {
+                if (this.currentGame === 'vocabulary') {
+                    this.isManualVocabPlayPending = true;
+                }
                 this.playCurrentQuestionAudio();
             });
         }
@@ -1492,6 +1545,13 @@ class GameManager {
             return;
         }
 
+        // If already on this game and it's active, do nothing
+        // Exception: allow resume to proceed even if the game appears "already active"
+        // (resumeGame sets isGameActive=true + currentGame before calling performGameSwitch)
+        if (!this.isResuming && this.isGameActive && gameType === this.currentGame) {
+            return;
+        }
+
         // Auto-save and show toast if switching from an active game
         if (this.isGameActive && gameType !== this.currentGame) {
             const saved = this.saveGameState();
@@ -1561,15 +1621,26 @@ class GameManager {
         this.startGame(gameType);
     }
 
-    generatePracticeWords() {
-        // Generate list of struggling words for practice mode
+    refreshPracticeDataContext() {
+        // Keep references/settings/data fresh so practice count and list stay in sync.
+        this.progressManager = window.progressManager || this.progressManager;
+        this.scoreManager = window.scoreManager || this.scoreManager;
+        this.loadSettings();
+        this.loadGameData();
+    }
+
+    getPracticeWords(options = {}) {
+        const { refreshData = false } = options;
+
+        if (refreshData) {
+            this.refreshPracticeDataContext();
+        }
+
         const allWords = this.gameData.vocabulary || [];
+        console.log('[PRACTICE] Computing words from filtered vocabulary:', allWords.length);
 
-        console.log('Generating practice words from', allWords.length, 'total words');
-
-        // Filter: mastery < 0.5 (struggling words only)
+        // Filter: only attempted words with mastery < 0.5 (struggling words)
         const strugglingWords = allWords.filter(word => {
-            // Use ProgressManager if available, fallback to window.app
             const stats = this.progressManager
                 ? this.progressManager.getWordStats(word.word, word.category)
                 : window.app?.getWordStats(word.word, word.category);
@@ -1577,8 +1648,6 @@ class GameManager {
             const isStruggling = stats && stats.masteryLevel < 0.5;
             return hasAttempts && isStruggling;
         });
-
-        console.log('Found', strugglingWords.length, 'struggling words');
 
         // Sort by accuracy (lowest first - most incorrect)
         strugglingWords.sort((a, b) => {
@@ -1590,20 +1659,19 @@ class GameManager {
                 : window.app?.getWordStats(b.word, b.category);
             const accuracyA = statsA && statsA.totalAttempts > 0 ? statsA.correctAttempts / statsA.totalAttempts : 0;
             const accuracyB = statsB && statsB.totalAttempts > 0 ? statsB.correctAttempts / statsB.totalAttempts : 0;
-            return accuracyA - accuracyB; // Lowest accuracy first
+            return accuracyA - accuracyB;
         });
 
-        console.log('Practice words sorted by accuracy. First 5:', strugglingWords.slice(0, 5).map(w => {
-            const stats = this.progressManager
-                ? this.progressManager.getWordStats(w.word, w.category)
-                : window.app?.getWordStats(w.word, w.category);
-            return {
-                word: w.word,
-                accuracy: stats && stats.totalAttempts > 0 ? stats.correctAttempts / stats.totalAttempts : 0
-            };
-        }));
+        console.log('[PRACTICE] Shared count/list result:', {
+            count: strugglingWords.length,
+            sample: strugglingWords.slice(0, 5).map(w => w.word)
+        });
 
         return strugglingWords;
+    }
+
+    generatePracticeWords() {
+        return this.getPracticeWords();
     }
 
     startGame(gameType) {
@@ -1620,10 +1688,6 @@ class GameManager {
                 this.gameElapsedMs = 0;
                 this.gameSessionStartAt = null; // Reset so we get a fresh start time
 
-                // Show mascot welcome message for new games
-                if (window.gamificationManager?.mascot) {
-                    window.gamificationManager.mascot.showMessage('welcome');
-                }
             }
             // Start timing for non-practice games
             if (gameType !== 'practice') {
@@ -1639,7 +1703,7 @@ class GameManager {
             if (gameType === 'practice') {
                 // Only generate new questions if NOT resuming
                 if (!this.isResuming) {
-                    const practiceWords = this.generatePracticeWords();
+                    const practiceWords = this.getPracticeWords({ refreshData: true });
                     if (practiceWords.length === 0) {
                         // This shouldn't happen as the practice button is hidden when no words, but handle gracefully
                         this.showPracticeEmptyMessage();
@@ -1705,9 +1769,24 @@ class GameManager {
             } else if (gameType === 'scramble') {
                 // Sentence Scramble game - delegate to SentenceScrambleGame class
                 if (window.scrambleGame) {
-                    // Determine difficulty from settings
-                    const difficulty = this.settings?.difficulty || 'beginner';
-                    window.scrambleGame.startGame(difficulty, null, 10);
+                    const canResume = this.isResuming &&
+                        this.currentQuestionIndex > 0 &&
+                        this.shuffledQuestions && this.shuffledQuestions.length > 0 &&
+                        this.shuffledQuestions[0]?.words;
+                    if (canResume) {
+                        // Restore saved state into the game instance
+                        window.scrambleGame.sentences = this.shuffledQuestions;
+                        window.scrambleGame.currentIndex = this.currentQuestionIndex;
+                        window.scrambleGame.score = this.scores['scramble'] || 0;
+                        window.scrambleGame.isAnswerChecked = false;
+                        window.scrambleGame.selectedWords = [];
+                        window.scrambleGame.availableWords = [];
+                        window.scrambleGame.showGame();
+                        window.scrambleGame.loadSentence();
+                    } else {
+                        const difficulty = this.settings?.difficulty || 'beginner';
+                        window.scrambleGame.startGame(difficulty, null, 10);
+                    }
                     this.isGameActive = false;
                     this.isResuming = false;
                 } else {
@@ -1717,8 +1796,22 @@ class GameManager {
             } else if (gameType === 'fill-blanks') {
                 // Fill-in-the-Blanks game - delegate to FillBlanksGame class
                 if (window.fillBlanksGame) {
-                    const difficulty = this.settings?.difficulty || 'beginner';
-                    window.fillBlanksGame.startGame(difficulty, null, 10);
+                    const canResume = this.isResuming &&
+                        this.currentQuestionIndex > 0 &&
+                        this.shuffledQuestions && this.shuffledQuestions.length > 0 &&
+                        this.shuffledQuestions[0]?.words;
+                    if (canResume) {
+                        // Restore saved state into the game instance
+                        window.fillBlanksGame.sentences = this.shuffledQuestions;
+                        window.fillBlanksGame.currentIndex = this.currentQuestionIndex;
+                        window.fillBlanksGame.score = this.scores['fill-blanks'] || 0;
+                        window.fillBlanksGame.isAnswerSelected = false;
+                        window.fillBlanksGame.showGame();
+                        window.fillBlanksGame.loadSentence();
+                    } else {
+                        const difficulty = this.settings?.difficulty || 'beginner';
+                        window.fillBlanksGame.startGame(difficulty, null, 10);
+                    }
                     this.isGameActive = false;
                     this.isResuming = false;
                 } else {
@@ -1784,88 +1877,111 @@ class GameManager {
         }
     }
 
+    saveLastSessionWordKeys(gameType) {
+        if (!window.app?.userProgress) return;
+        const wordKeys = (this.shuffledQuestions || []).map(q => `${q.word}_${q.category}`);
+        if (!window.app.userProgress.lastSessionWordKeys) {
+            window.app.userProgress.lastSessionWordKeys = {};
+        }
+        window.app.userProgress.lastSessionWordKeys[gameType] = wordKeys;
+        window.app.saveUserProgress();
+    }
+
     smartQuestionSelection(array) {
-        // Smart question selection based on mastery levels
-        // Prioritizes words that need more practice while maintaining variety
+        // Smart question selection based on mastery levels + session rotation
+        // Fresh words (not shown last session) are prioritized; recently-played fill only if needed
 
         const questions = [...array];
+        const gameType = this.currentGame;
 
-        // Categorize words by mastery level
-        const categorized = {
-            new: [],          // Never seen before (mastery = 0)
-            struggling: [],   // Low mastery (0 < mastery < 0.5)
-            learning: [],     // Medium mastery (0.5 <= mastery < 0.8)
-            mastered: []      // High mastery (mastery >= 0.8)
-        };
-
-        questions.forEach(q => {
-            const wordKey = `${q.word}_${q.category}`;
-            // Use ProgressManager if available, fallback to window.app
-            const wordStats = this.progressManager
-                ? this.progressManager.getWordStats(q.word, q.category)
-                : window.app?.getWordStats(q.word, q.category);
-            const mastery = wordStats?.masteryLevel || 0;
-
-            // Store mastery level on the question object for later use
-            q.masteryLevel = mastery;
-
-            if (mastery === 0) {
-                categorized.new.push(q);
-            } else if (mastery < 0.5) {
-                categorized.struggling.push(q);
-            } else if (mastery < 0.8) {
-                categorized.learning.push(q);
-            } else {
-                categorized.mastered.push(q);
-            }
-        });
-
-        console.log('Word distribution by mastery:', {
-            new: categorized.new.length,
-            struggling: categorized.struggling.length,
-            learning: categorized.learning.length,
-            mastered: categorized.mastered.length
-        });
-
-        // Smart weighting: prioritize words that need practice
-        // 40% struggling, 30% new, 20% learning, 10% mastered
-        const selected = [];
-        const targetCount = Math.min(questions.length, 50); // Select up to 50 questions
-
-        const weights = {
-            struggling: 0.40,
-            new: 0.30,
-            learning: 0.20,
-            mastered: 0.10
-        };
-
-        // Calculate how many from each category
-        const counts = {
-            struggling: Math.ceil(targetCount * weights.struggling),
-            new: Math.ceil(targetCount * weights.new),
-            learning: Math.ceil(targetCount * weights.learning),
-            mastered: Math.ceil(targetCount * weights.mastered)
-        };
-
-        // Helper function to randomly select N items from array
+        // Helper: randomly pick n items from an array
         const selectRandom = (arr, n) => {
             const shuffled = [...arr].sort(() => Math.random() - 0.5);
             return shuffled.slice(0, Math.min(n, arr.length));
         };
 
-        // Select from each category
-        selected.push(...selectRandom(categorized.struggling, counts.struggling));
-        selected.push(...selectRandom(categorized.new, counts.new));
-        selected.push(...selectRandom(categorized.learning, counts.learning));
-        selected.push(...selectRandom(categorized.mastered, counts.mastered));
+        // --- Session rotation: split words into "fresh" and "recently played" ---
+        // Words shown in the last completed session are de-prioritized so the player
+        // sees a different set each time they replay.
+        const lastSessionKeys = new Set(
+            window.app?.userProgress?.lastSessionWordKeys?.[gameType] || []
+        );
+        const freshWords = lastSessionKeys.size > 0
+            ? questions.filter(q => !lastSessionKeys.has(`${q.word}_${q.category}`))
+            : questions;
+        const recentWords = lastSessionKeys.size > 0
+            ? questions.filter(q => lastSessionKeys.has(`${q.word}_${q.category}`))
+            : [];
 
-        // If we don't have enough, fill with remaining words
-        if (selected.length < targetCount) {
-            const remaining = questions.filter(q => !selected.includes(q));
-            selected.push(...selectRandom(remaining, targetCount - selected.length));
+        // --- Categorize FRESH words by mastery level ---
+        const categorized = {
+            new: [],        // Never seen (mastery = 0)
+            struggling: [], // Low mastery (0 < mastery < 0.5)
+            learning: [],   // Medium mastery (0.5 <= mastery < 0.8)
+            mastered: []    // High mastery (mastery >= 0.8)
+        };
+
+        freshWords.forEach(q => {
+            const wordStats = this.progressManager
+                ? this.progressManager.getWordStats(q.word, q.category)
+                : window.app?.getWordStats(q.word, q.category);
+            const mastery = wordStats?.masteryLevel || 0;
+            q.masteryLevel = mastery;
+
+            if (mastery === 0) categorized.new.push(q);
+            else if (mastery < 0.5) categorized.struggling.push(q);
+            else if (mastery < 0.8) categorized.learning.push(q);
+            else categorized.mastered.push(q);
+        });
+
+        // Annotate recent words with mastery (used for fallback ordering below)
+        recentWords.forEach(q => {
+            const wordStats = this.progressManager
+                ? this.progressManager.getWordStats(q.word, q.category)
+                : window.app?.getWordStats(q.word, q.category);
+            q.masteryLevel = wordStats?.masteryLevel || 0;
+        });
+
+        console.log('Word distribution by mastery+recency:', {
+            fresh: { new: categorized.new.length, struggling: categorized.struggling.length, learning: categorized.learning.length, mastered: categorized.mastered.length },
+            recentlyPlayed: recentWords.length
+        });
+
+        const selected = [];
+        const targetCount = Math.min(questions.length, 50);
+        const weights = { struggling: 0.40, new: 0.30, learning: 0.20, mastered: 0.10 };
+
+        // --- PHASE 1: Fill from fresh words using mastery weights ---
+        if (freshWords.length > 0) {
+            const freshTarget = Math.min(freshWords.length, targetCount);
+            const counts = {
+                struggling: Math.ceil(freshTarget * weights.struggling),
+                new: Math.ceil(freshTarget * weights.new),
+                learning: Math.ceil(freshTarget * weights.learning),
+                mastered: Math.ceil(freshTarget * weights.mastered)
+            };
+
+            selected.push(...selectRandom(categorized.struggling, counts.struggling));
+            selected.push(...selectRandom(categorized.new, counts.new));
+            selected.push(...selectRandom(categorized.learning, counts.learning));
+            selected.push(...selectRandom(categorized.mastered, counts.mastered));
+
+            // Fill any remaining fresh slots (deduplication via key set)
+            if (selected.length < freshTarget) {
+                const selectedKeys = new Set(selected.map(q => `${q.word}_${q.category}`));
+                const freshRemaining = freshWords.filter(q => !selectedKeys.has(`${q.word}_${q.category}`));
+                selected.push(...selectRandom(freshRemaining, freshTarget - selected.length));
+            }
         }
 
-        // Now apply the improved shuffle with diversity constraints
+        // --- PHASE 2: If still short of target, fill from recently-played words ---
+        // Sorted by mastery ascending so struggling ones still come first
+        if (selected.length < targetCount && recentWords.length > 0) {
+            const needed = targetCount - selected.length;
+            const recentSorted = [...recentWords].sort((a, b) => a.masteryLevel - b.masteryLevel);
+            selected.push(...recentSorted.slice(0, needed));
+        }
+
         return this.improvedShuffle(selected);
     }
 
@@ -2020,6 +2136,12 @@ class GameManager {
                 case 'abc':
                     this.loadABCQuestion(question);
                     break;
+                case 'memory':
+                case 'scramble':
+                case 'fill-blanks':
+                    // These games handle their own question loading via their own classes.
+                    // startGame() already delegates to the game instance, so nothing to do here.
+                    return;
                 default:
                     console.error('Unknown game type:', gameType);
                     return;
@@ -2116,6 +2238,13 @@ class GameManager {
 
                 // In vocabulary game: reveal options after 3 audio plays
                 if (this.currentGame === 'vocabulary') {
+                    const isManualPlay = !!this.isManualVocabPlayPending;
+                    this.isManualVocabPlayPending = false;
+                    if (!isManualPlay) {
+                        console.log('📢 [AUDIO] Ignoring non-manual vocabulary playback for counting');
+                        return;
+                    }
+
                     // Increment play count
                     this.vocabPlayCount = (this.vocabPlayCount || 0) + 1;
                     const requiredClicks = this.vocabRequiredClicks || 3;
@@ -2125,30 +2254,31 @@ class GameManager {
                     console.log('📢 [AUDIO] vocabPlayCount:', this.vocabPlayCount, '/', requiredClicks);
 
                     const feedback = document.getElementById('vocab-feedback');
+                    const audioHint = document.getElementById('vocab-audio-hint');
 
                     // Check if we've reached required plays
                     if (!this.vocabularyAudioPlayed) {
                         if (clicksLeft > 0) {
                             // Still need more plays - update feedback
                             console.log('📢 [AUDIO] Need', clicksLeft, 'more plays');
-                            if (feedback) {
-                                feedback.textContent = `השמע את המילה עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}...`;
-                                feedback.className = 'feedback vocab-prompt';
+                            if (audioHint) {
+                                audioHint.textContent = `השמע עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}`;
+                                audioHint.hidden = false;
+                                audioHint.classList.add('show');
                             }
                         } else {
                             // Reached required plays - reveal options
                             console.log('📢 [AUDIO] Required plays reached - revealing vocabulary options now');
 
+                            if (audioHint) {
+                                audioHint.textContent = '';
+                                audioHint.hidden = true;
+                                audioHint.classList.remove('show');
+                            }
+
                             if (feedback) {
-                                feedback.textContent = 'כל הכבוד! עכשיו בחר את התרגום הנכון:';
-                                feedback.className = 'feedback vocab-prompt';
-                                // Clear after a moment
-                                setTimeout(() => {
-                                    if (feedback.textContent === 'כל הכבוד! עכשיו בחר את התרגום הנכון:') {
-                                        feedback.textContent = '';
-                                        feedback.className = 'feedback';
-                                    }
-                                }, 1500);
+                                feedback.textContent = '';
+                                feedback.className = 'feedback';
                             }
 
                             const optionsContainer = document.getElementById('vocab-options');
@@ -2282,6 +2412,9 @@ class GameManager {
             this.gameElapsedMs = 0;
             this.gameSessionStartAt = null;
 
+            // Save words shown this session so next session can de-prioritize them
+            this.saveLastSessionWordKeys(gameType);
+
             // Delete saved game state since game is completed
             this.deleteGameState(gameType);
 
@@ -2307,15 +2440,12 @@ class GameManager {
                 window.confettiManager?.celebrateAchievement();
             }
 
-            // Mascot congratulations
-            if (window.gamificationManager?.mascot) {
-                if (percentage === 100) {
-                    window.gamificationManager.mascot.showMessage('gameComplete', 'מושלם! 100%! אתה אלוף! 👑');
-                } else if (percentage >= 80) {
-                    window.gamificationManager.mascot.showMessage('gameComplete', 'עבודה נהדרת! המשך ככה! 🌟');
-                } else {
-                    window.gamificationManager.mascot.showMessage('gameComplete', 'סיימת! תמשיך להתאמן! 💪');
-                }
+            if (percentage === 100) {
+                this.showMoraleFeedback('מושלם! 100%! אתה אלוף! 👑', 'fa-trophy');
+            } else if (percentage >= 80) {
+                this.showMoraleFeedback('עבודה נהדרת! המשך ככה! 🌟', 'fa-star');
+            } else {
+                this.showMoraleFeedback('סיימת! תמשיך להתאמן! 💪', 'fa-heart');
             }
 
             if (!gameArea) {
@@ -2333,9 +2463,11 @@ class GameManager {
             const completionDiv = document.createElement('div');
             completionDiv.className = 'game-complete';
             const timeText = this.formatGameTime(totalGameTimeMs);
+            const endGameStars = percentage >= 80 ? '⭐⭐⭐' : percentage >= 60 ? '⭐⭐' : '⭐';
             completionDiv.innerHTML = `
                 <div class="completion-content">
                     <h2><i class="fas fa-trophy"></i> משחק הושלם!</h2>
+                    <div class="completion-stars">${endGameStars}</div>
                     <div class="score-display">
                         <div class="score-circle">
                             <span class="score-number">${percentage}%</span>
@@ -2377,15 +2509,6 @@ class GameManager {
 
             this.isGameActive = false;
 
-            // Provide ENGLISH audio feedback for game completion
-            try {
-                const message = `You scored ${finalScore} out of ${this.totalQuestions * 10}. Accuracy: ${percentage} percent.`;
-                await speechManager.speak(message);
-                // NO second encouragement message
-            } catch (error) {
-                console.error('Error playing completion feedback:', error);
-            }
-            
             console.log(`${gameType} game ended successfully`);
             // Update overall app achievements/progress if available (skip in practice mode)
             try {
@@ -2560,10 +2683,10 @@ class GameManager {
             const cycleCounter = document.getElementById('practice-cycle-counter');
 
             if (wordCounter) {
-                wordCounter.textContent = `מילה ${this.practiceWordIndex + 1} מתוך ${this.practiceWordsCount}`;
+                wordCounter.textContent = `שאלה ${this.practiceWordIndex + 1} מתוך ${this.practiceWordsCount}`;
             }
             if (cycleCounter) {
-                cycleCounter.textContent = `סיבוב ${this.practiceCycle}/2`;
+                cycleCounter.textContent = `סיבוב ${this.practiceCycle} מתוך 2`;
             }
         } else {
             // Update question counter for non-practice games
@@ -2613,6 +2736,9 @@ function initializeGameManager() {
         console.log('[GameLogic] Creating GameManager instance...');
         gameManager = new GameManager();
         window.gameManager = gameManager; // Make globally accessible
+        if (window.gamificationManager?.updatePracticeModeCard) {
+            window.gamificationManager.updatePracticeModeCard();
+        }
         console.log('[GameLogic] ✅ Game manager initialized successfully');
     } catch (error) {
         console.error('[GameLogic] ❌ Error initializing game:', error);
@@ -2625,6 +2751,9 @@ function initializeGameManager() {
                 try {
                     gameManager = new GameManager();
                     window.gameManager = gameManager; // Make globally accessible
+                    if (window.gamificationManager?.updatePracticeModeCard) {
+                        window.gamificationManager.updatePracticeModeCard();
+                    }
                     console.log('[GameLogic] ✅ Game manager initialized on retry');
                 } catch (retryError) {
                     console.error('[GameLogic] ❌ Failed to initialize game manager on retry:', retryError);

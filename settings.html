@@ -851,7 +851,7 @@
 
         <!-- Vocabulary Categories -->
         <div class="settings-section">
-            <h2 class="clickable-title" onclick="window.location.href='words.html'" title="לחץ לצפייה בכל המילים">
+            <h2 class="clickable-title">
                 <i class="fas fa-book"></i>קטגוריות אוצר מילים
                 <i class="fas fa-external-link-alt" style="font-size: 0.7em; margin-right: 10px; opacity: 0.6;"></i>
             </h2>
@@ -952,7 +952,6 @@
             <div class="setting-item">
                 <label class="setting-label">בחירת קול</label>
                 <p class="setting-description">בחר את הקול המועדף עליך לקריאת המילים</p>
-                <a href="voice-test.html" class="btn" style="display: inline-block; padding: 10px 20px; background: #2196F3; color: white; text-decoration: none; border-radius: 6px;">🎤 בדוק קולות זמינים</a>
             </div>
         </div>
 
@@ -1169,10 +1168,13 @@
     <!-- Console Logger - Captures all console output for debugging -->
     <script type="module" src="utils/consoleLogger.js"></script>
     <script src="auth.js?t=1762332862"></script>
-    <script src="settings.js?t=1762332862"></script>
+    <script src="settings.js?t=1764691200"></script>
     <script type="module">
-        import { initTopHeader } from './components/top-header.js?t=1771279200';
+        import { initTopHeader } from './components/top-header.js?t=1774902001';
         initTopHeader({ activePage: 'settings' });
     </script>
+    <script type="module" src="data/vocabularyBank.js?t=1774896000"></script>
+    <script type="module" src="components/practice-indicator.js?t=1774896000"></script>
+    <script type="module" src="components/header-score.js?t=1774899000"></script>
 </body>
 </html>

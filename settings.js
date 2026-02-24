@@ -92,6 +92,9 @@ class SettingsManager {
             return;
         }
 
+        const path = (window.location && window.location.pathname) ? window.location.pathname : '';
+        const isHomePage = path.endsWith('/') || path.endsWith('/index.html') || path.endsWith('index.html');
+
         Object.keys(this.settings.enabledGames).forEach(gameType => {
             const isEnabled = this.settings.enabledGames[gameType];
             console.log(`Game ${gameType}: ${isEnabled ? 'enabled' : 'disabled'}`);
@@ -102,10 +105,14 @@ class SettingsManager {
                 gameCard.style.display = isEnabled ? '' : 'none';
             }
 
-            // Hide/show in top nav (all instances)
-            document.querySelectorAll(`.top-game-btn[data-game="${gameType}"]`).forEach(btn => {
-                btn.style.display = isEnabled ? '' : 'none';
-            });
+            // Hide/show in top nav only on the home page.
+            if (isHomePage) {
+                // Practice mode is managed separately and should stay visible in the header.
+                if (gameType === 'practice') return;
+                document.querySelectorAll(`.top-game-btn[data-game="${gameType}"]`).forEach(btn => {
+                    btn.style.display = isEnabled ? '' : 'none';
+                });
+            }
         });
     }
 
@@ -1072,77 +1079,9 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initialize user management (only on settings page)
     initUserManagement();
 
-    // Initialize top header user info (if top header exists)
-    initTopHeaderUserInfo();
-});
-
-function initTopHeaderUserInfo() {
-    const headerUserAvatar = document.getElementById('header-user-avatar');
-    const headerUserName = document.getElementById('header-user-name');
-    const headerLogoutBtn = document.getElementById('header-logout-btn');
-    const homeBtn = document.getElementById('settings-home-btn');
-    const navBtns = document.querySelectorAll('.top-game-btn[data-nav]');
-
-    if (!headerUserAvatar || !headerUserName) {
-        // Not on a page with top header
-        return;
-    }
-
-    // Function to update header with user info
-    function updateHeaderUserInfo() {
-        if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
-            const currentUser = authService.getCurrentUser();
-            if (currentUser) {
-                // Update avatar
-                headerUserAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
-                headerUserAvatar.style.background = currentUser.avatarColor ||
-                    'linear-gradient(135deg, #667eea, #764ba2)';
-
-                // Update name
-                headerUserName.textContent = currentUser.name;
-            }
-        }
-    }
-
-    // Handle home button - use replace to avoid showing sidebar
-    if (homeBtn) {
-        homeBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            window.location.replace('index.html');
-        });
-    }
-
-    // Handle game navigation buttons - use replace to avoid showing sidebar
-    navBtns.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            const game = btn.dataset.nav;
-            if (game) {
-                window.location.replace(`index.html#${game}`);
-            }
-        });
-    });
-
-    // Handle logout
-    if (headerLogoutBtn) {
-        headerLogoutBtn.addEventListener('click', (e) => {
-            e.preventDefault();
-            if (typeof authService !== 'undefined') {
-                authService.logout();
-                window.location.replace('index.html');
-            }
-        });
-    }
-
-    // Update header on load
-    updateHeaderUserInfo();
-
-    // Update home notification dot
+    // Update home notification dot (header injected by top-header.js module)
     updateHomeNotificationDot();
-
-    // Listen for auth state changes
-    window.addEventListener('userLoggedIn', updateHeaderUserInfo);
-}
+});
 
 // Function to update home notification dot on settings/stats pages
 function updateHomeNotificationDot() {

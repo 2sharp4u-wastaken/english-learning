@@ -86,8 +86,10 @@ export class SentenceScrambleGame {
         this.isAnswerChecked = false;
         this.selectedWords = [];
 
-        // Shuffle the words for the word bank
-        this.availableWords = [...this.currentSentence.words].sort(() => Math.random() - 0.5);
+        // Shuffle the words for the word bank (strip trailing punctuation for display)
+        this.availableWords = [...this.currentSentence.words]
+            .map(w => w.replace(/[.,!?;:]+$/, ''))
+            .sort(() => Math.random() - 0.5);
 
         // Render the sentence UI
         this.renderSentence();
@@ -125,11 +127,11 @@ export class SentenceScrambleGame {
             });
         }
 
-        // Reset check button
+        // Reset check button — hidden until all words are placed
         const checkBtn = document.getElementById('scramble-check');
         if (checkBtn) {
             checkBtn.disabled = true;
-            checkBtn.style.display = 'inline-block';
+            checkBtn.style.display = 'none';
         }
 
         const nextBtn = document.getElementById('scramble-next');
@@ -180,10 +182,12 @@ export class SentenceScrambleGame {
         // Render the word in the answer zone
         this.renderAnswerZone();
 
-        // Enable check button if at least one word
+        // Show check button only once all words are placed
         const checkBtn = document.getElementById('scramble-check');
         if (checkBtn) {
-            checkBtn.disabled = this.selectedWords.length === 0;
+            const allPlaced = this.selectedWords.length === this.availableWords.length;
+            checkBtn.style.display = allPlaced ? 'inline-block' : 'none';
+            checkBtn.disabled = !allPlaced;
         }
     }
 
@@ -212,10 +216,11 @@ export class SentenceScrambleGame {
         // Re-render answer zone
         this.renderAnswerZone();
 
-        // Disable check button if empty
+        // Hide check button until all words are placed again
         const checkBtn = document.getElementById('scramble-check');
         if (checkBtn) {
-            checkBtn.disabled = this.selectedWords.length === 0;
+            checkBtn.style.display = 'none';
+            checkBtn.disabled = true;
         }
     }
 
@@ -253,8 +258,13 @@ export class SentenceScrambleGame {
         this.isAnswerChecked = true;
 
         const playerAnswer = this.selectedWords.map(item => item.word).join(' ');
-        const correctAnswer = this.currentSentence.words.join(' ');
+        // Compare without trailing punctuation (since we strip it from word chips)
+        const correctAnswer = this.currentSentence.words
+            .map(w => w.replace(/[.,!?;:]+$/, '')).join(' ');
         const isCorrect = playerAnswer.toLowerCase() === correctAnswer.toLowerCase();
+        if (window.gameManager?.handleMoraleAnswerResult) {
+            window.gameManager.handleMoraleAnswerResult(isCorrect);
+        }
 
         // Disable check button
         const checkBtn = document.getElementById('scramble-check');
@@ -262,21 +272,6 @@ export class SentenceScrambleGame {
 
         // Show feedback
         this.showFeedback(isCorrect, correctAnswer);
-
-        // Update score
-        if (isCorrect) {
-            this.correctCount++;
-            const points = 15;
-            this.score += points;
-            if (this.scoreManager) {
-                this.scoreManager.addScore(points, `Scramble: ${playerAnswer}`);
-            }
-        } else {
-            this.wrongCount++;
-        }
-
-        // Speak the correct sentence
-        this.speakSentence(this.currentSentence.sentence);
 
         // Highlight answer zone
         const answerZone = document.getElementById('scramble-answer-zone');
@@ -286,9 +281,35 @@ export class SentenceScrambleGame {
             });
         }
 
-        // Show next button
-        const nextBtn = document.getElementById('scramble-next');
-        if (nextBtn) nextBtn.style.display = 'inline-block';
+        // Update score
+        if (isCorrect) {
+            this.correctCount++;
+            const points = 15;
+            this.score += points;
+            if (this.scoreManager) {
+                this.scoreManager.addPoints('scramble', points);
+            }
+
+            // Confetti and correct sound
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 } });
+            }
+            try { window.audioEffects?.playCorrect(); } catch (e) {}
+
+            // Speak the correct sentence then show Next button — no auto-advance
+            this.speakSentence(this.currentSentence.sentence);
+            const nextBtn = document.getElementById('scramble-next');
+            if (nextBtn) nextBtn.style.display = 'block';
+        } else {
+            this.wrongCount++;
+            // Wrong answer sound
+            try { window.audioEffects?.playWrong(); } catch (e) {}
+            // Speak the correct sentence so they hear it
+            this.speakSentence(this.currentSentence.sentence);
+
+            // Animate words into correct order, then show next button
+            this.animateCorrectOrder();
+        }
 
         this.updateProgress();
     }
@@ -312,11 +333,74 @@ export class SentenceScrambleGame {
     }
 
     /**
+     * Animate the correct word order into the answer zone, then reveal next button
+     */
+    animateCorrectOrder() {
+        const answerZone = document.getElementById('scramble-answer-zone');
+        if (!answerZone) return;
+
+        const correctWords = this.currentSentence.words.map(w => w.replace(/[.,!?;:]+$/, ''));
+        const wordDelay = 180; // ms between each word appearing
+        const animDuration = 420; // ms — long enough for the last chip's animation
+
+        // Brief pause so the player sees the wrong-feedback first
+        setTimeout(() => {
+            answerZone.innerHTML = '';
+
+            correctWords.forEach((word, index) => {
+                setTimeout(() => {
+                    const chip = document.createElement('span');
+                    chip.className = 'scramble-answer-chip reveal-correct';
+                    chip.textContent = word;
+                    answerZone.appendChild(chip);
+                }, index * wordDelay);
+            });
+
+            // Show next button after all chips have finished animating
+            const totalTime = (correctWords.length - 1) * wordDelay + animDuration;
+            setTimeout(() => {
+                const nextBtn = document.getElementById('scramble-next');
+                if (nextBtn) nextBtn.style.display = 'block';
+            }, totalTime);
+        }, 500);
+    }
+
+    /**
      * Move to next sentence
      */
     nextSentence() {
         this.currentIndex++;
+        this.saveState();
         this.loadSentence();
+    }
+
+    /**
+     * Persist current progress to localStorage so the home page footer shows
+     * and the game can be resumed after a page refresh.
+     */
+    saveState() {
+        if (!this.sentences.length) return;
+        const userId = localStorage.getItem('currentUser') || 'default';
+        const state = {
+            gameType: 'scramble',
+            currentQuestionIndex: this.currentIndex,
+            score: this.score,
+            totalQuestions: this.sentences.length,
+            timestamp: Date.now(),
+            shuffledQuestions: this.sentences,
+            gameElapsedMs: 0
+        };
+        localStorage.setItem(`savedGame_${userId}_scramble`, JSON.stringify(state));
+        if (window.gameManager) window.gameManager.updateHomeNotification();
+    }
+
+    /**
+     * Remove saved state (game finished or restarted)
+     */
+    clearState() {
+        const userId = localStorage.getItem('currentUser') || 'default';
+        localStorage.removeItem(`savedGame_${userId}_scramble`);
+        if (window.gameManager) window.gameManager.updateHomeNotification();
     }
 
     /**
@@ -342,46 +426,80 @@ export class SentenceScrambleGame {
      * Show game completion screen
      */
     showGameComplete() {
+        const pct = Math.round((this.correctCount / this.sentences.length) * 100);
+        const stars = pct >= 80 ? '⭐⭐⭐' : pct >= 60 ? '⭐⭐' : '⭐';
+
+        // Hide game UI elements
+        const gameContainer = document.getElementById('scramble-game-container');
+        if (gameContainer) gameContainer.style.display = 'none';
+
         const feedback = document.getElementById('scramble-feedback');
-        if (feedback) {
-            const pct = Math.round((this.correctCount / this.sentences.length) * 100);
-            let stars = '⭐';
-            if (pct >= 80) stars = '⭐⭐⭐';
-            else if (pct >= 60) stars = '⭐⭐';
-
-            feedback.innerHTML = `
-                <div class="game-complete-message">
-                    <div style="font-size: 2em;">${stars}</div>
-                    <div>סיימת! ${this.correctCount}/${this.sentences.length} נכון</div>
-                    <div>${pct}% הצלחה</div>
-                    <div>ניקוד: ${this.score}</div>
-                </div>
-            `;
-            feedback.className = 'feedback success';
-            feedback.style.display = 'block';
-        }
-
-        // Hide word bank and answer zone
-        const wordBank = document.getElementById('scramble-word-bank');
-        if (wordBank) wordBank.innerHTML = '';
-
-        const answerZone = document.getElementById('scramble-answer-zone');
-        if (answerZone) answerZone.innerHTML = '';
-
-        // Show play again button
-        const playAgainBtn = document.getElementById('scramble-play-again');
-        if (playAgainBtn) playAgainBtn.style.display = 'inline-block';
+        if (feedback) feedback.style.display = 'none';
 
         const nextBtn = document.getElementById('scramble-next');
         if (nextBtn) nextBtn.style.display = 'none';
+
+        const checkBtn = document.getElementById('scramble-check');
+        if (checkBtn) checkBtn.style.display = 'none';
+
+        // Build the unified completion div
+        const gameEl = document.getElementById('scramble-game');
+        const completionDiv = document.createElement('div');
+        completionDiv.className = 'game-complete';
+        completionDiv.innerHTML = `
+            <div class="completion-content">
+                <h2><i class="fas fa-trophy"></i> משחק הושלם!</h2>
+                <div class="completion-stars">${stars}</div>
+                <div class="score-display">
+                    <div class="score-circle">
+                        <span class="score-number">${pct}%</span>
+                        <span class="score-label">דיוק</span>
+                    </div>
+                    <div class="score-details">
+                        <p><strong>נכון:</strong> ${this.correctCount}/${this.sentences.length}</p>
+                        <p><strong>ניקוד:</strong> ${this.score}</p>
+                    </div>
+                </div>
+                <div class="completion-actions">
+                    <button class="restart-game-btn">
+                        <i class="fas fa-redo"></i> שחק שוב
+                    </button>
+                    <button class="choose-game-btn">
+                        <i class="fas fa-home"></i> בחר משחק אחר
+                    </button>
+                </div>
+            </div>
+        `;
+
+        if (gameEl) gameEl.appendChild(completionDiv);
+
+        // Wire buttons
+        completionDiv.querySelector('.restart-game-btn').addEventListener('click', () => this.playAgain());
+        completionDiv.querySelector('.choose-game-btn').addEventListener('click', () => window.location.replace('index.html'));
+
+        // Victory audio and confetti
+        try { window.audioEffects?.playVictory(); } catch (e) {}
+        if (pct >= 80 && typeof confetti === 'function') {
+            confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+        }
+
+        this.clearState();
     }
 
     /**
      * Reset and play again
      */
     playAgain() {
-        const playAgainBtn = document.getElementById('scramble-play-again');
-        if (playAgainBtn) playAgainBtn.style.display = 'none';
+        // Remove completion div
+        const gameEl = document.getElementById('scramble-game');
+        if (gameEl) {
+            const completionDiv = gameEl.querySelector('.game-complete');
+            if (completionDiv) completionDiv.remove();
+        }
+
+        // Show game container again
+        const gameContainer = document.getElementById('scramble-game-container');
+        if (gameContainer) gameContainer.style.display = 'block';
 
         this.currentIndex = 0;
         this.score = 0;

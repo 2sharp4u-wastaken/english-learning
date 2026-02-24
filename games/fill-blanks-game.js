@@ -101,6 +101,10 @@ export class FillBlanksGame {
         const blankIndex = sentence.blank.position;
         const correctAnswer = words[blankIndex];
 
+        // Strip trailing punctuation so comparison with options works correctly
+        // e.g. words array may contain "blue." but options contain "blue"
+        const correctAnswerClean = correctAnswer.replace(/[.,!?;:]+$/, '');
+
         // Display sentence with blank
         const sentenceDisplay = document.getElementById('fill-blanks-sentence');
         if (sentenceDisplay) {
@@ -131,8 +135,8 @@ export class FillBlanksGame {
             themeEl.textContent = `${icon} ${sentence.theme}`;
         }
 
-        // Render options
-        this.renderOptions(sentence.blank.options, correctAnswer);
+        // Render options using the punctuation-stripped correct answer
+        this.renderOptions(sentence.blank.options, correctAnswerClean);
 
         // Reset feedback
         const feedback = document.getElementById('fill-blanks-feedback');
@@ -180,6 +184,9 @@ export class FillBlanksGame {
         this.isAnswerSelected = true;
 
         const isCorrect = buttonElement.dataset.correct === 'true';
+        if (window.gameManager?.handleMoraleAnswerResult) {
+            window.gameManager.handleMoraleAnswerResult(isCorrect);
+        }
 
         // Mark selected button
         buttonElement.classList.add(isCorrect ? 'correct' : 'incorrect');
@@ -211,21 +218,31 @@ export class FillBlanksGame {
             const points = 10;
             this.score += points;
             if (this.scoreManager) {
-                this.scoreManager.addScore(points, `Fill Blank: ${answer}`);
+                this.scoreManager.addPoints('fill-blanks', points);
             }
 
-            // Speak the full sentence
+            // Confetti and correct sound
+            if (typeof confetti === 'function') {
+                confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 } });
+            }
+            try { window.audioEffects?.playCorrect(); } catch (e) {}
+
+            // Speak the full sentence then show Next button — no auto-advance
             this.speakSentence(this.currentSentence.sentence);
+            const nextBtn = document.getElementById('fill-blanks-next');
+            if (nextBtn) nextBtn.style.display = 'block';
         } else {
             this.wrongCount++;
+            // Wrong answer sound
+            try { window.audioEffects?.playWrong(); } catch (e) {}
             // Speak the correct answer
             const correct = this.currentSentence.blank.options[0];
             this.speakSentence(correct);
-        }
 
-        // Show next button
-        const nextBtn = document.getElementById('fill-blanks-next');
-        if (nextBtn) nextBtn.style.display = 'inline-block';
+            // Show next button for manual advance on wrong answer
+            const nextBtn = document.getElementById('fill-blanks-next');
+            if (nextBtn) nextBtn.style.display = 'block';
+        }
 
         this.updateProgress();
     }
@@ -267,7 +284,37 @@ export class FillBlanksGame {
      */
     nextSentence() {
         this.currentIndex++;
+        this.saveState();
         this.loadSentence();
+    }
+
+    /**
+     * Persist current progress to localStorage so the home page footer shows
+     * and the game can be resumed after a page refresh.
+     */
+    saveState() {
+        if (!this.sentences.length) return;
+        const userId = localStorage.getItem('currentUser') || 'default';
+        const state = {
+            gameType: 'fill-blanks',
+            currentQuestionIndex: this.currentIndex,
+            score: this.score,
+            totalQuestions: this.sentences.length,
+            timestamp: Date.now(),
+            shuffledQuestions: this.sentences,
+            gameElapsedMs: 0
+        };
+        localStorage.setItem(`savedGame_${userId}_fill-blanks`, JSON.stringify(state));
+        if (window.gameManager) window.gameManager.updateHomeNotification();
+    }
+
+    /**
+     * Remove saved state (game finished or restarted)
+     */
+    clearState() {
+        const userId = localStorage.getItem('currentUser') || 'default';
+        localStorage.removeItem(`savedGame_${userId}_fill-blanks`);
+        if (window.gameManager) window.gameManager.updateHomeNotification();
     }
 
     /**
@@ -293,46 +340,77 @@ export class FillBlanksGame {
      * Show game completion screen
      */
     showGameComplete() {
+        const pct = Math.round((this.correctCount / this.sentences.length) * 100);
+        const stars = pct >= 80 ? '⭐⭐⭐' : pct >= 60 ? '⭐⭐' : '⭐';
+
+        // Hide game UI elements
+        const gameContainer = document.getElementById('fill-blanks-container');
+        if (gameContainer) gameContainer.style.display = 'none';
+
         const feedback = document.getElementById('fill-blanks-feedback');
-        if (feedback) {
-            const pct = Math.round((this.correctCount / this.sentences.length) * 100);
-            let stars = '⭐';
-            if (pct >= 80) stars = '⭐⭐⭐';
-            else if (pct >= 60) stars = '⭐⭐';
-
-            feedback.innerHTML = `
-                <div class="game-complete-message">
-                    <div style="font-size: 2em;">${stars}</div>
-                    <div>סיימת! ${this.correctCount}/${this.sentences.length} נכון</div>
-                    <div>${pct}% הצלחה</div>
-                    <div>ניקוד: ${this.score}</div>
-                </div>
-            `;
-            feedback.className = 'feedback success';
-            feedback.style.display = 'block';
-        }
-
-        // Clear sentence display and options
-        const sentenceDisplay = document.getElementById('fill-blanks-sentence');
-        if (sentenceDisplay) sentenceDisplay.innerHTML = '';
-
-        const optionsContainer = document.getElementById('fill-blanks-options');
-        if (optionsContainer) optionsContainer.innerHTML = '';
-
-        // Show play again button
-        const playAgainBtn = document.getElementById('fill-blanks-play-again');
-        if (playAgainBtn) playAgainBtn.style.display = 'inline-block';
+        if (feedback) feedback.style.display = 'none';
 
         const nextBtn = document.getElementById('fill-blanks-next');
         if (nextBtn) nextBtn.style.display = 'none';
+
+        // Build the unified completion div
+        const gameEl = document.getElementById('fill-blanks-game');
+        const completionDiv = document.createElement('div');
+        completionDiv.className = 'game-complete';
+        completionDiv.innerHTML = `
+            <div class="completion-content">
+                <h2><i class="fas fa-trophy"></i> משחק הושלם!</h2>
+                <div class="completion-stars">${stars}</div>
+                <div class="score-display">
+                    <div class="score-circle">
+                        <span class="score-number">${pct}%</span>
+                        <span class="score-label">דיוק</span>
+                    </div>
+                    <div class="score-details">
+                        <p><strong>נכון:</strong> ${this.correctCount}/${this.sentences.length}</p>
+                        <p><strong>ניקוד:</strong> ${this.score}</p>
+                    </div>
+                </div>
+                <div class="completion-actions">
+                    <button class="restart-game-btn">
+                        <i class="fas fa-redo"></i> שחק שוב
+                    </button>
+                    <button class="choose-game-btn">
+                        <i class="fas fa-home"></i> בחר משחק אחר
+                    </button>
+                </div>
+            </div>
+        `;
+
+        if (gameEl) gameEl.appendChild(completionDiv);
+
+        // Wire buttons
+        completionDiv.querySelector('.restart-game-btn').addEventListener('click', () => this.playAgain());
+        completionDiv.querySelector('.choose-game-btn').addEventListener('click', () => window.location.replace('index.html'));
+
+        // Victory audio and confetti
+        try { window.audioEffects?.playVictory(); } catch (e) {}
+        if (pct >= 80 && typeof confetti === 'function') {
+            confetti({ particleCount: 120, spread: 70, origin: { y: 0.6 } });
+        }
+
+        this.clearState();
     }
 
     /**
      * Reset and play again
      */
     playAgain() {
-        const playAgainBtn = document.getElementById('fill-blanks-play-again');
-        if (playAgainBtn) playAgainBtn.style.display = 'none';
+        // Remove completion div
+        const gameEl = document.getElementById('fill-blanks-game');
+        if (gameEl) {
+            const completionDiv = gameEl.querySelector('.game-complete');
+            if (completionDiv) completionDiv.remove();
+        }
+
+        // Show game container again
+        const gameContainer = document.getElementById('fill-blanks-container');
+        if (gameContainer) gameContainer.style.display = 'block';
 
         this.currentIndex = 0;
         this.score = 0;

@@ -23,6 +23,12 @@ export async function loadVocabularyQuestion(question) {
             feedback.textContent = '';
             feedback.className = 'feedback';
         }
+        const audioHint = document.getElementById('vocab-audio-hint');
+        if (audioHint) {
+            audioHint.textContent = '';
+            audioHint.classList.remove('show');
+            audioHint.hidden = true;
+        }
 
         // Check if required elements exist
         const wordElement = document.getElementById('vocab-word');
@@ -95,6 +101,14 @@ export async function loadVocabularyQuestion(question) {
         this.vocabPlayCount = 0;
         this.vocabRequiredClicks = requiredClicks;
         this.vocabularyAudioPlayed = false;
+        this.isManualVocabPlayPending = false;
+
+        // Always show the initial required count as soon as the question appears.
+        if (audioHint && requiredClicks > 0) {
+            audioHint.textContent = `השמע עוד ${requiredClicks} ${requiredClicks === 1 ? 'פעם' : 'פעמים'}`;
+            audioHint.hidden = false;
+            audioHint.classList.add('show');
+        }
 
         // Reset next button
         document.getElementById('vocab-next').style.display = 'none';
@@ -106,26 +120,14 @@ export async function loadVocabularyQuestion(question) {
         console.log('📢 [VOCABULARY] Auto-playing word on question load');
         try {
             await speechManager.speakWord(question.word, '', 'vocabulary');
-
-            // Count auto-play as first play
-            this.vocabPlayCount = 1;
-            this.audioPlaysLeft--;
-            this.updateAllPlayCounters('vocabulary');
-
-            const clicksLeft = requiredClicks - 1;
-            console.log('📢 [VOCABULARY] Auto-play complete - need', clicksLeft, 'more plays');
-
-            // Show prompt for remaining plays
-            if (feedback) {
-                feedback.textContent = `השמע את המילה עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}...`;
-                feedback.className = 'feedback vocab-prompt';
-            }
+            console.log('📢 [VOCABULARY] Auto-play complete - waiting for user plays:', requiredClicks);
         } catch (error) {
             console.error('Error auto-playing word audio:', error);
             // If auto-play fails, show full prompt
-            if (feedback) {
-                feedback.textContent = `🔊 לחץ על כפתור ההשמעה ${requiredClicks} פעמים כדי לשמוע את המילה ולחשוף את התשובות`;
-                feedback.className = 'feedback vocab-prompt';
+            if (audioHint) {
+                audioHint.textContent = `לחץ על ההשמעה ${requiredClicks} פעמים`;
+                audioHint.hidden = false;
+                audioHint.classList.add('show');
             }
         }
 
@@ -138,7 +140,14 @@ export async function loadVocabularyQuestion(question) {
 export async function checkVocabularyAnswer(selectedIndex, correctIndex) {
     const buttons = document.querySelectorAll('#vocab-options .option-btn');
     const feedback = document.getElementById('vocab-feedback');
+    const audioHint = document.getElementById('vocab-audio-hint');
     const isCorrect = selectedIndex === correctIndex;
+
+    if (audioHint) {
+        audioHint.textContent = '';
+        audioHint.classList.remove('show');
+        audioHint.hidden = true;
+    }
 
     // Track word attempt immediately
     const question = this.shuffledQuestions[this.currentQuestionIndex];

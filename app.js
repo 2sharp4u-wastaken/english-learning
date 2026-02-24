@@ -84,6 +84,405 @@ class AppManager {
         this.initializeManagers();
     }
 
+    // ============================================================
+    // PHASE 3 - Screen Navigation
+    // ============================================================
+
+    /**
+     * Navigate to a named screen.
+     * Valid ids: 'welcome-screen', 'courses-screen', 'topics-screen', 'profile-screen',
+     *            or any game content id (e.g. 'vocabulary-game').
+     */
+    showScreen(screenId) {
+        document.querySelectorAll('.game-content').forEach(el => {
+            el.style.display = 'none';
+        });
+        const target = document.getElementById(screenId);
+        if (target) {
+            target.style.display = 'block';
+        }
+        this.currentScreenId = screenId;
+
+        // Update active state on top-screen-nav buttons
+        document.querySelectorAll('.top-screen-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+        if (screenId === 'courses-screen') {
+            document.getElementById('nav-courses-btn')?.classList.add('active');
+        } else if (screenId === 'profile-screen') {
+            document.getElementById('nav-profile-btn')?.classList.add('active');
+        }
+    }
+
+    setupScreenNavigation() {
+        // Courses nav button
+        const coursesNavBtn = document.getElementById('nav-courses-btn');
+        if (coursesNavBtn) {
+            coursesNavBtn.addEventListener('click', () => {
+                this.renderCoursesScreen();
+                this.showScreen('courses-screen');
+            });
+        }
+
+        // Profile nav button
+        const profileNavBtn = document.getElementById('nav-profile-btn');
+        if (profileNavBtn) {
+            profileNavBtn.addEventListener('click', () => {
+                this.renderProfileScreen();
+                this.showScreen('profile-screen');
+            });
+        }
+
+        // Back from courses → welcome
+        const coursesBackBtn = document.getElementById('courses-back-btn');
+        if (coursesBackBtn) {
+            coursesBackBtn.addEventListener('click', () => {
+                this.showScreen('welcome-screen');
+            });
+        }
+
+        // Back from topics → courses
+        const topicsBackBtn = document.getElementById('topics-back-btn');
+        if (topicsBackBtn) {
+            topicsBackBtn.addEventListener('click', () => {
+                this.renderCoursesScreen();
+                this.showScreen('courses-screen');
+            });
+        }
+
+        // Back from profile → welcome
+        const profileBackBtn = document.getElementById('profile-back-btn');
+        if (profileBackBtn) {
+            profileBackBtn.addEventListener('click', () => {
+                this.showScreen('welcome-screen');
+            });
+        }
+
+        // Certificate modal close
+        const certContinueBtn = document.getElementById('cert-continue-btn');
+        if (certContinueBtn) {
+            certContinueBtn.addEventListener('click', () => {
+                this.hideCertificateModal();
+            });
+        }
+    }
+
+    // ============================================================
+    // PHASE 3 - Course Selection Screen
+    // ============================================================
+
+    renderCoursesScreen() {
+        const grid = document.getElementById('courses-grid');
+        if (!grid || !this.courseManager) return;
+
+        // Update coin balance
+        const coinEl = document.getElementById('courses-coin-balance');
+        if (coinEl) coinEl.textContent = this.userProgress?.coins || 0;
+
+        const courses = this.courseManager.getAllCourses();
+        if (courses.length === 0) {
+            grid.innerHTML = '<div style="text-align:center;color:#a0aec0;padding:40px;">אין קורסים זמינים</div>';
+            return;
+        }
+
+        grid.innerHTML = courses.map(course => {
+            const unlocked = this.courseManager.isCourseUnlocked(course.id);
+            const progress = this.courseManager.getCourseProgress(course.id);
+            const diffClass = course.difficulty || 'beginner';
+            const diffLabel = { beginner: 'מתחיל', intermediate: 'בינוני', advanced: 'מתקדם' }[diffClass] || diffClass;
+
+            return `
+                <div class="course-card ${unlocked ? '' : 'locked'}" data-course-id="${course.id}">
+                    <div class="course-card-top">
+                        <div class="course-card-icon">${course.icon || '📚'}</div>
+                        <div class="course-card-info">
+                            <h3 class="course-card-name">${course.nameHebrew || course.name}</h3>
+                            <p class="course-card-desc">${course.descriptionHebrew || course.description || ''}</p>
+                        </div>
+                        <div class="course-card-lock">${unlocked ? '' : '🔒'}</div>
+                    </div>
+                    <div class="course-difficulty-badge ${diffClass}">${diffLabel}</div>
+                    <div class="course-progress-row">
+                        <div class="course-progress-bar">
+                            <div class="course-progress-fill" style="width:${progress}%"></div>
+                        </div>
+                        <span class="course-progress-pct">${progress}%</span>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Wire click handlers
+        grid.querySelectorAll('.course-card:not(.locked)').forEach(card => {
+            card.addEventListener('click', () => {
+                const courseId = card.dataset.courseId;
+                this.renderTopicsScreen(courseId);
+                this.showScreen('topics-screen');
+            });
+        });
+    }
+
+    // ============================================================
+    // PHASE 3 - Topic Selection Screen
+    // ============================================================
+
+    renderTopicsScreen(courseId) {
+        this.currentCourseId = courseId;
+        const course = this.courseManager?.getCourse(courseId);
+        if (!course) return;
+
+        // Update header
+        const titleEl = document.getElementById('topics-course-title');
+        if (titleEl) titleEl.textContent = course.nameHebrew || course.name;
+        const iconEl = document.getElementById('topics-course-icon');
+        if (iconEl) iconEl.textContent = course.icon || '📚';
+
+        // Course progress bar
+        const progress = this.courseManager.getCourseProgress(courseId);
+        const progressFill = document.getElementById('topics-progress-fill');
+        if (progressFill) progressFill.style.width = progress + '%';
+        const progressLabel = document.getElementById('topics-progress-label');
+        if (progressLabel) progressLabel.textContent = `${progress}% הושלם`;
+
+        // Update coin balance
+        const coinEl = document.getElementById('topics-coin-balance');
+        if (coinEl) coinEl.textContent = this.userProgress?.coins || 0;
+
+        // Render topics grouped by unit
+        const list = document.getElementById('topics-list');
+        if (!list) return;
+
+        let html = '';
+        (course.units || []).forEach(unit => {
+            html += `<div class="topic-unit-divider">${unit.nameHebrew || unit.name} ${unit.icon || ''}</div>`;
+
+            (unit.topics || []).forEach(topic => {
+                const unlocked = this.courseManager.isTopicUnlocked(topic.id);
+                const completed = this.courseManager.isTopicCompleted(topic.id);
+                const mastery = this.courseManager.getTopicMastery(topic.id);
+                const topicProgress = this.userProgress?.topicProgress?.[topic.id];
+                const completedActivities = topicProgress?.completedActivities || [];
+
+                const activitiesBadges = (topic.activities || []).map(act => {
+                    const done = completedActivities.includes(act);
+                    const labels = {
+                        vocabulary: 'אוצר מילים', listening: 'הקשבה', memory: 'זיכרון',
+                        scramble: 'סידור', 'fill-blanks': 'השלמה', grammar: 'דקדוק',
+                        pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC'
+                    };
+                    return `<span class="activity-badge ${done ? 'done' : ''}">${labels[act] || act}</span>`;
+                }).join('');
+
+                const rightIcon = completed
+                    ? `<span class="topic-check-icon">✅</span>`
+                    : unlocked
+                        ? `<i class="fas fa-chevron-left topic-arrow-icon"></i>`
+                        : `<span class="topic-lock-icon">🔒</span>`;
+
+                html += `
+                    <div class="topic-card ${unlocked ? '' : 'locked'} ${completed ? 'completed' : ''}"
+                         data-topic-id="${topic.id}" data-course-id="${courseId}">
+                        <div class="topic-card-icon">${topic.icon || '📖'}</div>
+                        <div class="topic-card-body">
+                            <div class="topic-card-name">${topic.nameHebrew || topic.name}</div>
+                            <div class="topic-card-activities">${activitiesBadges}</div>
+                            ${mastery > 0 ? `
+                            <div class="topic-mastery-row">
+                                <div class="topic-mastery-bar">
+                                    <div class="topic-mastery-fill" style="width:${mastery}%"></div>
+                                </div>
+                                <span class="topic-mastery-pct">${mastery}%</span>
+                            </div>` : ''}
+                        </div>
+                        <div class="topic-card-right">${rightIcon}</div>
+                    </div>
+                `;
+            });
+        });
+
+        list.innerHTML = html;
+
+        // Wire click handlers for unlocked topics
+        list.querySelectorAll('.topic-card:not(.locked)').forEach(card => {
+            card.addEventListener('click', () => {
+                const topicId = card.dataset.topicId;
+                this.showTopicActivityPicker(topicId, courseId, card);
+            });
+        });
+    }
+
+    showTopicActivityPicker(topicId, courseId, cardEl) {
+        // Remove existing picker if any
+        document.querySelectorAll('.topic-activity-picker').forEach(el => el.remove());
+
+        const topicData = this.courseManager?.getTopic(topicId);
+        if (!topicData) return;
+        const { topic } = topicData;
+
+        const activityIcons = {
+            vocabulary: '📚', listening: '👂', memory: '🃏',
+            scramble: '🔀', 'fill-blanks': '✍️', grammar: '✏️',
+            pronunciation: '🎤', reading: '📖', abc: '🔤'
+        };
+        const activityLabels = {
+            vocabulary: 'אוצר מילים', listening: 'הקשבה', memory: 'זיכרון',
+            scramble: 'סידור משפטים', 'fill-blanks': 'השלמת משפט',
+            grammar: 'דקדוק', pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC'
+        };
+
+        const picker = document.createElement('div');
+        picker.className = 'topic-activity-picker show';
+        picker.innerHTML = `
+            <div class="topic-activity-picker-title">בחר פעילות: ${topic.nameHebrew || topic.name}</div>
+            <div class="activity-picker-grid">
+                ${(topic.activities || []).map(act => `
+                    <button class="activity-picker-btn" data-activity="${act}" data-topic="${topicId}">
+                        <span class="activity-icon">${activityIcons[act] || '🎮'}</span>
+                        ${activityLabels[act] || act}
+                    </button>
+                `).join('')}
+            </div>
+        `;
+
+        cardEl.insertAdjacentElement('afterend', picker);
+
+        // Wire activity buttons
+        picker.querySelectorAll('.activity-picker-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const activity = btn.dataset.activity;
+                picker.remove();
+                this.startTopicActivity(topicId, activity, topic);
+            });
+        });
+
+        // Close picker when clicking elsewhere
+        const closeHandler = (e) => {
+            if (!picker.contains(e.target) && !cardEl.contains(e.target)) {
+                picker.remove();
+                document.removeEventListener('click', closeHandler);
+            }
+        };
+        setTimeout(() => document.addEventListener('click', closeHandler), 100);
+    }
+
+    startTopicActivity(topicId, activityType, topic) {
+        // Mark topic as started
+        this.courseManager?.startTopic(topicId);
+
+        // Navigate to the appropriate game
+        // gameManager.startGame() handles showing the correct screen
+        if (typeof gameManager !== 'undefined') {
+            // For games that need a category, use the topic's words
+            if (['vocabulary', 'listening', 'pronunciation', 'reading', 'grammar'].includes(activityType)) {
+                // Start game with topic words if available
+                if (topic.words && topic.words.length > 0) {
+                    gameManager.currentTopicId = topicId;
+                    gameManager.startGame(activityType, topic.words);
+                } else {
+                    gameManager.startGame(activityType);
+                }
+            } else {
+                gameManager.currentTopicId = topicId;
+                gameManager.startGame(activityType);
+            }
+        }
+    }
+
+    // ============================================================
+    // PHASE 3 - Profile / Dashboard Screen
+    // ============================================================
+
+    renderProfileScreen() {
+        // Avatar
+        const avatarEl = document.getElementById('profile-avatar-large');
+        if (avatarEl) {
+            const name = this.currentUser || 'U';
+            avatarEl.textContent = name.charAt(0).toUpperCase();
+        }
+
+        // Name
+        const nameEl = document.getElementById('profile-student-name');
+        if (nameEl) {
+            nameEl.textContent = this.userProgress?.studentName || this.currentUser || 'לומד';
+        }
+
+        // Coins
+        const coinsEl = document.getElementById('profile-coin-count');
+        if (coinsEl) coinsEl.textContent = this.userProgress?.coins || 0;
+
+        // Stats
+        const streakEl = document.getElementById('profile-streak');
+        if (streakEl) streakEl.textContent = this.userProgress?.streakDays || 0;
+
+        const topicsDoneEl = document.getElementById('profile-topics-done');
+        if (topicsDoneEl && this.courseManager) {
+            const stats = this.courseManager.getStats();
+            topicsDoneEl.textContent = stats.completedTopics;
+        }
+
+        const wordsMasteredEl = document.getElementById('profile-words-mastered');
+        if (wordsMasteredEl && this.progressManager) {
+            const masteredCount = Object.values(this.userProgress?.wordMastery || {})
+                .filter(w => w.mastery >= 0.8).length;
+            wordsMasteredEl.textContent = masteredCount;
+        }
+
+        const certsEl = document.getElementById('profile-certs-count');
+        if (certsEl) certsEl.textContent = (this.userProgress?.certificates || []).length;
+
+        // Certificates gallery
+        this.renderCertificateGallery();
+    }
+
+    renderCertificateGallery() {
+        const grid = document.getElementById('profile-certificates-grid');
+        if (!grid) return;
+
+        const certs = this.userProgress?.certificates || [];
+        if (certs.length === 0) {
+            grid.innerHTML = '<div class="no-certs-msg">עוד אין תעודות. סיים נושא כדי לקבל תעודה! 🎓</div>';
+            return;
+        }
+
+        grid.innerHTML = certs.map(cert => `
+            <div class="mini-cert-card" title="${cert.topicName}">
+                <span class="mini-cert-icon">🏅</span>
+                <div class="mini-cert-name">${cert.topicName}</div>
+                <div class="mini-cert-date">${cert.earnedDate || ''}</div>
+            </div>
+        `).join('');
+    }
+
+    // ============================================================
+    // PHASE 3 - Certificate Modal
+    // ============================================================
+
+    showCertificateModal(topicName, score) {
+        const modal = document.getElementById('certificate-modal');
+        if (!modal) return;
+
+        document.getElementById('cert-topic-name').textContent = topicName || 'נושא';
+        document.getElementById('cert-score').textContent = score || 100;
+        const today = new Date().toLocaleDateString('he-IL');
+        document.getElementById('cert-date').textContent = today;
+
+        modal.style.display = 'flex';
+
+        // Fire confetti
+        if (typeof confetti === 'function') {
+            confetti({ particleCount: 120, spread: 80, origin: { y: 0.5 } });
+        }
+    }
+
+    hideCertificateModal() {
+        const modal = document.getElementById('certificate-modal');
+        if (modal) modal.style.display = 'none';
+    }
+
+    // ============================================================
+    // END PHASE 3
+    // ============================================================
+
     initializeManagers() {
         if (!this.userProgress) {
             console.error('Cannot initialize managers: userProgress not loaded');
@@ -101,7 +500,7 @@ class AppManager {
 
         // Initialize each manager
         this.scoreManager.initialize();
-        this.progressManager.initialize();
+        this.progressManager.initialize(this.userProgress);
         this.courseManager.initialize();
         this.certificateManager.initialize();
         this.coinManager.initialize();
@@ -126,6 +525,8 @@ class AppManager {
         window.memoryGame = this.memoryGame;
         window.scrambleGame = this.scrambleGame;
         window.fillBlanksGame = this.fillBlanksGame;
+        window.showCertificateModal = (topicName, score) => this.showCertificateModal(topicName, score);
+        window.showScreen = (id) => this.showScreen(id);
 
         // Wire up memory play-again button
         const memoryPlayAgainBtn = document.getElementById('memory-play-again');
@@ -171,6 +572,9 @@ class AppManager {
                 if (window.fillBlanksGame) window.fillBlanksGame.playAgain();
             });
         }
+
+        // Setup Phase 3 screen navigation
+        this.setupScreenNavigation();
 
         console.log('[AppManager] All managers initialized successfully');
     }
@@ -238,6 +642,16 @@ class AppManager {
 
         // Reinitialize managers with new user's progress
         this.initializeManagers();
+
+        // Refresh game manager references/data for the new user.
+        if (window.gameManager?.refreshPracticeDataContext) {
+            window.gameManager.refreshPracticeDataContext();
+        }
+
+        // Refresh practice badge/count and all card stats after user switch.
+        if (window.gamificationManager?.updateAllGameCards) {
+            window.gamificationManager.updateAllGameCards();
+        }
 
         console.log(`Switched to user: ${userName}`);
 
@@ -501,6 +915,7 @@ class AppManager {
             totalCorrectAnswers: 0,
             preferredDifficulty: 'beginner',
             wordMastery: {},  // Track mastery per word: { "Dog": { totalAttempts, correctAttempts, ... } }
+            lastSessionWordKeys: {},  // { gameType: ['word_category', ...] } - words shown in last session per game type
 
             // Course system (v3)
             courses: {},  // { courseId: { unlocked, startedDate, currentUnit, currentTopic } }

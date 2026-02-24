@@ -7,60 +7,100 @@ export const subjects = {
         image: '👦☝️',
         hebrew: 'אני',
         verb: 'am',
-        audioText: 'I'
+        audioText: 'I',
+        gender: 'masculine'
     },
     'you': {
         image: '👉😊',
         hebrew: 'אתה/את',
         verb: 'are',
-        audioText: 'you'
+        audioText: 'you',
+        gender: 'masculine'
     },
     'he': {
         image: '👦',
         hebrew: 'הוא',
         verb: 'is',
-        audioText: 'he'
+        audioText: 'he',
+        gender: 'masculine'
     },
     'she': {
         image: '👧',
         hebrew: 'היא',
         verb: 'is',
-        audioText: 'she'
+        audioText: 'she',
+        gender: 'feminine'
     },
     'it': {
-        image: '🐕',
+        image: '🧸',
         hebrew: 'זה',
         verb: 'is',
-        audioText: 'it'
+        audioText: 'it',
+        gender: 'masculine'
     },
     'we': {
         image: '👨‍👩‍👧',
         hebrew: 'אנחנו',
         verb: 'are',
-        audioText: 'we'
+        audioText: 'we',
+        gender: 'plural'
     },
     'they': {
         image: '👫👫',
         hebrew: 'הם',
         verb: 'are',
-        audioText: 'they'
+        audioText: 'they',
+        gender: 'plural'
     }
 };
 
 // Simple adjectives/states that kids know (with pictures)
+// hebrew = masculine form; hebrewFem = feminine; hebrewPlural = plural
 export const predicates = [
-    { word: 'happy', image: '😊', hebrew: 'שמח' },
-    { word: 'sad', image: '😢', hebrew: 'עצוב' },
-    { word: 'hungry', image: '🍽️', hebrew: 'רעב' },
-    { word: 'tired', image: '😴', hebrew: 'עייף' },
-    { word: 'big', image: '🐘', hebrew: 'גדול' },
-    { word: 'small', image: '🐁', hebrew: 'קטן' },
-    { word: 'fast', image: '🏃', hebrew: 'מהיר' },
-    { word: 'playing', image: '⚽', hebrew: 'משחק' },
-    { word: 'eating', image: '🍎', hebrew: 'אוכל' },
-    { word: 'sleeping', image: '😴', hebrew: 'ישן' },
-    { word: 'at home', image: '🏠', hebrew: 'בבית' },
-    { word: 'at school', image: '🏫', hebrew: 'בבית ספר' }
+    // Feelings
+    { word: 'happy',      image: '😊',  hebrew: 'שמח',        hebrewFem: 'שמחה',       hebrewPlural: 'שמחים' },
+    { word: 'sad',        image: '😢',  hebrew: 'עצוב',       hebrewFem: 'עצובה',      hebrewPlural: 'עצובים' },
+    { word: 'angry',      image: '😠',  hebrew: 'כועס',       hebrewFem: 'כועסת',      hebrewPlural: 'כועסים' },
+    { word: 'excited',    image: '🤩',  hebrew: 'מתרגש',      hebrewFem: 'מתרגשת',     hebrewPlural: 'מתרגשים' },
+    { word: 'scared',     image: '😨',  hebrew: 'מפחד',       hebrewFem: 'מפחדת',      hebrewPlural: 'מפחדים' },
+    { word: 'bored',      image: '😑',  hebrew: 'משועמם',     hebrewFem: 'משועממת',    hebrewPlural: 'משועממים' },
+    { word: 'surprised',  image: '😲',  hebrew: 'מופתע',      hebrewFem: 'מופתעת',     hebrewPlural: 'מופתעים' },
+    { word: 'funny',      image: '🤣',  hebrew: 'מצחיק',      hebrewFem: 'מצחיקה',     hebrewPlural: 'מצחיקים' },
+    // Body states
+    { word: 'hungry',     image: '🍽️', hebrew: 'רעב',        hebrewFem: 'רעבה',       hebrewPlural: 'רעבים' },
+    { word: 'thirsty',    image: '🥤',  hebrew: 'צמא',        hebrewFem: 'צמאה',       hebrewPlural: 'צמאים' },
+    { word: 'tired',      image: '😴',  hebrew: 'עייף',       hebrewFem: 'עייפה',      hebrewPlural: 'עייפים' },
+    { word: 'sick',       image: '🤒',  hebrew: 'חולה',       hebrewFem: 'חולה',       hebrewPlural: 'חולים' },
+    { word: 'cold',       image: '🥶',  hebrew: 'קר',         hebrewFem: 'קרה',        hebrewPlural: 'קרים' },
+    { word: 'hot',        image: '🥵',  hebrew: 'חם',         hebrewFem: 'חמה',        hebrewPlural: 'חמים' },
+    // Sizes & qualities
+    { word: 'big',        image: '🐋',  hebrew: 'גדול',       hebrewFem: 'גדולה',      hebrewPlural: 'גדולים' },
+    { word: 'small',      image: '🐜',  hebrew: 'קטן',        hebrewFem: 'קטנה',       hebrewPlural: 'קטנים' },
+    { word: 'tall',       image: '🦒',  hebrew: 'גבוה',       hebrewFem: 'גבוהה',      hebrewPlural: 'גבוהים' },
+    { word: 'fast',       image: '⚡',  hebrew: 'מהיר',       hebrewFem: 'מהירה',      hebrewPlural: 'מהירים' },
+    { word: 'strong',     image: '💪',  hebrew: 'חזק',        hebrewFem: 'חזקה',       hebrewPlural: 'חזקים' },
+    { word: 'smart',      image: '🧠',  hebrew: 'חכם',        hebrewFem: 'חכמה',       hebrewPlural: 'חכמים' },
+    { word: 'cute',       image: '🥰',  hebrew: 'חמוד',       hebrewFem: 'חמודה',      hebrewPlural: 'חמודים' },
+    { word: 'clean',      image: '🧼',  hebrew: 'נקי',        hebrewFem: 'נקייה',      hebrewPlural: 'נקיים' },
+    { word: 'dirty',      image: '🤧',  hebrew: 'מלוכלך',     hebrewFem: 'מלוכלכת',    hebrewPlural: 'מלוכלכים' },
+    // Actions
+    { word: 'playing',    image: '⚽',  hebrew: 'משחק',       hebrewFem: 'משחקת',      hebrewPlural: 'משחקים' },
+    { word: 'eating',     image: '🍎',  hebrew: 'אוכל',       hebrewFem: 'אוכלת',      hebrewPlural: 'אוכלים' },
+    { word: 'sleeping',   image: '😴',  hebrew: 'ישן',        hebrewFem: 'ישנה',       hebrewPlural: 'ישנים' },
+    { word: 'running',    image: '🏃',  hebrew: 'רץ',         hebrewFem: 'רצה',        hebrewPlural: 'רצים' },
+    { word: 'jumping',    image: '🦘',  hebrew: 'קופץ',       hebrewFem: 'קופצת',      hebrewPlural: 'קופצים' },
+    { word: 'swimming',   image: '🏊',  hebrew: 'שוחה',       hebrewFem: 'שוחה',       hebrewPlural: 'שוחים' },
+    { word: 'reading',    image: '📚',  hebrew: 'קורא',       hebrewFem: 'קוראת',      hebrewPlural: 'קוראים' },
+    { word: 'singing',    image: '🎵',  hebrew: 'שר',         hebrewFem: 'שרה',        hebrewPlural: 'שרים' },
+    { word: 'dancing',    image: '💃',  hebrew: 'רוקד',       hebrewFem: 'רוקדת',      hebrewPlural: 'רוקדים' },
+    { word: 'laughing',   image: '😂',  hebrew: 'צוחק',       hebrewFem: 'צוחקת',      hebrewPlural: 'צוחקים' },
+    { word: 'cooking',    image: '👨‍🍳', hebrew: 'מבשל',       hebrewFem: 'מבשלת',      hebrewPlural: 'מבשלים' },
+    { word: 'drawing',    image: '🎨',  hebrew: 'מצייר',      hebrewFem: 'מציירת',     hebrewPlural: 'מציירים' },
+    // Locations
+    { word: 'home',       image: '🏠',  hebrew: 'בבית',       hebrewFem: 'בבית',       hebrewPlural: 'בבית' },
+    { word: 'in school',  image: '🏫',  hebrew: 'בבית ספר',   hebrewFem: 'בבית ספר',   hebrewPlural: 'בבית ספר' },
+    { word: 'outside',    image: '🌳',  hebrew: 'בחוץ',       hebrewFem: 'בחוץ',       hebrewPlural: 'בחוץ' },
+    { word: 'in bed',     image: '🛏️',  hebrew: 'במיטה',      hebrewFem: 'במיטה',      hebrewPlural: 'במיטה' },
 ];
 
 // Question types for the beginner grammar game
@@ -131,8 +171,8 @@ export function generateGrammarBeginnerQuestions(count = 10) {
 
 // Type 1: "Who Says It?" - Hear sentence, pick the subject picture
 function createWhoSaysItQuestion(subjectKey, subject, predicate, sentence) {
-    // Get 2 wrong subject options
-    const wrongSubjects = getWrongSubjects(subjectKey, 2);
+    // Get 3 wrong subject options → 4 total
+    const wrongSubjects = getWrongSubjects(subjectKey, 3);
 
     const options = [
         { key: subjectKey, image: subject.image, hebrew: subject.hebrew, isCorrect: true },
@@ -155,7 +195,8 @@ function createWhoSaysItQuestion(subjectKey, subject, predicate, sentence) {
         sentenceAudio: sentence,
         options: options,
         correctAnswer: subjectKey,
-        predicate: predicate
+        predicate: predicate,
+        hebrewSentence: `${subject.hebrew} ${getPredicateHebrew(predicate, subject)}`
     };
 }
 
@@ -181,20 +222,23 @@ function createCompleteSoundQuestion(subjectKey, subject, predicate) {
         predicate: predicate,
         options: options,
         correctAnswer: correctVerb,
-        fullSentence: `${subjectKey} ${correctVerb} ${predicate.word}`
+        fullSentence: `${subjectKey} ${correctVerb} ${predicate.word}`,
+        hebrewSentence: `${subject.hebrew} ${getPredicateHebrew(predicate, subject)}`
     };
 }
 
 // Type 3: "What Sounds Right?" - Pick correct vs incorrect sentence
 function createSoundsRightQuestion(subjectKey, subject, predicate, correctSentence) {
-    // Create a wrong sentence with incorrect verb
+    // Both wrong verb forms as distractors → 3 options total
     const wrongVerbs = ['am', 'is', 'are'].filter(v => v !== subject.verb);
-    const wrongVerb = wrongVerbs[Math.floor(Math.random() * wrongVerbs.length)];
-    const wrongSentence = `${subjectKey} ${wrongVerb} ${predicate.word}`;
 
     const options = [
         { sentence: correctSentence, audio: correctSentence, isCorrect: true },
-        { sentence: wrongSentence, audio: wrongSentence, isCorrect: false }
+        ...wrongVerbs.map(v => ({
+            sentence: `${subjectKey} ${v} ${predicate.word}`,
+            audio: `${subjectKey} ${v} ${predicate.word}`,
+            isCorrect: false
+        }))
     ];
 
     // Shuffle options
@@ -209,7 +253,9 @@ function createSoundsRightQuestion(subjectKey, subject, predicate, correctSenten
         predicateImage: predicate.image,
         predicateHebrew: predicate.hebrew,
         options: options,
-        correctAnswer: correctSentence
+        correctAnswer: correctSentence,
+        sentenceAudio: correctSentence,
+        hebrewSentence: `${subject.hebrew} ${getPredicateHebrew(predicate, subject)}`
     };
 }
 
@@ -224,15 +270,15 @@ function createMatchPictureQuestion(subjectKey, subject, predicate, sentence) {
         .filter(([key, s]) => s.verb !== subject.verb)
         .map(([key]) => key);
 
-    // Pick 2 wrong options - prefer different verbs for learning
+    // Pick 3 wrong options → 4 total; prefer different verbs for learning
     let wrongOptions = [];
-    if (differentVerbSubjects.length >= 2) {
+    if (differentVerbSubjects.length >= 3) {
         shuffleArray(differentVerbSubjects);
-        wrongOptions = differentVerbSubjects.slice(0, 2);
+        wrongOptions = differentVerbSubjects.slice(0, 3);
     } else {
         const allWrong = [...differentVerbSubjects, ...sameVerbSubjects];
         shuffleArray(allWrong);
-        wrongOptions = allWrong.slice(0, 2);
+        wrongOptions = allWrong.slice(0, 3);
     }
 
     const options = [
@@ -262,8 +308,16 @@ function createMatchPictureQuestion(subjectKey, subject, predicate, sentence) {
         sentenceAudio: sentence,
         predicate: predicate,
         options: options,
-        correctAnswer: subjectKey
+        correctAnswer: subjectKey,
+        hebrewSentence: `${subject.hebrew} ${getPredicateHebrew(predicate, subject)}`
     };
+}
+
+// Helper: Return gender-correct Hebrew form of a predicate for a given subject
+function getPredicateHebrew(predicate, subject) {
+    if (subject.gender === 'feminine') return predicate.hebrewFem || predicate.hebrew;
+    if (subject.gender === 'plural')   return predicate.hebrewPlural || predicate.hebrew;
+    return predicate.hebrew;
 }
 
 // Helper: Get wrong subject options

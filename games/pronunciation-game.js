@@ -81,15 +81,18 @@ export async function loadPronunciationQuestion(question) {
     }
     if (nextBtn) nextBtn.style.display = 'none';
 
+    // Release the lock here — DOM setup is done. Audio must NOT hold the lock
+    // because Chrome's onend event can silently fail, hanging the promise forever
+    // and permanently blocking all future loadPronunciationQuestion calls.
+    isLoadingQuestion = false;
+    console.log('Pronunciation question loaded successfully');
+
     // Auto-play the word audio when question loads
     try {
         await speechManager.speakWord(question.word, '', 'pronunciation');
     } catch (error) {
         console.error('Error playing word audio:', error);
     }
-
-    console.log('Pronunciation question loaded successfully');
-    isLoadingQuestion = false;
 }
 
 export async function toggleRecording() {
@@ -147,6 +150,13 @@ export async function toggleRecording() {
 
         recordBtn.classList.add('recording');
 
+        // Gray out listen button so kids can't cheat by playing the word during recording
+        const listenBtn = document.getElementById('pronunciation-listen');
+        if (listenBtn) {
+            listenBtn.disabled = true;
+            listenBtn.style.opacity = '0.4';
+        }
+
         if (feedback) {
             const fbData = getFeedback('pronunciation', 'recording');
             feedback.textContent = fbData.text;
@@ -156,6 +166,12 @@ export async function toggleRecording() {
         const result = await speechManager.startRecording();
 
         recordBtn.classList.remove('recording');
+
+        // Re-enable listen button
+        if (listenBtn) {
+            listenBtn.disabled = false;
+            listenBtn.style.opacity = '';
+        }
 
         await this.processPronunciationResult(result);
 
@@ -179,6 +195,12 @@ export async function toggleRecording() {
         }
     } finally {
         isProcessingRecording = false;
+        // Always re-enable listen button when recording ends (success, error, or cancel)
+        const listenBtn = document.getElementById('pronunciation-listen');
+        if (listenBtn) {
+            listenBtn.disabled = false;
+            listenBtn.style.opacity = '';
+        }
     }
 }
 

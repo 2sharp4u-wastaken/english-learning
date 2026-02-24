@@ -71,11 +71,16 @@ export function loadGrammarQuestion(question) {
 export async function checkGrammarAnswer(selectedIndex, correctIndex, question) {
     const options = document.querySelectorAll('#grammar-options .option-btn');
     const feedback = document.getElementById('grammar-feedback');
+    const isCorrect = selectedIndex === correctIndex;
+
+    if (window.gameManager?.handleMoraleAnswerResult) {
+        window.gameManager.handleMoraleAnswerResult(isCorrect);
+    }
 
     // Disable all options
     options.forEach(btn => btn.disabled = true);
 
-    if (selectedIndex === correctIndex) {
+    if (isCorrect) {
         options[selectedIndex].classList.add('correct');
         const explanation = this.currentLanguage === 'en' ? question.explanation : question.hebrewExplanation;
 

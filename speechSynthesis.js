@@ -234,8 +234,13 @@ class SpeechManager {
 
         const utterance = new SpeechSynthesisUtterance(text);
 
-        // Always use English voice for consistency
-        if (this.englishVoice) {
+        // Route voice/language by requested content language
+        if (options.language === 'hebrew') {
+            if (this.hebrewVoice) {
+                utterance.voice = this.hebrewVoice;
+            }
+            utterance.lang = this.hebrewVoice?.lang || 'he-IL';
+        } else if (this.englishVoice) {
             utterance.voice = this.englishVoice;
             utterance.lang = 'en-US';
         }

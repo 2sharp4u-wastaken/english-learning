@@ -77,6 +77,7 @@ async function renderWhoSaysIt(question, gameBoard) {
                     </button>
                 `).join('')}
             </div>
+            <div class="gb-translation" id="gb-translation" style="display:none"></div>
         </div>
         <div class="feedback" id="grammar-beginner-feedback"></div>
     `;
@@ -88,17 +89,23 @@ async function renderWhoSaysIt(question, gameBoard) {
     const playBtn = document.getElementById('play-sentence');
     if (playBtn) {
         playBtn.addEventListener('click', () => {
-            speechManager.speakWord(question.sentenceAudio, '', 'grammar-beginner');
+            speechManager.speakSentence(question.sentenceAudio);
         });
     }
 
-    // Auto-play the sentence
+    // Auto-play the sentence (use speakSentence to preserve spaces)
     await delay(300);
-    speechManager.speakWord(question.sentenceAudio, '', 'grammar-beginner');
+    speechManager.speakSentence(question.sentenceAudio);
 }
 
 // Type 2: "Complete the Sound" - See subject picture, pick am/is/are
 async function renderCompleteSound(question, gameBoard) {
+    async function speakContext() {
+        await speechManager.speakWord(question.subjectAudio, '', 'grammar-beginner');
+        await delay(500);
+        speechManager.speakWord(question.predicate.word, '', 'grammar-beginner');
+    }
+
     gameBoard.innerHTML = `
         <div class="grammar-beginner-card">
             <div class="instruction-area">
@@ -108,8 +115,9 @@ async function renderCompleteSound(question, gameBoard) {
                 <div class="subject-display">
                     <span class="subject-image-large">${question.subjectImage}</span>
                     <span class="subject-hebrew">${question.subjectHebrew}</span>
-                    <button class="play-subject-btn" id="play-subject">
+                    <button class="play-sentence-btn" id="play-subject">
                         <i class="fas fa-volume-up"></i>
+                        <span>השמע שוב</span>
                     </button>
                 </div>
                 <div class="verb-blank">___</div>
@@ -119,57 +127,41 @@ async function renderCompleteSound(question, gameBoard) {
                 </div>
             </div>
             <div class="verb-options" id="grammar-beginner-options">
-                ${question.options.map((opt, idx) => `
-                    <button class="verb-option-btn" data-index="${idx}" data-verb="${opt.verb}">
-                        <i class="fas fa-volume-up"></i>
-                        <span class="verb-text">${opt.verb}</span>
-                    </button>
+                ${question.options.map(opt => `
+                    <div class="verb-option-group">
+                        <button class="verb-play-btn" data-verb="${opt.verb}" data-action="play">
+                            <i class="fas fa-volume-up"></i>
+                            <span class="verb-text">${opt.verb}</span>
+                        </button>
+                        <button class="verb-select-btn" data-verb="${opt.verb}" data-action="select">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
                 `).join('')}
             </div>
-            <div class="verb-hint">
-                <span>🔊 לחץ על כפתור כדי לשמוע</span>
-            </div>
+            <div class="gb-translation" id="gb-translation" style="display:none"></div>
         </div>
         <div class="feedback" id="grammar-beginner-feedback"></div>
     `;
 
-    // Setup play subject button
     const playSubjectBtn = document.getElementById('play-subject');
     if (playSubjectBtn) {
-        playSubjectBtn.addEventListener('click', () => {
-            speechManager.speakWord(question.subjectAudio, '', 'grammar-beginner');
-        });
+        playSubjectBtn.addEventListener('click', () => speakContext());
     }
 
-    // Setup verb option buttons - click to hear, double-click or long-press to select
-    const verbBtns = document.querySelectorAll('.verb-option-btn');
-    verbBtns.forEach(btn => {
-        let clickCount = 0;
-        let clickTimer = null;
-
+    // Play buttons speak the verb; select buttons submit the answer
+    document.querySelectorAll('#grammar-beginner-options button').forEach(btn => {
         btn.addEventListener('click', () => {
-            clickCount++;
-            const verb = btn.dataset.verb;
-
-            if (clickCount === 1) {
-                // First click - play audio
-                speechManager.speakWord(verb, '', 'grammar-beginner');
-
-                clickTimer = setTimeout(() => {
-                    clickCount = 0;
-                }, 500);
-            } else if (clickCount === 2) {
-                // Double click - select answer
-                clearTimeout(clickTimer);
-                clickCount = 0;
-                checkGrammarBeginnerAnswer.call(this, question, verb);
+            if (btn.dataset.action === 'play') {
+                speechManager.speakWord(btn.dataset.verb, '');
+            } else {
+                checkGrammarBeginnerAnswer.call(this, question, btn.dataset.verb);
             }
         });
     });
 
-    // Auto-play the subject
     await delay(300);
-    speechManager.speakWord(question.subjectAudio, '', 'grammar-beginner');
+    speakContext();
 }
 
 // Type 3: "What Sounds Right?" - Pick correct vs incorrect sentence
@@ -180,46 +172,41 @@ async function renderSoundsRight(question, gameBoard) {
                 <div class="instruction-hebrew">${question.instruction}</div>
             </div>
             <div class="context-display">
-                <span class="subject-image-large">${question.subjectImage}</span>
-                <span class="predicate-image-large">${question.predicateImage}</span>
+                <div class="context-item">
+                    <span class="subject-image-large">${question.subjectImage}</span>
+                    <span class="context-hebrew">${question.subjectHebrew}</span>
+                </div>
+                <div class="context-item">
+                    <span class="predicate-image-large">${question.predicateImage}</span>
+                    <span class="context-hebrew">${question.predicateHebrew}</span>
+                </div>
             </div>
             <div class="sentence-options" id="grammar-beginner-options">
                 ${question.options.map((opt, idx) => `
-                    <button class="sentence-option-btn" data-index="${idx}" data-sentence="${opt.sentence}">
-                        <i class="fas fa-volume-up"></i>
-                        <span class="option-number">${idx + 1}</span>
-                    </button>
+                    <div class="sentence-option-group">
+                        <button class="sentence-play-btn" data-sentence="${opt.sentence}" data-action="play">
+                            <i class="fas fa-volume-up"></i>
+                            <span>שמע ${idx + 1}</span>
+                        </button>
+                        <button class="sentence-select-btn" data-sentence="${opt.sentence}" data-action="select">
+                            <i class="fas fa-check"></i>
+                            <span>בחר ${idx + 1}</span>
+                        </button>
+                    </div>
                 `).join('')}
             </div>
-            <div class="sentence-hint">
-                <span>🔊 לחץ לשמוע, לחץ שוב לבחור</span>
-            </div>
+            <div class="gb-translation" id="gb-translation" style="display:none"></div>
         </div>
         <div class="feedback" id="grammar-beginner-feedback"></div>
     `;
 
-    // Setup sentence option buttons
-    const sentenceBtns = document.querySelectorAll('.sentence-option-btn');
-    sentenceBtns.forEach(btn => {
-        let clickCount = 0;
-        let clickTimer = null;
-
+    // Play buttons speak the sentence; select buttons submit the answer
+    document.querySelectorAll('#grammar-beginner-options button').forEach(btn => {
         btn.addEventListener('click', () => {
-            clickCount++;
-            const sentence = btn.dataset.sentence;
-
-            if (clickCount === 1) {
-                // First click - play audio
-                speechManager.speakWord(sentence, '', 'grammar-beginner');
-
-                clickTimer = setTimeout(() => {
-                    clickCount = 0;
-                }, 500);
-            } else if (clickCount === 2) {
-                // Double click - select answer
-                clearTimeout(clickTimer);
-                clickCount = 0;
-                checkGrammarBeginnerAnswer.call(this, question, sentence);
+            if (btn.dataset.action === 'play') {
+                speechManager.speakSentence(btn.dataset.sentence);
+            } else {
+                checkGrammarBeginnerAnswer.call(this, question, btn.dataset.sentence);
             }
         });
     });
@@ -236,15 +223,19 @@ async function renderMatchPicture(question, gameBoard) {
                     <span>השמע שוב</span>
                 </button>
             </div>
+            <div class="match-predicate-display">
+                <span class="predicate-emoji">${question.predicate.image}</span>
+                <span class="predicate-hebrew-label">${question.predicate.hebrew}</span>
+            </div>
             <div class="subject-options match-picture-options" id="grammar-beginner-options">
                 ${question.options.map((opt, idx) => `
                     <button class="subject-option-btn" data-index="${idx}" data-key="${opt.key}">
                         <span class="subject-image">${opt.image}</span>
-                        <span class="predicate-image-small">${opt.predicateImage}</span>
                         <span class="subject-hebrew">${opt.hebrew}</span>
                     </button>
                 `).join('')}
             </div>
+            <div class="gb-translation" id="gb-translation" style="display:none"></div>
         </div>
         <div class="feedback" id="grammar-beginner-feedback"></div>
     `;
@@ -256,13 +247,13 @@ async function renderMatchPicture(question, gameBoard) {
     const playBtn = document.getElementById('play-sentence');
     if (playBtn) {
         playBtn.addEventListener('click', () => {
-            speechManager.speakWord(question.sentenceAudio, '', 'grammar-beginner');
+            speechManager.speakSentence(question.sentenceAudio);
         });
     }
 
     // Auto-play the sentence
     await delay(300);
-    speechManager.speakWord(question.sentenceAudio, '', 'grammar-beginner');
+    speechManager.speakSentence(question.sentenceAudio);
 }
 
 // Setup click listeners for simple option selection
@@ -279,14 +270,23 @@ function setupOptionListeners(question) {
 // Check the answer for grammar beginner questions
 export async function checkGrammarBeginnerAnswer(question, selectedAnswer) {
     const isCorrect = selectedAnswer === question.correctAnswer;
+    const isMatchPicture = question.type === questionTypes.MATCH_PICTURE;
+
+    if (window.gameManager?.handleMoraleAnswerResult) {
+        window.gameManager.handleMoraleAnswerResult(isCorrect);
+    }
 
     // Track attempt
     this.currentQuestionAttempts++;
 
-    // Disable all options
-    const options = document.querySelectorAll('#grammar-beginner-options button');
-    options.forEach(btn => {
-        btn.disabled = true;
+    // Lock/style all option buttons.
+    // Play buttons (data-action="play") stay enabled for post-answer listening;
+    // select buttons (and legacy single-purpose buttons) get disabled.
+    const allBtns = document.querySelectorAll('#grammar-beginner-options button');
+    allBtns.forEach(btn => {
+        const isPlayBtn = btn.dataset.action === 'play';
+        if (!isPlayBtn) btn.disabled = true;
+
         const key = btn.dataset.key || btn.dataset.sentence || btn.dataset.verb;
         if (key === question.correctAnswer) {
             btn.classList.add('correct');
@@ -295,8 +295,22 @@ export async function checkGrammarBeginnerAnswer(question, selectedAnswer) {
         }
     });
 
-    // Show feedback
     const feedback = document.getElementById('grammar-beginner-feedback');
+
+    // Helper: flash Hebrew translation in sync with audio playback
+    function showTranslation() {
+        const translationEl = document.getElementById('gb-translation');
+        if (translationEl && question.hebrewSentence) {
+            translationEl.textContent = question.hebrewSentence;
+            translationEl.style.display = 'block';
+            // Trigger flash animation each time it's shown
+            translationEl.classList.remove('gb-flash');
+            void translationEl.offsetWidth; // force reflow
+            translationEl.classList.add('gb-flash');
+        }
+    }
+
+    const nextBtn = document.getElementById('grammar-beginner-next');
 
     if (isCorrect) {
         feedback.textContent = 'מעולה! 🎉';
@@ -307,60 +321,43 @@ export async function checkGrammarBeginnerAnswer(question, selectedAnswer) {
         this.scores['grammar-beginner'] = (this.scores['grammar-beginner'] || 0) + points;
         this.updateScore('grammar-beginner');
 
-        // Play success audio
+        // Confetti and correct sound
         try {
-            await speechManager.speak('Great!');
-            // Play the full correct sentence
-            if (question.fullSentence) {
-                await speechManager.speakWord(question.fullSentence, '', 'grammar-beginner');
-            } else if (question.sentenceAudio) {
-                await speechManager.speakWord(question.sentenceAudio, '', 'grammar-beginner');
+            if (typeof confetti !== 'undefined') {
+                confetti({ particleCount: 80, spread: 60, origin: { y: 0.7 } });
             }
-        } catch (e) {
-            console.error('Error playing feedback audio:', e);
-        }
-
-        // Confetti
-        try {
-            const settings = typeof SettingsManager !== 'undefined' ? SettingsManager.getSettings() : null;
-            if (settings?.showConfetti && typeof confetti !== 'undefined') {
-                confetti({
-                    particleCount: 80,
-                    spread: 60,
-                    origin: { y: 0.7 }
-                });
-            }
+            window.audioEffects?.playCorrect();
         } catch (e) {}
 
-        // Save progress and auto-advance
+        // Flash Hebrew translation, then play the full correct sentence in sync
+        showTranslation();
+        try {
+            const sentenceText = question.fullSentence || question.sentenceAudio;
+            if (sentenceText) await speechManager.speakSentence(sentenceText);
+        } catch (e) {}
+
+        // Save progress and show next button — no auto-advance
         this.currentQuestionIndex++;
         this.saveGameState();
-
-        setTimeout(() => {
-            this.loadQuestion('grammar-beginner');
-        }, 2000);
+        if (nextBtn) nextBtn.style.display = 'block';
 
     } else {
-        feedback.textContent = 'נסה שוב! 🔄';
+        feedback.textContent = 'כמעט! הנה התשובה הנכונה 🔄';
         feedback.className = 'feedback incorrect';
 
-        // Play the correct sentence so they learn
+        try { window.audioEffects?.playWrong(); } catch (e) {}
+
+        // Flash Hebrew translation, then play the correct sentence in sync
+        showTranslation();
         try {
-            await speechManager.speak('Try again');
+            const correctSentence = question.fullSentence || question.sentenceAudio;
+            if (correctSentence) await speechManager.speakSentence(correctSentence);
         } catch (e) {}
 
-        // Re-enable options for retry (except the wrong one just clicked)
-        setTimeout(() => {
-            options.forEach(btn => {
-                const key = btn.dataset.key || btn.dataset.sentence || btn.dataset.verb;
-                if (key !== selectedAnswer) {
-                    btn.disabled = false;
-                }
-                btn.classList.remove('incorrect');
-            });
-            feedback.textContent = '';
-            feedback.className = 'feedback';
-        }, 1500);
+        // Save progress and show next button — no auto-advance
+        this.currentQuestionIndex++;
+        this.saveGameState();
+        if (nextBtn) nextBtn.style.display = 'block';
     }
 }
 

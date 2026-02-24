@@ -42,15 +42,11 @@ function buildHeaderHTML(activePage) {
     const statsClass    = activePage === 'stats'    ? ' active' : '';
     const settingsClass = activePage === 'settings' ? ' active' : '';
 
-    // Score display is only meaningful on the home page
-    const scoreHTML = isHome
-        ? '<span class="header-score" id="header-score">ניקוד: <span id="current-score">0</span></span>'
-        : '';
+    // Score display shown on all pages for consistent header layout
+    const scoreHTML = '<span class="header-score" id="header-score">ניקוד: <span id="current-score">0</span></span>';
 
     // Header starts hidden on home (shown after login), always visible on other pages
     const headerStyle  = isHome ? 'display: none;' : `display: flex; ${FIXED_STYLE}`;
-    // Streak widget only shown on home page
-    const streakStyle  = isHome ? '' : ' style="display: none;"';
 
     return `<header class="top-header" id="top-header" style="${headerStyle}">
         <div class="header-left">
@@ -61,11 +57,12 @@ function buildHeaderHTML(activePage) {
             </div>
             <nav class="top-game-nav">
                 ${gameButtons}
-                <button class="top-game-btn" data-game="practice" id="practice-top-btn" title="מצב תרגול"${isHome ? ' style="display: none;"' : ''}>
+                ${isHome ? `
+                <button class="top-game-btn" data-game="practice" id="practice-top-btn" title="מצב תרגול">
                     <i class="fas fa-bullseye"></i>
                     <span>תרגול</span>
                     <span class="practice-badge" id="practice-badge"></span>
-                </button>
+                </button>` : ''}
             </nav>
             <div class="top-screen-nav">
                 <button class="top-screen-btn" id="nav-courses-btn" title="קורסים">
@@ -79,11 +76,6 @@ function buildHeaderHTML(activePage) {
             </div>
         </div>
         <div class="header-right">
-            <div class="streak-widget"${streakStyle}>
-                <div class="streak-flame">🔥</div>
-                <div class="streak-count" id="streak-count">0</div>
-                <div class="streak-label">ימים ברצף</div>
-            </div>
             <a href="stats.html" class="header-icon-btn${statsClass}" id="stats-btn" title="סטטיסטיקות">
                 <i class="fas fa-chart-line"></i>
             </a>
@@ -130,8 +122,18 @@ function updateUserInfo() {
 function setupHomeEvents() {
     const topHeader  = document.getElementById('top-header');
     const topGameBtns = document.querySelectorAll('.top-game-btn');
+    const topScreenBtns = document.querySelectorAll('.top-screen-btn');
     const statsBtn   = document.getElementById('stats-btn');
     const settingsBtn = document.getElementById('settings-btn');
+
+    function refreshPracticeButtonOnHome(retries = 12) {
+        if (window.gamificationManager?.updatePracticeModeCard) {
+            window.gamificationManager.updatePracticeModeCard();
+            return;
+        }
+        if (retries <= 0) return;
+        setTimeout(() => refreshPracticeButtonOnHome(retries - 1), 250);
+    }
 
     // Show the header after login
     function showHeader() {
@@ -143,6 +145,8 @@ function setupHomeEvents() {
             syncHeaderOffset('home');
             watchHeaderHeight('home');
         });
+        // Ensure practice entrypoint is recalculated after header visibility changes.
+        refreshPracticeButtonOnHome();
     }
 
     // Game nav buttons → switch game in gameManager
@@ -155,6 +159,7 @@ function setupHomeEvents() {
                 if (window.gameManager) {
                     topGameBtns.forEach(b => b.classList.remove('active'));
                     btn.classList.add('active');
+                    topScreenBtns.forEach(b => b.classList.remove('active'));
                     window.gameManager.switchGame(gameType);
                 } else {
                     setTimeout(go, 100);
@@ -185,6 +190,7 @@ function setupHomeEvents() {
             gameManager.populateResumeGames();
         }
         topGameBtns.forEach(b => b.classList.remove('active'));
+        topScreenBtns.forEach(b => b.classList.remove('active'));
     });
 
     // Logout
@@ -219,11 +225,6 @@ function setupHomeEvents() {
 // ---------------------------------------------------------------------------
 
 function setupOtherPageEvents() {
-    // Practice button starts hidden in the template (home-page logic controls it there).
-    // On non-home pages we always want it visible since gamification.js isn't loaded here.
-    const practiceBtn = document.getElementById('practice-top-btn');
-    if (practiceBtn) practiceBtn.style.removeProperty('display');
-
     // Logo → navigate back to home
     document.getElementById('header-home-btn')?.addEventListener('click', () => {
         window.location.replace('index.html');
@@ -257,6 +258,34 @@ function setupOtherPageEvents() {
     window.addEventListener('user-logged-in', updateUserInfo);
     updateUserInfo();
 }
+
+// ---------------------------------------------------------------------------
+// Active state sync (hash + stored last screen)
+// ---------------------------------------------------------------------------
+
+function applyActiveNavFromHash() {
+    const hash = window.location.hash ? window.location.hash.substring(1) : '';
+    const topGameBtns = document.querySelectorAll('.top-game-btn');
+    const topScreenBtns = document.querySelectorAll('.top-screen-btn');
+
+    topGameBtns.forEach(b => b.classList.remove('active'));
+    topScreenBtns.forEach(b => b.classList.remove('active'));
+
+    if (!hash) return;
+
+    if (hash === 'courses') {
+        document.getElementById('nav-courses-btn')?.classList.add('active');
+        return;
+    }
+    if (hash === 'profile') {
+        document.getElementById('nav-profile-btn')?.classList.add('active');
+        return;
+    }
+
+    const gameBtn = document.querySelector(`.top-game-btn[data-game="${hash}"]`);
+    if (gameBtn) gameBtn.classList.add('active');
+}
+
 
 // ---------------------------------------------------------------------------
 // Dynamic header offset — keeps content clear of the header regardless of
@@ -311,6 +340,12 @@ export function initTopHeader(options = {}) {
 
     if (activePage === 'home') {
         setupHomeEvents();
+        // Home header exists now; refresh practice state once systems are ready.
+        setTimeout(() => {
+            if (window.gamificationManager?.updatePracticeModeCard) {
+                window.gamificationManager.updatePracticeModeCard();
+            }
+        }, 300);
     } else {
         setupOtherPageEvents();
         // Non-home pages: header is always visible, sync offset immediately
@@ -320,6 +355,9 @@ export function initTopHeader(options = {}) {
             watchHeaderHeight(activePage);
         });
     }
+
+    applyActiveNavFromHash();
+    window.addEventListener('hashchange', applyActiveNavFromHash);
 }
 
 // Exported so home page can call it after the header becomes visible (post-login)
