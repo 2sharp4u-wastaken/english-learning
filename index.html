@@ -18,86 +18,7 @@
     <div class="app-layout">
         <!-- Main Content Area -->
         <div class="main-content">
-            <!-- Top Navigation Header -->
-            <header class="top-header" id="top-header" style="display: none;">
-                <div class="header-left">
-                    <div class="app-logo">
-                        <span class="home-notification-dot" id="home-notification-dot"></span>
-                        <i class="fas fa-graduation-cap"></i>
-                        <span>לומדים אנגלית</span>
-                    </div>
-                    <nav class="top-game-nav">
-                        <button class="top-game-btn" data-game="vocabulary" title="בונה אוצר מילים">
-                            <i class="fas fa-book"></i>
-                            <span>אוצר מילים</span>
-                        </button>
-                        <button class="top-game-btn" data-game="grammar" title="תרגול דקדוק">
-                            <i class="fas fa-spell-check"></i>
-                            <span>דקדוק</span>
-                        </button>
-                        <button class="top-game-btn" data-game="grammar-beginner" title="דקדוק למתחילים - למידה בהאזנה">
-                            <i class="fas fa-volume-up"></i>
-                            <span>דקדוק+</span>
-                        </button>
-                        <button class="top-game-btn" data-game="pronunciation" title="הגייה">
-                            <i class="fas fa-microphone"></i>
-                            <span>הגייה</span>
-                        </button>
-                        <button class="top-game-btn" data-game="listening" title="הקשבה">
-                            <i class="fas fa-headphones"></i>
-                            <span>הקשבה</span>
-                        </button>
-                        <button class="top-game-btn" data-game="reading" title="איית אותי">
-                            <i class="fas fa-book-open"></i>
-                            <span>קריאה</span>
-                        </button>
-                        <button class="top-game-btn" data-game="abc" title="ABC אותיות">
-                            <i class="fas fa-font"></i>
-                            <span>ABC</span>
-                        </button>
-                        <button class="top-game-btn" data-game="memory" title="זיכרון - מצא את הזוגות">
-                            <i class="fas fa-th"></i>
-                            <span>זיכרון</span>
-                        </button>
-                        <button class="top-game-btn" data-game="scramble" title="סידור משפטים">
-                            <i class="fas fa-random"></i>
-                            <span>סידור</span>
-                        </button>
-                        <button class="top-game-btn" data-game="fill-blanks" title="השלם את המשפט">
-                            <i class="fas fa-fill-drip"></i>
-                            <span>השלמה</span>
-                        </button>
-                        <button class="top-game-btn" data-game="practice" id="practice-top-btn" title="מצב תרגול" style="display: none;">
-                            <i class="fas fa-bullseye"></i>
-                            <span>תרגול</span>
-                            <span class="practice-badge" id="practice-badge"></span>
-                        </button>
-                    </nav>
-                </div>
-                <div class="header-right">
-                    <div class="streak-widget">
-                        <div class="streak-flame">🔥</div>
-                        <div class="streak-count" id="streak-count">0</div>
-                        <div class="streak-label">ימים ברצף</div>
-                    </div>
-                    <a href="stats.html" class="header-icon-btn" id="stats-btn" title="סטטיסטיקות">
-                        <i class="fas fa-chart-line"></i>
-                    </a>
-                    <a href="settings.html" class="header-icon-btn" id="settings-btn" title="הגדרות">
-                        <i class="fas fa-cog"></i>
-                    </a>
-                    <div class="header-user-info" id="header-user-info">
-                        <div class="header-user-avatar" id="header-user-avatar">O</div>
-                        <div class="header-user-details">
-                            <span class="header-user-name" id="header-user-name">User</span>
-                            <span class="header-score" id="header-score">ניקוד: <span id="current-score">0</span></span>
-                        </div>
-                    </div>
-                    <button class="header-icon-btn" id="header-logout-btn" title="התנתק">
-                        <i class="fas fa-sign-out-alt"></i>
-                    </button>
-                </div>
-            </header>
+            <!-- Top Navigation Header is injected by components/top-header.js -->
 
             <main class="game-area">
             <!-- Welcome Screen -->
@@ -480,7 +401,6 @@
                 <button class="next-btn" id="grammar-beginner-next" style="display: none;">
                     <span>השאלה הבאה</span>
                 </button>
-                <div class="score-display">ניקוד: <span id="grammar-beginner-score">0</span></div>
             </div>
 
             <!-- Pronunciation Game -->
@@ -777,7 +697,6 @@
                 <button class="next-btn" id="fill-blanks-play-again" style="display: none;">
                     <span>שחק שוב</span>
                 </button>
-                <div class="score-display">ניקוד: <span id="fill-blanks-score">0</span></div>
             </div>
 
             <!-- Sentence Scramble Game -->
@@ -823,7 +742,6 @@
                 <button class="next-btn" id="scramble-play-again" style="display: none;">
                     <span>שחק שוב</span>
                 </button>
-                <div class="score-display">ניקוד: <span id="scramble-score">0</span></div>
             </div>
 
             <!-- Memory/Matching Game -->
@@ -844,7 +762,122 @@
                     <span>שחק שוב</span>
                 </button>
             </div>
+            <!-- Courses Selection Screen -->
+            <div id="courses-screen" class="game-content">
+                <div class="courses-screen-header">
+                    <button class="back-screen-btn" id="courses-back-btn" style="display: none;">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <h1 class="screen-title">הקורסים שלי</h1>
+                    <div class="coin-display">
+                        <span class="coin-icon">🪙</span>
+                        <span class="coin-amount" id="courses-coin-balance">0</span>
+                    </div>
+                </div>
+                <div class="courses-grid" id="courses-grid">
+                    <!-- Course cards populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Topics Selection Screen -->
+            <div id="topics-screen" class="game-content">
+                <div class="topics-screen-header">
+                    <button class="back-screen-btn" id="topics-back-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <div class="topics-header-info">
+                        <div class="topics-course-icon" id="topics-course-icon">📚</div>
+                        <h1 class="screen-title" id="topics-course-title">קורס</h1>
+                    </div>
+                    <div class="coin-display">
+                        <span class="coin-icon">🪙</span>
+                        <span class="coin-amount" id="topics-coin-balance">0</span>
+                    </div>
+                </div>
+                <div class="topics-course-progress">
+                    <div class="topics-progress-bar">
+                        <div class="topics-progress-fill" id="topics-progress-fill"></div>
+                    </div>
+                    <span class="topics-progress-label" id="topics-progress-label">0% הושלם</span>
+                </div>
+                <div class="topics-list" id="topics-list">
+                    <!-- Topic cards populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Profile / Dashboard Screen -->
+            <div id="profile-screen" class="game-content">
+                <div class="profile-screen-header">
+                    <button class="back-screen-btn" id="profile-back-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <h1 class="screen-title">הפרופיל שלי</h1>
+                </div>
+                <div class="profile-hero">
+                    <div class="profile-avatar-large" id="profile-avatar-large">O</div>
+                    <div class="profile-hero-info">
+                        <h2 class="profile-student-name" id="profile-student-name">לומד</h2>
+                        <div class="profile-coins-big">
+                            <span class="coin-icon">🪙</span>
+                            <span id="profile-coin-count">0</span>
+                            <span class="profile-coins-label">מטבעות</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="profile-stats-grid">
+                    <div class="profile-stat-card">
+                        <div class="profile-stat-icon">🔥</div>
+                        <div class="profile-stat-value" id="profile-streak">0</div>
+                        <div class="profile-stat-label">ימי רצף</div>
+                    </div>
+                    <div class="profile-stat-card">
+                        <div class="profile-stat-icon">🎯</div>
+                        <div class="profile-stat-value" id="profile-topics-done">0</div>
+                        <div class="profile-stat-label">נושאים הושלמו</div>
+                    </div>
+                    <div class="profile-stat-card">
+                        <div class="profile-stat-icon">🌟</div>
+                        <div class="profile-stat-value" id="profile-words-mastered">0</div>
+                        <div class="profile-stat-label">מילים נלמדו</div>
+                    </div>
+                    <div class="profile-stat-card">
+                        <div class="profile-stat-icon">🏆</div>
+                        <div class="profile-stat-value" id="profile-certs-count">0</div>
+                        <div class="profile-stat-label">תעודות</div>
+                    </div>
+                </div>
+                <div class="profile-section">
+                    <h3 class="profile-section-title">התעודות שלי</h3>
+                    <div class="profile-certificates-grid" id="profile-certificates-grid">
+                        <div class="no-certs-msg">עוד אין תעודות. סיים נושא כדי לקבל תעודה! 🎓</div>
+                    </div>
+                </div>
+            </div>
+
             </main>
+        </div>
+    </div>
+
+    <!-- Certificate Modal -->
+    <div id="certificate-modal" class="cert-modal-overlay" style="display: none;">
+        <div class="cert-modal-card">
+            <div class="cert-confetti-area" id="cert-confetti-area"></div>
+            <div class="cert-header">
+                <div class="cert-medal">🏅</div>
+                <h2 class="cert-title">כל הכבוד!</h2>
+                <p class="cert-subtitle">השלמת את הנושא בהצלחה!</p>
+            </div>
+            <div class="cert-body">
+                <div class="cert-star-row">⭐⭐⭐</div>
+                <div class="cert-topic-name" id="cert-topic-name">שם הנושא</div>
+                <div class="cert-score-display">
+                    ניקוד: <span id="cert-score">100</span>
+                </div>
+                <div class="cert-date" id="cert-date"></div>
+            </div>
+            <div class="cert-actions">
+                <button class="cert-btn cert-continue-btn" id="cert-continue-btn">המשך ללמוד</button>
+            </div>
         </div>
     </div>
 
@@ -959,6 +992,10 @@
     <script src="feedback.js"></script>
     <script src="audio-effects.js"></script>
     <script src="gamification.js"></script>
+    <script type="module">
+        import { initTopHeader } from './components/top-header.js?t=1771279200';
+        initTopHeader({ activePage: 'home' });
+    </script>
     <script type="module" src="gameLogic.js?t=1762610965"></script>
     <script type="module" src="app.js?t=1762332862"></script>
 
@@ -1129,39 +1166,22 @@
                 }
             }
 
-            // Check if we're coming from settings/stats (has referrer)
-            function isComingFromSettingsOrStats() {
-                return document.referrer && (
-                    document.referrer.includes('settings.html') ||
-                    document.referrer.includes('stats.html')
-                );
-            }
-
             // Show welcome screen after login - ALWAYS clear hash on login
             window.addEventListener('user-logged-in', () => {
-                // Clear hash to ensure welcome screen shows
+                // Clear hash to ensure welcome screen shows after fresh login
                 if (window.location.hash) {
                     history.replaceState(null, null, window.location.pathname);
                 }
                 setTimeout(showWelcomeScreen, 100);
             });
 
-            // Show welcome screen if user is already logged in
+            // Show welcome screen (or navigate to hashed game) if already logged in
             if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
                 setTimeout(() => {
-                    // If coming from settings/stats, clear hash and show welcome screen
-                    if (isComingFromSettingsOrStats()) {
-                        if (window.location.hash) {
-                            history.replaceState(null, null, window.location.pathname);
-                        }
-                        showWelcomeScreen();
-                    }
-                    // If there's a hash from direct navigation, honor it
-                    else if (window.location.hash) {
+                    // Honor any hash (e.g., game buttons from settings/stats pages)
+                    if (window.location.hash) {
                         handleHashNavigation();
-                    }
-                    // Otherwise show welcome screen
-                    else {
+                    } else {
                         showWelcomeScreen();
                     }
                 }, 200);
@@ -1172,151 +1192,5 @@
         });
     </script>
 
-    <script>
-        // Top Header Handler
-        document.addEventListener('DOMContentLoaded', () => {
-            const topHeader = document.getElementById('top-header');
-            const topGameBtns = document.querySelectorAll('.top-game-btn');
-            const headerLogoutBtn = document.getElementById('header-logout-btn');
-            const headerUserAvatar = document.getElementById('header-user-avatar');
-            const headerUserName = document.getElementById('header-user-name');
-
-            // Function to update header with user info
-            function updateHeaderUserInfo() {
-                if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
-                    const currentUser = authService.getCurrentUser();
-                    if (currentUser) {
-                        // Update avatar
-                        headerUserAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
-                        headerUserAvatar.style.background = currentUser.avatarColor ||
-                            'linear-gradient(135deg, #667eea, #764ba2)';
-
-                        // Update name
-                        headerUserName.textContent = currentUser.name;
-
-                        // Show header and enable header mode
-                        topHeader.style.display = 'flex';
-                        document.querySelector('.app-layout').classList.add('header-mode');
-                    }
-                }
-            }
-
-            // Handle top game navigation clicks
-            topGameBtns.forEach(btn => {
-                btn.addEventListener('click', () => {
-                    const gameType = btn.dataset.game;
-
-                    // Validate game type before switching
-                    if (!gameType) {
-                        console.warn('Top game button clicked without data-game attribute:', btn);
-                        return;
-                    }
-
-                    const switchToGame = () => {
-                        if (window.gameManager) {
-                            // Update active states
-                            topGameBtns.forEach(b => b.classList.remove('active'));
-                            btn.classList.add('active');
-
-                            // Switch to game
-                            window.gameManager.switchGame(gameType);
-                        } else {
-                            setTimeout(switchToGame, 100);
-                        }
-                    };
-
-                    switchToGame();
-                });
-            });
-
-            // Handle app logo click to go to home page
-            const appLogo = document.querySelector('.app-logo');
-            if (appLogo) {
-                appLogo.addEventListener('click', () => {
-                    // Auto-save game if active (no modal, immediate navigation)
-                    if (typeof gameManager !== 'undefined' && gameManager.isGameActive) {
-                        const saved = gameManager.saveGameState();
-                        if (saved) {
-                            gameManager.showToast('המשחק נשמר בהצלחה');
-                        }
-                        // Mark game as inactive since we're leaving
-                        gameManager.isGameActive = false;
-                    }
-
-                    // Clear hash to show we're on welcome screen
-                    if (window.location.hash) {
-                        history.replaceState(null, null, window.location.pathname);
-                    }
-
-                    // Hide all game sections
-                    document.querySelectorAll('.game-content').forEach(section => {
-                        section.classList.remove('active');
-                        section.style.display = 'none';
-                    });
-
-                    // Show welcome screen
-                    const welcomeScreen = document.getElementById('welcome-screen');
-                    if (welcomeScreen) {
-                        welcomeScreen.classList.add('active');
-                        welcomeScreen.style.display = 'block';
-                    }
-
-                    // Refresh resume cards to show updated progress
-                    if (typeof gameManager !== 'undefined' && gameManager.populateResumeGames) {
-                        gameManager.populateResumeGames();
-                    }
-
-                    // Remove active state from all top game buttons
-                    topGameBtns.forEach(btn => btn.classList.remove('active'));
-                });
-            }
-
-            // Handle header logout button
-            if (headerLogoutBtn) {
-                headerLogoutBtn.addEventListener('click', () => {
-                    if (typeof authService !== 'undefined') {
-                        // Clear hash before logout to ensure clean state
-                        if (window.location.hash) {
-                            history.replaceState(null, null, window.location.pathname);
-                        }
-                        authService.logout();
-                        topHeader.style.display = 'none';
-                        document.querySelector('.app-layout').classList.remove('header-mode');
-                    }
-                });
-            }
-
-            // Handle Stats and Settings buttons - auto-save without modal
-            const statsBtn = document.getElementById('stats-btn');
-            const settingsBtn = document.getElementById('settings-btn');
-
-            [statsBtn, settingsBtn].forEach(btn => {
-                if (btn) {
-                    btn.addEventListener('click', (e) => {
-                        // Auto-save game if active, then navigate
-                        if (typeof gameManager !== 'undefined' && gameManager.isGameActive) {
-                            const saved = gameManager.saveGameState();
-                            if (saved) {
-                                gameManager.showToast('המשחק נשמר בהצלחה');
-                            }
-                        }
-                        // Let the default link navigation happen
-                    });
-                }
-            });
-
-            // Show header after login
-            window.addEventListener('user-logged-in', () => {
-                setTimeout(updateHeaderUserInfo, 100);
-            });
-
-            // Show header if user is already logged in
-            if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
-                setTimeout(updateHeaderUserInfo, 200);
-            }
-
-            // Sidebar removed - no sync needed
-        });
-    </script>
 </body>
 </html>

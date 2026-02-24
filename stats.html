@@ -412,61 +412,9 @@
     </style>
 </head>
 <body>
-    <!-- Top Navigation Header (same as main page) -->
-    <header class="top-header" style="display: flex; position: fixed; top: 0; left: 0; right: 0; width: 100%; z-index: 1000;">
-        <div class="header-left">
-            <div class="app-logo" id="stats-home-btn" style="cursor: pointer;">
-                <span class="home-notification-dot" id="home-notification-dot"></span>
-                <i class="fas fa-graduation-cap"></i>
-                <span>לומדים אנגלית</span>
-            </div>
-            <nav class="top-game-nav">
-                <button class="top-game-btn" data-nav="vocabulary" title="בונה אוצר מילים">
-                    <i class="fas fa-book"></i>
-                    <span>אוצר מילים</span>
-                </button>
-                <button class="top-game-btn" data-nav="grammar" title="תרגול דקדוק">
-                    <i class="fas fa-spell-check"></i>
-                    <span>דקדוק</span>
-                </button>
-                <button class="top-game-btn" data-nav="pronunciation" title="הגייה">
-                    <i class="fas fa-microphone"></i>
-                    <span>הגייה</span>
-                </button>
-                <button class="top-game-btn" data-nav="listening" title="הקשבה">
-                    <i class="fas fa-headphones"></i>
-                    <span>הקשבה</span>
-                </button>
-                <button class="top-game-btn" data-nav="reading" title="איית אותי">
-                    <i class="fas fa-book-open"></i>
-                    <span>קריאה</span>
-                </button>
-                <button class="top-game-btn" data-nav="abc" title="ABC אותיות">
-                    <i class="fas fa-font"></i>
-                    <span>ABC</span>
-                </button>
-            </nav>
-        </div>
-        <div class="header-right">
-            <a href="stats.html" class="header-icon-btn active" title="סטטיסטיקות">
-                <i class="fas fa-chart-line"></i>
-            </a>
-            <a href="settings.html" class="header-icon-btn" title="הגדרות">
-                <i class="fas fa-cog"></i>
-            </a>
-            <div class="header-user-info" id="header-user-info">
-                <div class="header-user-avatar" id="header-user-avatar">O</div>
-                <div class="header-user-details">
-                    <span class="header-user-name" id="header-user-name">User</span>
-                </div>
-            </div>
-            <button class="header-icon-btn" id="header-logout-btn" title="התנתק">
-                <i class="fas fa-sign-out-alt"></i>
-            </button>
-        </div>
-    </header>
+    <!-- Top Navigation Header is injected by components/top-header.js -->
 
-    <div class="stats-container" style="margin-top: 80px;">
+    <div class="stats-container">
         <div class="stats-header">
             <h1><i class="fas fa-chart-line"></i>סטטיסטיקות שחקנים</h1>
             <p>עקוב אחר ההתקדמות וההישגים שלך</p>
@@ -492,6 +440,10 @@
     <script src="auth.js?v=1"></script>
     <script src="settings.js"></script>
     <script src="stats.js"></script>
+    <script type="module">
+        import { initTopHeader } from './components/top-header.js?t=1771279200';
+        initTopHeader({ activePage: 'stats' });
+    </script>
     <script>
         // Password modal helper function
         function showPasswordModal(title = 'אישור פעולה') {
@@ -569,64 +521,6 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            // Top Header User Info Initialization
-            const headerUserAvatar = document.getElementById('header-user-avatar');
-            const headerUserName = document.getElementById('header-user-name');
-            const headerLogoutBtn = document.getElementById('header-logout-btn');
-
-            // Function to update header with user info
-            function updateHeaderUserInfo() {
-                if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
-                    const currentUser = authService.getCurrentUser();
-                    if (currentUser) {
-                        // Update avatar
-                        headerUserAvatar.textContent = currentUser.name.charAt(0).toUpperCase();
-                        headerUserAvatar.style.background = currentUser.avatarColor ||
-                            'linear-gradient(135deg, #667eea, #764ba2)';
-
-                        // Update name
-                        headerUserName.textContent = currentUser.name;
-                    }
-                }
-            }
-
-            // Handle home button
-            const homeBtn = document.getElementById('stats-home-btn');
-            if (homeBtn) {
-                homeBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    window.location.replace('index.html');
-                });
-            }
-
-            // Handle game navigation buttons
-            document.querySelectorAll('.top-game-btn[data-nav]').forEach(btn => {
-                btn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    const game = btn.dataset.nav;
-                    if (game) {
-                        window.location.replace(`index.html#${game}`);
-                    }
-                });
-            });
-
-            // Handle logout
-            if (headerLogoutBtn) {
-                headerLogoutBtn.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    if (typeof authService !== 'undefined') {
-                        authService.logout();
-                        window.location.replace('index.html');
-                    }
-                });
-            }
-
-            // Update header on load
-            updateHeaderUserInfo();
-
-            // Listen for auth state changes
-            window.addEventListener('userLoggedIn', updateHeaderUserInfo);
-
             // Delete stats button handler
             const deleteBtn = document.getElementById('delete-stats-btn');
             if (deleteBtn) {
