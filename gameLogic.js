@@ -3,7 +3,7 @@
 
 // Import game modules
 import * as VocabularyGame from './games/vocabulary-game.js?t=1762595926';
-import * as GrammarGame from './games/grammar-game.js?t=1762595926';
+import * as GrammarGame from './games/grammar-game.js?t=1774903002';
 import * as GrammarBeginnerGame from './games/grammar-beginner-game.js';
 import * as ListeningGame from './games/listening-game.js?t=1762609545';
 import * as PronunciationGame from './games/pronunciation-game.js?t=1771785500';
@@ -12,6 +12,7 @@ import * as PracticeGame from './games/practice-game.js';
 import * as ABCGame from './games/abc-game.js';
 import { generateABCQuestions, areAllLettersMastered, getUnmasteredLetterCount } from './data/abcData.js';
 import { generateGrammarBeginnerQuestions } from './data/grammarBeginnerData.js';
+import { getRandomSentences } from './data/sentences.js';
 
 // Game Logic for English Learning Games
 
@@ -53,7 +54,10 @@ class GameManager {
             listening: 0,
             reading: 0,
             practice: 0,
-            abc: 0
+            abc: 0,
+            memory: 0,
+            scramble: 0,
+            'fill-blanks': 0
         };
         this.currentQuestionIndex = 0;
         this.isResuming = false;  // Flag to track if we're resuming a saved game
@@ -162,8 +166,41 @@ class GameManager {
 
         console.log('[GameManager] Managers initialized successfully');
 
+        // One-time migration: clear any old-format saved state for games that changed format
+        this.clearLegacySavedState();
+
         // Register all existing games with GameRegistry
         this.registerGames();
+    }
+
+    clearLegacySavedState() {
+        // Remove old-format saved states that pre-date the standard-game migration.
+        // These were written by the old SentenceScrambleGame/FillBlanksGame classes
+        // and have a different shuffledQuestions format that the new standard flow
+        // can't resume. The validation in startGame() would catch them anyway,
+        // but clearing upfront avoids the "resuming" prompt on the home screen.
+        const userId = localStorage.getItem('currentUser') || 'default';
+        const gamesToClear = ['scramble', 'fill-blanks', 'memory'];
+        gamesToClear.forEach(gameType => {
+            const key = `savedGame_${userId}_${gameType}`;
+            const raw = localStorage.getItem(key);
+            if (!raw) return;
+            try {
+                const state = JSON.parse(raw);
+                // Old scramble/fill-blanks states had no 'words' on each question
+                // Old memory state was never saved by GameManager
+                // New memory state has { level, pairs, columns } on each question
+                const isLegacy = gameType === 'memory'
+                    ? !state.shuffledQuestions?.[0]?.level
+                    : !Array.isArray(state.shuffledQuestions?.[0]?.words);
+                if (isLegacy) {
+                    localStorage.removeItem(key);
+                    console.log(`[GameManager] Cleared legacy saved state for ${gameType}`);
+                }
+            } catch (e) {
+                localStorage.removeItem(key);
+            }
+        });
     }
 
     registerGames() {
@@ -288,23 +325,17 @@ class GameManager {
         });
 
         registry.register('memory', {
-            module: window.memoryGame,
-            loadQuestion: 'startGame',
-            checkAnswer: 'handleCardClick',
             displayName: 'Memory / Matching',
             displayNameHebrew: 'משחק זיכרון',
             icon: '🃏',
             config: {
-                questionsPerGame: 6,
+                questionsPerGame: 3,
                 pointsPerCorrect: 15,
                 categories: ['vocabulary']
             }
         });
 
         registry.register('scramble', {
-            module: window.scrambleGame,
-            loadQuestion: 'loadSentence',
-            checkAnswer: 'checkAnswer',
             displayName: 'Sentence Scramble',
             displayNameHebrew: 'סידור משפטים',
             icon: '🔀',
@@ -316,9 +347,6 @@ class GameManager {
         });
 
         registry.register('fill-blanks', {
-            module: window.fillBlanksGame,
-            loadQuestion: 'loadSentence',
-            checkAnswer: 'selectAnswer',
             displayName: 'Fill in the Blanks',
             displayNameHebrew: 'השלם את המשפט',
             icon: '✍️',
@@ -366,10 +394,7 @@ class GameManager {
             difficulty: 'beginner',
             theme: 'classic',
             showPictures: false,
-            enhancedShuffle: true,
-            preventConsecutiveCategories: true,
-            showConfetti: true,
-            saveProgress: true
+            showConfetti: true
         };
     }
 
@@ -528,6 +553,11 @@ class GameManager {
     // ============================================
 
     recordWordAttempt(word, category, isCorrect, responseTime, gameType) {
+        // Lazily resolve progressManager from global in case app.js initialized it after gameLogic.js
+        if (!this.progressManager && window.progressManager) {
+            this.progressManager = window.progressManager;
+        }
+
         // Track word attempt using ProgressManager
         if (!this.progressManager) {
             console.warn('Cannot record word attempt: ProgressManager not initialized');
@@ -609,25 +639,22 @@ class GameManager {
     populateResumeGames() {
         const savedGames = this.getAllSavedGames();
 
-        // Update each game card footer based on saved game state
+        // Update each game card continue button based on saved game state
         document.querySelectorAll('.game-card').forEach(card => {
             const gameType = card.dataset.game;
-            const footer = card.querySelector('.game-card-footer');
-            const continueBtn = card.querySelector('.continue-btn');
-            const progressSpan = card.querySelector('.continue-progress');
+            const continueBtn = card.querySelector('.card-continue-btn');
 
-            if (!footer || !continueBtn || !progressSpan) return;
+            if (!continueBtn) return;
 
             // Check if there's a saved game for this game type
             const savedGame = savedGames.find(g => g.gameType === gameType);
 
             if (savedGame) {
-                // Show footer with dual action buttons
-                footer.style.display = 'flex';
-                progressSpan.textContent = `שאלה ${savedGame.currentQuestionIndex + 1}/${savedGame.totalQuestions}`;
+                // Show continue button when this game has resumable progress
+                continueBtn.style.display = 'inline-flex';
             } else {
-                // Hide footer, clicking card will start new game
-                footer.style.display = 'none';
+                // Hide continue button when there is no saved state
+                continueBtn.style.display = 'none';
             }
         });
 
@@ -669,12 +696,10 @@ class GameManager {
         // Switch to the game
         this.performGameSwitch(gameState.gameType);
 
-        // Update score and progress UI
-        this.updateScore(gameState.gameType);
-        this.updateProgress(gameState.gameType);
+        // startGame() (called via performGameSwitch) already calls
+        // updateScore / updateProgress / loadQuestion at the end — skip here to avoid
+        // loading the question twice.
 
-        // Load current question
-        this.loadQuestion(gameState.gameType);
 
         // Show toast
         this.showToast(`ממשיך משחק ${this.getGameName(gameState.gameType)}!`);
@@ -987,11 +1012,19 @@ class GameManager {
         this.practiceCycle = 1;
         this.totalQuestions = 0;
 
+        // Reset progress bar to 0 so it doesn't show stale fill
+        const progressFill = document.getElementById('practice-progress-fill');
+        if (progressFill) progressFill.style.width = '0%';
+
         // Hide the progress counters in the UI
         const wordCounter = document.getElementById('practice-word-counter');
         const cycleCounter = document.getElementById('practice-cycle-counter');
         if (wordCounter) wordCounter.textContent = '';
         if (cycleCounter) cycleCounter.textContent = '';
+
+        // Remove any pre-existing empty message to prevent duplicates
+        const existingMsg = gameArea.querySelector('.practice-empty-message');
+        if (existingMsg) existingMsg.remove();
 
         // Hide normal game elements
         Array.from(gameArea.children).forEach(child => {
@@ -1013,6 +1046,20 @@ class GameManager {
             </div>
         `;
         gameArea.appendChild(emptyMessage);
+    }
+
+    clearPracticeEmptyMessage() {
+        // Remove the empty-state overlay and restore the hidden game elements
+        const gameArea = document.querySelector('#practice-game .game-board');
+        if (!gameArea) return;
+        const existingMsg = gameArea.querySelector('.practice-empty-message');
+        if (existingMsg) {
+            existingMsg.remove();
+            // Restore visibility of all game-board children that were hidden
+            Array.from(gameArea.children).forEach(child => {
+                child.style.display = '';
+            });
+        }
     }
 
     // Show ABC all letters mastered congratulations screen
@@ -1064,7 +1111,7 @@ class GameManager {
         completionMessage.style.display = 'flex';
 
         // Trigger confetti
-        if (this.settings?.confetti !== false && typeof window.confetti !== 'undefined') {
+        if (this.settings?.showConfetti !== false && typeof window.confetti !== 'undefined') {
             window.confetti({
                 particleCount: 200,
                 spread: 100,
@@ -1172,9 +1219,6 @@ class GameManager {
                 this.loadQuestion('grammar');
             });
         }
-
-        // Grammar topic selector - initialize tabs
-        this.initGrammarTopicSelector();
 
         // Grammar Beginner game events
         const grammarBeginnerNextElement = document.getElementById('grammar-beginner-next');
@@ -1298,7 +1342,7 @@ class GameManager {
         }
 
         // Reset game button events for all games (except practice which has exit button)
-        const gameTypes = ['vocab', 'grammar', 'pronunciation', 'listening', 'reading', 'abc'];
+        const gameTypes = ['vocab', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'scramble', 'fill-blanks', 'memory'];
         gameTypes.forEach(gameType => {
             const resetBtn = document.getElementById(`${gameType}-reset-btn`);
             if (resetBtn) {
@@ -1346,8 +1390,9 @@ class GameManager {
             return;
         }
 
-        // Get difficulty setting
-        const difficulty = this.settings && this.settings.difficulty ? this.settings.difficulty : 'beginner';
+        // Get difficulty setting - prefer per-user value from userProgress
+        const difficulty = window.app?.userProgress?.preferredDifficulty
+            || (this.settings && this.settings.difficulty ? this.settings.difficulty : 'beginner');
         console.log(`Loading game data with difficulty: ${difficulty}`);
 
         // Filter vocabulary by selected categories
@@ -1523,12 +1568,14 @@ class GameManager {
 
     getFilteredGrammarQuestions() {
         const allQuestions = this.gameData.grammar || [];
+        const selectedCategories = this.settings?.selectedCategories || this.selectedCategories || [];
 
-        if (this.selectedGrammarCategory === 'all') {
+        if (!selectedCategories.length) {
             return allQuestions;
         }
 
-        return allQuestions.filter(q => q.category === this.selectedGrammarCategory);
+        const filtered = allQuestions.filter(q => selectedCategories.includes(q.category));
+        return filtered.length > 0 ? filtered : allQuestions;
     }
 
     switchGame(gameType) {
@@ -1710,6 +1757,8 @@ class GameManager {
                         this.isGameActive = false;
                         return;
                     }
+                    // Clear any leftover empty-state overlay from a previous session
+                    this.clearPracticeEmptyMessage();
                     // Store practice words in gameData and use them
                     this.gameData.practice = practiceWords;
                     // Use ALL struggling words (no limit)
@@ -1753,83 +1802,73 @@ class GameManager {
                     console.log(`ABC game: ${this.shuffledQuestions.length} questions (ordered for variety)`, this.shuffledQuestions.slice(0, 5).map(q => `${q.word}-${q.type}`));
                 }
             } else if (gameType === 'memory') {
-                // Memory game - delegate to MemoryGame class entirely
-                if (window.memoryGame) {
-                    // Get words from vocabulary data (animals, food, etc.)
+                const validResume = this.isResuming &&
+                    this.shuffledQuestions?.length === 3 &&
+                    this.shuffledQuestions[this.currentQuestionIndex]?.level;
+                if (!validResume) {
+                    if (this.isResuming) console.warn('[Memory] Invalid saved state, starting fresh');
                     const allWords = this.gameData.vocabulary || [];
-                    const pairCount = 6; // Default 6 pairs for beginners
-                    window.memoryGame.startGame(allWords, pairCount);
-                    // Memory game handles its own UI, reset standard question flow
-                    this.isGameActive = false;
-                    this.isResuming = false;
+                    this.shuffledQuestions = [
+                        { level: 1, pairs: 6,  columns: 4, words: allWords },
+                        { level: 2, pairs: 9,  columns: 6, words: allWords },
+                        { level: 3, pairs: 12, columns: 8, words: allWords }
+                    ];
+                    this.totalQuestions = 3;
+                    this.currentQuestionIndex = 0;
+                    this.scores['memory'] = 0;
+                    console.log('[Memory] 3-level game prepared');
                 } else {
-                    console.error('[Memory] memoryGame instance not initialized. Check app.js import.');
+                    // Re-attach live vocabulary words (not saved in localStorage)
+                    const allWords = this.gameData.vocabulary || [];
+                    this.shuffledQuestions = this.shuffledQuestions.map(q => ({ ...q, words: allWords }));
+                    console.log(`[Memory] Resuming at level ${this.currentQuestionIndex + 1}`);
                 }
-                return; // Skip standard question flow
             } else if (gameType === 'scramble') {
-                // Sentence Scramble game - delegate to SentenceScrambleGame class
-                if (window.scrambleGame) {
-                    const canResume = this.isResuming &&
-                        this.currentQuestionIndex > 0 &&
-                        this.shuffledQuestions && this.shuffledQuestions.length > 0 &&
-                        this.shuffledQuestions[0]?.words;
-                    if (canResume) {
-                        // Restore saved state into the game instance
-                        window.scrambleGame.sentences = this.shuffledQuestions;
-                        window.scrambleGame.currentIndex = this.currentQuestionIndex;
-                        window.scrambleGame.score = this.scores['scramble'] || 0;
-                        window.scrambleGame.isAnswerChecked = false;
-                        window.scrambleGame.selectedWords = [];
-                        window.scrambleGame.availableWords = [];
-                        window.scrambleGame.showGame();
-                        window.scrambleGame.loadSentence();
-                    } else {
-                        const difficulty = this.settings?.difficulty || 'beginner';
-                        window.scrambleGame.startGame(difficulty, null, 10);
-                    }
-                    this.isGameActive = false;
-                    this.isResuming = false;
+                const validResume = this.isResuming &&
+                    this.shuffledQuestions?.length > 0 &&
+                    this.currentQuestionIndex < this.shuffledQuestions.length &&
+                    Array.isArray(this.shuffledQuestions[this.currentQuestionIndex]?.words);
+                if (!validResume) {
+                    if (this.isResuming) console.warn('[Scramble] Invalid saved state, starting fresh');
+                    const rawDiff = window.app?.userProgress?.preferredDifficulty || this.settings?.difficulty || 'beginner';
+                    const diff = rawDiff === 'advanced' ? 'intermediate' : rawDiff;
+                    this.shuffledQuestions = getRandomSentences(10, diff, null);
+                    this.totalQuestions = this.shuffledQuestions.length;
+                    this.currentQuestionIndex = 0;
+                    this.scores['scramble'] = 0;
+                    console.log(`[Scramble] ${this.totalQuestions} sentences loaded (${diff})`);
                 } else {
-                    console.error('[Scramble] scrambleGame instance not initialized. Check app.js import.');
+                    console.log(`[Scramble] Resuming at sentence ${this.currentQuestionIndex + 1}`);
                 }
-                return; // Skip standard question flow
             } else if (gameType === 'fill-blanks') {
-                // Fill-in-the-Blanks game - delegate to FillBlanksGame class
-                if (window.fillBlanksGame) {
-                    const canResume = this.isResuming &&
-                        this.currentQuestionIndex > 0 &&
-                        this.shuffledQuestions && this.shuffledQuestions.length > 0 &&
-                        this.shuffledQuestions[0]?.words;
-                    if (canResume) {
-                        // Restore saved state into the game instance
-                        window.fillBlanksGame.sentences = this.shuffledQuestions;
-                        window.fillBlanksGame.currentIndex = this.currentQuestionIndex;
-                        window.fillBlanksGame.score = this.scores['fill-blanks'] || 0;
-                        window.fillBlanksGame.isAnswerSelected = false;
-                        window.fillBlanksGame.showGame();
-                        window.fillBlanksGame.loadSentence();
-                    } else {
-                        const difficulty = this.settings?.difficulty || 'beginner';
-                        window.fillBlanksGame.startGame(difficulty, null, 10);
-                    }
-                    this.isGameActive = false;
-                    this.isResuming = false;
+                const validResume = this.isResuming &&
+                    this.shuffledQuestions?.length > 0 &&
+                    this.currentQuestionIndex < this.shuffledQuestions.length &&
+                    this.shuffledQuestions[this.currentQuestionIndex]?.blank;
+                if (!validResume) {
+                    if (this.isResuming) console.warn('[FillBlanks] Invalid saved state, starting fresh');
+                    const rawDiff = window.app?.userProgress?.preferredDifficulty || this.settings?.difficulty || 'beginner';
+                    const diff = rawDiff === 'advanced' ? 'intermediate' : rawDiff;
+                    this.shuffledQuestions = getRandomSentences(10, diff, null);
+                    this.totalQuestions = this.shuffledQuestions.length;
+                    this.currentQuestionIndex = 0;
+                    this.scores['fill-blanks'] = 0;
+                    console.log(`[FillBlanks] ${this.totalQuestions} sentences loaded (${diff})`);
                 } else {
-                    console.error('[FillBlanks] fillBlanksGame instance not initialized. Check app.js import.');
+                    console.log(`[FillBlanks] Resuming at sentence ${this.currentQuestionIndex + 1}`);
                 }
-                return; // Skip standard question flow
             } else if (gameType === 'grammar') {
-                // Special handling for grammar - filter by selected topic
+                // Special handling for grammar - filter by settings categories
                 const filteredGrammar = this.getFilteredGrammarQuestions();
                 if (!filteredGrammar || filteredGrammar.length === 0) {
-                    console.error('No grammar questions found for selected category:', this.selectedGrammarCategory);
+                    console.error('No grammar questions found');
                     return;
                 }
 
                 // Only generate new questions if NOT resuming
                 if (!this.isResuming) {
                     this.shuffledQuestions = this.smartQuestionSelection([...filteredGrammar]);
-                    console.log(`Grammar game: ${this.shuffledQuestions.length} questions for category "${this.selectedGrammarCategory}"`, this.shuffledQuestions.slice(0, 5));
+                    console.log(`Grammar game: ${this.shuffledQuestions.length} questions`, this.shuffledQuestions.slice(0, 5));
                 } else {
                     console.log(`Resuming grammar with ${this.shuffledQuestions.length} questions at index ${this.currentQuestionIndex}`);
                 }
@@ -2137,11 +2176,14 @@ class GameManager {
                     this.loadABCQuestion(question);
                     break;
                 case 'memory':
+                    window.memoryGame.loadQuestion(question);
+                    break;
                 case 'scramble':
+                    window.scrambleGame.loadQuestion(question);
+                    break;
                 case 'fill-blanks':
-                    // These games handle their own question loading via their own classes.
-                    // startGame() already delegates to the game instance, so nothing to do here.
-                    return;
+                    window.fillBlanksGame.loadQuestion(question);
+                    break;
                 default:
                     console.error('Unknown game type:', gameType);
                     return;
@@ -2666,7 +2708,14 @@ class GameManager {
     }
 
     updateProgress(gameType = this.currentGame) {
-        const progress = (this.currentQuestionIndex / this.totalQuestions) * 100;
+        // Memory manages its own stats display via updateStats() — skip standard update
+        if (gameType === 'memory') return;
+
+        // Use 1-based index for display so the last question reaches 100%
+        // Guard against totalQuestions === 0 to avoid 100% when practice list is empty
+        const progress = this.totalQuestions > 0
+            ? (Math.min(this.currentQuestionIndex + 1, this.totalQuestions) / this.totalQuestions) * 100
+            : 0;
         const container = document.getElementById(`${gameType}-game`);
         if (!container) return;
 

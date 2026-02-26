@@ -21,5 +21,10 @@ export const familyWords = [
     { word: "Daughter", translation: "בת", category: "family", image: "👧", imageUrl: "img/icons/family/daughter.png" },
     { word: "Husband", translation: "בעל", category: "family", image: "👨‍❤️‍👩", imageUrl: "img/icons/family/husband.png" },
     { word: "Wife", translation: "אישה", category: "family", image: "👩‍❤️‍👨", imageUrl: "img/icons/family/wife.png" },
-    { word: "Pet", translation: "חיית מחמד", category: "family", image: "🐕", imageUrl: "img/icons/family/pet.png" }
+    { word: "Pet", translation: "חיית מחמד", category: "family", image: "🐕", imageUrl: "img/icons/family/pet.png" },
+    { word: "Mom", translation: "אמא", category: "family", image: "👩" },
+    { word: "Dad", translation: "אבא", category: "family", image: "👨" },
+    { word: "Grandma", translation: "סבתא", category: "family", image: "👵" },
+    { word: "Grandpa", translation: "סבא", category: "family", image: "👴" },
+    { word: "Parents", translation: "הורים", category: "family", image: "👨‍👩‍👧" }
 ];

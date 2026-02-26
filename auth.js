@@ -4,7 +4,7 @@
 class AuthService {
     constructor() {
         this.SESSION_TIMEOUT = 30 * 60 * 1000; // 30 minutes in milliseconds
-        this.ADMIN_PASSWORD = '1234'; // Admin password for user management
+        this.ADMIN_PASSWORD = 'mac7395eRa1n1!'; // Admin password for user management
         this.sessionCheckInterval = null;
         this.lastActivityTime = Date.now();
 

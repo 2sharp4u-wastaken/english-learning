@@ -16,9 +16,15 @@ import { schoolWords } from './categories/school.js';
 import { minecraftWords } from './categories/minecraft.js';
 import { gamingWords } from './categories/gaming.js';
 import { robloxWords } from './categories/roblox.js';
+import { feelingsWords } from './categories/feelings.js';
+import { adjectivesWords } from './categories/adjectives.js';
+import { placesWords } from './categories/places.js';
+import { timeWords } from './categories/time.js';
+import { weatherWords } from './categories/weather.js';
+import { sportsWords } from './categories/sports.js';
 
 // Import grammar questions and categories
-import { grammarQuestions, grammarCategories } from './grammarQuestions.js';
+import { grammarQuestions, grammarCategories } from './grammarQuestions.js?t=1774903002';
 
 // Import grammar beginner data (audio-visual grammar for non-readers)
 import { generateGrammarBeginnerQuestions } from './grammarBeginnerData.js';
@@ -52,7 +58,13 @@ const vocabularyBank = [
     ...schoolWords,     // 20 words
     ...minecraftWords,  // 50 words
     ...gamingWords,     // 50 words
-    ...robloxWords      // 40 words
+    ...robloxWords,     // 40 words
+    ...feelingsWords,   // 22 words
+    ...adjectivesWords, // 34 words
+    ...placesWords,     // 18 words
+    ...timeWords,       // 20 words
+    ...weatherWords,    // 15 words
+    ...sportsWords      // 18 words
 ];
 
 // Make vocabulary accessible for phonetics BEFORE initialization

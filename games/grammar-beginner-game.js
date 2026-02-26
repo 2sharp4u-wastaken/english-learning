@@ -3,9 +3,22 @@
 
 import { questionTypes } from '../data/grammarBeginnerData.js';
 
+const BEGINNER_TYPE_LABELS = {
+    'who-says-it':    '👤 מי אמר?',
+    'complete-sound': '🔊 השלם',
+    'sounds-right':   '✅ נשמע נכון?',
+    'match-picture':  '🖼️ התאם תמונה',
+};
+
 // Load a grammar beginner question based on its type
 export async function loadGrammarBeginnerQuestion(question) {
     console.log('[GrammarBeginner] Loading question:', question.type, question);
+
+    // Update category badge
+    const categoryEl = document.getElementById('grammar-beginner-category');
+    if (categoryEl) {
+        categoryEl.textContent = BEGINNER_TYPE_LABELS[question.type] || question.type || '';
+    }
 
     // Clear any previous audio
     if (typeof speechManager !== 'undefined') {

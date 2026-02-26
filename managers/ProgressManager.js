@@ -42,8 +42,10 @@ export class ProgressManager {
      * @returns {Object|null}
      */
     getWordStats(word, category) {
-        const key = `${word}_${category}`;
-        return this.wordMastery[key] || null;
+        const key = `${word.toLowerCase()}_${category}`;
+        // Also check original-case key for backward-compatible reads of existing saved data
+        const legacyKey = `${word}_${category}`;
+        return this.wordMastery[key] || this.wordMastery[legacyKey] || null;
     }
 
     /**
@@ -56,7 +58,7 @@ export class ProgressManager {
      * @returns {Object} Updated word stats
      */
     recordWordAttempt(word, category, isCorrect, gameType, responseTime = null) {
-        const key = `${word}_${category}`;
+        const key = `${word.toLowerCase()}_${category}`;
 
         // Get or create word stats
         let stats = this.wordMastery[key] || this.createDefaultWordStats(word, category);

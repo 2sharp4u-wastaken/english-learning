@@ -62,5 +62,8 @@ export const foodWords = [
     { word: "Butter", translation: "חמאה", category: "food", image: "🧈" },
     { word: "Honey", translation: "דבש", category: "food", image: "🍯" },
     { word: "Jam", translation: "ריבה", category: "food", image: "🫐" , imageUrl: "img/icons/food/jam.png"},
-    { word: "Roll", translation: "לחמניה", category: "food", image: "🥖", imageUrl: "img/icons/food/roll.png" }
+    { word: "Roll", translation: "לחמניה", category: "food", image: "🥖", imageUrl: "img/icons/food/roll.png" },
+    { word: "Breakfast", translation: "ארוחת בוקר", category: "food", image: "🍳" },
+    { word: "Lunch", translation: "ארוחת צהריים", category: "food", image: "🥪" },
+    { word: "Dinner", translation: "ארוחת ערב", category: "food", image: "🍽️" }
 ];

@@ -29,15 +29,13 @@ export class GameRegistry {
      * @param {string} config.icon - Emoji or icon for this game type
      */
     register(type, config) {
-        if (!type || !config.module) {
-            throw new Error('Game type and module are required');
+        if (!type) {
+            throw new Error('Game type is required');
         }
 
         const gameConfig = {
             type,
-            module: config.module,
-            loadQuestion: config.loadQuestion || 'loadQuestion',
-            checkAnswer: config.checkAnswer || 'checkAnswer',
+            ...(config.module && { module: config.module, loadQuestion: config.loadQuestion || 'loadQuestion', checkAnswer: config.checkAnswer || 'checkAnswer' }),
             displayName: config.displayName || type,
             displayNameHebrew: config.displayNameHebrew || type,
             icon: config.icon || '🎮',

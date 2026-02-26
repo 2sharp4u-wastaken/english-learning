@@ -704,6 +704,24 @@
             background: rgba(245, 158, 11, 0.2);
         }
 
+        .user-action-btn.reset-practice {
+            background: rgba(102, 126, 234, 0.1);
+            color: #667eea;
+        }
+
+        .user-action-btn.reset-practice:hover {
+            background: rgba(102, 126, 234, 0.2);
+        }
+
+        .user-action-btn.reset-stats {
+            background: rgba(16, 185, 129, 0.1);
+            color: #059669;
+        }
+
+        .user-action-btn.reset-stats:hover {
+            background: rgba(16, 185, 129, 0.2);
+        }
+
         .user-action-btn.delete {
             background: rgba(245, 101, 101, 0.1);
             color: #e53e3e;
@@ -849,9 +867,46 @@
             </div>
         </div>
 
+        <!-- User Management -->
+        <div class="settings-section protected-section" data-protected="true">
+            <h2><i class="fas fa-users"></i>ניהול משתמשים</h2>
+
+            <div class="setting-item">
+                <label class="setting-label">משתמשים רשומים</label>
+                <p class="setting-description">נהל משתמשים (נדרשת סיסמת מנהל לפתיחת הגדרות מוגנות)</p>
+
+                <div class="user-table-container">
+                    <table class="user-table" id="user-table">
+                        <thead>
+                            <tr>
+                                <th>שם משתמש</th>
+                                <th>תאריך יצירה</th>
+                                <th>התחברות אחרונה</th>
+                                <th>סטטוס סיסמה</th>
+                                <th>איפוס סיסמה</th>
+                                <th>איפוס תרגול</th>
+                                <th>איפוס סטטיסטיקות</th>
+                                <th>מחיקה</th>
+                            </tr>
+                        </thead>
+                        <tbody id="user-table-body">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
+                    <button class="btn btn-primary" id="add-user-btn" style="display: inline-flex;">
+                        <i class="fas fa-user-plus"></i>
+                        הוסף משתמש
+                    </button>
+                </div>
+            </div>
+        </div>
+
         <!-- Vocabulary Categories -->
         <div class="settings-section">
-            <h2 class="clickable-title">
+            <h2 class="clickable-title" onclick="window.location.href='words.html'" title="פתח מילון">
                 <i class="fas fa-book"></i>קטגוריות אוצר מילים
                 <i class="fas fa-external-link-alt" style="font-size: 0.7em; margin-right: 10px; opacity: 0.6;"></i>
             </h2>
@@ -871,87 +926,6 @@
                     <i class="fas fa-exclamation-triangle"></i>
                     בחרת פחות מ-5 קטגוריות - המשחק יהיה במצב אימון (הציונים לא יישמרו).
                 </div>
-            </div>
-        </div>
-
-        <!-- Game Enable/Disable -->
-        <div class="settings-section protected-section" data-protected="true">
-            <h2><i class="fas fa-gamepad"></i>הפעלת/ביטול משחקים</h2>
-            <div class="setting-item">
-                <label class="setting-label">בחר אילו משחקים להפעיל</label>
-                <p class="setting-description">ניתן להפעיל או לבטל משחקים ספציפיים</p>
-
-                <div class="radio-group">
-                    <div class="setting-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <label class="setting-label">🎯 משחק אוצר מילים (Vocabulary)</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="game-vocabulary" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <label class="setting-label">👂 משחק הקשבה (Listening)</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="game-listening" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <label class="setting-label">📖 משחק קריאה (Reading)</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="game-reading" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                    </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <label class="setting-label">🎤 משחק הגייה (Pronunciation)</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="game-pronunciation" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <label class="setting-label">📝 משחק דקדוק (Grammar)</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="game-grammar" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-
-                    <div class="setting-item">
-                        <div style="display: flex; justify-content: space-between; align-items: center;">
-                            <label class="setting-label">🔤 משחק ABC אותיות (Letters)</label>
-                            <label class="toggle-switch">
-                                <input type="checkbox" id="game-abc" checked>
-                                <span class="toggle-slider"></span>
-                            </label>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Audio Settings -->
-        <div class="settings-section protected-section" data-protected="true">
-            <h2><i class="fas fa-volume-up"></i>הגדרות שמע</h2>
-
-            <div class="setting-item">
-                <label class="setting-label">בחירת קול</label>
-                <p class="setting-description">בחר את הקול המועדף עליך לקריאת המילים</p>
             </div>
         </div>
 
@@ -1011,37 +985,10 @@
             <h2><i class="fas fa-cogs"></i>הגדרות מתקדמות</h2>
 
             <div class="setting-item">
-                <label class="setting-label">ערבוב משופר</label>
-                <p class="setting-description">שימוש באלגוריתם ערבוב משופר למגוון גדול יותר</p>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="enhanced-shuffle" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">מניעת קטגוריות רצופות</label>
-                <p class="setting-description">מבטיח שלא יהיו שתי מילים רצופות מאותה קטגוריה</p>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="prevent-consecutive" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-
-            <div class="setting-item">
                 <label class="setting-label">קונפטי בהצלחה</label>
                 <p class="setting-description">הצג אנימציית קונפטי כשמשיבים נכון</p>
                 <label class="toggle-switch">
                     <input type="checkbox" id="show-confetti" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">שמור התקדמות</label>
-                <p class="setting-description">שמור את ההתקדמות והציונים שלך</p>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="save-progress" checked>
                     <span class="toggle-slider"></span>
                 </label>
             </div>
@@ -1106,40 +1053,6 @@
                     <input type="checkbox" id="show-exit-toast" checked>
                     <span class="toggle-slider"></span>
                 </label>
-            </div>
-        </div>
-
-        <!-- User Management -->
-        <div class="settings-section protected-section" data-protected="true">
-            <h2><i class="fas fa-users"></i>ניהול משתמשים</h2>
-
-            <div class="setting-item">
-                <label class="setting-label">משתמשים רשומים</label>
-                <p class="setting-description">נהל משתמשים (נדרשת סיסמת מנהל לפתיחת הגדרות מוגנות)</p>
-
-                <div class="user-table-container">
-                    <table class="user-table" id="user-table">
-                        <thead>
-                            <tr>
-                                <th>שם משתמש</th>
-                                <th>תאריך יצירה</th>
-                                <th>התחברות אחרונה</th>
-                                <th>סטטוס סיסמה</th>
-                                <th>פעולות</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body">
-                            <!-- Will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" id="add-user-btn" style="display: inline-flex;">
-                        <i class="fas fa-user-plus"></i>
-                        הוסף משתמש
-                    </button>
-                </div>
             </div>
         </div>
 

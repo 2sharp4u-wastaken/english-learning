@@ -35,6 +35,10 @@ class AppManager {
     }
 
     initializeApp() {
+        // MUST be first: create game instances before auth check so that
+        // initializeManagers() (called inside setupWithAuth) can safely inject managers.
+        this.initializeGameInstances();
+
         // Check if authService is ready
         if (typeof authService !== 'undefined') {
             this.setupWithAuth();
@@ -49,7 +53,6 @@ class AppManager {
         // this.displayWelcomeMessage(); // Disabled - user prefers login selection modal
         this.loadAchievements();
         this.updatePracticeModeIndicator();
-        this.filterDisabledGames();
 
         // Wire language toggle if present
         const langToggle = document.getElementById('lang-toggle');
@@ -84,13 +87,26 @@ class AppManager {
         this.initializeManagers();
     }
 
+    initializeGameInstances() {
+        // Create game instances — they act as UI renderers, state is owned by GameManager
+        this.memoryGame = new MemoryGame();
+        this.scrambleGame = new SentenceScrambleGame();
+        this.fillBlanksGame = new FillBlanksGame();
+
+        window.memoryGame = this.memoryGame;
+        window.scrambleGame = this.scrambleGame;
+        window.fillBlanksGame = this.fillBlanksGame;
+
+        console.log('[AppManager] Game instances created');
+    }
+
     // ============================================================
     // PHASE 3 - Screen Navigation
     // ============================================================
 
     /**
      * Navigate to a named screen.
-     * Valid ids: 'welcome-screen', 'courses-screen', 'topics-screen', 'profile-screen',
+     * Valid ids: 'welcome-screen', 'user-hub-screen', 'topics-screen',
      *            or any game content id (e.g. 'vocabulary-game').
      */
     showScreen(screenId) {
@@ -102,59 +118,40 @@ class AppManager {
             target.style.display = 'block';
         }
         this.currentScreenId = screenId;
-
-        // Update active state on top-screen-nav buttons
-        document.querySelectorAll('.top-screen-btn').forEach(btn => {
-            btn.classList.remove('active');
-        });
-        if (screenId === 'courses-screen') {
-            document.getElementById('nav-courses-btn')?.classList.add('active');
-        } else if (screenId === 'profile-screen') {
-            document.getElementById('nav-profile-btn')?.classList.add('active');
-        }
     }
 
     setupScreenNavigation() {
-        // Courses nav button
-        const coursesNavBtn = document.getElementById('nav-courses-btn');
-        if (coursesNavBtn) {
-            coursesNavBtn.addEventListener('click', () => {
-                this.renderCoursesScreen();
-                this.showScreen('courses-screen');
+        // User-info pill → open user hub (profile tab)
+        const userInfoPill = document.getElementById('header-user-info');
+        if (userInfoPill) {
+            userInfoPill.addEventListener('click', () => {
+                this.renderUserHub();
+                this.showScreen('user-hub-screen');
             });
         }
 
-        // Profile nav button
-        const profileNavBtn = document.getElementById('nav-profile-btn');
-        if (profileNavBtn) {
-            profileNavBtn.addEventListener('click', () => {
-                this.renderProfileScreen();
-                this.showScreen('profile-screen');
-            });
-        }
-
-        // Back from courses → welcome
-        const coursesBackBtn = document.getElementById('courses-back-btn');
-        if (coursesBackBtn) {
-            coursesBackBtn.addEventListener('click', () => {
+        // Back from user hub → welcome
+        const hubBackBtn = document.getElementById('user-hub-back-btn');
+        if (hubBackBtn) {
+            hubBackBtn.addEventListener('click', () => {
                 this.showScreen('welcome-screen');
             });
         }
 
-        // Back from topics → courses
+        // Hub tab buttons
+        document.querySelectorAll('.hub-tab').forEach(btn => {
+            btn.addEventListener('click', () => {
+                this.switchHubTab(btn.dataset.tab);
+            });
+        });
+
+        // Back from topics → user hub (courses tab)
         const topicsBackBtn = document.getElementById('topics-back-btn');
         if (topicsBackBtn) {
             topicsBackBtn.addEventListener('click', () => {
                 this.renderCoursesScreen();
-                this.showScreen('courses-screen');
-            });
-        }
-
-        // Back from profile → welcome
-        const profileBackBtn = document.getElementById('profile-back-btn');
-        if (profileBackBtn) {
-            profileBackBtn.addEventListener('click', () => {
-                this.showScreen('welcome-screen');
+                this.switchHubTab('courses');
+                this.showScreen('user-hub-screen');
             });
         }
 
@@ -176,7 +173,7 @@ class AppManager {
         if (!grid || !this.courseManager) return;
 
         // Update coin balance
-        const coinEl = document.getElementById('courses-coin-balance');
+        const coinEl = document.getElementById('hub-coin-balance');
         if (coinEl) coinEl.textContent = this.userProgress?.coins || 0;
 
         const courses = this.courseManager.getAllCourses();
@@ -192,34 +189,135 @@ class AppManager {
             const diffLabel = { beginner: 'מתחיל', intermediate: 'בינוני', advanced: 'מתקדם' }[diffClass] || diffClass;
 
             return `
-                <div class="course-card ${unlocked ? '' : 'locked'}" data-course-id="${course.id}">
-                    <div class="course-card-top">
-                        <div class="course-card-icon">${course.icon || '📚'}</div>
-                        <div class="course-card-info">
-                            <h3 class="course-card-name">${course.nameHebrew || course.name}</h3>
-                            <p class="course-card-desc">${course.descriptionHebrew || course.description || ''}</p>
+                <div class="course-row" data-course-id="${course.id}">
+                    <div class="course-card ${unlocked ? 'expandable' : 'locked'}">
+                        <div class="course-card-top">
+                            <div class="course-card-icon">${course.icon || '📚'}</div>
+                            <div class="course-card-info">
+                                <h3 class="course-card-name">${course.nameHebrew || course.name}</h3>
+                                <p class="course-card-desc">${course.descriptionHebrew || course.description || ''}</p>
+                            </div>
+                            <div class="course-card-lock">
+                                ${unlocked
+                                    ? '<i class="fas fa-chevron-down course-expand-icon"></i>'
+                                    : '🔒'}
+                            </div>
                         </div>
-                        <div class="course-card-lock">${unlocked ? '' : '🔒'}</div>
-                    </div>
-                    <div class="course-difficulty-badge ${diffClass}">${diffLabel}</div>
-                    <div class="course-progress-row">
-                        <div class="course-progress-bar">
-                            <div class="course-progress-fill" style="width:${progress}%"></div>
+                        <div class="course-difficulty-badge ${diffClass}">${diffLabel}</div>
+                        <div class="course-progress-row">
+                            <div class="course-progress-bar">
+                                <div class="course-progress-fill" style="width:${progress}%"></div>
+                            </div>
+                            <span class="course-progress-pct">${progress}%</span>
                         </div>
-                        <span class="course-progress-pct">${progress}%</span>
                     </div>
+                    <div class="course-detail-panel" id="course-detail-${course.id}"></div>
                 </div>
             `;
         }).join('');
 
-        // Wire click handlers
-        grid.querySelectorAll('.course-card:not(.locked)').forEach(card => {
+        // Wire click handlers for expandable cards
+        grid.querySelectorAll('.course-card.expandable').forEach(card => {
             card.addEventListener('click', () => {
-                const courseId = card.dataset.courseId;
-                this.renderTopicsScreen(courseId);
-                this.showScreen('topics-screen');
+                const courseId = card.closest('.course-row').dataset.courseId;
+                this.toggleCourseDetail(courseId, card);
             });
         });
+    }
+
+    toggleCourseDetail(courseId, cardEl) {
+        const panel = document.getElementById(`course-detail-${courseId}`);
+        if (!panel) return;
+
+        const isOpen = panel.classList.contains('open');
+
+        // Close all open panels and reset their expand icons
+        document.querySelectorAll('.course-detail-panel.open').forEach(p => {
+            p.classList.remove('open');
+            p.previousElementSibling?.classList.remove('card-open');
+            p.previousElementSibling?.querySelector('.course-expand-icon')?.classList.remove('rotated');
+        });
+
+        if (!isOpen) {
+            // (Re-)render fresh so mastery/completion state is current
+            panel.innerHTML = this.buildCourseDetailHTML(courseId);
+            panel.classList.add('open');
+            cardEl.classList.add('card-open');
+            cardEl.querySelector('.course-expand-icon')?.classList.add('rotated');
+
+            // Wire topic click handlers
+            panel.querySelectorAll('.topic-card:not(.locked)').forEach(topicCard => {
+                topicCard.addEventListener('click', () => {
+                    const topicId = topicCard.dataset.topicId;
+                    this.showTopicActivityPicker(topicId, courseId, topicCard);
+                });
+            });
+        }
+    }
+
+    buildCourseDetailHTML(courseId) {
+        const course = this.courseManager?.getCourse(courseId);
+        if (!course) return '';
+
+        const progress = this.courseManager.getCourseProgress(courseId);
+
+        let html = `
+            <div class="course-detail-progress">
+                <div class="topics-progress-bar">
+                    <div class="topics-progress-fill" style="width:${progress}%"></div>
+                </div>
+                <span class="topics-progress-label">${progress}% הושלם</span>
+            </div>
+        `;
+
+        (course.units || []).forEach(unit => {
+            html += `<div class="topic-unit-divider">${unit.nameHebrew || unit.name} ${unit.icon || ''}</div>`;
+
+            (unit.topics || []).forEach(topic => {
+                const unlocked = this.courseManager.isTopicUnlocked(topic.id);
+                const completed = this.courseManager.isTopicCompleted(topic.id);
+                const mastery = this.courseManager.getTopicMastery(topic.id);
+                const topicProgress = this.userProgress?.topicProgress?.[topic.id];
+                const completedActivities = topicProgress?.completedActivities || [];
+
+                const activitiesBadges = (topic.activities || []).map(act => {
+                    const done = completedActivities.includes(act);
+                    const labels = {
+                        vocabulary: 'אוצר מילים', listening: 'הקשבה', memory: 'זיכרון',
+                        scramble: 'סידור', 'fill-blanks': 'השלמה', grammar: 'דקדוק',
+                        pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC'
+                    };
+                    return `<span class="activity-badge ${done ? 'done' : ''}">${labels[act] || act}</span>`;
+                }).join('');
+
+                const rightIcon = completed
+                    ? `<span class="topic-check-icon">✅</span>`
+                    : unlocked
+                        ? `<i class="fas fa-chevron-left topic-arrow-icon"></i>`
+                        : `<span class="topic-lock-icon">🔒</span>`;
+
+                html += `
+                    <div class="topic-card ${unlocked ? '' : 'locked'} ${completed ? 'completed' : ''}"
+                         data-topic-id="${topic.id}" data-course-id="${courseId}">
+                        <div class="topic-card-icon">${topic.icon || '📖'}</div>
+                        <div class="topic-card-body">
+                            <div class="topic-card-name">${topic.nameHebrew || topic.name}</div>
+                            <div class="topic-card-activities">${activitiesBadges}</div>
+                            ${mastery > 0 ? `
+                            <div class="topic-mastery-row">
+                                <div class="topic-mastery-bar">
+                                    <div class="topic-mastery-fill" style="width:${mastery}%"></div>
+                                </div>
+                                <span class="topic-mastery-pct">${mastery}%</span>
+                            </div>` : ''}
+                        </div>
+                        <div class="topic-card-right">${rightIcon}</div>
+                    </div>
+                `;
+            });
+        });
+
+        return html;
     }
 
     // ============================================================
@@ -406,29 +504,66 @@ class AppManager {
             nameEl.textContent = this.userProgress?.studentName || this.currentUser || 'לומד';
         }
 
-        // Coins
+        // Coins (profile hero)
         const coinsEl = document.getElementById('profile-coin-count');
         if (coinsEl) coinsEl.textContent = this.userProgress?.coins || 0;
 
-        // Stats
+        // Streak
         const streakEl = document.getElementById('profile-streak');
         if (streakEl) streakEl.textContent = this.userProgress?.streakDays || 0;
 
+        // Topics done (from CourseManager stats)
         const topicsDoneEl = document.getElementById('profile-topics-done');
         if (topicsDoneEl && this.courseManager) {
             const stats = this.courseManager.getStats();
             topicsDoneEl.textContent = stats.completedTopics;
         }
 
+        // Words mastered – use ProgressManager mastery stats when available
         const wordsMasteredEl = document.getElementById('profile-words-mastered');
-        if (wordsMasteredEl && this.progressManager) {
-            const masteredCount = Object.values(this.userProgress?.wordMastery || {})
-                .filter(w => w.mastery >= 0.8).length;
+        if (wordsMasteredEl) {
+            let masteredCount = 0;
+
+            if (this.progressManager?.getMasteryStats) {
+                const masteryStats = this.progressManager.getMasteryStats();
+                masteredCount = masteryStats.mastered || 0;
+            } else {
+                // Fallback to legacy userProgress.wordMastery structure
+                masteredCount = Object.values(this.userProgress?.wordMastery || {})
+                    .filter(w => (w.masteryLevel ?? w.mastery ?? 0) >= 0.8).length;
+            }
+
             wordsMasteredEl.textContent = masteredCount;
         }
 
+        // Certificates count
         const certsEl = document.getElementById('profile-certs-count');
         if (certsEl) certsEl.textContent = (this.userProgress?.certificates || []).length;
+
+        // Recommended next step (next topic to work on)
+        const nextActionContainer = document.getElementById('profile-next-action');
+        const nextActionBtn = document.getElementById('profile-next-btn');
+        if (nextActionContainer && nextActionBtn && this.courseManager) {
+            const recommendation = this.courseManager.getNextRecommendedTopic();
+
+            if (recommendation && recommendation.topic && recommendation.course) {
+                const { topic, course } = recommendation;
+                const courseName = course.nameHebrew || course.name || '';
+                const topicName = topic.nameHebrew || topic.name || '';
+
+                nextActionBtn.textContent = `${courseName} • ${topicName}`;
+                nextActionBtn.onclick = () => {
+                    const activities = topic.activities || [];
+                    const defaultActivity = activities[0] || 'vocabulary';
+                    this.startTopicActivity(topic.id, defaultActivity, topic);
+                };
+
+                nextActionContainer.style.display = 'block';
+            } else {
+                nextActionContainer.style.display = 'none';
+                nextActionBtn.onclick = null;
+            }
+        }
 
         // Certificates gallery
         this.renderCertificateGallery();
@@ -451,6 +586,23 @@ class AppManager {
                 <div class="mini-cert-date">${cert.earnedDate || ''}</div>
             </div>
         `).join('');
+    }
+
+    // ============================================================
+    // PHASE 3 - User Hub (Profile + Courses unified screen)
+    // ============================================================
+
+    renderUserHub(defaultTab = 'profile') {
+        this.renderProfileScreen();
+        this.renderCoursesScreen();
+        this.switchHubTab(defaultTab);
+    }
+
+    switchHubTab(tabName) {
+        document.querySelectorAll('.hub-tab').forEach(t => t.classList.remove('active'));
+        document.querySelectorAll('.hub-tab-panel').forEach(p => p.classList.remove('active'));
+        document.getElementById(`tab-${tabName}`)?.classList.add('active');
+        document.getElementById(`hub-panel-${tabName}`)?.classList.add('active');
     }
 
     // ============================================================
@@ -510,10 +662,20 @@ class AppManager {
             this.courseManager.registerCourse(course);
         });
 
-        // Initialize game instances (gameManager looked up lazily from window)
-        this.memoryGame = new MemoryGame(null, this.scoreManager, this.progressManager);
-        this.scrambleGame = new SentenceScrambleGame(this.scoreManager, this.progressManager);
-        this.fillBlanksGame = new FillBlanksGame(this.scoreManager, this.progressManager);
+        // Inject real managers into already-created game instances
+        // (instances were created unconditionally in initializeGameInstances())
+        if (this.memoryGame) {
+            this.memoryGame.scoreManager = this.scoreManager;
+            this.memoryGame.progressManager = this.progressManager;
+        }
+        if (this.scrambleGame) {
+            this.scrambleGame.scoreManager = this.scoreManager;
+            this.scrambleGame.progressManager = this.progressManager;
+        }
+        if (this.fillBlanksGame) {
+            this.fillBlanksGame.scoreManager = this.scoreManager;
+            this.fillBlanksGame.progressManager = this.progressManager;
+        }
 
         // Export managers globally for access from other modules
         window.scoreManager = this.scoreManager;
@@ -522,61 +684,18 @@ class AppManager {
         window.certificateManager = this.certificateManager;
         window.coinManager = this.coinManager;
         window.gameRegistry = gameRegistry;
-        window.memoryGame = this.memoryGame;
-        window.scrambleGame = this.scrambleGame;
-        window.fillBlanksGame = this.fillBlanksGame;
         window.showCertificateModal = (topicName, score) => this.showCertificateModal(topicName, score);
         window.showScreen = (id) => this.showScreen(id);
-
-        // Wire up memory play-again button
-        const memoryPlayAgainBtn = document.getElementById('memory-play-again');
-        if (memoryPlayAgainBtn) {
-            memoryPlayAgainBtn.addEventListener('click', () => {
-                if (window.memoryGame) window.memoryGame.playAgain();
-            });
-        }
-
-        // Wire up scramble game buttons
-        const scrambleCheckBtn = document.getElementById('scramble-check');
-        if (scrambleCheckBtn) {
-            scrambleCheckBtn.addEventListener('click', () => {
-                if (window.scrambleGame) window.scrambleGame.checkAnswer();
-            });
-        }
-
-        const scrambleNextBtn = document.getElementById('scramble-next');
-        if (scrambleNextBtn) {
-            scrambleNextBtn.addEventListener('click', () => {
-                if (window.scrambleGame) window.scrambleGame.nextSentence();
-            });
-        }
-
-        const scramblePlayAgainBtn = document.getElementById('scramble-play-again');
-        if (scramblePlayAgainBtn) {
-            scramblePlayAgainBtn.addEventListener('click', () => {
-                if (window.scrambleGame) window.scrambleGame.playAgain();
-            });
-        }
-
-        // Wire up fill-blanks game buttons
-        const fillBlanksNextBtn = document.getElementById('fill-blanks-next');
-        if (fillBlanksNextBtn) {
-            fillBlanksNextBtn.addEventListener('click', () => {
-                if (window.fillBlanksGame) window.fillBlanksGame.nextSentence();
-            });
-        }
-
-        const fillBlanksPlayAgainBtn = document.getElementById('fill-blanks-play-again');
-        if (fillBlanksPlayAgainBtn) {
-            fillBlanksPlayAgainBtn.addEventListener('click', () => {
-                if (window.fillBlanksGame) window.fillBlanksGame.playAgain();
-            });
-        }
 
         // Setup Phase 3 screen navigation
         this.setupScreenNavigation();
 
         console.log('[AppManager] All managers initialized successfully');
+
+        // Once managers and userProgress are ready, refresh home card stats.
+        if (window.gamificationManager?.updateAllGameCards) {
+            window.gamificationManager.updateAllGameCards();
+        }
     }
 
     updatePracticeModeIndicator() {
@@ -584,21 +703,6 @@ class AppManager {
         if (badge && typeof SettingsManager !== 'undefined' && SettingsManager.isPracticeMode()) {
             badge.style.display = 'inline-block';
         }
-    }
-
-    filterDisabledGames() {
-        const settings = typeof SettingsManager !== 'undefined' ? SettingsManager.getSettings() : null;
-        if (!settings || !settings.enabledGames) return;
-
-        // Hide game buttons for disabled games
-        Object.keys(settings.enabledGames).forEach(gameType => {
-            if (!settings.enabledGames[gameType]) {
-                const gameBtn = document.querySelector(`.game-btn[data-game="${gameType}"]`);
-                if (gameBtn) {
-                    gameBtn.style.display = 'none';
-                }
-            }
-        });
     }
 
     setupUserSelector() {
@@ -908,7 +1012,8 @@ class AppManager {
                 grammar: 0,
                 pronunciation: 0,
                 listening: 0,
-                reading: 0
+                reading: 0,
+                memory: 0
             },
             streakDays: 0,
             lastPlayDate: null,

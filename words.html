@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>מילון - English Learning Games</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* Use dict- prefix to avoid conflicts with global styles.css rules */
+
+        .dict-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 140px 20px 40px;
+        }
+
+        .dict-header {
+            text-align: center;
+            margin-bottom: 25px;
+            background: rgba(255, 255, 255, 0.95);
+            padding: 22px 30px;
+            border-radius: 20px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+        }
+
+        .dict-header h1 {
+            font-size: 2.1rem;
+            color: #4a5568;
+            margin: 0 0 6px;
+        }
+
+        .dict-header h1 i {
+            color: #667eea;
+            margin-left: 12px;
+        }
+
+        .dict-header p {
+            color: #718096;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        /* Search bar */
+        .dict-search-wrap {
+            position: relative;
+            max-width: 500px;
+            margin: 0 auto 20px;
+        }
+
+        .dict-search-wrap input {
+            width: 100%;
+            padding: 14px 50px 14px 20px;
+            border: 2px solid rgba(255,255,255,0.5);
+            border-radius: 50px;
+            font-size: 1.05rem;
+            font-family: 'Poppins', sans-serif;
+            background: rgba(255, 255, 255, 0.92);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            outline: none;
+            transition: all 0.2s;
+            box-sizing: border-box;
+        }
+
+        .dict-search-wrap input:focus {
+            border-color: #667eea;
+            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .dict-search-wrap i {
+            position: absolute;
+            left: 18px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #a0aec0;
+            font-size: 1rem;
+        }
+
+        /* Category filter tabs */
+        .dict-filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            justify-content: center;
+            margin-bottom: 18px;
+        }
+
+        .dict-filter-btn {
+            padding: 7px 16px;
+            border-radius: 50px;
+            border: 2px solid rgba(255,255,255,0.5);
+            background: rgba(255, 255, 255, 0.75);
+            font-size: 0.9rem;
+            font-family: 'Poppins', sans-serif;
+            font-weight: 600;
+            color: #4a5568;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .dict-filter-btn:hover {
+            background: rgba(255,255,255,0.95);
+            border-color: rgba(255,255,255,0.9);
+            transform: translateY(-2px);
+        }
+
+        .dict-filter-btn.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-color: transparent;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.5);
+        }
+
+        /* Stats bar */
+        .dict-stats {
+            text-align: center;
+            margin-bottom: 20px;
+            background: rgba(255,255,255,0.18);
+            border: 1px solid rgba(255,255,255,0.35);
+            border-radius: 50px;
+            padding: 8px 20px;
+            display: inline-block;
+            width: 100%;
+            box-sizing: border-box;
+            color: white;
+            font-size: 1rem;
+            font-weight: 500;
+            text-shadow: 0 1px 3px rgba(0,0,0,0.2);
+        }
+
+        .dict-stats strong {
+            font-weight: 800;
+            font-size: 1.1rem;
+        }
+
+        /* Category sections */
+        .dict-section {
+            margin-bottom: 32px;
+        }
+
+        .dict-section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+            padding: 11px 18px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 14px;
+            color: white;
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+        }
+
+        .dict-section-icon {
+            font-size: 1.5rem;
+            line-height: 1;
+        }
+
+        .dict-section-header h2 {
+            font-size: 1.15rem;
+            font-weight: 700;
+            margin: 0;
+        }
+
+        .dict-section-count {
+            margin-right: auto;
+            background: rgba(255,255,255,0.25);
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.82rem;
+            font-weight: 600;
+        }
+
+        /* Word grid */
+        .dict-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+            gap: 12px;
+        }
+
+        /* Individual word card - dict- prefix to avoid global .word-card conflict */
+        .dict-card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 16px;
+            padding: 14px 10px 12px;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            transition: all 0.2s ease;
+            cursor: pointer;
+            border: 2px solid transparent;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 6px;
+            user-select: none;
+        }
+
+        .dict-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.25);
+            border-color: #667eea;
+        }
+
+        .dict-card:active {
+            transform: translateY(-1px) scale(0.97);
+        }
+
+        .dict-card.playing {
+            border-color: #48bb78;
+            box-shadow: 0 8px 25px rgba(72, 187, 120, 0.35);
+        }
+
+        /* Emoji display - dict- prefix to avoid .word-image conflict */
+        .dict-emoji-wrap {
+            width: 64px;
+            height: 64px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .dict-emoji {
+            font-size: 2.6rem;
+            line-height: 1;
+        }
+
+        .dict-img {
+            width: 60px;
+            height: 60px;
+            object-fit: contain;
+            border-radius: 8px;
+        }
+
+        .dict-word-en {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #2d3748;
+            line-height: 1.2;
+        }
+
+        .dict-word-he {
+            font-size: 0.8rem;
+            color: #718096;
+            line-height: 1.2;
+        }
+
+        .dict-card-speaker {
+            font-size: 0.75rem;
+            color: #a0aec0;
+            margin-top: 2px;
+        }
+
+        /* Hidden states */
+        .dict-card.dict-hidden { display: none; }
+        .dict-section.dict-hidden { display: none; }
+
+        /* Empty state */
+        .dict-empty {
+            text-align: center;
+            padding: 60px 20px;
+            color: white;
+            display: none;
+        }
+
+        .dict-empty i {
+            font-size: 3rem;
+            opacity: 0.5;
+            margin-bottom: 14px;
+            display: block;
+        }
+
+        .dict-empty p {
+            font-size: 1.2rem;
+            opacity: 0.8;
+        }
+
+        @media (max-width: 768px) {
+            .dict-container {
+                padding: 120px 12px 30px;
+            }
+
+            .dict-header h1 { font-size: 1.6rem; }
+
+            .dict-grid {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                gap: 10px;
+            }
+
+            .dict-emoji-wrap { width: 52px; height: 52px; }
+            .dict-emoji { font-size: 2.1rem; }
+            .dict-img { width: 48px; height: 48px; }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation Header is injected by components/top-header.js -->
+
+    <div class="dict-container">
+
+        <div class="dict-header">
+            <h1><i class="fas fa-book-open"></i>מילון אוצר מילים</h1>
+            <p>לחץ על מילה כדי לשמוע אותה • כל המילים מסודרות לפי קטגוריות</p>
+        </div>
+
+        <!-- Search -->
+        <div class="dict-search-wrap">
+            <input type="text" id="dict-search" placeholder="חפש מילה באנגלית או בעברית...">
+            <i class="fas fa-search"></i>
+        </div>
+
+        <!-- Category filter buttons -->
+        <div class="dict-filters" id="dict-filters">
+            <button class="dict-filter-btn active" data-cat="all">הכל</button>
+        </div>
+
+        <!-- Stats -->
+        <div class="dict-stats" id="dict-stats">
+            מציג <strong id="dict-visible">0</strong> מילים מתוך <strong id="dict-total">0</strong>
+        </div>
+
+        <!-- Word sections -->
+        <div id="dict-content"></div>
+
+        <!-- Empty state -->
+        <div class="dict-empty" id="dict-empty">
+            <i class="fas fa-search"></i>
+            <p>לא נמצאו מילים</p>
+        </div>
+
+    </div>
+
+    <script type="module" src="utils/consoleLogger.js"></script>
+    <script type="module">
+        import { initTopHeader } from './components/top-header.js';
+        initTopHeader({ activePage: 'words' });
+    </script>
+    <script type="module">
+        import { animalsWords }    from './data/categories/animals.js';
+        import { colorsWords }     from './data/categories/colors.js';
+        import { numbersWords }    from './data/categories/numbers.js';
+        import { foodWords }       from './data/categories/food.js';
+        import { bodyWords }       from './data/categories/body.js';
+        import { familyWords }     from './data/categories/family.js';
+        import { clothesWords }    from './data/categories/clothes.js';
+        import { homeWords }       from './data/categories/home.js';
+        import { actionsWords }    from './data/categories/actions.js';
+        import { natureWords }     from './data/categories/nature.js';
+        import { schoolWords }     from './data/categories/school.js';
+        import { minecraftWords }  from './data/categories/minecraft.js';
+        import { gamingWords }     from './data/categories/gaming.js';
+        import { robloxWords }     from './data/categories/roblox.js';
+        import { feelingsWords }   from './data/categories/feelings.js';
+        import { adjectivesWords } from './data/categories/adjectives.js';
+        import { placesWords }     from './data/categories/places.js';
+        import { timeWords }       from './data/categories/time.js';
+        import { weatherWords }    from './data/categories/weather.js';
+        import { sportsWords }     from './data/categories/sports.js';
+
+        const CATEGORIES = [
+            { id: 'animals',    name: 'חיות',        icon: '🐾', words: animalsWords },
+            { id: 'colors',     name: 'צבעים',       icon: '🎨', words: colorsWords },
+            { id: 'numbers',    name: 'מספרים',      icon: '🔢', words: numbersWords },
+            { id: 'food',       name: 'אוכל ושתייה', icon: '🍎', words: foodWords },
+            { id: 'body',       name: 'חלקי גוף',    icon: '👁️', words: bodyWords },
+            { id: 'family',     name: 'משפחה',       icon: '👨‍👩‍👧', words: familyWords },
+            { id: 'clothes',    name: 'בגדים',       icon: '👕', words: clothesWords },
+            { id: 'home',       name: 'בית וחפצים',  icon: '🏠', words: homeWords },
+            { id: 'actions',    name: 'פעולות',      icon: '🏃', words: actionsWords },
+            { id: 'nature',     name: 'טבע',         icon: '🌿', words: natureWords },
+            { id: 'school',     name: 'בית ספר',     icon: '📚', words: schoolWords },
+            { id: 'minecraft',  name: 'Minecraft',   icon: '⛏️', words: minecraftWords },
+            { id: 'gaming',     name: 'משחקים',      icon: '🎮', words: gamingWords },
+            { id: 'roblox',     name: 'Roblox',      icon: '🟥', words: robloxWords },
+            { id: 'feelings',   name: 'רגשות',       icon: '😊', words: feelingsWords },
+            { id: 'adjectives', name: 'תארים',       icon: '✨', words: adjectivesWords },
+            { id: 'places',     name: 'מקומות',      icon: '📍', words: placesWords },
+            { id: 'time',       name: 'זמן',         icon: '⏰', words: timeWords },
+            { id: 'weather',    name: 'מזג אוויר',   icon: '☀️', words: weatherWords },
+            { id: 'sports',     name: 'ספורט',       icon: '⚽', words: sportsWords },
+        ];
+
+        // ---- Speech ----
+        let voices = [];
+        let englishVoice = null;
+
+        function loadVoices() {
+            voices = speechSynthesis.getVoices();
+            englishVoice = voices.find(v =>
+                v.lang.startsWith('en') && (v.name.includes('Samantha') || v.name.includes('Daniel') || v.name.includes('Google'))
+            ) || voices.find(v => v.lang.startsWith('en')) || null;
+        }
+        loadVoices();
+        speechSynthesis.onvoiceschanged = loadVoices;
+
+        function speakWord(word) {
+            if (!('speechSynthesis' in window)) return;
+            speechSynthesis.cancel();
+            const utt = new SpeechSynthesisUtterance(word);
+            utt.lang = 'en-US';
+            utt.rate = 0.85;
+            utt.pitch = 1.1;
+            if (englishVoice) utt.voice = englishVoice;
+            speechSynthesis.speak(utt);
+        }
+
+        // ---- Build card HTML (using img when imageUrl available, emoji otherwise) ----
+        function buildCardHTML(w) {
+            const imageHTML = w.imageUrl
+                ? `<img class="dict-img" src="${w.imageUrl}" alt="${w.word}" loading="lazy" onerror="this.style.display='none';this.parentElement.querySelector('.dict-emoji').style.display='block'">`
+                  + `<span class="dict-emoji" style="display:none">${w.image || '📝'}</span>`
+                : `<span class="dict-emoji">${w.image || '📝'}</span>`;
+
+            return `<div class="dict-card" data-word="${w.word}" data-en="${w.word.toLowerCase()}" data-he="${w.translation}">
+                <div class="dict-emoji-wrap">${imageHTML}</div>
+                <span class="dict-word-en">${w.word}</span>
+                <span class="dict-word-he">${w.translation}</span>
+                <span class="dict-card-speaker"><i class="fas fa-volume-up"></i></span>
+            </div>`;
+        }
+
+        // ---- Render ----
+        let activeFilter = 'all';
+        let searchQuery = '';
+
+        function renderFilters() {
+            const container = document.getElementById('dict-filters');
+            CATEGORIES.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = 'dict-filter-btn';
+                btn.dataset.cat = cat.id;
+                btn.textContent = `${cat.icon} ${cat.name}`;
+                container.appendChild(btn);
+            });
+
+            container.addEventListener('click', e => {
+                const btn = e.target.closest('.dict-filter-btn');
+                if (!btn) return;
+                container.querySelectorAll('.dict-filter-btn').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+                activeFilter = btn.dataset.cat;
+                applyFilters();
+            });
+        }
+
+        function renderContent() {
+            const container = document.getElementById('dict-content');
+            container.innerHTML = CATEGORIES.map(cat => `
+                <div class="dict-section" data-cat="${cat.id}">
+                    <div class="dict-section-header">
+                        <span class="dict-section-icon">${cat.icon}</span>
+                        <h2>${cat.name}</h2>
+                        <span class="dict-section-count">${cat.words.length} מילים</span>
+                    </div>
+                    <div class="dict-grid">
+                        ${cat.words.map(w => buildCardHTML(w)).join('')}
+                    </div>
+                </div>
+            `).join('');
+
+            // Click to speak
+            container.addEventListener('click', e => {
+                const card = e.target.closest('.dict-card');
+                if (!card) return;
+                const word = card.dataset.word;
+                speakWord(word);
+                // Visual feedback
+                card.classList.add('playing');
+                setTimeout(() => card.classList.remove('playing'), 1200);
+            });
+        }
+
+        function applyFilters() {
+            const q = searchQuery.trim().toLowerCase();
+            let visible = 0;
+
+            document.querySelectorAll('.dict-section').forEach(section => {
+                const catId = section.dataset.cat;
+                if (activeFilter !== 'all' && activeFilter !== catId) {
+                    section.classList.add('dict-hidden');
+                    return;
+                }
+
+                let sectionVisible = false;
+                section.querySelectorAll('.dict-card').forEach(card => {
+                    const match = !q || card.dataset.en.includes(q) || card.dataset.he.includes(q);
+                    card.classList.toggle('dict-hidden', !match);
+                    if (match) { visible++; sectionVisible = true; }
+                });
+
+                section.classList.toggle('dict-hidden', !sectionVisible);
+            });
+
+            document.getElementById('dict-visible').textContent = visible;
+            document.getElementById('dict-empty').style.display = visible === 0 ? 'block' : 'none';
+        }
+
+        // ---- Init ----
+        const total = CATEGORIES.reduce((s, c) => s + c.words.length, 0);
+        document.getElementById('dict-total').textContent = total;
+        document.getElementById('dict-visible').textContent = total;
+
+        renderFilters();
+        renderContent();
+
+        document.getElementById('dict-search').addEventListener('input', e => {
+            searchQuery = e.target.value;
+            applyFilters();
+        });
+    </script>
+    <script type="module" src="components/practice-indicator.js"></script>
+    <script type="module" src="components/header-score.js"></script>
+</body>
+</html>

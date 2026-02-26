@@ -404,10 +404,38 @@
             }
         }
 
-        /* Delete Stats Button Hover Effect */
-        #delete-stats-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(245, 101, 101, 0.6);
+        /* Per-user delete button wrapper */
+        .user-tab-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .user-delete-btn {
+            width: 34px;
+            height: 34px;
+            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 8px rgba(245, 101, 101, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+        }
+
+        .user-tab-wrapper:hover .user-delete-btn {
+            opacity: 1;
+        }
+
+        .user-delete-btn:hover {
+            transform: scale(1.15);
+            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.6);
         }
     </style>
 </head>
@@ -418,14 +446,6 @@
         <div class="stats-header">
             <h1><i class="fas fa-chart-line"></i>סטטיסטיקות שחקנים</h1>
             <p>עקוב אחר ההתקדמות וההישגים שלך</p>
-
-            <!-- Delete Stats Button -->
-            <div style="margin-top: 20px;">
-                <button class="btn btn-danger" id="delete-stats-btn" style="background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%); color: white; padding: 12px 24px; border: none; border-radius: 50px; font-size: 1rem; font-weight: 700; cursor: pointer; box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4); transition: all 0.3s ease;">
-                    <i class="fas fa-trash-alt"></i>
-                    מחק סטטיסטיקות
-                </button>
-            </div>
         </div>
 
         <!-- User Selection Tabs (populated dynamically by stats.js) -->
@@ -523,68 +543,6 @@
             });
         }
 
-        document.addEventListener('DOMContentLoaded', () => {
-            // Delete stats button handler
-            const deleteBtn = document.getElementById('delete-stats-btn');
-            if (deleteBtn) {
-                deleteBtn.addEventListener('click', async () => {
-                    if (!confirm('האם אתה בטוח שברצונך למחוק את כל הסטטיסטיקות של כל המשתמשים? פעולה זו אינה הפיכה!')) {
-                        return;
-                    }
-
-                    // Show password modal
-                    const isAuthorized = await showPasswordModal('מחק סטטיסטיקות - הזן סיסמת מנהל');
-                    if (!isAuthorized) {
-                        return;
-                    }
-
-                    // Delete all stats directly without needing SettingsManager instance
-                    const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading'];
-
-                    // Get all users
-                    let userIds = [];
-                    if (typeof authService !== 'undefined' && authService.getUsers) {
-                        const allUsers = authService.getUsers();
-                        userIds = Object.keys(allUsers); // usernames like 'omer', 'zohar', etc.
-                    }
-
-                    // Delete user progress for each user
-                    userIds.forEach(userId => {
-                        localStorage.removeItem(`userProgress_${userId}`);
-                    });
-
-                    // Delete score history for each user and game (CORRECT FORMAT: username_gametype_history)
-                    userIds.forEach(userId => {
-                        gameTypes.forEach(game => {
-                            localStorage.removeItem(`${userId}_${game}_history`);
-                            // Also remove old format if it exists
-                            localStorage.removeItem(`scoreHistory_${userId}_${game}`);
-                        });
-                    });
-
-                    // Clear ALL stats-related keys by scanning localStorage
-                    const keysToRemove = [];
-                    for (let i = 0; i < localStorage.length; i++) {
-                        const key = localStorage.key(i);
-                        if (key && (
-                            key.startsWith('userProgress_') ||
-                            key.startsWith('scoreHistory_') ||
-                            key.includes('_history') || // Catches username_gametype_history
-                            key.includes('_score') ||
-                            key.includes('Stats')
-                        )) {
-                            keysToRemove.push(key);
-                        }
-                    }
-                    keysToRemove.forEach(key => localStorage.removeItem(key));
-
-                    alert('כל הסטטיסטיקות נמחקו בהצלחה!');
-
-                    // Reload stats page to show empty stats
-                    setTimeout(() => location.reload(), 500);
-                });
-            }
-        });
     </script>
 
     <!-- Password Modal -->

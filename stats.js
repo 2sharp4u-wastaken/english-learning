@@ -3,10 +3,14 @@
 const gameNames = {
     vocabulary: { name: 'בונה אוצר מילים', icon: '📚' },
     grammar: { name: 'תרגול דקדוק', icon: '✍️' },
+    'grammar-beginner': { name: 'דקדוק מתחילים', icon: '📝' },
     pronunciation: { name: 'הגייה', icon: '🎤' },
     listening: { name: 'הקשבה', icon: '🎧' },
     reading: { name: 'איות', icon: '🔤' },
-    abc: { name: 'ABC אותיות', icon: '🔠' }
+    abc: { name: 'ABC אותיות', icon: '🔠' },
+    memory: { name: 'משחק זיכרון', icon: '🧠' },
+    scramble: { name: 'סידור משפטים', icon: '🔀' },
+    'fill-blanks': { name: 'השלם את המשפט', icon: '✏️' }
 };
 
 // Get users dynamically from authService
@@ -61,7 +65,8 @@ function getDefaultProgress() {
             pronunciation: 0,
             listening: 0,
             reading: 0,
-            abc: 0
+            abc: 0,
+            memory: 0
         },
         streakDays: 0,
         lastPlayDate: null,
@@ -146,6 +151,18 @@ function getWordMasteryStats(userName) {
     return stats;
 }
 
+function loadMemoryBestRecords(userName) {
+    try {
+        const raw = localStorage.getItem(`memoryBest_${userName}`);
+        if (!raw) return {};
+        const parsed = JSON.parse(raw);
+        return parsed && typeof parsed === 'object' ? parsed : {};
+    } catch (e) {
+        console.warn('Failed to load memory best records for', userName, e);
+        return {};
+    }
+}
+
 function renderUserStats(userName) {
     const progress = loadUserProgress(userName);
     const container = document.getElementById(`stats-${userName}`);
@@ -157,14 +174,16 @@ function renderUserStats(userName) {
 
     const overallTopScore = Math.max(...Object.values(progress.bestScores));
 
-    const overallAverage = Math.round(
-        Object.keys(gameNames).reduce((sum, gameType) => {
+    const playedGameTypes = Object.keys(gameNames).filter(g => getGamesPlayed(userName, g) > 0);
+    const overallAverage = playedGameTypes.length > 0 ? Math.round(
+        playedGameTypes.reduce((sum, gameType) => {
             return sum + calculateAverageScore(userName, gameType);
-        }, 0) / Object.keys(gameNames).length
-    );
+        }, 0) / playedGameTypes.length
+    ) : 0;
 
     // Get word mastery stats
     const masteryStats = getWordMasteryStats(userName);
+    const memoryBestRecords = loadMemoryBestRecords(userName);
 
     // Build HTML
     let html = '';
@@ -368,36 +387,145 @@ function renderUserStats(userName) {
         html += `</div>`;
     }
 
-    // Overall Summary Row
-    const totalOverall = Object.keys(gameNames).reduce((sum, gameType) => {
-        return sum + (progress.bestScores[gameType] || 0);
-    }, 0);
+    // Memory game personal bests (per level)
+    const memoryBestLevels = Object.keys(memoryBestRecords).sort((a, b) => Number(a) - Number(b));
+    if (memoryBestLevels.length > 0) {
+        html += `
+            <div class="games-stats-table">
+                <h2><i class="fas fa-brain"></i> שיאים במשחק הזיכרון</h2>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>רמה</th>
+                            <th>ניקוד</th>
+                            <th>זמן (שניות)</th>
+                            <th>מהלכים</th>
+                            <th>כוכבים</th>
+                            <th>תאריך</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+        `;
+
+        memoryBestLevels.forEach(levelKey => {
+            const rec = memoryBestRecords[levelKey];
+            if (!rec) return;
+            html += `
+                <tr>
+                    <td>${levelKey}</td>
+                    <td class="score top-score">${rec.score ?? 0}</td>
+                    <td>${rec.timeSeconds ?? '—'}</td>
+                    <td>${rec.moves ?? '—'}</td>
+                    <td>${rec.stars ?? 0}</td>
+                    <td>${rec.date || ''}</td>
+                </tr>
+            `;
+        });
+
+        html += `
+                    </tbody>
+                </table>
+            </div>
+        `;
+    }
+
+    // Meaningful Summary Section
+    const bestGame = playedGameTypes.length > 0
+        ? playedGameTypes.reduce((best, g) =>
+            (progress.bestScores[g] || 0) > (progress.bestScores[best] || 0) ? g : best,
+            playedGameTypes[0])
+        : null;
+
+    const mostPlayedGame = playedGameTypes.length > 0
+        ? playedGameTypes.reduce((most, g) =>
+            getGamesPlayed(userName, g) > getGamesPlayed(userName, most) ? g : most,
+            playedGameTypes[0])
+        : null;
+
+    const wordsMastered = masteryStats.mastered.length;
+    const wordsTotal = masteryStats.total;
 
     html += `
         <div class="games-stats-table">
-            <h2><i class="fas fa-calculator"></i> סיכום כללי</h2>
-            <table>
-                <thead>
-                    <tr>
-                        <th>משחק</th>
-                        <th>שיא</th>
-                        <th>ממוצע</th>
-                        <th>משחקים</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr style="background: rgba(255, 215, 0, 0.1); font-weight: 800;">
-                        <td class="game-name">סה"כ</td>
-                        <td class="score top-score">${totalOverall}</td>
-                        <td class="score average-score">${overallAverage}</td>
-                        <td>${totalGamesPlayed}</td>
-                    </tr>
-                </tbody>
-            </table>
+            <h2><i class="fas fa-star"></i> סיכום כללי</h2>
+            <div class="stats-overview" style="margin-top: 20px;">
+                <div class="stat-card">
+                    <i class="fas fa-medal"></i>
+                    <h3>משחק מוביל</h3>
+                    ${bestGame ? `
+                        <div style="font-size: 2rem; margin: 8px 0;">${gameNames[bestGame].icon}</div>
+                        <div style="font-size: 1rem; color: #4a5568; margin-bottom: 6px;">${gameNames[bestGame].name}</div>
+                        <div class="stat-value">${progress.bestScores[bestGame] || 0}</div>
+                    ` : `<div class="stat-value">—</div>`}
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-redo"></i>
+                    <h3>הכי הרבה תרגול</h3>
+                    ${mostPlayedGame ? `
+                        <div style="font-size: 2rem; margin: 8px 0;">${gameNames[mostPlayedGame].icon}</div>
+                        <div style="font-size: 1rem; color: #4a5568; margin-bottom: 6px;">${gameNames[mostPlayedGame].name}</div>
+                        <div class="stat-value">${getGamesPlayed(userName, mostPlayedGame)}</div>
+                    ` : `<div class="stat-value">—</div>`}
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-check-double" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;"></i>
+                    <h3>מילים נשלטות</h3>
+                    <div class="stat-value" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">${wordsMastered}</div>
+                    ${wordsTotal > 0 ? `<div style="font-size: 0.95rem; color: #718096;">מתוך ${wordsTotal} שנלמדו</div>` : ''}
+                </div>
+                <div class="stat-card">
+                    <i class="fas fa-fire"></i>
+                    <h3>רצף ימים</h3>
+                    <div class="stat-value">${progress.streakDays || 0}</div>
+                </div>
+            </div>
         </div>
     `;
 
     container.innerHTML = html;
+}
+
+// Delete a single user's stats (password-protected)
+async function deleteUserStats(userId, displayName) {
+    if (!confirm(`האם אתה בטוח שברצונך למחוק את כל הסטטיסטיקות של ${displayName}?\nפעולה זו אינה הפיכה!`)) {
+        return;
+    }
+
+    let isAuthorized = false;
+    if (typeof showPasswordModal === 'function') {
+        isAuthorized = await showPasswordModal(`מחק סטטיסטיקות של ${displayName}`);
+    } else {
+        const password = prompt('הכנס סיסמת מנהל:');
+        isAuthorized = !!(password && typeof authService !== 'undefined' && authService.verifyAdminPassword(password));
+        if (password && !isAuthorized) alert('סיסמה שגויה!');
+    }
+
+    if (!isAuthorized) return;
+
+    const gameTypes = ['vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'memory', 'scramble', 'fill-blanks'];
+
+    // Remove main progress blob
+    localStorage.removeItem(`userProgress_${userId}`);
+    localStorage.removeItem(`memoryBest_${userId}`);
+
+    // Remove per-game score histories
+    gameTypes.forEach(game => {
+        localStorage.removeItem(`${userId}_${game}_history`);
+        localStorage.removeItem(`scoreHistory_${userId}_${game}`);
+    });
+
+    // Scan and remove any remaining keys belonging to this user
+    const keysToRemove = [];
+    for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith(`userProgress_${userId}`) || key.startsWith(`${userId}_`) || key.startsWith(`memoryBest_${userId}`))) {
+            keysToRemove.push(key);
+        }
+    }
+    keysToRemove.forEach(key => localStorage.removeItem(key));
+
+    alert(`הסטטיסטיקות של ${displayName} נמחקו בהצלחה!`);
+    setTimeout(() => location.reload(), 400);
 }
 
 // Initialize user tabs and stats dynamically
@@ -411,19 +539,36 @@ function initializeStatsPage() {
     // Clear existing tabs and content areas
     userTabsContainer.innerHTML = '';
 
-    // Remove old stats content areas (but keep the header and delete button)
+    // Remove old stats content areas (but keep the header)
     const oldStatsContent = document.querySelectorAll('.user-stats-content');
     oldStatsContent.forEach(el => el.remove());
 
     // Create tabs and content areas for each user
     users.forEach((user, index) => {
-        // Create tab button
+        // Wrapper holds the tab button + per-user delete button
+        const tabWrapper = document.createElement('div');
+        tabWrapper.className = 'user-tab-wrapper';
+
+        // Tab button
         const tab = document.createElement('button');
         tab.className = 'user-tab' + (index === 0 ? ' active' : '');
         tab.dataset.user = user.id;
         tab.onclick = () => switchUser(user.id);
         tab.innerHTML = `<i class="fas fa-user"></i> ${user.displayName || user.name}`;
-        userTabsContainer.appendChild(tab);
+
+        // Per-user trash button
+        const deleteBtn = document.createElement('button');
+        deleteBtn.className = 'user-delete-btn';
+        deleteBtn.title = `מחק סטטיסטיקות של ${user.displayName || user.name}`;
+        deleteBtn.innerHTML = '<i class="fas fa-trash-alt"></i>';
+        deleteBtn.onclick = (e) => {
+            e.stopPropagation();
+            deleteUserStats(user.id, user.displayName || user.name);
+        };
+
+        tabWrapper.appendChild(tab);
+        tabWrapper.appendChild(deleteBtn);
+        userTabsContainer.appendChild(tabWrapper);
 
         // Create stats content area
         const contentArea = document.createElement('div');

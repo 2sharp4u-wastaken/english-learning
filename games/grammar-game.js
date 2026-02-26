@@ -1,8 +1,33 @@
 // Grammar Game Module
 // Handles grammar exercises with fill-in-the-blank questions
 
+const GRAMMAR_CATEGORY_LABELS = {
+    'verb-to-be':           '🔵 I am / She is',
+    'verb-to-be-negative':  '🚫 I am not',
+    'verb-to-be-question':  '❓ Is she...?',
+    'verb-to-be-past':      '⏮️ was / were',
+    'present-simple':       '▶️ Present Simple',
+    'present-continuous':   '🔄 Present Continuous',
+    'past-simple':          '⏪ Past Simple',
+    'plurals':              '👥 Plurals',
+    'prepositions':         '📍 Prepositions',
+    'possessives':          '👤 Possessives',
+    'pronouns':             '👆 Pronouns',
+    'question-words':       '🤔 Question Words',
+    'comparatives':         '📊 Comparatives',
+    'articles':             '📝 a / an / the',
+    'modals':               '💪 can / can\'t',
+    'future':               '🔮 Future (will)',
+};
+
 export function loadGrammarQuestion(question) {
     console.log('Loading grammar question:', question);
+
+    // Update category badge
+    const categoryEl = document.getElementById('grammar-category');
+    if (categoryEl) {
+        categoryEl.textContent = GRAMMAR_CATEGORY_LABELS[question.category] || question.category || '';
+    }
 
     // Clear feedback from previous question
     const feedback = document.getElementById('grammar-feedback');
@@ -19,6 +44,11 @@ export function loadGrammarQuestion(question) {
     const secondPart = (sentenceParts[1] || '').replace(/\.$/, '');
 
     sentenceElement.innerHTML = `${sentenceParts[0]}<span class="blank">______</span>${secondPart}`;
+
+    const hebrewEl = document.getElementById('grammar-hebrew');
+    if (hebrewEl) {
+        hebrewEl.textContent = question.hebrewSentence || question.translation || '';
+    }
 
     const optionsContainer = document.getElementById('grammar-options');
     optionsContainer.innerHTML = '';
@@ -71,7 +101,12 @@ export function loadGrammarQuestion(question) {
 export async function checkGrammarAnswer(selectedIndex, correctIndex, question) {
     const options = document.querySelectorAll('#grammar-options .option-btn');
     const feedback = document.getElementById('grammar-feedback');
+    const sentenceElement = document.getElementById('grammar-sentence');
     const isCorrect = selectedIndex === correctIndex;
+    const correctAnswer = question.options[question.correct];
+    const fullSentence = question.sentence.includes('___')
+        ? question.sentence.replace('___', correctAnswer)
+        : question.sentence;
 
     if (window.gameManager?.handleMoraleAnswerResult) {
         window.gameManager.handleMoraleAnswerResult(isCorrect);
@@ -106,15 +141,21 @@ export async function checkGrammarAnswer(selectedIndex, correctIndex, question) 
         feedback.className = 'feedback correct';
         this.scores.grammar += 10;
 
+        // Replace blank with full correct sentence so the learner clearly sees it
+        if (sentenceElement) {
+            sentenceElement.textContent = fullSentence;
+        }
+
         // Save progress immediately to prevent loss if user navigates away
         this.currentQuestionIndex++;
         this.saveGameState();
 
-        // Audio feedback for correct answer
+        // Audio feedback: praise phrase (if any) + full correct sentence
         try {
             if (fbData.audio) {
                 await speechManager.speak(fbData.audio);
             }
+            await speechManager.speak(fullSentence);
         } catch (error) {
             console.error('Error playing audio feedback:', error);
         }
@@ -124,19 +165,31 @@ export async function checkGrammarAnswer(selectedIndex, correctIndex, question) 
     } else {
         options[selectedIndex].classList.add('incorrect');
         options[correctIndex].classList.add('correct');
-        const explanation = this.currentLanguage === 'en' ? question.explanation : question.hebrewExplanation;
+        const ruleExplanation = this.currentLanguage === 'en'
+            ? question.explanation
+            : question.hebrewExplanation;
 
-        // Get centralized feedback
-        const fbData = getFeedback('grammar', 'incorrect', explanation);
+        // Show explicit correct answer + rule so it is unambiguous
+        const baseText = this.currentLanguage === 'he'
+            ? 'הנה התשובה הנכונה:'
+            : 'Here is the correct answer:';
 
-        feedback.innerHTML = fbData.text;
+        let html = `<strong>${baseText}</strong><br>${fullSentence}`;
+        if (ruleExplanation) {
+            html += `<br>${ruleExplanation}`;
+        }
+
+        feedback.innerHTML = html;
         feedback.className = 'feedback incorrect';
 
-        // Audio feedback for incorrect answer
+        // Replace blank with full correct sentence
+        if (sentenceElement) {
+            sentenceElement.textContent = fullSentence;
+        }
+
+        // Audio feedback: speak the full correct sentence
         try {
-            if (fbData.audio) {
-                await speechManager.speak(fbData.audio);
-            }
+            await speechManager.speak(fullSentence);
         } catch (error) {
             console.error('Error playing audio feedback:', error);
         }

@@ -6,7 +6,7 @@ Each item is self-contained and can be tackled independently.
 
 ## 1) Grammar game: remove topic selector; use settings categories; add Hebrew translation
 
-**Status:** ❌ Not started
+**Status:** ✅ Done
 
 **Entry points:**
 - `index.html` — `#grammar-topic-selector` div and `#grammar-sentence`
@@ -30,7 +30,7 @@ Each item is self-contained and can be tackled independently.
 
 ## 2) Game initialization failure: memory/scramble/fill-blanks + memory card flip lockup
 
-**Status:** ❌ Not started
+**Status:** ✅ Done
 
 **Root cause analysis:**
 - `app.js` creates `window.memoryGame`, `window.scrambleGame`, `window.fillBlanksGame` inside `initializeManagers()`, which is gated by `authService.getCurrentUserId()` returning a non-null value.
@@ -57,7 +57,7 @@ Each item is self-contained and can be tackled independently.
 
 ## 3) Home page card stats (🌟 / 📚 / ⚠️) always show zero
 
-**Status:** ❌ Not started
+**Status:** ✅ Done (2026-02-25)
 
 **Root cause analysis:**
 - `gamification.js:updateGameCardProgress()` calls `getGameMasteryStats(gameType)`.
@@ -84,7 +84,7 @@ Each item is self-contained and can be tackled independently.
 
 ## 4) Progress bar visually incomplete at last question (question 10/10)
 
-**Status:** ❌ Not started
+**Status:** ✅ Done (2026-02-25)
 
 **Root cause:**
 - `gameLogic.js updateProgress()`: `progress = (this.currentQuestionIndex / this.totalQuestions) * 100`
@@ -163,7 +163,7 @@ Each item is self-contained and can be tackled independently.
 
 ## 7) Home page card layout: move action buttons into card; show icons with tooltips
 
-**Status:** ❌ Not started
+**Status:** ✅ Done (2026-02-25)
 
 **Current state:**
 - Each `.game-card` has a `.game-card-main` section (icon + title + stats) and a `.game-card-footer` (hidden with `display:none`) containing "new game" and "continue" text buttons.
@@ -200,6 +200,11 @@ Each item is self-contained and can be tackled independently.
 - New game and continue icon buttons appear flanking the card icon.
 - Hovering over buttons shows Hebrew tooltip text.
 - Continue button is hidden when no saved game exists for that type.
+
+**Implemented (2026-02-25):**
+- Removed `.game-card-footer` from all home cards and added `.card-icon-row` with `.card-new-btn` and `.card-continue-btn`.
+- Updated home-card click handlers to use the new button classes and route new-game button through `gameManager.switchGame(gameType)` after clearing saved state.
+- Updated `populateResumeGames()` to toggle `.card-continue-btn` visibility based on saved game availability.
 
 ---
 

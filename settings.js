@@ -16,7 +16,13 @@ class SettingsManager {
             { id: 'school', name: 'בית ספר', wordCount: 10 },
             { id: 'minecraft', name: '🎮 Minecraft', wordCount: 25 },
             { id: 'gaming', name: '🎮 משחקים', wordCount: 25 },
-            { id: 'roblox', name: '🎮 Roblox', wordCount: 20 }
+            { id: 'roblox', name: '🎮 Roblox', wordCount: 20 },
+            { id: 'feelings', name: 'רגשות', wordCount: 22 },
+            { id: 'adjectives', name: 'תארים', wordCount: 34 },
+            { id: 'places', name: 'מקומות', wordCount: 18 },
+            { id: 'time', name: 'זמן', wordCount: 20 },
+            { id: 'weather', name: 'מזג אוויר', wordCount: 15 },
+            { id: 'sports', name: 'ספורט', wordCount: 18 }
         ];
 
         this.isPasswordUnlocked = false;
@@ -28,16 +34,6 @@ class SettingsManager {
                 'gaming', 'roblox', 'actions', 'nature', 'school'
             ],
 
-            // Enabled games
-            enabledGames: {
-                vocabulary: true,
-                listening: true,
-                reading: true,
-                pronunciation: true,
-                grammar: true,
-                abc: true
-            },
-
             // Game settings
             questionsPerGame: 10,
             clickRepeatCount: 3,
@@ -48,10 +44,7 @@ class SettingsManager {
             showPictures: false,
 
             // Advanced settings
-            enhancedShuffle: true,
-            preventConsecutiveCategories: true,
             showConfetti: true,
-            saveProgress: true,
 
             // Exit behavior settings
             exitBehavior: 'hybrid', // Options: 'hybrid', 'confirmation', 'autosave', 'smart'
@@ -81,39 +74,6 @@ class SettingsManager {
         this.setupPasswordProtection();
         console.log('Password protection setup complete');
 
-        this.updateGameVisibility();
-        console.log('Game visibility updated');
-    }
-
-    updateGameVisibility() {
-        console.log('Updating game visibility based on enabled games');
-        if (!this.settings || !this.settings.enabledGames) {
-            console.warn('No enabled games settings found');
-            return;
-        }
-
-        const path = (window.location && window.location.pathname) ? window.location.pathname : '';
-        const isHomePage = path.endsWith('/') || path.endsWith('/index.html') || path.endsWith('index.html');
-
-        Object.keys(this.settings.enabledGames).forEach(gameType => {
-            const isEnabled = this.settings.enabledGames[gameType];
-            console.log(`Game ${gameType}: ${isEnabled ? 'enabled' : 'disabled'}`);
-
-            // Hide/show game cards in home page welcome screen
-            const gameCard = document.querySelector(`.game-card[data-game="${gameType}"]`);
-            if (gameCard) {
-                gameCard.style.display = isEnabled ? '' : 'none';
-            }
-
-            // Hide/show in top nav only on the home page.
-            if (isHomePage) {
-                // Practice mode is managed separately and should stay visible in the header.
-                if (gameType === 'practice') return;
-                document.querySelectorAll(`.top-game-btn[data-game="${gameType}"]`).forEach(btn => {
-                    btn.style.display = isEnabled ? '' : 'none';
-                });
-            }
-        });
     }
 
     setupPasswordProtection() {
@@ -246,27 +206,47 @@ class SettingsManager {
         console.log('All protected sections locked');
     }
 
+    getCurrentUserId() {
+        if (typeof authService !== 'undefined' && authService.getCurrentUserId) {
+            return authService.getCurrentUserId();
+        }
+        return localStorage.getItem('currentUser') || null;
+    }
+
     loadSettings() {
         const saved = localStorage.getItem('englishLearningSettings');
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
                 this.settings = { ...this.defaultSettings, ...parsed };
-                // Ensure enabledGames exists
-                if (!this.settings.enabledGames) {
-                    this.settings.enabledGames = {...this.defaultSettings.enabledGames};
-                }
             } catch (error) {
                 console.error('Error loading settings:', error);
                 this.settings = { ...this.defaultSettings };
             }
+        }
+        // Override difficulty from current user's per-user progress
+        const userId = this.getCurrentUserId();
+        if (userId) {
+            try {
+                const progress = JSON.parse(localStorage.getItem(`userProgress_${userId}`) || '{}');
+                if (progress.preferredDifficulty) {
+                    this.settings.difficulty = progress.preferredDifficulty;
+                }
+            } catch (e) { /* ignore */ }
         }
     }
 
     saveSettings() {
         try {
             localStorage.setItem('englishLearningSettings', JSON.stringify(this.settings));
-            this.updateGameVisibility();
+            // Also save difficulty to current user's per-user progress
+            const userId = this.getCurrentUserId();
+            if (userId) {
+                const progressKey = `userProgress_${userId}`;
+                const progress = JSON.parse(localStorage.getItem(progressKey) || '{}');
+                progress.preferredDifficulty = this.settings.difficulty;
+                localStorage.setItem(progressKey, JSON.stringify(progress));
+            }
             return true;
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -523,16 +503,6 @@ class SettingsManager {
             }
         });
 
-        // Game enable/disable toggles
-        ['vocabulary', 'listening', 'reading', 'pronunciation', 'grammar'].forEach(game => {
-            const toggle = document.getElementById(`game-${game}`);
-            if (toggle) {
-                toggle.addEventListener('change', (e) => {
-                    this.settings.enabledGames[game] = e.target.checked;
-                });
-            }
-        });
-
         // Auto play toggle - REMOVED (no longer in UI)
         // document.getElementById('auto-play').addEventListener('change', (e) => {
         //     this.settings.autoPlay = e.target.checked;
@@ -594,24 +564,9 @@ class SettingsManager {
         //     this.settings.showPictures = e.target.checked;
         // });
 
-        // Enhanced shuffle toggle
-        document.getElementById('enhanced-shuffle').addEventListener('change', (e) => {
-            this.settings.enhancedShuffle = e.target.checked;
-        });
-
-        // Prevent consecutive categories toggle
-        document.getElementById('prevent-consecutive').addEventListener('change', (e) => {
-            this.settings.preventConsecutiveCategories = e.target.checked;
-        });
-
         // Show confetti toggle
         document.getElementById('show-confetti').addEventListener('change', (e) => {
             this.settings.showConfetti = e.target.checked;
-        });
-
-        // Save progress toggle
-        document.getElementById('save-progress').addEventListener('change', (e) => {
-            this.settings.saveProgress = e.target.checked;
         });
 
         // Exit behavior radio buttons
@@ -709,16 +664,6 @@ class SettingsManager {
         document.getElementById('audio-plays').value = this.settings.audioPlaysAllowed;
         document.getElementById('plays-value').textContent = this.settings.audioPlaysAllowed;
 
-        // Update game toggles
-        if (this.settings.enabledGames) {
-            ['vocabulary', 'listening', 'reading', 'pronunciation', 'grammar'].forEach(game => {
-                const toggle = document.getElementById(`game-${game}`);
-                if (toggle && this.settings.enabledGames[game] !== undefined) {
-                    toggle.checked = this.settings.enabledGames[game];
-                }
-            });
-        }
-
         // Update difficulty
         document.getElementById(`diff-${this.settings.difficulty}`).checked = true;
         document.querySelector(`input[value="${this.settings.difficulty}"]`).closest('.radio-item').classList.add('selected');
@@ -726,10 +671,7 @@ class SettingsManager {
         // Theme settings removed from UI
 
         // Update advanced settings
-        document.getElementById('enhanced-shuffle').checked = this.settings.enhancedShuffle;
-        document.getElementById('prevent-consecutive').checked = this.settings.preventConsecutiveCategories;
         document.getElementById('show-confetti').checked = this.settings.showConfetti;
-        document.getElementById('save-progress').checked = this.settings.saveProgress;
 
         // Update exit behavior settings
         const exitBehavior = this.settings.exitBehavior || 'hybrid';
@@ -842,9 +784,21 @@ function populateUserTable() {
                 <button class="user-action-btn reset" onclick="resetUserPassword('${user.id}')" title="אפס סיסמה">
                     <i class="fas fa-redo"></i> אפס
                 </button>
+            </td>
+            <td>
+                <button class="user-action-btn reset-practice" onclick="resetUserPractice('${user.id}')" title="אפס נתוני תרגול">
+                    <i class="fas fa-dumbbell"></i> אפס
+                </button>
+            </td>
+            <td>
+                <button class="user-action-btn reset-stats" onclick="resetUserStats('${user.id}')" title="אפס סטטיסטיקות">
+                    <i class="fas fa-chart-bar"></i> אפס
+                </button>
+            </td>
+            <td>
                 ${!isManager ? `<button class="user-action-btn delete" onclick="deleteUser('${user.id}')" title="מחק משתמש">
                     <i class="fas fa-trash"></i> מחק
-                </button>` : ''}
+                </button>` : '—'}
             </td>
         `;
         tbody.appendChild(row);

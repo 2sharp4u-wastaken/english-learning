@@ -41,5 +41,16 @@ export const actionsWords = [
     { word: "Clean", translation: "לנקות", category: "actions", image: "🧹" , imageUrl: "img/icons/actions/clean.png"},
     { word: "Wash", translation: "לשטוף", category: "actions", image: "🧼" , imageUrl: "img/icons/actions/wash.png"},
     { word: "Drive", translation: "לנהוג", category: "actions", image: "🚗", imageUrl: "img/icons/actions/drive.png" },
-    { word: "Ride", translation: "לרכב", category: "actions", image: "🚲", imageUrl: "img/icons/actions/ride.png" }
+    { word: "Ride", translation: "לרכב", category: "actions", image: "🚲", imageUrl: "img/icons/actions/ride.png" },
+    { word: "See", translation: "לראות", category: "actions", image: "👁️" },
+    { word: "Go", translation: "ללכת", category: "actions", image: "🚶" },
+    { word: "Love", translation: "לאהוב", category: "actions", image: "❤️" },
+    { word: "Want", translation: "לרצות", category: "actions", image: "🙋" },
+    { word: "Work", translation: "לעבוד", category: "actions", image: "💼" },
+    { word: "Help", translation: "לעזור", category: "actions", image: "🤝" },
+    { word: "Wake", translation: "להתעורר", category: "actions", image: "⏰" },
+    { word: "Count", translation: "לספור", category: "actions", image: "🔢" },
+    { word: "Visit", translation: "לבקר", category: "actions", image: "🏠" },
+    { word: "Share", translation: "לחלוק", category: "actions", image: "🤲" },
+    { word: "Climb", translation: "לטפס", category: "actions", image: "🧗" }
 ];

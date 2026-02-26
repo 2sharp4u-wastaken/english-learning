@@ -64,16 +64,6 @@ function buildHeaderHTML(activePage) {
                     <span class="practice-badge" id="practice-badge"></span>
                 </button>` : ''}
             </nav>
-            <div class="top-screen-nav">
-                <button class="top-screen-btn" id="nav-courses-btn" title="קורסים">
-                    <i class="fas fa-graduation-cap"></i>
-                    <span>קורסים</span>
-                </button>
-                <button class="top-screen-btn" id="nav-profile-btn" title="פרופיל">
-                    <i class="fas fa-user-circle"></i>
-                    <span>פרופיל</span>
-                </button>
-            </div>
         </div>
         <div class="header-right">
             <a href="stats.html" class="header-icon-btn${statsClass}" id="stats-btn" title="סטטיסטיקות">
@@ -238,12 +228,9 @@ function setupOtherPageEvents() {
         });
     });
 
-    // Screen nav buttons → navigate to index.html with hash
-    document.getElementById('nav-courses-btn')?.addEventListener('click', () => {
-        window.location.replace('index.html#courses');
-    });
-    document.getElementById('nav-profile-btn')?.addEventListener('click', () => {
-        window.location.replace('index.html#profile');
+    // User-info pill → navigate to user hub
+    document.getElementById('header-user-info')?.addEventListener('click', () => {
+        window.location.replace('index.html#user-hub');
     });
 
     // Logout
@@ -272,15 +259,6 @@ function applyActiveNavFromHash() {
     topScreenBtns.forEach(b => b.classList.remove('active'));
 
     if (!hash) return;
-
-    if (hash === 'courses') {
-        document.getElementById('nav-courses-btn')?.classList.add('active');
-        return;
-    }
-    if (hash === 'profile') {
-        document.getElementById('nav-profile-btn')?.classList.add('active');
-        return;
-    }
 
     const gameBtn = document.querySelector(`.top-game-btn[data-game="${hash}"]`);
     if (gameBtn) gameBtn.classList.add('active');

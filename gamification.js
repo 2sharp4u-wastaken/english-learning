@@ -70,7 +70,7 @@ class GamificationManager {
     }
 
     updateAllGameCards() {
-        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading', 'practice', 'abc'];
+        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading', 'memory', 'practice', 'abc'];
         gameTypes.forEach(gameType => {
             if (gameType === 'practice') {
                 this.updatePracticeModeCard();
@@ -98,9 +98,21 @@ class GamificationManager {
     }
 
     getGameMasteryStats(gameType) {
+        if (!window.app || !window.app.userProgress) {
+            return {
+                totalWords: 0,
+                masteredWords: 0,
+                learningWords: 0,
+                strugglingWords: 0,
+                newWords: 0,
+                averageMastery: 0
+            };
+        }
+
         const wordMastery = window.app.userProgress.wordMastery || {};
         const settings = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
         const selectedCategories = settings.selectedCategories || [];
+        const hasCategoryFilter = Array.isArray(selectedCategories) && selectedCategories.length > 0;
 
         let totalWords = 0;
         let masteredWords = 0;
@@ -113,8 +125,8 @@ class GamificationManager {
         const allWords = window.vocabularyBank || [];
 
         allWords.forEach(wordObj => {
-            // Skip if word's category is not selected
-            if (!selectedCategories.includes(wordObj.category)) return;
+            // If specific categories are selected, skip words outside them.
+            if (hasCategoryFilter && !selectedCategories.includes(wordObj.category)) return;
 
             const key = `${wordObj.word}_${wordObj.category}`;
             const stats = wordMastery[key];
@@ -366,9 +378,10 @@ class CollectionManager {
         const masteryData = window.app?.userProgress?.wordMastery || {};
         const settings = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
         const selectedCategories = settings.selectedCategories || [];
+        const hasCategoryFilter = Array.isArray(selectedCategories) && selectedCategories.length > 0;
 
         return allWords
-            .filter(word => selectedCategories.includes(word.category))
+            .filter(word => !hasCategoryFilter || selectedCategories.includes(word.category))
             .map(word => {
                 const key = `${word.word}_${word.category}`;
                 return {

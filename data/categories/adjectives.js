@@ -1,0 +1,40 @@
+// Describing Words (Adjectives) vocabulary (34 words)
+// For Hebrew-speaking children aged 5-9
+// Covers words used as answers and distractors in sentence games
+
+export const adjectivesWords = [
+    { word: "Big", translation: "גדול", category: "adjectives", image: "🐘" },
+    { word: "Small", translation: "קטן", category: "adjectives", image: "🐭" },
+    { word: "Fast", translation: "מהיר", category: "adjectives", image: "🏎️" },
+    { word: "Slow", translation: "איטי", category: "adjectives", image: "🐢" },
+    { word: "Hot", translation: "חם", category: "adjectives", image: "🔥" },
+    { word: "Cold", translation: "קר", category: "adjectives", image: "❄️" },
+    { word: "Soft", translation: "רך", category: "adjectives", image: "🪶" },
+    { word: "Hard", translation: "קשה", category: "adjectives", image: "🪨" },
+    { word: "Sweet", translation: "מתוק", category: "adjectives", image: "🍬" },
+    { word: "Sour", translation: "חמוץ", category: "adjectives", image: "🍋" },
+    { word: "Yummy", translation: "טעים", category: "adjectives", image: "😋" },
+    { word: "Fresh", translation: "טרי", category: "adjectives", image: "🥗" },
+    { word: "Good", translation: "טוב", category: "adjectives", image: "👍" },
+    { word: "Bad", translation: "רע", category: "adjectives", image: "👎" },
+    { word: "New", translation: "חדש", category: "adjectives", image: "✨" },
+    { word: "Old", translation: "ישן", category: "adjectives", image: "🏚️" },
+    { word: "Tall", translation: "גבוה", category: "adjectives", image: "🦒" },
+    { word: "Short", translation: "נמוך", category: "adjectives", image: "🐾" },
+    { word: "Pretty", translation: "יפה", category: "adjectives", image: "🌸" },
+    { word: "Strong", translation: "חזק", category: "adjectives", image: "💪" },
+    { word: "Smart", translation: "חכם", category: "adjectives", image: "🧠" },
+    { word: "Clean", translation: "נקי", category: "adjectives", image: "🧼" },
+    { word: "Dirty", translation: "מלוכלך", category: "adjectives", image: "🦨" },
+    { word: "Heavy", translation: "כבד", category: "adjectives", image: "⚓" },
+    { word: "Light", translation: "קל", category: "adjectives", image: "🪶" },
+    { word: "Loud", translation: "רועש", category: "adjectives", image: "📢" },
+    { word: "Quiet", translation: "שקט", category: "adjectives", image: "🤫" },
+    { word: "Wild", translation: "פרא", category: "adjectives", image: "🌿" },
+    { word: "Boring", translation: "משעמם", category: "adjectives", image: "😑" },
+    { word: "Scary", translation: "מפחיד", category: "adjectives", image: "👻" },
+    { word: "Intelligent", translation: "חכם", category: "adjectives", image: "🦉" },
+    { word: "Important", translation: "חשוב", category: "adjectives", image: "⭐" },
+    { word: "Early", translation: "מוקדם", category: "adjectives", image: "🌅" },
+    { word: "Late", translation: "מאוחר", category: "adjectives", image: "🌙" }
+];
