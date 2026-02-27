@@ -13,6 +13,12 @@ import { schoolWords } from './categories/school.js';
 import { minecraftWords } from './categories/minecraft.js';
 import { gamingWords } from './categories/gaming.js';
 import { robloxWords } from './categories/roblox.js';
+import { adjectivesWords } from './categories/adjectives.js';
+import { feelingsWords } from './categories/feelings.js';
+import { placesWords } from './categories/places.js';
+import { sportsWords } from './categories/sports.js';
+import { timeWords } from './categories/time.js';
+import { weatherWords } from './categories/weather.js';
 
 const vocabularyBank = [
     ...animalsWords,
@@ -28,7 +34,13 @@ const vocabularyBank = [
     ...schoolWords,
     ...minecraftWords,
     ...gamingWords,
-    ...robloxWords
+    ...robloxWords,
+    ...adjectivesWords,
+    ...feelingsWords,
+    ...placesWords,
+    ...sportsWords,
+    ...timeWords,
+    ...weatherWords
 ];
 
 window.vocabularyBank = vocabularyBank;
