@@ -633,12 +633,34 @@ class SettingsManager {
 
         // Download logs button (top bar)
         const downloadLogsBtn = document.getElementById('download-logs-btn');
+        const logCountBadge = document.getElementById('log-count-badge');
+
+        const updateLogBadge = () => {
+            if (logCountBadge && window.consoleLogger) {
+                const count = window.consoleLogger.getLogCount();
+                logCountBadge.textContent = count > 0 ? count : '';
+            }
+        };
+
         if (downloadLogsBtn) {
+            updateLogBadge();
             downloadLogsBtn.addEventListener('click', () => {
                 if (window.consoleLogger && typeof window.consoleLogger.downloadLogs === 'function') {
                     window.consoleLogger.downloadLogs();
                 } else {
                     alert('לוגר לא זמין - נסה לרענן את הדף');
+                }
+            });
+        }
+
+        // Clear logs button (top bar)
+        const clearLogsBtn = document.getElementById('clear-logs-btn');
+        if (clearLogsBtn) {
+            clearLogsBtn.addEventListener('click', () => {
+                if (!confirm('למחוק את כל הלוגים השמורים?')) return;
+                if (window.consoleLogger) {
+                    window.consoleLogger.clearLogs();
+                    updateLogBadge();
                 }
             });
         }
@@ -955,6 +977,48 @@ function deleteUser(userId) {
     }
 }
 
+function resetUserPractice(userId) {
+    if (!confirm('האם אתה בטוח שברצונך לאפס את נתוני התרגול של משתמש זה?\nפעולה זו תמחק את כל נתוני המילים הנאבקות ומונה התרגול יראה 0.')) {
+        return;
+    }
+
+    const key = `userProgress_${userId}`;
+    const progress = JSON.parse(localStorage.getItem(key) || '{}');
+    progress.wordMastery = {};
+    localStorage.setItem(key, JSON.stringify(progress));
+
+    alert('נתוני התרגול אופסו בהצלחה!');
+}
+
+function resetUserStats(userId) {
+    if (!confirm('האם אתה בטוח שברצונך לאפס את כל הסטטיסטיקות של משתמש זה?\nפעולה זו תמחק את כל ציוני המשחקים וההיסטוריה ולא ניתן לבטלה!')) {
+        return;
+    }
+
+    const gameTypes = ['vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'memory', 'scramble', 'fill-blanks', 'practice'];
+
+    // Clear per-game score history
+    gameTypes.forEach(game => {
+        localStorage.removeItem(`${userId}_${game}_history`);
+    });
+
+    // Clear memory personal bests
+    localStorage.removeItem(`memoryBest_${userId}`);
+
+    // Reset aggregate fields in userProgress but keep wordMastery + settings
+    const key = `userProgress_${userId}`;
+    const progress = JSON.parse(localStorage.getItem(key) || '{}');
+    progress.bestScores = {};
+    progress.totalGamesPlayed = 0;
+    progress.gameHistory = {};
+    progress.streakDays = 0;
+    progress.lastPlayDate = null;
+    progress.totalCorrectAnswers = 0;
+    localStorage.setItem(key, JSON.stringify(progress));
+
+    alert('הסטטיסטיקות אופסו בהצלחה!');
+}
+
 function addUser() {
     // Check max users limit (4 users max)
     if (typeof authService !== 'undefined' && authService.getUsers) {
@@ -1023,6 +1087,8 @@ function showMessage(element, message, type) {
 
 // Expose functions to global scope for onclick handlers
 window.resetUserPassword = resetUserPassword;
+window.resetUserPractice = resetUserPractice;
+window.resetUserStats = resetUserStats;
 window.deleteUser = deleteUser;
 window.addUser = addUser;
 

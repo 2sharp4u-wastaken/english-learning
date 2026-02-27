@@ -404,39 +404,6 @@
             }
         }
 
-        /* Per-user delete button wrapper */
-        .user-tab-wrapper {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .user-delete-btn {
-            width: 34px;
-            height: 34px;
-            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-            color: white;
-            border: none;
-            border-radius: 50%;
-            cursor: pointer;
-            font-size: 0.85rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(245, 101, 101, 0.4);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-        }
-
-        .user-tab-wrapper:hover .user-delete-btn {
-            opacity: 1;
-        }
-
-        .user-delete-btn:hover {
-            transform: scale(1.15);
-            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.6);
-        }
     </style>
 </head>
 <body>
@@ -457,6 +424,7 @@
         <!-- Content areas will be created by JavaScript -->
     </div>
 
+    <script type="module" src="utils/consoleLogger.js"></script>
     <script src="auth.js?v=1"></script>
     <script src="settings.js?t=1764691200"></script>
     <script src="stats.js"></script>
