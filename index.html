@@ -765,6 +765,39 @@
                             <div class="no-certs-msg">עוד אין תעודות. סיים נושא כדי לקבל תעודה! 🎓</div>
                         </div>
                     </div>
+
+                    <!-- Chime Selector -->
+                    <div class="profile-section">
+                        <h3 class="profile-section-title">🎵 צליל כניסה</h3>
+                        <p style="font-size:0.9rem;color:#718096;margin-bottom:12px;">בחר את הצליל שישמע כאשר תיכנס למשחק</p>
+                        <div class="chime-selector" id="chime-selector">
+                            <button class="chime-option" data-chime="arpeggio">
+                                <span class="chime-icon">🎶</span>
+                                <span class="chime-name">ארפג׳יו</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                            <button class="chime-option" data-chime="fanfare">
+                                <span class="chime-icon">🎺</span>
+                                <span class="chime-name">פנפרה</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                            <button class="chime-option" data-chime="magical">
+                                <span class="chime-icon">✨</span>
+                                <span class="chime-name">קסם</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                            <button class="chime-option" data-chime="soft-bell">
+                                <span class="chime-icon">🔔</span>
+                                <span class="chime-name">פעמון</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                            <button class="chime-option" data-chime="adventure">
+                                <span class="chime-icon">⚔️</span>
+                                <span class="chime-name">הרפתקה</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Courses Tab Panel -->
@@ -1087,7 +1120,19 @@
             }
 
             // Show welcome screen after login - ALWAYS clear hash on login
-            window.addEventListener('user-logged-in', () => {
+            window.addEventListener('user-logged-in', (e) => {
+                // Play welcome chime using the user's saved preference
+                if (window.audioEffects) {
+                    const userId = (e.detail && e.detail.userId) || localStorage.getItem('currentUser');
+                    let chimeType = 'arpeggio';
+                    if (userId) {
+                        try {
+                            const progress = JSON.parse(localStorage.getItem(`userProgress_${userId}`) || '{}');
+                            chimeType = progress.welcomeChime || 'arpeggio';
+                        } catch (err) { /* ignore */ }
+                    }
+                    setTimeout(() => window.audioEffects.playWelcomeChime(chimeType), 400);
+                }
                 // Clear hash to ensure welcome screen shows after fresh login
                 if (window.location.hash) {
                     history.replaceState(null, null, window.location.pathname);
@@ -1110,6 +1155,61 @@
             // Handle hash changes (when user clicks browser back/forward)
             window.addEventListener('hashchange', handleHashNavigation);
         });
+    </script>
+
+    <script>
+        // ===== Chime Selector Logic =====
+        function initChimeSelector() {
+            const container = document.getElementById('chime-selector');
+            if (!container) return;
+
+            const userId = localStorage.getItem('currentUser');
+            let saved = 'arpeggio';
+            if (userId) {
+                try {
+                    const progress = JSON.parse(localStorage.getItem(`userProgress_${userId}`) || '{}');
+                    saved = progress.welcomeChime || 'arpeggio';
+                } catch (e) { /* ignore */ }
+            }
+
+            // Highlight saved selection
+            container.querySelectorAll('.chime-option').forEach(btn => {
+                if (btn.dataset.chime === saved) btn.classList.add('selected');
+                btn.addEventListener('click', () => {
+                    const type = btn.dataset.chime;
+
+                    // Preview chime
+                    if (window.audioEffects) window.audioEffects.playWelcomeChime(type);
+
+                    // Save preference
+                    const uid = localStorage.getItem('currentUser');
+                    if (uid) {
+                        try {
+                            const key = `userProgress_${uid}`;
+                            const progress = JSON.parse(localStorage.getItem(key) || '{}');
+                            progress.welcomeChime = type;
+                            localStorage.setItem(key, JSON.stringify(progress));
+                        } catch (e) { /* ignore */ }
+                    }
+
+                    // Update selection UI
+                    container.querySelectorAll('.chime-option').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                });
+            });
+        }
+
+        // Run when profile tab opens (app.js calls renderUserHub; we listen for it)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Also init on tab click inside user-hub
+            document.addEventListener('click', (e) => {
+                const tab = e.target.closest('[data-tab="profile"]');
+                if (tab) setTimeout(initChimeSelector, 50);
+            });
+        });
+
+        // Expose so app.js / renderUserHub can call it
+        window.initChimeSelector = initChimeSelector;
     </script>
 
 </body>

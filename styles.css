@@ -2306,35 +2306,6 @@ body::before {
         font-size: 16px !important; /* Prevent iOS zoom */
     }
 
-    /* Welcome modal mobile adjustments */
-    .welcome-modal .modal-content {
-        padding: 30px 20px;
-        max-width: 95%;
-    }
-
-    .welcome-modal h2 {
-        font-size: 1.6rem;
-    }
-
-    .welcome-text p {
-        font-size: 1rem;
-    }
-
-    .game-tips h3 {
-        font-size: 1.3rem;
-    }
-
-    .game-tips li {
-        font-size: 0.95rem;
-        padding: 8px 0;
-    }
-
-    .start-btn {
-        font-size: 1.1rem;
-        padding: 16px 24px;
-        min-height: 56px; /* Touch-friendly */
-    }
-
     /* Picture sizes */
     .word-picture {
         font-size: 5rem !important;
@@ -2428,23 +2399,6 @@ body::before {
         padding: 12px;
     }
 
-    /* Welcome modal extra small */
-    .welcome-modal .modal-content {
-        padding: 25px 15px;
-    }
-
-    .welcome-modal h2 {
-        font-size: 1.4rem;
-    }
-
-    .game-tips h3 {
-        font-size: 1.2rem;
-    }
-
-    .start-btn {
-        font-size: 1rem;
-        padding: 14px 20px;
-    }
 }
 
 /* ========== Loading Animation ========== */
@@ -2847,10 +2801,6 @@ body::before {
     animation: slideUp 0.5s ease;
 }
 
-.bounce {
-    animation: bounce 1s ease infinite;
-}
-
 /* ========== Authentication UI Styles ========== */
 
 /* Login Modal */
@@ -3194,101 +3144,6 @@ body::before {
     max-width: 400px;
 }
 
-/* Welcome Modal */
-.welcome-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(10px);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 10000;
-    animation: fadeIn 0.3s ease;
-}
-
-.welcome-modal .modal-content {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 24px;
-    padding: 40px;
-    max-width: 600px;
-    width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
-    animation: modalSlideIn 0.4s ease;
-    color: white;
-}
-
-.welcome-modal h2 {
-    color: white;
-    font-size: 2.2rem;
-    margin: 0 0 25px;
-    text-align: center;
-}
-
-.welcome-text {
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 25px;
-}
-
-.welcome-text p {
-    margin: 12px 0;
-    font-size: 1.1rem;
-    line-height: 1.6;
-}
-
-.game-tips {
-    background: rgba(255, 255, 255, 0.15);
-    border-radius: 12px;
-    padding: 20px;
-    margin-bottom: 30px;
-}
-
-.game-tips h3 {
-    color: white;
-    font-size: 1.5rem;
-    margin: 0 0 15px;
-    text-align: center;
-}
-
-.game-tips ul {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.game-tips li {
-    padding: 10px 0;
-    font-size: 1.05rem;
-    line-height: 1.5;
-}
-
-.start-btn {
-    width: 100%;
-    background: white;
-    color: #667eea;
-    border: none;
-    border-radius: 12px;
-    padding: 18px 30px;
-    font-size: 1.3rem;
-    font-weight: 700;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.start-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 10px 30px rgba(255, 255, 255, 0.3);
-}
-
-.start-btn:active {
-    transform: translateY(0);
-}
-
 .timeout-content {
     text-align: center;
 }
@@ -3329,58 +3184,6 @@ body::before {
         transform: translateX(50%) translateY(0);
         opacity: 1;
     }
-}
-
-/* ========== User Management Styles (Settings Page) ========== */
-
-.user-management-list {
-    display: grid;
-    gap: 12px;
-    margin-top: 15px;
-}
-
-.user-management-item {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 15px;
-    background: rgba(255, 255, 255, 0.05);
-    border-radius: 12px;
-    border: 2px solid rgba(255, 255, 255, 0.1);
-}
-
-.user-management-item .user-info {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-}
-
-.user-management-item .user-avatar-small {
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: white;
-    font-weight: 700;
-    font-size: 1.2rem;
-}
-
-.user-management-item .user-details-small {
-    color: white;
-}
-
-.user-management-item .user-details-small .user-name-small {
-    font-weight: 600;
-    margin: 0;
-}
-
-.user-management-item .user-details-small .user-status {
-    font-size: 0.85rem;
-    opacity: 0.8;
-    margin: 0;
 }
 
 .password-reset-controls {
@@ -7556,5 +7359,71 @@ body::before {
 
     .cert-modal-card {
         padding: 24px 20px;
+    }
+}
+
+/* ========== Chime Selector (Profile Page) ========== */
+.chime-selector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.chime-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 14px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 14px;
+    background: white;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    min-width: 70px;
+    font-family: inherit;
+}
+
+.chime-option:hover {
+    border-color: #667eea;
+    background: rgba(102, 126, 234, 0.05);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.2);
+}
+
+.chime-option.selected {
+    border-color: #667eea;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.25);
+}
+
+.chime-icon {
+    font-size: 1.6rem;
+    line-height: 1;
+}
+
+.chime-name {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #4a5568;
+}
+
+.chime-preview-btn {
+    font-size: 0.65rem;
+    color: #667eea;
+    opacity: 0.7;
+    margin-top: 2px;
+}
+
+@media (max-width: 480px) {
+    .chime-selector {
+        gap: 8px;
+    }
+    .chime-option {
+        padding: 10px 12px;
+        min-width: 58px;
+    }
+    .chime-icon {
+        font-size: 1.3rem;
     }
 }

@@ -50,7 +50,6 @@ class AppManager {
 
         this.setupGlobalEventListeners();
         this.checkBrowserCompatibility();
-        // this.displayWelcomeMessage(); // Disabled - user prefers login selection modal
         this.loadAchievements();
         this.updatePracticeModeIndicator();
 
@@ -596,6 +595,10 @@ class AppManager {
         this.renderProfileScreen();
         this.renderCoursesScreen();
         this.switchHubTab(defaultTab);
+        // Initialize chime selector after DOM is updated
+        setTimeout(() => {
+            if (typeof window.initChimeSelector === 'function') window.initChimeSelector();
+        }, 50);
     }
 
     switchHubTab(tabName) {
@@ -873,56 +876,6 @@ class AppManager {
                 warningDiv.remove();
             }
         }, 10000);
-    }
-
-    displayWelcomeMessage() {
-        // Show welcome message for first-time users
-        // Skip if user not authenticated yet
-        if (!this.userProgress) {
-            console.log('No user progress yet, skipping welcome message');
-            return;
-        }
-
-        if (!this.userProgress.hasPlayedBefore) {
-            this.showWelcomeModal();
-            this.userProgress.hasPlayedBefore = true;
-            this.saveUserProgress();
-        }
-    }
-
-    showWelcomeModal() {
-        const modal = document.createElement('div');
-        modal.className = 'welcome-modal';
-        modal.innerHTML = `
-            <div class="modal-content">
-                <h2>🎉 Welcome to English Learning Games!</h2>
-                <div class="welcome-text">
-                    <p><strong>English:</strong> Practice vocabulary, grammar, and pronunciation with fun interactive games!</p>
-                    <p><strong>עברית:</strong> תרגלו אוצר מילים, דקדוק והגייה עם משחקים אינטראקטיביים מהנים!</p>
-                </div>
-                <div class="game-tips">
-                    <h3>Tips for Success:</h3>
-                    <ul>
-                        <li>🎧 Use headphones for better audio experience</li>
-                        <li>🎤 Allow microphone access for pronunciation practice</li>
-                        <li>⌨️ Press SPACE to replay audio</li>
-                        <li>🔄 Switch between English/Hebrew interface anytime</li>
-                    </ul>
-                </div>
-                <button class="start-btn" onclick="appManager.closeWelcomeModal()">
-                    Let's Start Learning! / בואו נתחיל ללמוד!
-                </button>
-            </div>
-        `;
-        
-        document.body.appendChild(modal);
-    }
-
-    closeWelcomeModal() {
-        const modal = document.querySelector('.welcome-modal');
-        if (modal) {
-            modal.remove();
-        }
     }
 
     pauseGame() {

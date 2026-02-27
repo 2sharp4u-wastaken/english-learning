@@ -223,6 +223,99 @@ class AudioEffectsManager {
         osc.stop(now + 0.1);
     }
 
+    // Helper: play a sequence of notes one after another
+    _playMelody(notes, startTime, gap = 0) {
+        let t = startTime;
+        notes.forEach(note => {
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+            osc.frequency.value = note.freq;
+            osc.type = note.type || 'sine';
+            gain.gain.setValueAtTime(this.volume * 0.5, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + note.dur);
+            osc.start(t);
+            osc.stop(t + note.dur);
+            t += note.dur + gap;
+        });
+    }
+
+    // Play welcome theme chime on login (5 selectable types)
+    async playWelcomeChime(type = 'arpeggio') {
+        if (!this.enabled) return;
+        await this.resume();
+
+        const now = this.audioContext.currentTime;
+
+        switch (type) {
+            case 'arpeggio':
+                // Warm C major arpeggio: C4 E4 G4 C5
+                this._playMelody([
+                    { freq: 261.63, dur: 0.2, type: 'sine' },
+                    { freq: 329.63, dur: 0.2, type: 'sine' },
+                    { freq: 392.00, dur: 0.2, type: 'sine' },
+                    { freq: 523.25, dur: 0.5, type: 'sine' },
+                ], now, 0.05);
+                break;
+
+            case 'fanfare':
+                // Short triumphant fanfare: G4 G4 G4 E4 G4
+                this._playMelody([
+                    { freq: 392.00, dur: 0.12, type: 'square' },
+                    { freq: 392.00, dur: 0.12, type: 'square' },
+                    { freq: 392.00, dur: 0.12, type: 'square' },
+                    { freq: 329.63, dur: 0.18, type: 'square' },
+                    { freq: 392.00, dur: 0.45, type: 'square' },
+                ], now, 0.04);
+                break;
+
+            case 'magical':
+                // Twinkling star ascending: C5 E5 G5 B5 C6
+                this._playMelody([
+                    { freq: 523.25, dur: 0.15, type: 'triangle' },
+                    { freq: 659.25, dur: 0.15, type: 'triangle' },
+                    { freq: 783.99, dur: 0.15, type: 'triangle' },
+                    { freq: 987.77, dur: 0.15, type: 'triangle' },
+                    { freq: 1046.50, dur: 0.5, type: 'triangle' },
+                ], now, 0.04);
+                break;
+
+            case 'soft-bell': {
+                // Gentle bell chord: C4 E4 G4 C5 played in quick succession
+                const bellFreqs = [261.63, 329.63, 392.00, 523.25];
+                bellFreqs.forEach((freq, i) => {
+                    const osc = this.audioContext.createOscillator();
+                    const gain = this.audioContext.createGain();
+                    osc.connect(gain);
+                    gain.connect(this.audioContext.destination);
+                    osc.frequency.value = freq;
+                    osc.type = 'sine';
+                    const t = now + i * 0.07;
+                    gain.gain.setValueAtTime(this.volume * 0.35, t);
+                    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+                    osc.start(t);
+                    osc.stop(t + 1.4);
+                });
+                break;
+            }
+
+            case 'adventure':
+                // Heroic adventure start: C4 G4 E5 G5 C5
+                this._playMelody([
+                    { freq: 261.63, dur: 0.15, type: 'square' },
+                    { freq: 392.00, dur: 0.15, type: 'square' },
+                    { freq: 659.25, dur: 0.15, type: 'square' },
+                    { freq: 783.99, dur: 0.15, type: 'square' },
+                    { freq: 523.25, dur: 0.5, type: 'square' },
+                ], now, 0.04);
+                break;
+
+            default:
+                this.playWelcomeChime('arpeggio');
+        }
+    }
+
     // Set volume (0.0 to 1.0)
     setVolume(volume) {
         this.volume = Math.max(0, Math.min(1, volume));
