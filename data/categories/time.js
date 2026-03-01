@@ -22,5 +22,6 @@ export const timeWords = [
     { word: "Holiday", translation: "חג", category: "time", image: "🎊" },
     { word: "Summer", translation: "קיץ", category: "time", image: "☀️" },
     { word: "Winter", translation: "חורף", category: "time", image: "❄️" },
-    { word: "Season", translation: "עונה", category: "time", image: "🍂" }
+    { word: "Season", translation: "עונה", category: "time", image: "🍂" },
+    { word: "Fall", translation: "סתיו", category: "time", image: "🍂" }
 ];

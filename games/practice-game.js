@@ -11,7 +11,6 @@ let isProcessingRecording = false;
 
 // Store current word for playback
 let currentWord = '';
-let currentTranscript = '';
 
 export async function loadPracticeQuestion(question) {
     // Prevent double-loading
@@ -37,7 +36,6 @@ export async function loadPracticeQuestion(question) {
 
     // Store current word for playback
     currentWord = question.word;
-    currentTranscript = '';
 
     // Clear and set word
     const wordElement = document.getElementById('practice-word');
@@ -59,18 +57,6 @@ export async function loadPracticeQuestion(question) {
     if (hebrewElement) {
         hebrewElement.textContent = question.hebrew || '';
         hebrewElement.style.display = 'block';
-    }
-
-    // Hide comparison area from previous question
-    const comparisonArea = document.getElementById('comparison-area');
-    if (comparisonArea) {
-        comparisonArea.style.display = 'none';
-    }
-
-    // Hide "Listen to Your Recording" button
-    const listenUserBtn = document.getElementById('practice-listen-user');
-    if (listenUserBtn) {
-        listenUserBtn.style.display = 'none';
     }
 
     // Reset recording state
@@ -194,43 +180,12 @@ export async function processPracticeResult(result) {
     const question = this.shuffledQuestions[this.currentQuestionIndex];
     const feedback = document.getElementById('practice-feedback');
 
-    // Store transcript for playback
-    currentTranscript = result.transcript || '';
-
     const comparison = speechManager.comparePronunciation(question.word, result.transcript);
 
     // Track word attempt immediately
     const isCorrect = comparison.accuracy >= 0.7;
     if (question && question.word && question.category) {
         this.recordWordAttempt(question.word, question.category, isCorrect, 0, 'practice');
-    }
-
-    // Show comparison area
-    const comparisonArea = document.getElementById('comparison-area');
-    if (comparisonArea) {
-        comparisonArea.style.display = 'block';
-    }
-
-    // Update comparison text
-    const targetEl = document.getElementById('comparison-target');
-    const userEl = document.getElementById('comparison-user');
-    const scoreEl = document.querySelector('.accuracy-score .score-percentage');
-
-    if (targetEl) {
-        targetEl.textContent = question.word;
-    }
-    if (userEl) {
-        userEl.textContent = result.transcript || '(not recognized)';
-        // Color-code based on accuracy - aligned with recording threshold (0.7)
-        userEl.classList.remove('match', 'mismatch');
-        if (comparison.accuracy >= 0.7) {
-            userEl.classList.add('match'); // Green for correct (matches recording threshold)
-        } else {
-            userEl.classList.add('mismatch'); // Red for incorrect
-        }
-    }
-    if (scoreEl) {
-        scoreEl.textContent = `${Math.round(comparison.accuracy * 100)}%`;
     }
 
     // Display text feedback
@@ -285,12 +240,6 @@ export async function processPracticeResult(result) {
         console.error('Error playing native pronunciation:', error);
     }
 
-    // Enable "Listen to Your Recording" button
-    const listenUserBtn = document.getElementById('practice-listen-user');
-    if (listenUserBtn) {
-        listenUserBtn.style.display = 'inline-block';
-    }
-
     // Play audio feedback (Hebrew TTS)
     try {
         if (comparison.audioFeedback) {
@@ -333,20 +282,3 @@ export async function playNativePronunciation() {
     }
 }
 
-export async function playUserPronunciation() {
-    if (!currentTranscript) {
-        console.error('No user transcript to play');
-        return;
-    }
-
-    try {
-        // Cancel any ongoing speech first
-        speechManager.cancelSpeech();
-        await new Promise(resolve => setTimeout(resolve, 100));
-
-        // Play the user's transcript via TTS
-        await speechManager.speak(currentTranscript);
-    } catch (error) {
-        console.error('Error playing user pronunciation:', error);
-    }
-}

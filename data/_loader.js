@@ -1,27 +1,14 @@
 // Main data loader for English Learning Games
 // Imports all vocabulary categories and exports combined game data
 
-// Import all category modules
-import { animalsWords } from './categories/animals.js';
-import { colorsWords } from './categories/colors.js';
-import { numbersWords } from './categories/numbers.js';
-import { foodWords } from './categories/food.js';
-import { bodyWords } from './categories/body.js';
-import { familyWords } from './categories/family.js';
-import { clothesWords } from './categories/clothes.js';
-import { homeWords } from './categories/home.js';
-import { actionsWords } from './categories/actions.js';
-import { natureWords } from './categories/nature.js';
-import { schoolWords } from './categories/school.js';
-import { minecraftWords } from './categories/minecraft.js';
-import { gamingWords } from './categories/gaming.js';
-import { robloxWords } from './categories/roblox.js';
-import { feelingsWords } from './categories/feelings.js';
-import { adjectivesWords } from './categories/adjectives.js';
-import { placesWords } from './categories/places.js';
-import { timeWords } from './categories/time.js';
-import { weatherWords } from './categories/weather.js';
-import { sportsWords } from './categories/sports.js';
+// Import all category modules (single source of truth: categories/_index.js)
+import {
+    animalsWords, colorsWords, numbersWords, foodWords, bodyWords,
+    familyWords, clothesWords, homeWords, actionsWords, natureWords,
+    schoolWords, minecraftWords, gamingWords, robloxWords, feelingsWords,
+    adjectivesWords, placesWords, timeWords, weatherWords, sportsWords,
+    customWords
+} from './categories/_index.js';
 
 // Import grammar questions and categories
 import { grammarQuestions, grammarCategories } from './grammarQuestions.js?t=1774903002';
@@ -64,8 +51,20 @@ const vocabularyBank = [
     ...placesWords,     // 18 words
     ...timeWords,       // 20 words
     ...weatherWords,    // 15 words
-    ...sportsWords      // 18 words
+    ...sportsWords,     // 18 words
+    ...customWords      // parent-saved words (committed to source)
 ];
+
+// Inject parent custom words from localStorage
+try {
+    const customWords = JSON.parse(localStorage.getItem('customWords_global') || '[]');
+    if (customWords.length > 0) {
+        vocabularyBank.push(...customWords);
+        console.log(`Injected ${customWords.length} custom words into vocabulary bank`);
+    }
+} catch (e) {
+    console.warn('Failed to inject custom words:', e);
+}
 
 // Make vocabulary accessible for phonetics BEFORE initialization
 window.vocabularyBank = vocabularyBank;
@@ -135,5 +134,36 @@ window.difficultyLevels = difficultyLevels;
 window.grammarCategories = grammarCategories;
 export { gameData, difficultyLevels, grammarCategories };
 // vocabularyBank already set above before phonetics initialization
+
+// Called when another tab saves new custom words (storage event).
+// Diffs localStorage vs in-memory vocabularyBank, converts new words with full
+// bank context (for correct distractors), and appends to gameData.
+window.refreshCustomWords = function () {
+    try {
+        const fresh = JSON.parse(localStorage.getItem('customWords_global') || '[]');
+        const existingSet = new Set(vocabularyBank.map(w => w.word.toLowerCase()));
+        const newWords = fresh.filter(w => !existingSet.has(w.word.toLowerCase()));
+
+        if (newWords.length === 0) return;
+
+        // Extend vocabularyBank first so distractor generation has the full pool
+        vocabularyBank.push(...newWords);
+        window.vocabularyBank = vocabularyBank;
+
+        // Slice index where new words start (they were pushed to the end)
+        const startIdx = vocabularyBank.length - newWords.length;
+
+        // vocabulary + listening need full bank for distractor generation — convert
+        // all then take the tail. reading + pronunciation are purely per-word.
+        gameData.vocabulary.push(...convertToVocabulary(vocabularyBank).slice(startIdx));
+        gameData.reading.push(...convertToReading(newWords));
+        gameData.pronunciation.push(...convertToPronunciation(newWords));
+        gameData.listening.push(...convertToListening(vocabularyBank).slice(startIdx));
+
+        console.log(`[refreshCustomWords] Appended ${newWords.length} new custom word(s) to gameData`);
+    } catch (e) {
+        console.warn('[refreshCustomWords] Failed:', e);
+    }
+};
 
 console.log('Global gameData and difficultyLevels set successfully');

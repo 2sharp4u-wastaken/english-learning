@@ -111,6 +111,13 @@ export class FillBlanksGame {
             window.gameManager.handleMoraleAnswerResult(isCorrect);
         }
 
+        // Track the blank word in the vocabulary practice queue if it exists in the word bank
+        const blankWord = this.currentSentence.blank.options[0];
+        const vocabEntry = window.vocabularyBank?.find(w => w.word.toLowerCase() === blankWord.toLowerCase());
+        if (vocabEntry && window.gameManager?.recordWordAttempt) {
+            window.gameManager.recordWordAttempt(vocabEntry.word, vocabEntry.category, isCorrect, 0, 'fill-blanks');
+        }
+
         buttonElement.classList.add(isCorrect ? 'correct' : 'incorrect');
 
         if (!isCorrect) {

@@ -53,7 +53,6 @@ function applyLengthFilter(candidates, targetLength, tolerance = 1) {
 
 // Fallback distractor selection when phonetic matching insufficient
 function fallbackDistractors(targetWord, vocabularyBank, targetLength = null) {
-  console.warn(`[FALLBACK] Insufficient phonetic matches for: ${targetWord}`);
 
   // Find the target word object
   const targetObj = vocabularyBank.find(w =>
@@ -102,13 +101,11 @@ function fallbackDistractors(targetWord, vocabularyBank, targetLength = null) {
   const shuffled = shuffleArray(pool);
   const selected = shuffled.slice(0, 3).map(w => w.word);
 
-  console.log(`[FALLBACK] Selected ${selected.length} distractors:`, selected);
   return selected;
 }
 
 // Main distractor selection function
 export function selectDistractors(targetWord, masteryLevel = 0, vocabularyBank) {
-  console.log(`🎯 [PHONETICS] selectDistractors("${targetWord}") - isInitialized: ${isInitialized}, hasIndex: ${!!phoneticIndex}`);
 
   // Check if phonetics system is initialized
   if (!isInitialized || !phoneticIndex) {
@@ -121,7 +118,6 @@ export function selectDistractors(targetWord, masteryLevel = 0, vocabularyBank) 
   const metadata = phoneticIndex[normalized];
 
   if (!metadata) {
-    console.warn(`[PHONETICS] No metadata for "${targetWord}", using fallback`);
     return fallbackDistractors(targetWord, vocabularyBank);
   }
 
@@ -169,27 +165,19 @@ export function selectDistractors(targetWord, masteryLevel = 0, vocabularyBank) 
   candidatePool = [...new Set(candidatePool)]
     .filter(w => w.toLowerCase() !== normalized);
 
-  console.log(`[${difficultyTier}] "${targetWord}" (mastery: ${masteryLevel.toFixed(2)}) - Found ${candidatePool.length} candidates before length filter`);
-
   // Apply word length filter (±1 character tolerance)
   const lengthFiltered = applyLengthFilter(candidatePool, metadata.length, 1);
 
-  console.log(`[LENGTH FILTER] After filter: ${lengthFiltered.length} candidates (±1 char from ${metadata.length})`);
-
   // Check if we have enough distractors after filtering
   if (lengthFiltered.length >= 3) {
-    const selected = shuffleArray(lengthFiltered).slice(0, 3);
-    console.log(`[SUCCESS] Selected distractors:`, selected);
-    return selected;
+    return shuffleArray(lengthFiltered).slice(0, 3);
   }
 
   // Not enough matches - try with relaxed length filter
   if (candidatePool.length >= 3) {
     const relaxedFiltered = applyLengthFilter(candidatePool, metadata.length, 2);
     if (relaxedFiltered.length >= 3) {
-      const selected = shuffleArray(relaxedFiltered).slice(0, 3);
-      console.log(`[RELAXED] Selected distractors with ±2 length:`, selected);
-      return selected;
+      return shuffleArray(relaxedFiltered).slice(0, 3);
     }
   }
 

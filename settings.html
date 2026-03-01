@@ -1060,6 +1060,69 @@
             </div>
         </div>
 
+        <!-- Custom Words (Parent) -->
+        <div class="settings-section protected-section" data-protected="true" id="custom-words-section">
+            <h2><i class="fas fa-magic"></i>מילים מותאמות אישית</h2>
+
+            <div class="setting-item">
+                <label class="setting-label">מפתח Claude API</label>
+                <p class="setting-description">הכנס מפתח API כדי לאפשר תרגום אוטומטי. המפתח נשמר מקומית בלבד.</p>
+                <div style="display:flex;gap:10px;align-items:center;">
+                    <input type="password" id="claude-api-key"
+                           placeholder="sk-ant-..."
+                           style="flex:1;padding:12px 15px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:monospace;"
+                           autocomplete="off">
+                    <button type="button" id="api-key-toggle"
+                            style="padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;background:white;cursor:pointer;font-size:1rem;"
+                            title="הצג/הסתר מפתח">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                </div>
+            </div>
+
+            <div class="setting-item">
+                <label class="setting-label">הוסף מילים באנגלית</label>
+                <p class="setting-description">הכנס מילים באנגלית מופרדות בפסיק. Claude יתרגם ויסווג אותן אוטומטית.</p>
+                <textarea id="custom-words-input"
+                          placeholder="dragon, wizard, castle, rainbow, dinosaur"
+                          rows="3"
+                          style="width:100%;padding:12px 15px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:inherit;resize:vertical;box-sizing:border-box;direction:ltr;text-align:left;"></textarea>
+                <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                    <button class="btn btn-primary" id="import-words-btn">
+                        <i class="fas fa-upload"></i>
+                        ייבא מילים
+                    </button>
+                    <button class="btn btn-secondary" id="save-to-source-btn" style="display:none;">
+                        <i class="fas fa-save"></i>
+                        שמור לקבצי המקור
+                    </button>
+                    <button class="btn btn-secondary" id="clear-custom-words-btn" style="display:none;">
+                        <i class="fas fa-trash"></i>
+                        מחק הכל
+                    </button>
+                </div>
+
+                <!-- Progress / Status Log -->
+                <div id="import-status" style="margin-top:15px;display:none;">
+                    <div id="import-status-bar"
+                         style="padding:12px 15px;border-radius:10px;font-weight:600;font-size:0.95rem;"></div>
+                    <div id="import-log-toggle"
+                         style="margin-top:8px;cursor:pointer;color:#667eea;font-size:0.9rem;display:none;"
+                         onclick="(function(t){const l=document.getElementById('import-log');const open=l.style.display!=='none';l.style.display=open?'none':'block';t.querySelector('i').className='fas fa-chevron-'+(open?'down':'up');t.querySelector('span').textContent=open?'פרטים':'הסתר';})(this)">
+                        <i class="fas fa-chevron-up"></i> <span>הסתר</span>
+                    </div>
+                    <div id="import-log"></div>
+                </div>
+            </div>
+
+            <!-- Imported Words List -->
+            <div class="setting-item" id="custom-words-list-item" style="display:none;">
+                <label class="setting-label">מילים שיובאו <span id="custom-words-count" class="category-count">0</span></label>
+                <div id="custom-words-list"
+                     style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+            </div>
+        </div>
+
         <div class="success-message" id="success-message">
             <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
             <div>ההגדרות נשמרו בהצלחה!</div>
@@ -1085,7 +1148,9 @@
     <!-- Console Logger - Captures all console output for debugging -->
     <script type="module" src="utils/consoleLogger.js"></script>
     <script src="auth.js?t=1762332862"></script>
-    <script src="settings.js?t=1764691200"></script>
+    <script src="utils/wordImporter.js?t=1775088000"></script>
+    <script src="utils/fileSystemWriter.js?t=1775200000"></script>
+    <script src="settings.js?t=1775200000"></script>
     <script type="module">
         import { initTopHeader } from './components/top-header.js?t=1774902001';
         initTopHeader({ activePage: 'settings' });

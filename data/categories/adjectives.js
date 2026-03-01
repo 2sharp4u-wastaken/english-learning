@@ -36,5 +36,7 @@ export const adjectivesWords = [
     { word: "Intelligent", translation: "חכם", category: "adjectives", image: "🦉" },
     { word: "Important", translation: "חשוב", category: "adjectives", image: "⭐" },
     { word: "Early", translation: "מוקדם", category: "adjectives", image: "🌅" },
-    { word: "Late", translation: "מאוחר", category: "adjectives", image: "🌙" }
+    { word: "Late", translation: "מאוחר", category: "adjectives", image: "🌙" },
+    { word: "Very", translation: "מאוד", category: "adjectives", image: "📊" },
+    { word: "More", translation: "עוד", category: "adjectives", image: "➕" }
 ];

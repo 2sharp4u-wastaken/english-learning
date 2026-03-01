@@ -10,14 +10,13 @@ Approved and pending features, organized into dedicated sessions.
 ## Session 0 — Housekeeping (do first)
 **Model: Sonnet | Priority: Immediate**
 
-- [ ] Review all uncommitted changes (app.js, settings.js, index.html, styles.css, audio-effects.js, data/vocabularyBank.js, stats.html, settings.html)
-- [ ] Commit in logical groups with meaningful messages
-- [ ] Push to remote
-- [ ] Recreate OVERHAUL_PROGRESS.md with updated Phase 4+ checklist
+- [x] Review all uncommitted changes (app.js, settings.js, index.html, styles.css, audio-effects.js, data/vocabularyBank.js, stats.html, settings.html)
+- [x] Commit in logical groups with meaningful messages
+- [x] Push to remote
 
 ---
 
-## Session 1 — Parent Custom Words (Claude API)
+## Session 1 — Parent Custom Words (Claude API) ✅ DONE
 **Model: Sonnet | Priority: High**
 
 Parent pastes comma-separated English words into a textarea on the settings page (parent-protected section). Claude API auto-translates and categorizes each word in batch. Results are saved to `localStorage.customWords_global` and immediately available in all games.

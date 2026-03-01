@@ -168,11 +168,9 @@ class GamificationManager {
         if (window.gameManager?.getPracticeWords) {
             const practiceWords = window.gameManager.getPracticeWords({ refreshData: true });
             strugglingCount = practiceWords.length;
-            console.log(`[PRACTICE] Badge count from shared source: ${strugglingCount}`);
         } else {
             const practiceWords = this.getFallbackPracticeWords();
             strugglingCount = practiceWords.length;
-            console.log(`[PRACTICE] Badge count from fallback source: ${strugglingCount}`);
 
             // Retry once gameManager likely finishes initializing.
             if (!this.practiceRefreshRetryTimer) {

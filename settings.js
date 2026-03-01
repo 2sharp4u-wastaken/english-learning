@@ -50,7 +50,10 @@ class SettingsManager {
             exitBehavior: 'hybrid', // Options: 'hybrid', 'confirmation', 'autosave', 'smart'
             exitThreshold: 3, // Question number where behavior changes (for hybrid/smart)
             autoSaveProgress: true, // Whether to save incomplete games
-            showExitToast: true // Show toast notification on exit
+            showExitToast: true, // Show toast notification on exit
+
+            // Custom words (Parent)
+            claudeApiKey: ''
         };
 
         this.settings = { ...this.defaultSettings };
@@ -74,6 +77,7 @@ class SettingsManager {
         this.setupPasswordProtection();
         console.log('Password protection setup complete');
 
+        this.setupCustomWordsSection();
     }
 
     setupPasswordProtection() {
@@ -263,6 +267,26 @@ class SettingsManager {
     renderCategoryCheckboxes() {
         const container = document.getElementById('category-checkboxes');
         if (!container) return; // Skip if element doesn't exist (not on settings page)
+
+        // Inject custom categories from imported words if not already in the list
+        try {
+            const customWords = JSON.parse(localStorage.getItem('customWords_global') || '[]');
+            const knownIds = new Set(this.categories.map(c => c.id));
+            const extraCats = {};
+            customWords.forEach(w => {
+                if (w.category && !knownIds.has(w.category)) {
+                    extraCats[w.category] = (extraCats[w.category] || 0) + 1;
+                }
+            });
+            Object.entries(extraCats).forEach(([catId, count]) => {
+                this.categories.push({
+                    id: catId,
+                    name: catId === 'custom' ? 'מותאם אישית' : catId,
+                    wordCount: count
+                });
+                knownIds.add(catId);
+            });
+        } catch (e) { /* ignore */ }
 
         container.innerHTML = '';
 
@@ -706,6 +730,329 @@ class SettingsManager {
 
         document.getElementById('auto-save-progress').checked = this.settings.autoSaveProgress !== false;
         document.getElementById('show-exit-toast').checked = this.settings.showExitToast !== false;
+
+        // Populate API key field
+        const apiKeyInput = document.getElementById('claude-api-key');
+        if (apiKeyInput && this.settings.claudeApiKey) {
+            apiKeyInput.value = this.settings.claudeApiKey;
+        }
+    }
+
+    setupCustomWordsSection() {
+        const section = document.getElementById('custom-words-section');
+        if (!section) return;
+
+        // Render existing words
+        this.renderCustomWordsList();
+
+        // API key show/hide toggle
+        const apiKeyInput = document.getElementById('claude-api-key');
+        const apiKeyToggle = document.getElementById('api-key-toggle');
+        if (apiKeyInput && apiKeyToggle) {
+            // Save on change
+            apiKeyInput.addEventListener('input', () => {
+                this.settings.claudeApiKey = apiKeyInput.value;
+            });
+            apiKeyToggle.addEventListener('click', () => {
+                const isPassword = apiKeyInput.type === 'password';
+                apiKeyInput.type = isPassword ? 'text' : 'password';
+                apiKeyToggle.innerHTML = isPassword
+                    ? '<i class="fas fa-eye-slash"></i>'
+                    : '<i class="fas fa-eye"></i>';
+            });
+        }
+
+        // Import button
+        const importBtn = document.getElementById('import-words-btn');
+        if (importBtn) {
+            importBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.runImport();
+            });
+        }
+
+        // Save to source files button
+        const saveSourceBtn = document.getElementById('save-to-source-btn');
+        if (saveSourceBtn) {
+            saveSourceBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                this.runSaveToSourceFiles();
+            });
+        }
+
+        // Clear all custom words button
+        const clearBtn = document.getElementById('clear-custom-words-btn');
+        if (clearBtn) {
+            clearBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                if (!confirm('למחוק את כל המילים המותאמות אישית?')) return;
+                if (window.wordImporter) {
+                    window.wordImporter.clearCustomWords();
+                    this.renderCustomWordsList();
+                    this.renderCategoryCheckboxes();
+                }
+            });
+        }
+    }
+
+    async runSaveToSourceFiles() {
+        if (!window.fileSystemWriter) {
+            alert('fileSystemWriter לא נטען — רענן את הדף');
+            return;
+        }
+        const words = window.wordImporter ? window.wordImporter.getCustomWords() : [];
+        if (words.length === 0) return;
+
+        const btn = document.getElementById('save-to-source-btn');
+        if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> שומר...'; }
+
+        // Reuse the import console panel so the parent sees per-file results
+        this.initImportConsole();
+
+        await window.fileSystemWriter.saveToSourceFiles(words, (progress) => {
+            if (progress.status === 'log') {
+                this.appendConsoleLine(progress);
+            } else if (progress.status === 'cancelled') {
+                // user dismissed the picker — just re-enable button
+            } else if (progress.status === 'success' || progress.status === 'partial') {
+                this.showImportStatus(progress.status === 'success' ? 'success' : 'error', progress.message);
+                this.renderCustomWordsList();
+            } else if (progress.status === 'error') {
+                this.showImportStatus('error', progress.message);
+            }
+        });
+
+        if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> שמור לקבצי המקור'; }
+    }
+
+    async runImport() {
+        const importBtn = document.getElementById('import-words-btn');
+        const textarea = document.getElementById('custom-words-input');
+        const apiKeyInput = document.getElementById('claude-api-key');
+
+        if (!window.wordImporter) {
+            this.showImportStatus('error', 'wordImporter לא נטען — רענן את הדף');
+            return;
+        }
+
+        const apiKey = (apiKeyInput && apiKeyInput.value.trim()) || this.settings.claudeApiKey;
+        const wordsText = textarea ? textarea.value.trim() : '';
+
+        // Persist API key before calling (so it survives navigation)
+        if (apiKey) {
+            this.settings.claudeApiKey = apiKey;
+            this.saveSettings();
+        }
+
+        // Disable button during import
+        if (importBtn) {
+            importBtn.disabled = true;
+            importBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מייבא...';
+        }
+
+        // Open the console panel immediately
+        this.initImportConsole();
+
+        await window.wordImporter.importWords(wordsText, apiKey, (progress) => {
+            if (progress.status === 'log') {
+                this.appendConsoleLine(progress);
+                return;
+            }
+            if (progress.status === 'processing') {
+                this.showImportStatus('processing', progress.message);
+            } else if (progress.status === 'success') {
+                this.showImportStatus('success', progress.message);
+                if (textarea) textarea.value = '';
+                this.renderCustomWordsList();
+                // Re-render category checkboxes in case new categories appeared
+                this.renderCategoryCheckboxes();
+                // Auto-add new categories to selectedCategories
+                if (progress.words) {
+                    // Update in-memory vocabularyBank so duplicate detection works
+                    // for any subsequent import within the same settings session
+                    if (window.vocabularyBank) {
+                        const existingWords = new Set(window.vocabularyBank.map(w => w.word.toLowerCase()));
+                        progress.words.forEach(w => {
+                            if (!existingWords.has(w.word.toLowerCase())) {
+                                window.vocabularyBank.push(w);
+                                existingWords.add(w.word.toLowerCase());
+                            }
+                        });
+                    }
+
+                    let changed = false;
+                    progress.words.forEach(w => {
+                        if (!this.settings.selectedCategories.includes(w.category)) {
+                            this.settings.selectedCategories.push(w.category);
+                            changed = true;
+                        }
+                    });
+                    if (changed) this.saveSettings();
+                }
+            } else {
+                this.showImportStatus('error', progress.message);
+            }
+        });
+
+        // Re-enable button
+        if (importBtn) {
+            importBtn.disabled = false;
+            importBtn.innerHTML = '<i class="fas fa-upload"></i> ייבא מילים';
+        }
+    }
+
+    // Called once at start of import to reset the console panel
+    initImportConsole() {
+        const container = document.getElementById('import-status');
+        const bar = document.getElementById('import-status-bar');
+        const logToggle = document.getElementById('import-log-toggle');
+        const log = document.getElementById('import-log');
+        if (!container) return;
+
+        container.style.display = 'block';
+        if (bar) {
+            bar.style.cssText = 'background:rgba(102,126,234,0.1);border:2px solid #667eea;color:#3c4fe0;padding:12px 15px;border-radius:10px;font-weight:600;font-size:0.95rem;';
+            bar.innerHTML = '<i class="fas fa-spinner fa-spin"></i> מייבא מילים...';
+        }
+        if (log) {
+            log.innerHTML = '';
+            log.style.cssText = `
+                display: block;
+                margin-top: 10px;
+                padding: 12px 14px;
+                background: #1a1a2e;
+                border-radius: 10px;
+                font-family: 'Courier New', monospace;
+                font-size: 0.82rem;
+                max-height: 320px;
+                overflow-y: auto;
+                direction: ltr;
+                text-align: left;
+                color: #a8b2d8;
+                line-height: 1.7;
+            `;
+        }
+        if (logToggle) logToggle.style.display = 'none';
+    }
+
+    appendConsoleLine(entry) {
+        const log = document.getElementById('import-log');
+        if (!log) return;
+
+        const colors = {
+            info:     '#a8b2d8',
+            api:      '#79b8ff',
+            prompt:   '#6a737d',
+            response: '#e6db74',
+            success:  '#5af78e',
+            skip:     '#ffb86c',
+            warn:     '#ffb86c',
+            error:    '#ff5555'
+        };
+
+        const line = document.createElement('div');
+        const color = colors[entry.type] || colors.info;
+
+        // Multi-line entries (prompt / raw response) get a slightly different treatment
+        if (entry.type === 'prompt' || entry.type === 'response') {
+            const label = entry.type === 'prompt' ? '── PROMPT ──' : '── RESPONSE ──';
+            const escaped = entry.text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            line.innerHTML =
+                `<span style="color:#6a737d;">[${entry.time}]</span> ` +
+                `<span style="color:#6a737d;">${label}</span>\n` +
+                `<span style="color:${color};white-space:pre-wrap;">${escaped}</span>`;
+        } else {
+            const escaped = entry.text
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;');
+            line.innerHTML =
+                `<span style="color:#6a737d;">[${entry.time}]</span> ` +
+                `<span style="color:${color};">${escaped}</span>`;
+        }
+
+        line.style.cssText = 'padding: 1px 0; border-bottom: 1px solid rgba(255,255,255,0.04);';
+        log.appendChild(line);
+        log.scrollTop = log.scrollHeight;
+    }
+
+    showImportStatus(type, message) {
+        const bar = document.getElementById('import-status-bar');
+        const logToggle = document.getElementById('import-log-toggle');
+        if (!bar) return;
+
+        const styles = {
+            processing: 'background:rgba(102,126,234,0.1);border:2px solid #667eea;color:#3c4fe0;',
+            success:    'background:rgba(72,187,120,0.1);border:2px solid #48bb78;color:#2f855a;',
+            error:      'background:rgba(245,101,101,0.1);border:2px solid #f56565;color:#c53030;'
+        };
+        const icons = {
+            processing: 'fa-spinner fa-spin',
+            success:    'fa-check-circle',
+            error:      'fa-exclamation-circle'
+        };
+        bar.style.cssText = (styles[type] || styles.error) + 'padding:12px 15px;border-radius:10px;font-weight:600;font-size:0.95rem;';
+        bar.innerHTML = `<i class="fas ${icons[type] || icons.error}"></i> ${message}`;
+
+        // Show the toggle once there are log entries
+        const log = document.getElementById('import-log');
+        if (logToggle && log && log.children.length > 0) {
+            logToggle.style.display = 'block';
+        }
+    }
+
+    renderCustomWordsList() {
+        const listContainer = document.getElementById('custom-words-list');
+        const listItem = document.getElementById('custom-words-list-item');
+        const countBadge = document.getElementById('custom-words-count');
+        const clearBtn = document.getElementById('clear-custom-words-btn');
+        const saveBtn = document.getElementById('save-to-source-btn');
+        if (!listContainer) return;
+
+        const words = window.wordImporter ? window.wordImporter.getCustomWords() : [];
+        const count = words.length;
+
+        if (countBadge) countBadge.textContent = count;
+
+        if (count === 0) {
+            if (listItem) listItem.style.display = 'none';
+            if (clearBtn) clearBtn.style.display = 'none';
+            if (saveBtn) saveBtn.style.display = 'none';
+            return;
+        }
+
+        if (listItem) listItem.style.display = 'block';
+        if (clearBtn) clearBtn.style.display = 'inline-flex';
+        if (saveBtn) saveBtn.style.display = 'inline-flex';
+
+        listContainer.innerHTML = words.map(w => `
+            <div style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;
+                        background:rgba(102,126,234,0.08);border:1px solid rgba(102,126,234,0.25);
+                        border-radius:20px;font-size:0.9rem;">
+                <span>${w.image}</span>
+                <span style="font-weight:600;">${w.word}</span>
+                <span style="color:#718096;">${w.translation}</span>
+                <button onclick="window.settingsManager.removeCustomWord('${w.word.replace(/'/g, "\\'")}')"
+                        style="background:none;border:none;cursor:pointer;color:#a0aec0;padding:0;margin-right:2px;font-size:0.85rem;"
+                        title="מחק">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>`
+        ).join('');
+    }
+
+    removeCustomWord(word) {
+        if (!window.wordImporter) return;
+        window.wordImporter.deleteCustomWord(word);
+        this.renderCustomWordsList();
+        this.renderCategoryCheckboxes();
+        this.updateSelectedCount();
     }
 }
 

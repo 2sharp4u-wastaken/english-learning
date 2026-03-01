@@ -182,6 +182,15 @@ export class SentenceScrambleGame {
             window.gameManager.handleMoraleAnswerResult(isCorrect);
         }
 
+        // Track vocabulary words from this sentence in the practice queue
+        this.currentSentence.words.forEach(w => {
+            const cleanWord = w.replace(/[.,!?;:]+$/, '');
+            const vocabEntry = window.vocabularyBank?.find(vw => vw.word.toLowerCase() === cleanWord.toLowerCase());
+            if (vocabEntry && window.gameManager?.recordWordAttempt) {
+                window.gameManager.recordWordAttempt(vocabEntry.word, vocabEntry.category, isCorrect, 0, 'scramble');
+            }
+        });
+
         const checkBtn = document.getElementById('scramble-check');
         if (checkBtn) checkBtn.style.display = 'none';
 

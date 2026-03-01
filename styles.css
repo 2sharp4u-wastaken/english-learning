@@ -2695,10 +2695,10 @@ body::before {
 #scramble-game .next-btn,
 #memory-game .next-btn {
     position: fixed;
-    top: 110px;
+    top: 120px;
     left: 50%;
     transform: translateX(-50%);
-    z-index: 999;
+    z-index: 1001;
     background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
     box-shadow: 0 4px 20px rgba(79, 172, 254, 0.4);
     margin: 0;
@@ -4443,11 +4443,11 @@ body::before {
 }
 
 .morale-boost-fx.show .morale-boost-backdrop {
-    animation: moraleBackdropPulse 1.4s ease-out;
+    animation: moraleBackdropPulse 2.8s ease-out;
 }
 
 .morale-boost-fx.show .morale-boost-card {
-    animation: moraleBoostCardPop 1.4s cubic-bezier(0.22, 1, 0.36, 1);
+    animation: moraleBoostCardPop 2.8s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 /* ============================================

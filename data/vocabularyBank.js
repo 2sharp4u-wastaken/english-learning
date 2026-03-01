@@ -1,24 +1,12 @@
 // Lightweight vocabulary bank for non-game pages (stats/settings).
-import { animalsWords } from './categories/animals.js';
-import { colorsWords } from './categories/colors.js';
-import { numbersWords } from './categories/numbers.js';
-import { foodWords } from './categories/food.js';
-import { bodyWords } from './categories/body.js';
-import { familyWords } from './categories/family.js';
-import { clothesWords } from './categories/clothes.js';
-import { homeWords } from './categories/home.js';
-import { actionsWords } from './categories/actions.js';
-import { natureWords } from './categories/nature.js';
-import { schoolWords } from './categories/school.js';
-import { minecraftWords } from './categories/minecraft.js';
-import { gamingWords } from './categories/gaming.js';
-import { robloxWords } from './categories/roblox.js';
-import { adjectivesWords } from './categories/adjectives.js';
-import { feelingsWords } from './categories/feelings.js';
-import { placesWords } from './categories/places.js';
-import { sportsWords } from './categories/sports.js';
-import { timeWords } from './categories/time.js';
-import { weatherWords } from './categories/weather.js';
+// Category list is maintained in categories/_index.js — add new categories there.
+import {
+    animalsWords, colorsWords, numbersWords, foodWords, bodyWords,
+    familyWords, clothesWords, homeWords, actionsWords, natureWords,
+    schoolWords, minecraftWords, gamingWords, robloxWords, feelingsWords,
+    adjectivesWords, placesWords, timeWords, weatherWords, sportsWords,
+    customWords
+} from './categories/_index.js';
 
 const vocabularyBank = [
     ...animalsWords,
@@ -40,8 +28,17 @@ const vocabularyBank = [
     ...placesWords,
     ...sportsWords,
     ...timeWords,
-    ...weatherWords
+    ...weatherWords,
+    ...customWords      // parent-saved words (committed to source)
 ];
+
+// Inject parent custom words from localStorage
+try {
+    const customWords = JSON.parse(localStorage.getItem('customWords_global') || '[]');
+    if (customWords.length > 0) {
+        vocabularyBank.push(...customWords);
+    }
+} catch (e) { /* ignore */ }
 
 window.vocabularyBank = vocabularyBank;
 export { vocabularyBank };

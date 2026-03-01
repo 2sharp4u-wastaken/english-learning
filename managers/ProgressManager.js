@@ -42,6 +42,7 @@ export class ProgressManager {
      * @returns {Object|null}
      */
     getWordStats(word, category) {
+        if (!word) return null;
         const key = `${word.toLowerCase()}_${category}`;
         // Also check original-case key for backward-compatible reads of existing saved data
         const legacyKey = `${word}_${category}`;

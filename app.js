@@ -793,6 +793,25 @@ class AppManager {
     setupGlobalEventListeners() {
         // Hamburger menu removed - sidebar always visible on mobile via CSS
 
+        // Re-initialize for the logged-in user whenever auth completes.
+        // This handles the case where the page loads unauthenticated (after logout)
+        // and the user logs in via the UI — setupWithAuth() was a no-op at DOMContentLoaded.
+        window.addEventListener('user-logged-in', () => {
+            this.setupWithAuth();
+            setTimeout(() => {
+                // Wire GameManager's manager references now that they are exported.
+                if (window.gameManager?.initializeManagers) {
+                    window.gameManager.initializeManagers();
+                }
+                if (window.gameManager?.refreshPracticeDataContext) {
+                    window.gameManager.refreshPracticeDataContext();
+                }
+                if (window.gamificationManager?.updateAllGameCards) {
+                    window.gamificationManager.updateAllGameCards();
+                }
+            }, 100);
+        });
+
         // Keyboard shortcuts
         document.addEventListener('keydown', (e) => {
             const isSpace = e.code === 'Space' || e.key === ' ';
@@ -1228,4 +1247,12 @@ document.addEventListener('DOMContentLoaded', () => {
             window.gamificationManager.init();
         }
     }, 500);
+});
+
+// When the parent imports words from settings.html (another tab), sync them into
+// this tab's in-memory gameData without requiring a page reload.
+window.addEventListener('storage', (e) => {
+    if (e.key === 'customWords_global' && window.refreshCustomWords) {
+        window.refreshCustomWords();
+    }
 });

@@ -35,7 +35,7 @@ export const foodWords = [
     { word: "Mushroom", translation: "פטריה", category: "food", image: "🍄" },
     { word: "Pear", translation: "אגס", category: "food", image: "🍐" },
     { word: "Peach", translation: "אפרסק", category: "food", image: "🍑" },
-    { word: "Plum", translation: "שזיף", category: "food", image: "🍇" , imageUrl: "img/icons/food/plum.png"},
+    { word: "Plum", translation: "שזיף", category: "food", image: "🍇" },
     { word: "Cherry", translation: "דובדבן", category: "food", image: "🍒" },
     { word: "Lemon", translation: "לימון", category: "food", image: "🍋" },
     { word: "Lime", translation: "ליימן", category: "food", image: "🍈" },
@@ -61,9 +61,11 @@ export const foodWords = [
     { word: "Yogurt", translation: "יוגורט", category: "food", image: "🥛" },
     { word: "Butter", translation: "חמאה", category: "food", image: "🧈" },
     { word: "Honey", translation: "דבש", category: "food", image: "🍯" },
-    { word: "Jam", translation: "ריבה", category: "food", image: "🫐" , imageUrl: "img/icons/food/jam.png"},
-    { word: "Roll", translation: "לחמניה", category: "food", image: "🥖", imageUrl: "img/icons/food/roll.png" },
+    { word: "Jam", translation: "ריבה", category: "food", image: "🫐" },
+    { word: "Roll", translation: "לחמניה", category: "food", image: "🥖" },
     { word: "Breakfast", translation: "ארוחת בוקר", category: "food", image: "🍳" },
     { word: "Lunch", translation: "ארוחת צהריים", category: "food", image: "🥪" },
-    { word: "Dinner", translation: "ארוחת ערב", category: "food", image: "🍽️" }
+    { word: "Dinner", translation: "ארוחת ערב", category: "food", image: "🍽️" },
+    { word: "Vegetables", translation: "ירקות", category: "food", image: "🥬" },
+    { word: "Spaghetti", translation: "ספגטי", category: "food", image: "🍝" }
 ];

@@ -124,7 +124,6 @@ class GameManager {
         this.togglePracticeRecording = PracticeGame.togglePracticeRecording.bind(this);
         this.processPracticeResult = PracticeGame.processPracticeResult.bind(this);
         this.playNativePronunciation = PracticeGame.playNativePronunciation.bind(this);
-        this.playUserPronunciation = PracticeGame.playUserPronunciation.bind(this);
         this.loadABCQuestion = ABCGame.loadABCQuestion.bind(this);
         this.checkABCAnswer = ABCGame.checkABCAnswer.bind(this);
         this.loadMatchCaseQuestion = ABCGame.loadMatchCaseQuestion.bind(this);
@@ -154,12 +153,19 @@ class GameManager {
         this.coinManager = window.coinManager;
 
         if (!this.scoreManager || !this.progressManager) {
-            this.managerInitRetries++;
-            if (this.managerInitRetries > 20) {
-                console.error('[GameManager] Managers failed to initialize after 20 retries. Check app.js initialization.');
+            // If no user is authenticated yet, wait for login instead of polling.
+            if (typeof authService !== 'undefined' && !authService.isAuthenticated()) {
+                window.addEventListener('user-logged-in', () => {
+                    setTimeout(() => this.initializeManagers(), 150);
+                }, { once: true });
                 return;
             }
-            console.warn(`[GameManager] Managers not yet available, retrying in 200ms... (attempt ${this.managerInitRetries}/20)`);
+            // Auth is in progress but managers not exported yet — retry briefly.
+            this.managerInitRetries = (this.managerInitRetries || 0) + 1;
+            if (this.managerInitRetries > 5) {
+                console.error('[GameManager] Managers failed to initialize. Check app.js initialization.');
+                return;
+            }
             setTimeout(() => this.initializeManagers(), 200);
             return;
         }
@@ -966,7 +972,7 @@ class GameManager {
         return map[icon] || '🌟';
     }
 
-    showMoraleBoost(message, icon = 'fa-star', duration = 1400) {
+    showMoraleBoost(message, icon = 'fa-star', duration = 2800) {
         if (!document.body) return;
 
         let moraleBoost = document.getElementById('morale-boost-fx');
@@ -1312,13 +1318,6 @@ class GameManager {
             });
         }
 
-        const practiceListenUser = document.getElementById('practice-listen-user');
-        if (practiceListenUser) {
-            practiceListenUser.addEventListener('click', () => {
-                this.playUserPronunciation();
-            });
-        }
-
         const practiceNext = document.getElementById('practice-next');
         if (practiceNext) {
             practiceNext.addEventListener('click', () => {
@@ -1340,6 +1339,23 @@ class GameManager {
                 this.loadQuestion('abc');
             });
         }
+
+        // Space key shortcut: click whichever next-question button is currently visible
+        document.addEventListener('keydown', (e) => {
+            if (e.code !== 'Space') return;
+            const tag = document.activeElement?.tagName?.toLowerCase();
+            if (tag === 'input' || tag === 'textarea' || tag === 'select') return;
+            if (document.activeElement?.isContentEditable) return;
+
+            const nextBtns = document.querySelectorAll('button.next-btn:not(#memory-finish-btn)');
+            for (const btn of nextBtns) {
+                if (btn.offsetParent !== null && getComputedStyle(btn).display !== 'none') {
+                    e.preventDefault();
+                    btn.click();
+                    break;
+                }
+            }
+        });
 
         // Reset game button events for all games (except practice which has exit button)
         const gameTypes = ['vocab', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'scramble', 'fill-blanks', 'memory'];
@@ -1405,8 +1421,6 @@ class GameManager {
                 this.selectedCategories.includes(item.category)
             );
             console.log(`[Category Filter] Filtered vocabulary to ${filteredVocabulary.length} words from categories: ${this.selectedCategories.join(', ')}`);
-            // Log sample of filtered words
-            console.log(`[Category Filter] Sample words:`, filteredVocabulary.slice(0, 5).map(w => `${w.word} (${w.category})`));
         } else {
             console.log(`[Category Filter] No categories selected, using all ${filteredVocabulary.length} words`);
         }
@@ -1684,7 +1698,6 @@ class GameManager {
         }
 
         const allWords = this.gameData.vocabulary || [];
-        console.log('[PRACTICE] Computing words from filtered vocabulary:', allWords.length);
 
         // Filter: only attempted words with mastery < 0.5 (struggling words)
         const strugglingWords = allWords.filter(word => {
@@ -1707,11 +1720,6 @@ class GameManager {
             const accuracyA = statsA && statsA.totalAttempts > 0 ? statsA.correctAttempts / statsA.totalAttempts : 0;
             const accuracyB = statsB && statsB.totalAttempts > 0 ? statsB.correctAttempts / statsB.totalAttempts : 0;
             return accuracyA - accuracyB;
-        });
-
-        console.log('[PRACTICE] Shared count/list result:', {
-            count: strugglingWords.length,
-            sample: strugglingWords.slice(0, 5).map(w => w.word)
         });
 
         return strugglingWords;
@@ -1865,8 +1873,23 @@ class GameManager {
                     return;
                 }
 
-                // Only generate new questions if NOT resuming
-                if (!this.isResuming) {
+                // Validate resumed state: grammar questions must have string options.
+                // Guards against stale localStorage entries that contain grammar-beginner
+                // object-format questions (e.g. { key, image, hebrew, isCorrect }).
+                const validResume = this.isResuming &&
+                    this.shuffledQuestions?.length > 0 &&
+                    this.currentQuestionIndex < this.shuffledQuestions.length &&
+                    typeof this.shuffledQuestions[this.currentQuestionIndex]?.options?.[0] === 'string';
+
+                if (!validResume) {
+                    if (this.isResuming) {
+                        console.warn('[Grammar] Invalid saved state (stale data), starting fresh');
+                        const userId = localStorage.getItem('currentUser') || 'default';
+                        localStorage.removeItem(`savedGame_${userId}_grammar`);
+                        this.currentQuestionIndex = 0;
+                        this.scores.grammar = 0;
+                        this.gameElapsedMs = 0;
+                    }
                     this.shuffledQuestions = this.smartQuestionSelection([...filteredGrammar]);
                     console.log(`Grammar game: ${this.shuffledQuestions.length} questions`, this.shuffledQuestions.slice(0, 5));
                 } else {
@@ -2380,7 +2403,8 @@ class GameManager {
         try {
             console.log(`Ending ${gameType} game...`);
 
-            const gameArea = document.querySelector(`#${gameType}-game .game-board`);
+            const gameArea = document.querySelector(`#${gameType}-game .game-board`)
+                ?? document.getElementById(`${gameType}-game`);
 
             // Special handling for practice mode
             if (gameType === 'practice') {
@@ -2569,7 +2593,8 @@ class GameManager {
     restartGame(gameType) {
         try {
             console.log(`Restarting ${gameType} game...`);
-            const gameArea = document.querySelector(`#${gameType}-game .game-board`);
+            const gameArea = document.querySelector(`#${gameType}-game .game-board`)
+                ?? document.getElementById(`${gameType}-game`);
             
             if (!gameArea) {
                 console.error(`Game area not found for ${gameType}`);

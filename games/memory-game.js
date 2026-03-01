@@ -10,6 +10,7 @@ export class MemoryGame {
         this.moves = 0;
         this.startTime = null;
         this.isProcessing = false;
+        this.processingToken = 0;
         this.gameWords = [];
         this.sourceWords = [];
         this.awaitingFinish = false;
@@ -81,6 +82,7 @@ export class MemoryGame {
         this.moves = 0;
         this.startTime = Date.now();
         this.isProcessing = false;
+        this.processingToken = 0;
         this.awaitingFinish = false;
         this.currentCombo = 0;
         this.maxCombo = 0;
@@ -184,10 +186,20 @@ export class MemoryGame {
             wordSpan.textContent = safeContent;
             cardFront.appendChild(wordSpan);
         } else {
-            // Translation cards: text-only (Hebrew)
-            cardFront.textContent = safeContent;
+            // Translation cards: emoji/icon (if any) above the Hebrew word
             cardFront.classList.add('memory-card-translation');
-            cardFront.style.fontSize = safeContent.length > 10 ? '0.95em' : '1.1em';
+            const visual = card.wordObj?.visual;
+            if (visual) {
+                const emojiSpan = document.createElement('div');
+                emojiSpan.className = 'memory-card-image';
+                emojiSpan.textContent = visual;
+                cardFront.appendChild(emojiSpan);
+            }
+            const wordSpan = document.createElement('div');
+            wordSpan.className = 'memory-card-word';
+            wordSpan.textContent = safeContent;
+            wordSpan.style.fontSize = safeContent.length > 10 ? '0.95em' : '1.1em';
+            cardFront.appendChild(wordSpan);
         }
 
         const cardBack = document.createElement('div');
@@ -227,14 +239,17 @@ export class MemoryGame {
 
         if (this.flippedCards.length === 2) {
             this.isProcessing = true;
+            // Increment token so any previous safety timeout from an earlier pair
+            // does not interfere with this one.
+            const token = ++this.processingToken;
             this.moves++;
             this.updateStats();
 
-            // Safety: force-release the lock after 2s if processing got stuck.
-            // Also visually unflip any non-matched cards so they aren't permanently stuck face-up.
+            // Safety: force-release the lock after 2s if THIS processing event got stuck.
+            // Guard with token to avoid clobbering a subsequent pair's processing state.
             const safetyFlipped = [...this.flippedCards];
             setTimeout(() => {
-                if (this.isProcessing) {
+                if (this.isProcessing && this.processingToken === token) {
                     console.warn('[MemoryGame] Force-releasing stuck isProcessing lock');
                     safetyFlipped.forEach(i => {
                         if (this.cards[i] && !this.cards[i].isMatched) {
@@ -272,6 +287,14 @@ export class MemoryGame {
         const [index1, index2] = this.flippedCards;
         const card1 = this.cards[index1];
         const card2 = this.cards[index2];
+
+        // Guard: stale check fired after flippedCards was already cleared by a safety timeout.
+        if (!card1 || !card2) {
+            console.warn('[MemoryGame] checkForMatch: flippedCards already cleared, skipping');
+            this.isProcessing = false;
+            this.flippedCards = [];
+            return;
+        }
 
         if (card1.pairId === card2.pairId) {
             this.handleMatch(index1, index2, card1);
@@ -958,6 +981,7 @@ export class MemoryGame {
         this.totalPairs = 0;
         this.moves = 0;
         this.isProcessing = false;
+        this.processingToken = 0;
         this.gameWords = [];
         this.sourceWords = [];
         this.awaitingFinish = false;

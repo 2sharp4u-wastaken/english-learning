@@ -10,16 +10,16 @@ export const natureWords = [
     { word: "Cloud", translation: "ענן", category: "nature", image: "☁️" },
     { word: "Rain", translation: "גשם", category: "nature", image: "🌧️" },
     { word: "Snow", translation: "שלג", category: "nature", image: "❄️" },
-    { word: "Wind", translation: "רוח", category: "nature", image: "🌬️" , imageUrl: "img/icons/nature/wind.png"},
+    { word: "Wind", translation: "רוח", category: "nature", image: "🌬️" },
     { word: "Fire", translation: "אש", category: "nature", image: "🔥" },
     { word: "Mountain", translation: "הר", category: "nature", image: "⛰️" },
     { word: "Sea", translation: "ים", category: "nature", image: "🌊" },
-    { word: "Sand", translation: "חול", category: "nature", image: "🏖️" , imageUrl: "img/icons/nature/sand.png"},
+    { word: "Sand", translation: "חול", category: "nature", image: "🏖️" },
     { word: "Stone", translation: "אבן", category: "nature", image: "🪨" },
     { word: "River", translation: "נהר", category: "nature", image: "🌊" , imageUrl: "img/icons/nature/river.png"},
     { word: "Lake", translation: "אגם", category: "nature", image: "🏞️" },
     { word: "Forest", translation: "יער", category: "nature", image: "🌲", imageUrl: "img/icons/nature/forest.png" },
-    { word: "Field", translation: "שדה", category: "nature", image: "🌾" , imageUrl: "img/icons/nature/field.png"},
+    { word: "Field", translation: "שדה", category: "nature", image: "🌾" },
     { word: "Sky", translation: "שמיים", category: "nature", image: "☁️", imageUrl: "img/icons/nature/sky.png" },
     { word: "Rainbow", translation: "קשת", category: "nature", image: "🌈" },
     { word: "Leaf", translation: "עלה", category: "nature", image: "🍃" },
@@ -29,5 +29,5 @@ export const natureWords = [
     { word: "Island", translation: "אי", category: "nature", image: "🏝️" },
     { word: "Volcano", translation: "הר געש", category: "nature", image: "🌋" },
     { word: "Thunder", translation: "רעם", category: "nature", image: "🌩️" },
-    { word: "Lightning", translation: "ברק", category: "nature", image: "⚡" , imageUrl: "img/icons/nature/lightning.png"}
+    { word: "Lightning", translation: "ברק", category: "nature", image: "⚡" }
 ];
