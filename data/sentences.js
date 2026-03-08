@@ -772,7 +772,10 @@ export function getRandomSentences(count, difficulty = null, theme = null) {
     }
 
     if (theme) {
-        pool = pool.filter(s => s.theme === theme);
+        const themes = Array.isArray(theme) ? theme : [theme];
+        const filtered = pool.filter(s => themes.includes(s.theme));
+        // Fall back to unthemed pool if no sentences match (e.g. no overlapping categories)
+        if (filtered.length > 0) pool = filtered;
     }
 
     // Shuffle and take count

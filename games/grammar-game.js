@@ -141,8 +141,6 @@ export async function checkGrammarAnswer(selectedIndex, correctIndex, question) 
         feedback.className = 'feedback correct';
         // Use scoreManager to add points (persists across sessions)
         window.scoreManager.addPoints('grammar', 10);
-        // Update local score for consistency
-        this.scores.grammar = window.scoreManager.getScore('grammar');
 
         // Replace blank with full correct sentence so the learner clearly sees it
         if (sentenceElement) {

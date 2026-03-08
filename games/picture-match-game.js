@@ -89,7 +89,6 @@ export async function checkPictureMatchAnswer(selectedIdx, question) {
         } catch (_) {}
 
         window.scoreManager.addPoints('picture-match', 10);
-        this.scores['picture-match'] = window.scoreManager.getScore('picture-match');
         this.currentQuestionIndex++;
         this.saveGameState();
 

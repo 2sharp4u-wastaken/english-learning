@@ -172,7 +172,6 @@ export async function checkListeningAnswer(selectedIndex, correctIndex) {
         feedback.className = 'feedback correct';
         // Use scoreManager to add points (persists across sessions)
         window.scoreManager.addPoints('listening', 10);
-        this.scores.listening = window.scoreManager.getScore('listening');
 
         // Save progress immediately to prevent loss if user navigates away
         this.currentQuestionIndex++;

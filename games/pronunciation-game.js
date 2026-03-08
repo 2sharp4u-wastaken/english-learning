@@ -252,7 +252,6 @@ export async function processPronunciationResult(result) {
         // Use scoreManager to add points (persists across sessions)
         const points = Math.round(comparison.accuracy * 10);
         window.scoreManager.addPoints('pronunciation', points);
-        this.scores.pronunciation = window.scoreManager.getScore('pronunciation');
 
         // Trigger confetti if enabled
         try {

@@ -321,14 +321,7 @@ class CollectionManager {
     }
 
     getGameName(gameType) {
-        const names = {
-            vocabulary: 'אוצר מילים',
-            grammar: 'דקדוק',
-            pronunciation: 'הגייה',
-            listening: 'הקשבה',
-            reading: 'קריאה'
-        };
-        return names[gameType] || 'כל המשחקים';
+        return window.gameRegistry?.get(gameType)?.displayNameHebrew || 'כל המשחקים';
     }
 }
 

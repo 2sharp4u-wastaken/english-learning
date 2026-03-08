@@ -328,7 +328,7 @@ export class WordJourneyGame {
 
         if (isCorrect) {
             this.stageCorrect++;
-            this.gm.scores['word-journey'] = (this.gm.scores['word-journey'] || 0) + 10;
+            window.scoreManager.addPoints('word-journey', 10);
             this.gm.updateScore('word-journey');
             this.triggerConfetti();
             setTimeout(() => {
@@ -522,7 +522,7 @@ export class WordJourneyGame {
         if (isCorrect) {
             slots.forEach(s => s.classList.add('correct-anim'));
             this.stageCorrect++;
-            this.gm.scores['word-journey'] = (this.gm.scores['word-journey'] || 0) + 10;
+            window.scoreManager.addPoints('word-journey', 10);
             this.gm.updateScore('word-journey');
             this.triggerConfetti();
 
@@ -720,7 +720,7 @@ export class WordJourneyGame {
 
         if (isCorrect) {
             this.stageCorrect++;
-            this.gm.scores['word-journey'] = (this.gm.scores['word-journey'] || 0) + 10;
+            window.scoreManager.addPoints('word-journey', 10);
             this.gm.updateScore('word-journey');
             this.triggerConfetti();
 
@@ -892,7 +892,7 @@ export class WordJourneyGame {
             this._applyRecallPairGradient(b.el, pairIdx);
 
             this.stageCorrect++;
-            this.gm.scores['word-journey'] = (this.gm.scores['word-journey'] || 0) + 5;
+            window.scoreManager.addPoints('word-journey', 5);
             this.gm.updateScore('word-journey');
             this.triggerConfetti();
 

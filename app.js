@@ -1103,6 +1103,7 @@ class AppManager {
 
     saveSettings() {
         localStorage.setItem('englishLearningSettings', JSON.stringify(this.settings));
+        window.gameManager?.applySettings(this.settings);
     }
 
     updateProgress(gameType, score) {

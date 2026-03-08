@@ -332,7 +332,6 @@ export async function checkGrammarBeginnerAnswer(question, selectedAnswer) {
         // Award points using scoreManager
         const points = Math.max(0, 10 - this.currentQuestionAttempts + 1);
         window.scoreManager.addPoints('grammar-beginner', points);
-        this.scores['grammar-beginner'] = window.scoreManager.getScore('grammar-beginner');
         this.updateScore('grammar-beginner');
 
         // Confetti and correct sound

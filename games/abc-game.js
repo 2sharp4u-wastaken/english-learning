@@ -493,7 +493,6 @@ export async function processABCSpeechResult(result) {
     if (isCorrect) {
         // Use scoreManager to add points (persists across sessions)
         window.scoreManager.addPoints('abc', 10);
-        this.scores.abc = window.scoreManager.getScore('abc');
 
         // Trigger confetti if enabled
         try {
@@ -647,9 +646,7 @@ export async function checkABCAnswer(selectedIndex, correctIndex) {
 
     if (isCorrect) {
         buttons[selectedIndex].classList.add('correct');
-        console.log('[ABC] Before score increment:', this.scores.abc);
-        this.scores.abc += 10;
-        console.log('[ABC] After score increment:', this.scores.abc);
+        window.scoreManager.addPoints('abc', 10);
 
         // Trigger confetti if enabled
         try {

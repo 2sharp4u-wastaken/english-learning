@@ -162,8 +162,6 @@ export async function checkVocabularyAnswer(selectedIndex, correctIndex) {
         buttons[selectedIndex].classList.add('correct');
         // Use scoreManager to add points (persists across sessions)
         window.scoreManager.addPoints('vocabulary', 10);
-        // Update local score for consistency
-        this.scores.vocabulary = window.scoreManager.getScore('vocabulary');
 
         // Trigger confetti if enabled
         try {

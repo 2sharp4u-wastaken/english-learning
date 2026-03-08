@@ -325,7 +325,7 @@ export class SentenceScrambleGame {
         window.gameManager.saveGameState();
 
         if (isCorrect) {
-            window.gameManager.scores['scramble'] += 10;
+            window.scoreManager.addPoints('scramble', 10);
             window.gameManager.updateScore('scramble');
             if (typeof confetti === 'function') {
                 confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 } });

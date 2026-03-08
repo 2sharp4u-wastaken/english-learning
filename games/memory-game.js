@@ -488,7 +488,7 @@ export class MemoryGame {
 
         // Sync live score to header
         if (window.gameManager) {
-            window.gameManager.scores['memory'] = this.runningScore;
+            window.scoreManager.setScore('memory', this.runningScore);
             window.gameManager.updateScore('memory');
         }
 
@@ -589,9 +589,8 @@ export class MemoryGame {
 
         if (window.gameManager) {
             window.scoreManager.addPoints('memory', metrics.score);
-            window.gameManager.scores['memory'] = window.scoreManager.getScore('memory');
         }
-        const totalScore = window.gameManager?.scores?.memory ?? metrics.score;
+        const totalScore = window.scoreManager?.getScore('memory') ?? metrics.score;
 
         this.hideBoardForSummary();
 

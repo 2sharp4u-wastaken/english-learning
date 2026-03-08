@@ -16,14 +16,8 @@ Always ask before committing or pushing. Show the diff summary and wait for expl
 ### Read before modifying
 Read every file you plan to change before touching it. Do not suggest changes to code you haven't read.
 
-### Prefer editing existing files over creating new ones
-Only create new files when the feature genuinely requires it.
-
 ### Keep the logger lean
 `utils/consoleLogger.js` must use an in-memory array only — never localStorage persistence per log call, as it causes severe UI slowdown. The committed version is the correct one.
-
-### No emojis in code or files unless already present in that file
-The codebase already uses emojis in UI strings/templates — match the existing style, don't add new ones to logic files.
 
 ### Cache-busting
 CSS/JS files use `?t=<timestamp>` query strings for cache busting. Update the timestamp when changing a file that needs it.

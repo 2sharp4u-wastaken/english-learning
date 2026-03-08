@@ -4,9 +4,8 @@
 // "Save to Source Files" writes the image to img/icons/<category>/ and
 // updates the relevant data/categories/<category>.js file.
 
-(function () {
-    const STORAGE_KEY = 'wordImageOverrides';
-    const TRANS_STORAGE_KEY = 'wordTranslationOverrides';
+const STORAGE_KEY = 'wordImageOverrides';
+const TRANS_STORAGE_KEY = 'wordTranslationOverrides';
     let _overrides = {};
     let _transOverrides = {};
 
@@ -766,8 +765,9 @@
         return _esc(s).replace(/"/g, '&quot;');
     }
 
-    // Initialize override cache on script load
-    _load();
+// Initialize override cache on script load
+_load();
 
-    window.wordImageManager = { init, getOverrides, setOverride, removeOverride, getTransOverrides, setTransOverride, removeTransOverride };
-})();
+window.wordImageManager = { init, getOverrides, setOverride, removeOverride, getTransOverrides, setTransOverride, removeTransOverride };
+
+export { init, getOverrides, setOverride, removeOverride, getTransOverrides, setTransOverride, removeTransOverride };

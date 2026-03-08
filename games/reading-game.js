@@ -272,7 +272,6 @@ export async function checkBuiltWord() {
         // Award points based on attempts using scoreManager
         const points = Math.max(0, 10 - this.currentQuestionAttempts);
         window.scoreManager.addPoints('reading', points);
-        this.scores.reading = window.scoreManager.getScore('reading');
         this.updateScore('reading');
 
         // Disable all buttons

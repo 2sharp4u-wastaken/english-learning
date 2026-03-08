@@ -23,7 +23,7 @@ export class ScoreManager {
      */
     initialize() {
         // Initialize scores for all game types
-        const gameTypes = ['vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'practice', 'abc'];
+        const gameTypes = ['vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'practice', 'abc', 'memory', 'scramble', 'fill-blanks', 'word-journey', 'picture-match'];
         this.initializeScores(gameTypes);
         console.log('[ScoreManager] Initialized');
     }
