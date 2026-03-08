@@ -23,5 +23,9 @@ export const feelingsWords = [
     { word: "Nice", translation: "נחמד", category: "feelings", image: "😇" },
     { word: "Brave", translation: "אמיץ", category: "feelings", image: "🦁" },
     { word: "Love", translation: "אהבה", category: "feelings", image: "❤️" },
-    { word: "Great", translation: "נהדר", category: "feelings", image: "🌟" }
+    { word: "Great", translation: "נהדר", category: "feelings", image: "🌟" },
+    { word: "Confused", translation: "מבולבל", category: "feelings", image: "😕" },
+    { word: "Disgusted", translation: "נגעל", category: "feelings", image: "🤢" },
+    { word: "Nervous", translation: "עצבני", category: "feelings", image: "😬" },
+    { word: "Lonely", translation: "בודד", category: "feelings", image: "😔" }
 ];

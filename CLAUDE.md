@@ -16,12 +16,6 @@ Always ask before committing or pushing. Show the diff summary and wait for expl
 ### Read before modifying
 Read every file you plan to change before touching it. Do not suggest changes to code you haven't read.
 
-### Read ROADMAP.md at the start of each session
-This is the active session plan and backlog. Find the first incomplete session/task before starting new work.
-
-### Update ROADMAP.md as you work
-After completing each checkbox item, immediately mark it `[x]` in ROADMAP.md before moving to the next item. Do not batch updates at the end.
-
 ### Prefer editing existing files over creating new ones
 Only create new files when the feature genuinely requires it.
 
@@ -66,8 +60,3 @@ All are initialized after user auth in `app.js → AppManager.setupWithAuth()`.
 - `settings.html` — parent-protected settings (password-gated sections use `data-protected="true"`)
 - `stats.html` — statistics view
 - `words.html` — word browser
-
-## Session Reset Protocol
-1. Read `ROADMAP.md` — find the first session with incomplete checkboxes
-2. Read all relevant files before modifying anything
-3. Check off items in ROADMAP.md as they are completed

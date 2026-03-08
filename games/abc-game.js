@@ -491,7 +491,9 @@ export async function processABCSpeechResult(result) {
     }
 
     if (isCorrect) {
-        this.scores.abc += 10;
+        // Use scoreManager to add points (persists across sessions)
+        window.scoreManager.addPoints('abc', 10);
+        this.scores.abc = window.scoreManager.getScore('abc');
 
         // Trigger confetti if enabled
         try {

@@ -139,7 +139,10 @@ export async function checkGrammarAnswer(selectedIndex, correctIndex, question) 
 
         feedback.innerHTML = fbData.text;
         feedback.className = 'feedback correct';
-        this.scores.grammar += 10;
+        // Use scoreManager to add points (persists across sessions)
+        window.scoreManager.addPoints('grammar', 10);
+        // Update local score for consistency
+        this.scores.grammar = window.scoreManager.getScore('grammar');
 
         // Replace blank with full correct sentence so the learner clearly sees it
         if (sentenceElement) {

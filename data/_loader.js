@@ -7,6 +7,7 @@ import {
     familyWords, clothesWords, homeWords, actionsWords, natureWords,
     schoolWords, minecraftWords, gamingWords, robloxWords, feelingsWords,
     adjectivesWords, placesWords, timeWords, weatherWords, sportsWords,
+    transportationWords, toolsWords, signsWords, musicWords,
     customWords
 } from './categories/_index.js';
 
@@ -24,7 +25,8 @@ import {
     convertToVocabulary,
     convertToReading,
     convertToPronunciation,
-    convertToListening
+    convertToListening,
+    convertToPictureMatch
 } from './converters.js?t=1762593312';
 
 // Import phonetics system
@@ -51,8 +53,12 @@ const vocabularyBank = [
     ...placesWords,     // 18 words
     ...timeWords,       // 20 words
     ...weatherWords,    // 15 words
-    ...sportsWords,     // 18 words
-    ...customWords      // parent-saved words (committed to source)
+    ...sportsWords,           // 29 words
+    ...transportationWords,   // 26 words
+    ...toolsWords,            // 16 words
+    ...signsWords,            // 12 words
+    ...musicWords,            // 11 words
+    ...customWords            // parent-saved words (committed to source)
 ];
 
 // Inject parent custom words from localStorage
@@ -85,6 +91,7 @@ const convertedVocabulary = convertToVocabulary(vocabularyBank);
 const convertedReading = convertToReading(vocabularyBank);
 const convertedPronunciation = convertToPronunciation(vocabularyBank);
 const convertedListening = convertToListening(vocabularyBank);
+const convertedPictureMatch = convertToPictureMatch(vocabularyBank);
 
 // Generate ABC questions
 const abcQuestions = generateABCQuestions(30); // Generate pool of 30 questions
@@ -100,7 +107,8 @@ const gameData = {
     pronunciation: convertedPronunciation,
     listening: convertedListening,
     reading: convertedReading,
-    abc: abcQuestions
+    abc: abcQuestions,
+    'picture-match': convertedPictureMatch
 };
 
 // Difficulty levels for adaptive learning

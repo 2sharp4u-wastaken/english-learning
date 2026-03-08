@@ -2711,6 +2711,11 @@ body::before {
     animation: slideIn 0.3s ease;
 }
 
+#fill-blanks-game .next-btn,
+#scramble-game .next-btn {
+    top: 100px;
+}
+
 #vocabulary-game .next-btn:hover,
 #pronunciation-game .next-btn:hover,
 #listening-game .next-btn:hover,
@@ -3484,14 +3489,6 @@ body::before {
     direction: rtl;
 }
 
-.card-icon-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
 .game-card-icon {
     font-size: 4em;
     filter: drop-shadow(0 2px 4px rgba(0,0,0,0.2));
@@ -3508,42 +3505,6 @@ body::before {
     font-size: 1em;
     opacity: 0.95;
     line-height: 1.4;
-}
-
-.card-action-btn {
-    width: 36px;
-    height: 36px;
-    border: none;
-    border-radius: 50%;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    flex-shrink: 0;
-}
-
-.card-new-btn {
-    background: rgba(255, 255, 255, 0.22);
-    color: white;
-    border: 2px solid rgba(255, 255, 255, 0.45);
-}
-
-.card-new-btn:hover {
-    background: rgba(255, 255, 255, 0.34);
-    transform: scale(1.08);
-}
-
-.card-continue-btn {
-    background: rgba(255, 255, 255, 0.95);
-    color: #667eea;
-    border: 2px solid rgba(255, 255, 255, 0.95);
-}
-
-.card-continue-btn:hover {
-    background: white;
-    transform: scale(1.08);
 }
 
 @keyframes fadeInDown {
@@ -3639,11 +3600,6 @@ body::before {
     padding: 14px 12px;
 }
 
-.home-compact .card-icon-row {
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
 .home-compact .game-card-icon {
     font-size: 2.6em;
 }
@@ -3655,17 +3611,6 @@ body::before {
 
 .home-compact .game-card p {
     display: none;
-}
-
-.home-compact .game-card-stats {
-    gap: 6px;
-    font-size: 0.8rem;
-}
-
-.home-compact .card-action-btn {
-    width: 30px;
-    height: 30px;
-    font-size: 0.85rem;
 }
 
 @media (max-width: 1024px) {
@@ -4454,23 +4399,6 @@ body::before {
    GAMIFICATION FEATURES
    ============================================ */
 
-.game-card-stats {
-    display: flex;
-    gap: 8px;
-    justify-content: center;
-    margin-top: 10px;
-    font-size: 0.9rem;
-    opacity: 1;
-}
-
-.game-card-stats span {
-    background: rgba(255, 255, 255, 0.3);
-    padding: 6px 10px;
-    border-radius: 12px;
-    font-weight: 700;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
 /* Home streak widget (welcome screen) */
 .home-streak-widget {
     display: inline-flex;
@@ -4821,10 +4749,6 @@ body::before {
         padding: 20px;
     }
 
-    .game-card-stats {
-        font-size: 0.75rem;
-        gap: 6px;
-    }
 }
 
 /* ============================================
@@ -5729,7 +5653,6 @@ body::before {
 }
 
 .memory-card-front.memory-card-translation {
-    font-size: 1.1em;
     line-height: 1.3;
 }
 
@@ -5816,7 +5739,7 @@ body::before {
     background: none;
     color: rgba(255, 255, 255, 0.95);
     text-shadow: 0 1px 3px rgba(0, 0, 0, 0.55);
-    font-size: 0.8em;
+    font-size: 1.5em;
     font-weight: 600;
     pointer-events: none;
     display: inline-flex;
@@ -6014,8 +5937,47 @@ body::before {
     margin-bottom: 8px;
 }
 
+.scramble-build-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    direction: ltr;
+}
+
+.scramble-play-btn {
+    flex-shrink: 0;
+    width: 48px;
+    height: 50px;
+    background: rgba(255, 255, 255, 0.15);
+    color: white;
+    border: 2px solid rgba(255, 255, 255, 0.35);
+    border-radius: 12px;
+    font-size: 1.3em;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.scramble-play-btn:hover:not(:disabled) {
+    background: rgba(255, 255, 255, 0.3);
+    border-color: rgba(255, 255, 255, 0.7);
+    transform: scale(1.08);
+}
+
+.scramble-play-btn:active:not(:disabled) {
+    transform: scale(0.95);
+}
+
+.scramble-play-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+}
+
 /* Answer Zone */
 .scramble-answer-zone {
+    flex: 1;
     min-height: 70px;
     border: 3px dashed rgba(255, 255, 255, 0.4);
     border-radius: 12px;
@@ -6074,6 +6036,21 @@ body::before {
 .scramble-answer-chip.incorrect {
     background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
     cursor: default;
+}
+
+.scramble-answer-chip[draggable="true"] {
+    cursor: grab;
+}
+
+.scramble-answer-chip.dragging {
+    opacity: 0.35;
+    cursor: grabbing;
+}
+
+.scramble-answer-chip.drag-over {
+    border-color: rgba(255, 255, 255, 0.95);
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.08);
 }
 
 /* Word Bank */
@@ -7426,4 +7403,444 @@ body::before {
     .chime-icon {
         font-size: 1.3rem;
     }
+}
+
+/* ============================================================
+   WORD JOURNEY GAME (.wj-*)
+   Phases A–D: all stages + journey map UI
+   ============================================================ */
+
+/* Stage progress bar — Phase D: Journey Map */
+.wj-stage-bar {
+    display: flex;
+    gap: 2px;
+    align-items: center;
+    justify-content: center;
+    margin: 4px 0;
+    overflow: hidden;
+    padding-bottom: 4px;
+    padding-top: 12px;
+    flex-wrap: nowrap;
+    width: 100%;
+    box-sizing: border-box;
+}
+.wj-journey-step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    opacity: 0.4;
+    transition: opacity 0.3s, transform 0.2s;
+    flex-shrink: 1;
+    min-width: 0;
+}
+.wj-journey-step.active {
+    opacity: 1;
+    transform: scale(1.05);
+}
+.wj-journey-step.active .wj-step-icon {
+    animation: wj-pulse-step 1.5s infinite;
+}
+.wj-journey-step.completed {
+    opacity: 0.85;
+}
+.wj-step-icon {
+    font-size: 1.8rem;
+    line-height: 1;
+}
+.wj-step-label {
+    font-size: 0.75rem;
+    color: rgba(255,255,255,0.9);
+    direction: rtl;
+    white-space: nowrap;
+}
+.wj-step-arrow {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.4);
+    align-self: center;
+    padding-bottom: 10px;
+    flex-shrink: 0;
+}
+@keyframes wj-pulse-step {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.15); }
+}
+
+/* Discover card */
+.wj-discover-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 24px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    min-width: 220px;
+}
+.wj-discover-emoji {
+    font-size: 72px;
+    line-height: 1;
+}
+.wj-discover-word {
+    font-size: 2rem;
+    font-weight: bold;
+    color: white;
+    letter-spacing: 0.05em;
+}
+.wj-discover-translation {
+    font-size: 1.2rem;
+    color: rgba(255,255,255,0.8);
+    direction: rtl;
+}
+.wj-word-counter {
+    font-size: 0.85rem;
+    color: rgba(255,255,255,0.6);
+}
+
+/* Stage instruction text */
+.wj-stage-instruction {
+    font-size: 1.05rem;
+    color: rgba(255,255,255,0.9);
+    direction: rtl;
+    margin: 6px 0 4px;
+    text-align: center;
+}
+
+/* Within-stage progress bar */
+.wj-stage-progress-wrap {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    max-width: 340px;
+    margin: 0 auto 8px;
+}
+.wj-stage-progress-bar {
+    flex: 1;
+    height: 8px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 4px;
+    overflow: hidden;
+}
+.wj-stage-progress-fill {
+    height: 100%;
+    background: rgba(255,255,255,0.85);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+}
+.wj-stage-progress-label {
+    font-size: 0.8rem;
+    color: rgba(255,255,255,0.7);
+    white-space: nowrap;
+}
+
+/* Stage complete banner */
+.wj-stage-complete-banner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 32px 24px;
+    background: rgba(255,255,255,0.15);
+    border-radius: 20px;
+    animation: wj-pop-in 0.3s ease;
+}
+.wj-stage-complete-icon { font-size: 3rem; }
+.wj-stage-complete-score {
+    font-size: 2.8rem;
+    font-weight: bold;
+    color: white;
+}
+.wj-stage-complete-label {
+    font-size: 1rem;
+    color: rgba(255,255,255,0.8);
+    direction: rtl;
+}
+.wj-stage-complete-pct {
+    font-size: 1.3rem;
+    color: rgba(255,255,255,0.7);
+}
+@keyframes wj-pop-in {
+    from { transform: scale(0.85); opacity: 0; }
+    to   { transform: scale(1);    opacity: 1; }
+}
+
+/* WJ card wrapper — mirrors listening/pronunciation card style */
+.wj-stage-card {
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 400px;
+}
+.wj-stage-layout-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+/* Audio wave icon for listen-match card */
+.wj-audio-icon {
+    font-size: 3.5rem !important;
+    line-height: 1;
+}
+
+/* Picture options grid for listen-match (mirrors listening-options style) */
+.wj-picture-options {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 360px;
+    margin-top: 4px;
+}
+.wj-picture-option {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 14px 8px;
+    min-height: 90px;
+    font-size: 1rem;
+    border-radius: 16px;
+}
+.wj-picture-option-img {
+    font-size: 3rem;
+    line-height: 1;
+    display: block;
+    margin-bottom: 2px;
+}
+
+/* Spell Tiles — reading-game layout */
+.wj-spell-card {
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 400px;
+}
+.wj-spell-layout-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.wj-built-word {
+    display: flex;
+    gap: 6px;
+    min-height: 52px;
+    align-items: center;
+    justify-content: center;
+    direction: ltr;
+    flex-wrap: wrap;
+}
+.wj-letter-bank-wrap {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    justify-content: center;
+    max-width: 360px;
+    margin: 4px auto 0;
+}
+/* Slot styles — inside built-word */
+.wj-slot {
+    width: 44px;
+    height: 52px;
+    border-bottom: 3px solid rgba(255,255,255,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.6rem;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    transition: color 0.2s, border-color 0.2s;
+}
+.wj-slot.filled { border-color: white; }
+.wj-slot.correct-anim { border-color: #4caf50; color: #4caf50; }
+.wj-slot.wrong-anim { border-color: #f44336; color: #f44336; }
+/* Letter tiles reuse letter-btn style */
+.wj-letter-tile {
+    width: 48px;
+    height: 54px;
+    font-size: 1.4rem;
+    font-weight: bold;
+}
+.wj-letter-tile.used { opacity: 0.25; pointer-events: none; }
+@keyframes wj-shake {
+    0%, 100% { transform: translateX(0); }
+    20%, 60% { transform: translateX(-6px); }
+    40%, 80% { transform: translateX(6px); }
+}
+.wj-built-word.shake { animation: wj-shake 0.4s; }
+
+/* Say Word — pronunciation-game layout */
+.wj-say-card {
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Recall — memory-game stats header */
+.wj-recall-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    font-size: 0.9rem;
+    color: rgba(255,255,255,0.85);
+    margin-bottom: 8px;
+    direction: rtl;
+}
+/* Recall grid — reuses .memory-grid, ensure proper sizing */
+#word-journey-game .memory-grid {
+    width: 100%;
+    max-width: 560px;
+    gap: 10px;
+}
+#word-journey-game .memory-card {
+    min-width: 80px;
+    min-height: 90px;
+}
+
+#word-journey-game .progress-container {
+    flex-direction: column;
+    align-items: center;
+}
+
+#word-journey-game .game-board {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
+/* ── Picture Match standalone game ── */
+.picture-match-card {
+    background: rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 16px 20px;
+    width: 100%;
+    max-width: 400px;
+}
+.picture-match-layout-vertical {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+.picture-match-option-img {
+    font-size: 2.8rem;
+    line-height: 1;
+    display: block;
+    margin-bottom: 2px;
+}
+/* Picture match options grid — 2 columns with large picture buttons */
+.picture-match-options-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    width: 100%;
+    max-width: 380px;
+    margin: 4px auto 0;
+}
+.picture-match-options-grid .option-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 12px 8px;
+    min-height: 96px;
+    font-size: 0.9rem;
+}
+/* Disabled Next button visual feedback */
+#wj-next:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+/* WJ spell-tiles: large picture + reading-game style action buttons */
+#word-journey-game .wj-spell-card .word-picture,
+#word-journey-game .wj-say-card .word-picture {
+    font-size: 8rem !important;
+    display: block;
+    text-align: center;
+    filter: drop-shadow(0 6px 12px rgba(0,0,0,0.2));
+    animation: pictureBounce 2s ease-in-out infinite;
+}
+/* Real images inside picture containers — keep them large */
+#word-journey-game .wj-spell-card .word-picture .word-image,
+#word-journey-game .wj-say-card .word-picture .word-image {
+    width: 130px;
+    height: 130px;
+    object-fit: contain;
+}
+/* Discover card image */
+#word-journey-game .wj-discover-emoji .word-image {
+    width: 110px;
+    height: 110px;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
+}
+/* Listen-match option images */
+#word-journey-game .wj-picture-option-img .word-image {
+    width: 64px;
+    height: 64px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+}
+/* Recall card images */
+#word-journey-game .memory-card-image .word-image {
+    width: 52px;
+    height: 52px;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto;
+}
+#word-journey-game .action-buttons {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    margin: 6px 0;
+    width: 100%;
+    max-width: 360px;
+}
+#word-journey-game .action-buttons .game-btn {
+    flex: 1;
+    max-width: 200px;
+    padding: 12px 20px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border-radius: 12px;
+    min-height: 52px;
+    direction: rtl;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#word-journey-game .clear-btn {
+    background: linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%);
+    color: white;
+    border: none;
+}
+#word-journey-game .clear-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(255,107,107,0.4);
+}
+#word-journey-game .check-btn {
+    background: linear-gradient(135deg, #51cf66 0%, #37b24d 100%);
+    color: white;
+    border: none;
+}
+#word-journey-game .check-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(81,207,102,0.4);
+}
+#word-journey-game .check-btn:disabled {
+    opacity: 0.45;
+    pointer-events: none;
 }

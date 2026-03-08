@@ -1,6 +1,12 @@
 // Image Rendering Utility
 // Handles displaying either real images or emoji fallbacks
 
+// Initialize parent-defined image overrides from localStorage (set via Settings → Word Images tab)
+if (!window.wordImageOverrides) {
+    try { window.wordImageOverrides = JSON.parse(localStorage.getItem('wordImageOverrides') || '{}'); }
+    catch (e) { window.wordImageOverrides = {}; }
+}
+
 /**
  * Renders a picture (image URL or emoji) into a DOM element
  * @param {HTMLElement} element - The element to render into
@@ -15,17 +21,28 @@ export function renderPicture(element, question) {
     // Clear existing content
     element.innerHTML = '';
 
+    // Check for parent-defined image override (set via Settings → Word Images tab)
+    const overrideKey = `${question.category}:${question.word}`;
+    let effectiveImageUrl = (window.wordImageOverrides && window.wordImageOverrides[overrideKey]) || question.imageUrl;
+
+    // Fallback: look up imageUrl from vocabularyBank (handles stale serialized state
+    // where imageUrl was added to the category file after the game was saved)
+    if (!effectiveImageUrl && question.word && question.category && window.vocabularyBank) {
+        const raw = window.vocabularyBank.find(r => r.word === question.word && r.category === question.category);
+        if (raw?.imageUrl) effectiveImageUrl = raw.imageUrl;
+    }
+
     // Check if we have an image URL
-    if (question.imageUrl) {
+    if (effectiveImageUrl) {
         // Create and display image
         const img = document.createElement('img');
-        img.src = question.imageUrl;
+        img.src = effectiveImageUrl;
         img.alt = question.word || 'Word image';
         img.className = 'word-image';
 
         // Fallback to emoji if image fails to load
         img.onerror = () => {
-            console.warn(`Failed to load image: ${question.imageUrl}, falling back to emoji`);
+            console.warn(`Failed to load image: ${effectiveImageUrl}, falling back to emoji`);
             element.innerHTML = '';
             element.textContent = question.picture || '🔤';
             element.style.fontSize = ''; // Reset font size

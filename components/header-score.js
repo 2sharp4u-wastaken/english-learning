@@ -1,4 +1,5 @@
 // Lightweight header score updater for non-home pages.
+// Shows the all-time accumulated totalPoints from userProgress.
 
 function getCurrentUserId() {
     if (typeof authService !== 'undefined' && authService.getCurrentUserId) {
@@ -8,27 +9,15 @@ function getCurrentUserId() {
     return localStorage.getItem('currentUser') || 'O';
 }
 
-function getLatestSavedScore(userId) {
-    const prefix = `savedGame_${userId}_`;
-    let latest = null;
-
-    for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (!key || !key.startsWith(prefix)) continue;
-        const raw = localStorage.getItem(key);
-        if (!raw) continue;
-        try {
-            const gameState = JSON.parse(raw);
-            if (!gameState || typeof gameState.timestamp !== 'number') continue;
-            if (!latest || gameState.timestamp > latest.timestamp) {
-                latest = gameState;
-            }
-        } catch (e) {
-            // ignore malformed entries
-        }
+function getAllTimeTotalPoints(userId) {
+    const raw = localStorage.getItem(`userProgress_${userId}`);
+    if (!raw) return 0;
+    try {
+        const progress = JSON.parse(raw);
+        return (typeof progress.totalPoints === 'number') ? progress.totalPoints : 0;
+    } catch (e) {
+        return 0;
     }
-
-    return latest && typeof latest.score === 'number' ? latest.score : null;
 }
 
 function updateHeaderScore() {
@@ -36,8 +25,7 @@ function updateHeaderScore() {
     if (!scoreEl) return;
 
     const userId = getCurrentUserId();
-    const latestScore = getLatestSavedScore(userId);
-    scoreEl.textContent = latestScore !== null ? latestScore : 0;
+    scoreEl.textContent = getAllTimeTotalPoints(userId);
 }
 
 function isHomePage() {
@@ -52,7 +40,7 @@ function initHeaderScore() {
 
     window.addEventListener('storage', (e) => {
         if (!e || !e.key) return;
-        if (e.key.startsWith('savedGame_') || e.key === 'currentUser') {
+        if (e.key.startsWith('userProgress_') || e.key === 'currentUser') {
             updateHeaderScore();
         }
     });

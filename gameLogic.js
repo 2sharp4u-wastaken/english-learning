@@ -7,9 +7,10 @@ import * as GrammarGame from './games/grammar-game.js?t=1774903002';
 import * as GrammarBeginnerGame from './games/grammar-beginner-game.js';
 import * as ListeningGame from './games/listening-game.js?t=1762609545';
 import * as PronunciationGame from './games/pronunciation-game.js?t=1771785500';
-import * as ReadingGame from './games/reading-game.js?t=1762608590';
+import * as ReadingGame from './games/reading-game.js?t=1742000000';
 import * as PracticeGame from './games/practice-game.js';
 import * as ABCGame from './games/abc-game.js';
+import * as PictureMatchGame from './games/picture-match-game.js';
 import { generateABCQuestions, areAllLettersMastered, getUnmasteredLetterCount } from './data/abcData.js';
 import { generateGrammarBeginnerQuestions } from './data/grammarBeginnerData.js';
 import { getRandomSentences } from './data/sentences.js';
@@ -45,23 +46,6 @@ class GameManager {
         this.coinManager = null;
         this.managerInitRetries = 0;
 
-        // Legacy scores object (kept for backwards compatibility, but delegated to ScoreManager)
-        this.scores = {
-            vocabulary: 0,
-            grammar: 0,
-            'grammar-beginner': 0,
-            pronunciation: 0,
-            listening: 0,
-            reading: 0,
-            practice: 0,
-            abc: 0,
-            memory: 0,
-            scramble: 0,
-            'fill-blanks': 0
-        };
-        this.currentQuestionIndex = 0;
-        this.isResuming = false;  // Flag to track if we're resuming a saved game
-
         // In-game timer: total elapsed while playing (ms). Only shown on game completion.
         this.gameElapsedMs = 0;
         this.gameSessionStartAt = null;  // When current session started (leave/resume resets)
@@ -75,6 +59,8 @@ class GameManager {
         this.loadSettings();
 
         this.gameData = {};
+        this.scores = {};
+        this.lastPersistedScores = {}; // tracks what's already been saved to totalPoints per game
         this.shuffledQuestions = [];
         this.isGameActive = false;
         this.builtWord = '';
@@ -137,6 +123,8 @@ class GameManager {
         this.playABCLetterAudio = ABCGame.playABCLetterAudio.bind(this);
         this.loadWordPictureQuestion = ABCGame.loadWordPictureQuestion.bind(this);
         this.resetABCMastery = ABCGame.resetABCMastery.bind(this);
+        this.loadPictureMatchQuestion = PictureMatchGame.loadPictureMatchQuestion.bind(this);
+        this.checkPictureMatchAnswer = PictureMatchGame.checkPictureMatchAnswer.bind(this);
 
         // Initialize the game after all bindings are set up
         this.initializeGame();
@@ -177,6 +165,51 @@ class GameManager {
 
         // Register all existing games with GameRegistry
         this.registerGames();
+
+        // Initialize scores from ScoreManager
+        this.initializeScores();
+    }
+
+    initializeScores() {
+        // Get all scores from ScoreManager
+        const allScores = this.scoreManager.getAllScores();
+
+        // If a game is already active (race condition: hash navigation ran before managers
+        // loaded), preserve the current game's score so resumeGame() state isn't wiped.
+        const activeGame = this.isGameActive ? this.currentGame : null;
+        const savedScore = activeGame ? (this.scores[activeGame] ?? 0) : 0;
+        const savedPersisted = activeGame ? (this.lastPersistedScores[activeGame] ?? 0) : 0;
+
+        // Convert to our legacy scores object for backwards compatibility with game modules
+        this.scores = {
+            vocabulary: allScores['vocabulary'] || 0,
+            grammar: allScores['grammar'] || 0,
+            'grammar-beginner': allScores['grammar-beginner'] || 0,
+            pronunciation: allScores['pronunciation'] || 0,
+            listening: allScores['listening'] || 0,
+            reading: allScores['reading'] || 0,
+            practice: allScores['practice'] || 0,
+            abc: allScores['abc'] || 0,
+            memory: allScores['memory'] || 0,
+            scramble: allScores['scramble'] || 0,
+            'fill-blanks': allScores['fill-blanks'] || 0,
+            'word-journey': allScores['word-journey'] || 0,
+            'picture-match': allScores['picture-match'] || 0
+        };
+
+        // Seed lastPersistedScores to match so the first updateScore() call computes delta = 0.
+        // Without this, any non-zero score loaded from scoreManager would be falsely re-added
+        // to totalPoints on the next updateScore() call.
+        this.lastPersistedScores = { ...this.scores };
+
+        // Restore the active game's score if it was wiped by the reinit above.
+        if (activeGame) {
+            this.scores[activeGame] = savedScore;
+            this.lastPersistedScores[activeGame] = savedPersisted;
+            this.updateScore(activeGame); // Show the in-game score, not the total
+        } else {
+            this.updateTotalScoreDisplay();
+        }
     }
 
     clearLegacySavedState() {
@@ -363,6 +396,28 @@ class GameManager {
             }
         });
 
+        registry.register('word-journey', {
+            displayName: 'Word Journey',
+            displayNameHebrew: 'מסע המילים',
+            icon: '🗺️',
+            config: {
+                questionsPerGame: 5,
+                pointsPerCorrect: 10,
+                categories: ['vocabulary']
+            }
+        });
+
+        registry.register('picture-match', {
+            displayName: 'Picture Match',
+            displayNameHebrew: 'מילה לתמונה',
+            icon: '🖼️',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['vocabulary']
+            }
+        });
+
         console.log('[GameManager] All games registered with GameRegistry');
     }
 
@@ -466,6 +521,19 @@ class GameManager {
             gameElapsedMs: totalElapsed
         };
 
+        // Word Journey: persist internal stage position so resume lands on the exact word
+        if (this.currentGame === 'word-journey' && window.wordJourneyGame) {
+            const wj = window.wordJourneyGame;
+            gameState.wjTotalCorrect = wj.totalCorrect;
+            gameState.wjTotalScoredQuestions = wj.totalScoredQuestions;
+            // Only save mid-stage position; if stageIndex >= length the stage already completed
+            if (wj.stageQuestions?.length > 0 && wj.stageIndex < wj.stageQuestions.length) {
+                gameState.wjStageIndex = wj.stageIndex;
+                gameState.wjStageQuestions = wj.stageQuestions;
+                gameState.wjStageCorrect = wj.stageCorrect;
+            }
+        }
+
         localStorage.setItem(`savedGame_${userId}_${this.currentGame}`, JSON.stringify(gameState));
         console.log('✅ Game state saved:', gameState);
         this.updateHomeNotification();
@@ -518,6 +586,7 @@ class GameManager {
         // Reset game state
         this.currentQuestionIndex = 0;
         this.scores[gameType] = 0;
+        this.lastPersistedScores[gameType] = 0;
         this.isGameActive = false;
 
         // Show toast and restart
@@ -599,12 +668,8 @@ class GameManager {
             }
         }
 
-        // Update game card progress indicators
+        // Update practice mode card since struggling words may have changed
         if (window.gamificationManager) {
-            if (gameType) {
-                window.gamificationManager.updateGameCardProgress(gameType);
-            }
-            // ALSO update practice mode card since struggling words may have changed
             window.gamificationManager.updatePracticeModeCard();
         }
 
@@ -693,11 +758,27 @@ class GameManager {
         this.currentGame = gameState.gameType;
         this.currentQuestionIndex = gameState.currentQuestionIndex;
         this.scores[gameState.gameType] = gameState.score;
+        // Mark as already-persisted so the resumed score isn't double-added to totalPoints
+        this.lastPersistedScores[gameState.gameType] = gameState.score;
         this.shuffledQuestions = gameState.shuffledQuestions;
         this.totalQuestions = gameState.totalQuestions;
         this.gameElapsedMs = gameState.gameElapsedMs || 0;
         this.gameSessionStartAt = Date.now();
         this.isGameActive = true;
+
+        // Word Journey: pre-load internal stage state before performGameSwitch calls loadStage
+        if (gameState.gameType === 'word-journey' && window.wordJourneyGame) {
+            const wj = window.wordJourneyGame;
+            wj.totalCorrect = gameState.wjTotalCorrect || 0;
+            wj.totalScoredQuestions = gameState.wjTotalScoredQuestions || 0;
+            if (gameState.wjStageIndex !== undefined) {
+                wj._resumeState = {
+                    stageIndex: gameState.wjStageIndex,
+                    stageQuestions: gameState.wjStageQuestions,
+                    stageCorrect: gameState.wjStageCorrect || 0,
+                };
+            }
+        }
 
         // Switch to the game
         this.performGameSwitch(gameState.gameType);
@@ -1143,6 +1224,9 @@ class GameManager {
         // Update URL hash
         history.replaceState(null, null, '#');
 
+        // Clear any in-flight confetti burst
+        if (typeof window.confetti?.reset === 'function') window.confetti.reset();
+
         // Reset game state
         this.isGameActive = false;
         this.currentGame = null;
@@ -1271,6 +1355,20 @@ class GameManager {
             });
         }
 
+        // Picture Match game events
+        const pictureMatchAudioEl = document.getElementById('picture-match-audio');
+        if (pictureMatchAudioEl) {
+            pictureMatchAudioEl.addEventListener('click', () => {
+                this.playCurrentQuestionAudio();
+            });
+        }
+        const pictureMatchNextEl = document.getElementById('picture-match-next');
+        if (pictureMatchNextEl) {
+            pictureMatchNextEl.addEventListener('click', () => {
+                this.loadQuestion('picture-match');
+            });
+        }
+
         // Reading game events
         const readingAudioElement = document.getElementById('reading-audio');
         if (readingAudioElement) {
@@ -1358,7 +1456,7 @@ class GameManager {
         });
 
         // Reset game button events for all games (except practice which has exit button)
-        const gameTypes = ['vocab', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'scramble', 'fill-blanks', 'memory'];
+        const gameTypes = ['vocab', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'scramble', 'fill-blanks', 'memory', 'word-journey', 'picture-match'];
         gameTypes.forEach(gameType => {
             const resetBtn = document.getElementById(`${gameType}-reset-btn`);
             if (resetBtn) {
@@ -1488,13 +1586,18 @@ class GameManager {
             difficultyFilteredReading = filteredReading.filter(item => !item.word || item.word.length <= 9);
         }
 
+        const filteredPictureMatch = this.selectedCategories && this.selectedCategories.length > 0
+            ? (gameData['picture-match'] || []).filter(item => this.selectedCategories.includes(item.category))
+            : (gameData['picture-match'] || []);
+
         this.gameData = {
             vocabulary: [...filteredVocabulary],
             grammar: filteredGrammar,
             pronunciation: difficultyFilteredPronunciation,
             listening: difficultyFilteredListening,
             reading: difficultyFilteredReading,
-            abc: gameData.abc || []
+            abc: gameData.abc || [],
+            'picture-match': filteredPictureMatch
         };
 
         console.log('Game data loaded with filtered categories and difficulty:', {
@@ -1633,6 +1736,12 @@ class GameManager {
     }
 
     performGameSwitch(gameType) {
+        // If navigating away from memory mid-flip, unflip pending cards so
+        // flippedCards is empty and the DOM is clean before the next render.
+        if (this.currentGame === 'memory' && gameType !== 'memory' && window.memoryGame) {
+            window.memoryGame.cancelFlipInProgress();
+        }
+
         // Cancel any ongoing speech from previous game
         speechManager.cancelSpeech();
 
@@ -1740,6 +1849,7 @@ class GameManager {
             if (!this.isResuming) {
                 this.currentQuestionIndex = 0;
                 this.scores[gameType] = 0;
+                this.lastPersistedScores[gameType] = 0;
                 this.gameElapsedMs = 0;
                 this.gameSessionStartAt = null; // Reset so we get a fresh start time
 
@@ -1775,9 +1885,9 @@ class GameManager {
                     this.practiceWordsCount = practiceWords.length;
                     this.practiceCycle = 1;
                     this.practiceWordIndex = 0;
-                    // Total questions = words × 2 cycles
-                    this.totalQuestions = practiceWords.length * 2;
-                    console.log(`Practice mode: ${this.practiceWordsCount} words × 2 cycles = ${this.totalQuestions} total`, this.shuffledQuestions);
+                    // Total questions = 1 cycle through all words
+                    this.totalQuestions = practiceWords.length;
+                    console.log(`Practice mode: ${this.practiceWordsCount} words × 1 cycle = ${this.totalQuestions} total`, this.shuffledQuestions);
                 }
             } else if (gameType === 'abc') {
                 // Hide completion message if visible from previous mastery completion
@@ -1909,6 +2019,44 @@ class GameManager {
                     console.log(`Grammar Beginner: ${this.shuffledQuestions.length} questions generated`);
                 } else {
                     console.log(`Resuming grammar beginner with ${this.shuffledQuestions.length} questions at index ${this.currentQuestionIndex}`);
+                }
+            } else if (gameType === 'word-journey') {
+                // Inject GameManager reference into WordJourneyGame
+                if (window.wordJourneyGame) {
+                    window.wordJourneyGame.setGameManager(this);
+                }
+                // Validate resume: saved words must have raw image field (not converted format)
+                const validResume = this.isResuming &&
+                    this.shuffledQuestions?.length > 0 &&
+                    this.currentQuestionIndex < this.shuffledQuestions.length &&
+                    this.shuffledQuestions[0]?.type === 'wj-stage' &&
+                    this.shuffledQuestions[0]?.words?.[0]?.image !== undefined;
+                if (!this.isResuming || !validResume) {
+                    if (this.isResuming && !validResume) {
+                        console.warn('[WordJourney] Invalid saved state, starting fresh');
+                        const userId = localStorage.getItem('currentUser') || 'default';
+                        localStorage.removeItem(`savedGame_${userId}_word-journey`);
+                        this.currentQuestionIndex = 0;
+                        this.scores['word-journey'] = 0;
+                    }
+                    const words = this.getWordJourneyWords();
+                    if (!words || words.length < 3) {
+                        console.error('[WordJourney] Not enough words');
+                        return;
+                    }
+                    this.shuffledQuestions = window.wordJourneyGame.buildStageDescriptors(words);
+                    this.totalQuestions = this.shuffledQuestions.length;
+                    this.currentQuestionIndex = 0;
+                    this.scores['word-journey'] = 0;
+                    console.log(`[WordJourney] ${words.length} words, ${this.totalQuestions} stages`);
+                } else {
+                    // Always sync totalQuestions to shuffledQuestions length to prevent cycle-back bug
+                    this.totalQuestions = this.shuffledQuestions.length;
+                    console.log(`[WordJourney] Resuming at stage ${this.currentQuestionIndex + 1}`);
+                }
+                // Build stage bar dots (always, for both fresh start and resume)
+                if (window.wordJourneyGame) {
+                    window.wordJourneyGame.buildStageBar(this.shuffledQuestions);
                 }
             } else {
                 // Check if game data exists
@@ -2151,7 +2299,7 @@ class GameManager {
                 // Calculate which word and cycle we're on
                 this.practiceWordIndex = this.currentQuestionIndex % this.practiceWordsCount;
                 this.practiceCycle = Math.floor(this.currentQuestionIndex / this.practiceWordsCount) + 1;
-                console.log(`Practice: Word ${this.practiceWordIndex + 1}/${this.practiceWordsCount}, Cycle ${this.practiceCycle}/2`);
+                console.log(`Practice: Word ${this.practiceWordIndex + 1}/${this.practiceWordsCount}`);
             } else {
                 // For other games: cycle back to start if needed
                 if (this.currentQuestionIndex >= this.shuffledQuestions.length) {
@@ -2206,6 +2354,12 @@ class GameManager {
                     break;
                 case 'fill-blanks':
                     window.fillBlanksGame.loadQuestion(question);
+                    break;
+                case 'word-journey':
+                    window.wordJourneyGame.loadStage(question);
+                    break;
+                case 'picture-match':
+                    this.loadPictureMatchQuestion(question);
                     break;
                 default:
                     console.error('Unknown game type:', gameType);
@@ -2472,6 +2626,9 @@ class GameManager {
             }
 
             // Regular game completion logic below
+            // Delete saved game state FIRST so a failed endGame never leaves a stale save
+            this.deleteGameState(gameType);
+
             // Total time: elapsed from saved sessions + current session
             const sessionElapsed = this.gameSessionStartAt ? (Date.now() - this.gameSessionStartAt) : 0;
             const totalGameTimeMs = (this.gameElapsedMs || 0) + sessionElapsed;
@@ -2479,18 +2636,47 @@ class GameManager {
             this.gameSessionStartAt = null;
 
             // Save words shown this session so next session can de-prioritize them
-            this.saveLastSessionWordKeys(gameType);
+            try { this.saveLastSessionWordKeys(gameType); } catch (_) {}
 
-            // Delete saved game state since game is completed
-            this.deleteGameState(gameType);
-
-            // Cap the score to prevent display bugs (e.g., 130%)
-            const maxPossibleScore = this.totalQuestions * 10;
-            const finalScore = Math.min(this.scores[gameType], maxPossibleScore);
-            const percentage = Math.round((finalScore / maxPossibleScore) * 100);
+            // Compute score and percentage
+            let maxPossibleScore, finalScore, percentage;
+            if (gameType === 'word-journey' && window.wordJourneyGame) {
+                const wj = window.wordJourneyGame;
+                finalScore = this.scores[gameType] || 0;
+                const totalQ = wj.totalScoredQuestions || 1;
+                const totalC = wj.totalCorrect || 0;
+                percentage = Math.min(100, Math.round((totalC / totalQ) * 100));
+                maxPossibleScore = Math.max(finalScore, totalQ * 10);
+            } else {
+                // Cap the score to prevent display bugs (e.g., 130%)
+                maxPossibleScore = this.totalQuestions * 10;
+                finalScore = Math.min(this.scores[gameType], maxPossibleScore);
+                percentage = Math.round((finalScore / maxPossibleScore) * 100);
+            }
 
             // Save game score to history for statistics
             this.saveGameScoreToHistory(gameType, percentage);
+
+            // Reconcile totalPoints: points are already persisted incrementally via updateScore(),
+            // so only add/subtract the delta to account for the score cap applied here.
+            if (window.app?.userProgress) {
+                const alreadyPersisted = this.lastPersistedScores[gameType] || 0;
+                const adjustment = finalScore - alreadyPersisted;
+                if (adjustment !== 0) {
+                    window.app.userProgress.totalPoints = Math.max(0, (window.app.userProgress.totalPoints || 0) + adjustment);
+                }
+                this.lastPersistedScores[gameType] = finalScore;
+                window.app.saveUserProgress();
+            }
+            this.updateTotalScoreDisplay();
+
+            // Award coins for game completion
+            if (this.coinManager) {
+                this.coinManager.awardActivityComplete();
+                if (percentage === 100) {
+                    this.coinManager.awardPerfectGame();
+                }
+            }
 
             // Play victory sound and show celebration
             if (window.audioEffects) {
@@ -2540,7 +2726,7 @@ class GameManager {
                             <span class="score-label">דיוק</span>
                         </div>
                         <div class="score-details">
-                            <p><strong>ניקוד סופי:</strong> ${finalScore}/${this.totalQuestions * 10}</p>
+                            <p><strong>ניקוד סופי:</strong> ${finalScore}/${maxPossibleScore}</p>
                             ${timeText ? `<p class="game-time"><strong>זמן כולל:</strong> ${timeText}</p>` : ''}
                         </div>
                     </div>
@@ -2620,6 +2806,46 @@ class GameManager {
         } catch (error) {
             console.error(`Error restarting ${gameType} game:`, error);
         }
+    }
+
+    getWordJourneyWords() {
+        // gameData.vocabulary is already filtered by selected categories + difficulty
+        // but uses converted format (picture/hebrew). We look up raw objects from
+        // vocabularyBank (which have the image + translation fields the game needs).
+        const rawBank = window.vocabularyBank || [];
+
+        if (this.currentTopicId && window.courseManager) {
+            const topicData = window.courseManager.getTopic(this.currentTopicId);
+            if (topicData?.topic?.words) {
+                const resolved = topicData.topic.words
+                    .map(w => rawBank.find(v => v.word === w))
+                    .filter(Boolean);
+                if (resolved.length >= 3) return resolved.slice(0, 8);
+            }
+        }
+
+        // Use filtered vocab to respect selected categories + difficulty setting,
+        // then resolve each entry back to its raw word object
+        const filteredVocab = this.gameData.vocabulary || [];
+        if (filteredVocab.length === 0 || rawBank.length === 0) return [];
+
+        const scored = filteredVocab
+            .map(v => {
+                const raw = rawBank.find(r => r.word === v.word && r.category === v.category);
+                return raw ? {
+                    word: raw,
+                    mastery: this.progressManager
+                        ? this.progressManager.getWordStats(raw.word, raw.category)?.mastery || 0
+                        : 0
+                } : null;
+            })
+            .filter(Boolean);
+
+        // Shuffle before sorting so equal-mastery words appear in random order each run
+        scored.forEach(s => { s._rnd = Math.random(); });
+        scored.sort((a, b) => a.mastery !== b.mastery ? a.mastery - b.mastery : a._rnd - b._rnd);
+
+        return scored.slice(0, 8).map(s => s.word);
     }
 
     // Exit confirmation methods removed - games now switch directly
@@ -2703,33 +2929,73 @@ class GameManager {
         console.log('Microphone permission indicator updated:', permissionInfo);
     }
 
-    updateScore(gameType) {
+    /**
+     * Update the header score display
+     * @param {string} gameType - Type of game (vocabulary, grammar, memory, etc.)
+     * @param {number} points - Points to add (optional, if null just displays current score)
+     */
+    updateScore(gameType, points = null) {
         try {
-            // Update the header score (unified across all games)
             const headerScoreElement = document.getElementById('current-score');
-            const scoreValue = this.scores[gameType];
+            if (!headerScoreElement) return;
 
-            console.log(`🏆 [SCORE] updateScore("${gameType}") called`);
-            console.log(`🏆 [SCORE] scores object:`, JSON.stringify(this.scores));
-            console.log(`🏆 [SCORE] score value for ${gameType}: ${scoreValue} (type: ${typeof scoreValue})`);
+            // Get current game score
+            const currentGameScore = this.scores[gameType] || 0;
 
-            if (headerScoreElement) {
-                // Hide score for practice mode (just tracks mastery, no points)
-                if (gameType === 'practice') {
-                    headerScoreElement.style.display = 'none';
-                } else {
-                    headerScoreElement.style.display = '';
-                    headerScoreElement.textContent = scoreValue;
-                    console.log(`🏆 [SCORE] Updated DOM element to: "${headerScoreElement.textContent}"`);
-                }
-            } else {
-                console.error(`🏆 [SCORE] Header score element not found`);
+            // Get total accumulated score across all games
+            const totalScore = Object.values(this.scores).reduce((sum, score) => sum + (score || 0), 0);
+
+            // For practice mode, only show current progress (no points-based scoring)
+            if (gameType === 'practice') {
+                headerScoreElement.style.display = 'none';
+                console.log(`🏆 [SCORE] Practice mode: score hidden`);
+                return;
             }
 
-            console.log(`🏆 [SCORE] Updated ${gameType} score to: ${scoreValue}`);
+            // If points were passed, add them to the game score and update display
+            if (points !== null && points !== undefined) {
+                const newTotal = currentGameScore + points;
+                this.scores[gameType] = newTotal;
+                this.updateTotalScoreDisplay(); // Update total score display
+                console.log(`🏆 [SCORE] Added ${points} points to ${gameType}: ${currentGameScore} + ${points} = ${newTotal}`);
+            }
+
+            // Show the current game's live score (restore display in case practice mode hid it)
+            headerScoreElement.style.display = '';
+            headerScoreElement.textContent = currentGameScore;
+
+            // Persist earned points immediately so stats/settings pages stay in sync
+            if (window.app?.userProgress) {
+                const prev = this.lastPersistedScores[gameType] || 0;
+                const curr = this.scores[gameType] || 0;
+                const delta = curr - prev;
+                if (delta > 0) {
+                    window.app.userProgress.totalPoints = (window.app.userProgress.totalPoints || 0) + delta;
+                    this.lastPersistedScores[gameType] = curr;
+                    window.app.saveUserProgress();
+                }
+            }
+
+            console.log(`🏆 [SCORE] Updated ${gameType} score: ${currentGameScore}, Total: ${totalScore}`);
         } catch (error) {
-            console.error(`🏆 [SCORE] Error updating score for ${gameType}:`, error);
+            console.error(`🏆 [SCORE] Error updating score:`, error);
         }
+    }
+
+    /**
+     * Update the total score display (all games combined)
+     */
+    updateTotalScoreDisplay() {
+        const headerScoreElement = document.getElementById('current-score');
+        if (!headerScoreElement) return;
+
+        // Prefer the persisted all-time total; fall back to session sum
+        const persistedTotal = window.app?.userProgress?.totalPoints;
+        const sessionTotal = Object.values(this.scores).reduce((sum, score) => sum + (score || 0), 0);
+        const totalScore = (typeof persistedTotal === 'number') ? persistedTotal : sessionTotal;
+        headerScoreElement.style.display = '';
+        headerScoreElement.textContent = totalScore;
+        console.log(`🏆 [SCORE] Total accumulated score: ${totalScore}`);
     }
 
     updateProgress(gameType = this.currentGame) {
@@ -2760,14 +3026,19 @@ class GameManager {
                 wordCounter.textContent = `שאלה ${this.practiceWordIndex + 1} מתוך ${this.practiceWordsCount}`;
             }
             if (cycleCounter) {
-                cycleCounter.textContent = `סיבוב ${this.practiceCycle} מתוך 2`;
+                cycleCounter.style.display = 'none';
             }
         } else {
             // Update question counter for non-practice games
             const currentQ = document.getElementById(`${elementPrefix}-current-q`);
             const totalQ = document.getElementById(`${elementPrefix}-total-q`);
             if (currentQ) currentQ.textContent = this.currentQuestionIndex + 1;
-            if (totalQ) totalQ.textContent = this.totalQuestions;
+            if (totalQ) {
+                // Word-journey has exactly 5 stages; use shuffledQuestions.length to avoid stale totalQuestions
+                totalQ.textContent = gameType === 'word-journey'
+                    ? (this.shuffledQuestions?.length || this.totalQuestions)
+                    : this.totalQuestions;
+            }
         }
 
         // Hide next button on last question

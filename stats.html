@@ -9,401 +9,438 @@
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* ===== Container & Header ===== */
         .stats-container {
-            max-width: 1400px;
+            max-width: 1200px;
             margin: 0 auto;
             padding: 40px 20px;
         }
 
         .stats-header {
             text-align: center;
-            margin-bottom: 40px;
+            margin-bottom: 32px;
             background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
+            padding: 28px 30px;
             border-radius: 20px;
             box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
         }
 
         .stats-header h1 {
-            font-size: 2.8rem;
+            font-size: 2.4rem;
             color: #4a5568;
-            margin-bottom: 10px;
+            margin-bottom: 6px;
         }
 
-        .stats-header h1 i {
-            color: #667eea;
-            margin-left: 15px;
-        }
+        .stats-header h1 i { color: #667eea; margin-left: 12px; }
 
+        /* ===== User selector pills ===== */
         .user-tabs {
             display: flex;
-            gap: 15px;
+            gap: 12px;
             justify-content: center;
-            margin-bottom: 40px;
+            margin-bottom: 32px;
             flex-wrap: wrap;
         }
 
+        .user-tab-wrapper { display: flex; }
+
         .user-tab {
-            padding: 20px 40px;
-            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
-            backdrop-filter: blur(10px);
-            border: 3px solid rgba(255, 255, 255, 0.4);
+            padding: 16px 36px;
+            background: linear-gradient(135deg, rgba(102,126,234,0.15) 0%, rgba(118,75,162,0.15) 100%);
+            border: 2px solid rgba(255,255,255,0.4);
             border-radius: 50px;
-            font-size: 1.4rem;
+            font-size: 1.3rem;
             font-weight: 800;
             color: #4a5568;
             cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
         }
 
-        .user-tab:hover {
-            transform: translateY(-4px) scale(1.05);
-            box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
-        }
+        .user-tab:hover { transform: translateY(-3px) scale(1.04); box-shadow: 0 8px 24px rgba(102,126,234,0.35); }
 
         .user-tab.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
             border-color: #fff;
-            box-shadow: 0 8px 30px rgba(102, 126, 234, 0.6);
-            transform: translateY(-4px) scale(1.08);
+            box-shadow: 0 8px 28px rgba(102,126,234,0.55);
+            transform: translateY(-3px) scale(1.06);
         }
 
-        .user-stats-content {
-            display: none;
+        .user-stats-content { display: none; }
+        .user-stats-content.active { display: block; animation: fadeIn 0.4s ease; }
+
+        /* ===== Content sub-tabs ===== */
+        .content-tabs {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 24px;
+            background: rgba(255,255,255,0.85);
+            padding: 8px;
+            border-radius: 16px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+            flex-wrap: wrap;
         }
 
-        .user-stats-content.active {
-            display: block;
-            animation: fadeIn 0.5s ease;
+        .content-tab {
+            flex: 1;
+            min-width: 100px;
+            padding: 12px 16px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 700;
+            color: #718096;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            white-space: nowrap;
         }
 
-        .stats-overview {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 25px;
-            margin-bottom: 40px;
-        }
+        .content-tab:hover:not(:disabled) { background: rgba(102,126,234,0.1); color: #667eea; }
 
-        .stat-card {
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.95) 0%, rgba(255, 255, 255, 0.9) 100%);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            text-align: center;
-            transition: all 0.3s ease;
-        }
-
-        .stat-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.15);
-        }
-
-        .stat-card i {
-            font-size: 3rem;
-            margin-bottom: 15px;
+        .content-tab.active {
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            color: white;
+            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
         }
 
-        .stat-card h3 {
-            font-size: 1.2rem;
-            color: #4a5568;
-            margin-bottom: 10px;
+        .content-tab.disabled, .content-tab:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
         }
 
-        .stat-card .stat-value {
-            font-size: 2.5rem;
+        .content-panel { display: none; }
+        .content-panel.active { display: block; animation: fadeIn 0.3s ease; }
+
+        /* ===== Hero card ===== */
+        .hero-card {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 20px;
+            padding: 24px 28px;
+            margin-bottom: 24px;
+            color: white;
+            box-shadow: 0 8px 28px rgba(102,126,234,0.4);
+        }
+
+        .hero-avatar {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.25);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
             font-weight: 800;
+            border: 3px solid rgba(255,255,255,0.5);
+            flex-shrink: 0;
+        }
+
+        .hero-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 4px;
+        }
+
+        .hero-streak {
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        .hero-streak-zero {
+            font-size: 1rem;
+            opacity: 0.75;
+        }
+
+        /* ===== Metric tiles ===== */
+        .metric-tiles {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        .metric-tile {
+            background: rgba(255,255,255,0.95);
+            border-radius: 16px;
+            padding: 20px 16px;
+            text-align: center;
+            box-shadow: 0 6px 20px rgba(0,0,0,0.08);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .metric-tile:hover { transform: translateY(-4px); box-shadow: 0 10px 28px rgba(0,0,0,0.12); }
+
+        .metric-tile i {
+            font-size: 1.8rem;
+            margin-bottom: 10px;
+            display: block;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
         }
 
+        .metric-tile.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .metric-tile.primary i { background: none; -webkit-text-fill-color: rgba(255,255,255,0.9); }
+        .metric-tile.primary .metric-value {
+            background: none;
+            -webkit-background-clip: unset;
+            background-clip: unset;
+            -webkit-text-fill-color: white;
+            color: white;
+        }
+        .metric-tile.primary .metric-label { color: rgba(255,255,255,0.85); }
+
+        .metric-tile.green i { background: linear-gradient(135deg,#10b981,#059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .metric-tile.green .metric-value { background: linear-gradient(135deg,#10b981,#059669); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        .metric-tile.orange i { background: linear-gradient(135deg,#f97316,#ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        .metric-tile.orange .metric-value { background: linear-gradient(135deg,#f97316,#ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+
+        .metric-value {
+            font-size: 2.2rem;
+            font-weight: 800;
+            line-height: 1.1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .metric-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: #718096;
+            margin-top: 6px;
+            line-height: 1.3;
+        }
+
+        .metric-sub { font-size: 0.75rem; color: #a0aec0; }
+
+        /* ===== Panel score banner (games tab) ===== */
+        .panel-score-banner {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 14px;
+            padding: 16px 24px;
+            margin-bottom: 20px;
+            font-size: 1.15rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        /* ===== Tables ===== */
         .games-stats-table {
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
+            background: rgba(255,255,255,0.95);
+            padding: 24px;
             border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            margin-bottom: 30px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
         }
 
         .games-stats-table h2 {
-            font-size: 2rem;
+            font-size: 1.6rem;
             color: #667eea;
-            margin-bottom: 25px;
+            margin-bottom: 20px;
             text-align: center;
-            padding-bottom: 15px;
-            border-bottom: 3px solid #e2e8f0;
+            padding-bottom: 12px;
+            border-bottom: 2px solid #e2e8f0;
         }
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .words-section-title {
+            font-size: 1.1rem;
+            font-weight: 700;
+            margin: 0 0 14px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
+        table { width: 100%; border-collapse: collapse; }
+
+        thead { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; }
 
         thead th {
-            padding: 20px;
-            font-size: 1.2rem;
+            padding: 14px 16px;
+            font-size: 1rem;
             font-weight: 700;
             text-align: center;
         }
 
-        thead th:first-child {
-            border-radius: 15px 0 0 0;
+        thead th:first-child { border-radius: 12px 0 0 0; }
+        thead th:last-child { border-radius: 0 12px 0 0; }
+
+        tbody tr { border-bottom: 1px solid #e2e8f0; transition: background 0.2s ease; }
+        tbody tr:hover { background: rgba(102,126,234,0.07); }
+        tbody tr:last-child { border-bottom: none; }
+
+        tbody td { padding: 14px 16px; text-align: center; font-size: 1rem; color: #4a5568; }
+        tbody td.game-name { font-weight: 700; text-align: right; font-size: 1.1rem; }
+        tbody td.game-icon { font-size: 1.6rem; }
+        tbody td.score { font-weight: 800; font-size: 1.3rem; }
+        tbody td.top-score { background: linear-gradient(135deg,#FFD700,#FFA500); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+        tbody td.average-score { color: #667eea; }
+        tbody td.memory-stars { letter-spacing: 3px; color: #f59e0b; font-size: 1.1rem; }
+
+        .mastery-bar-row { display: flex; align-items: center; gap: 8px; }
+        .mastery-bar-track { flex: 1; background: #e5e7eb; border-radius: 8px; height: 14px; overflow: hidden; min-width: 50px; }
+        .mastery-bar-fill { height: 100%; border-radius: 8px; }
+        .mastery-pct { font-weight: 600; font-size: 0.9rem; min-width: 38px; }
+
+        /* ===== Word mastery overview ===== */
+        .mastery-overview {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 14px;
+            margin-bottom: 24px;
         }
 
-        thead th:last-child {
-            border-radius: 0 15px 0 0;
-        }
-
-        tbody tr {
-            border-bottom: 2px solid #e2e8f0;
-            transition: all 0.3s ease;
-        }
-
-        tbody tr:hover {
-            background: rgba(102, 126, 234, 0.1);
-            transform: scale(1.02);
-        }
-
-        tbody tr:last-child {
-            border-bottom: none;
-        }
-
-        tbody td {
-            padding: 20px;
+        .mastery-tile {
+            background: rgba(255,255,255,0.95);
+            border-radius: 14px;
+            padding: 20px 14px;
             text-align: center;
-            font-size: 1.1rem;
-            color: #4a5568;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.08);
         }
 
-        tbody td.game-name {
+        .mastery-count { font-size: 2.4rem; font-weight: 800; line-height: 1; margin-bottom: 6px; }
+        .mastery-label { font-size: 0.9rem; font-weight: 600; color: #718096; }
+
+        .mastery-tile.struggling .mastery-count { color: #f59e0b; }
+        .mastery-tile.learning .mastery-count { color: #3b82f6; }
+        .mastery-tile.mastered .mastery-count { color: #10b981; }
+        .mastery-tile.total-words .mastery-count { color: #667eea; }
+
+        /* ===== Delete zone ===== */
+        .delete-zone {
+            margin-top: 32px;
+            background: rgba(255,255,255,0.9);
+            border: 2px dashed #fca5a5;
+            border-radius: 16px;
+            padding: 24px;
+            text-align: center;
+        }
+
+        .delete-zone-header {
+            font-size: 1rem;
             font-weight: 700;
-            text-align: right;
-            font-size: 1.3rem;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            margin-bottom: 10px;
         }
 
-        tbody td.game-icon {
-            font-size: 2rem;
+        .delete-zone-desc {
+            color: #6b7280;
+            font-size: 0.95rem;
+            margin-bottom: 16px;
+            line-height: 1.5;
         }
 
-        tbody td.score {
-            font-weight: 800;
-            font-size: 1.5rem;
-        }
-
-        tbody td.top-score {
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
-        }
-
-        tbody td.average-score {
-            color: #667eea;
-        }
-
-        .back-link {
+        .delete-user-btn {
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            color: white;
+            border: none;
+            border-radius: 50px;
+            padding: 13px 28px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 14px rgba(239,68,68,0.35);
             display: inline-flex;
             align-items: center;
-            gap: 10px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 30px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 700;
-            font-size: 1.1rem;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-            margin-bottom: 30px;
-            display: inline-block;
+            gap: 8px;
         }
 
-        .back-link:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.6);
+        .delete-user-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(239,68,68,0.5);
         }
 
-        .back-link i {
-            font-size: 1.2rem;
-        }
-
+        /* ===== No data state ===== */
         .no-data {
             text-align: center;
             padding: 60px 20px;
             color: #718096;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
         }
 
-        .no-data i {
-            font-size: 4rem;
-            margin-bottom: 20px;
-            opacity: 0.5;
+        .no-data i { font-size: 3.5rem; display: block; margin-bottom: 16px; opacity: 0.4; }
+
+        /* ===== Hall of Fame tab ===== */
+        .user-tab.hof-tab {
+            background: linear-gradient(135deg, rgba(245,158,11,0.15) 0%, rgba(217,119,6,0.15) 100%);
+            border-color: rgba(245,158,11,0.35);
+            color: #92400e;
         }
 
+        .user-tab.hof-tab:hover {
+            transform: translateY(-3px) scale(1.04);
+            box-shadow: 0 8px 24px rgba(245,158,11,0.4);
+        }
+
+        .user-tab.hof-tab.active {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+            border-color: #fff;
+            box-shadow: 0 8px 28px rgba(245,158,11,0.55);
+            transform: translateY(-3px) scale(1.06);
+        }
+
+        /* ===== Animation ===== */
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(14px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
-        /* ========== Mobile Responsive ========== */
+        /* ===== Responsive ===== */
+        @media (max-width: 900px) {
+            .metric-tiles { grid-template-columns: repeat(3, 1fr); }
+            .metric-tile:first-child { grid-column: 1 / -1; }
+        }
+
         @media (max-width: 768px) {
-            html {
-                font-size: 16px; /* Prevent iOS zoom */
-            }
-
-            .stats-container {
-                padding: 20px 15px;
-            }
-
-            .stats-header {
-                padding: 25px 20px;
-            }
-
-            .stats-header h1 {
-                font-size: 1.8rem;
-            }
-
-            .back-link {
-                padding: 12px 20px;
-                font-size: 1rem;
-                min-height: 48px; /* Touch-friendly */
-            }
-
-            .user-tabs {
-                gap: 10px;
-                margin-bottom: 25px;
-            }
-
-            .user-tab {
-                padding: 15px 30px;
-                font-size: 1.2rem;
-                min-height: 48px; /* Touch-friendly */
-            }
-
-            .stats-overview {
-                grid-template-columns: 1fr;
-                gap: 20px;
-            }
-
-            .stat-card {
-                padding: 25px;
-            }
-
-            .stat-card i {
-                font-size: 2.5rem;
-            }
-
-            .stat-card .stat-value {
-                font-size: 2rem;
-            }
-
-            .games-stats-table {
-                padding: 25px 20px;
-                overflow-x: auto; /* Allow horizontal scroll for table */
-            }
-
-            .games-stats-table h2 {
-                font-size: 1.5rem;
-            }
-
-            table {
-                font-size: 0.9rem;
-            }
-
-            thead th {
-                padding: 15px 10px;
-                font-size: 0.95rem;
-            }
-
-            tbody td {
-                padding: 15px 10px;
-            }
-
-            /* Make table scrollable on small screens */
-            .games-stats-table {
-                -webkit-overflow-scrolling: touch;
-            }
+            html { font-size: 16px; }
+            .stats-container { padding: 20px 12px; }
+            .stats-header { padding: 20px; }
+            .stats-header h1 { font-size: 1.7rem; }
+            .user-tab { padding: 13px 26px; font-size: 1.1rem; }
+            .metric-tiles { grid-template-columns: repeat(2, 1fr); }
+            .metric-tile:first-child { grid-column: 1 / -1; }
+            .mastery-overview { grid-template-columns: repeat(2, 1fr); }
+            .content-tab { font-size: 0.9rem; padding: 10px 12px; }
         }
 
         @media (max-width: 480px) {
-            .stats-container {
-                padding: 15px 10px;
-            }
-
-            .stats-header {
-                padding: 20px 15px;
-            }
-
-            .stats-header h1 {
-                font-size: 1.5rem;
-            }
-
-            .user-tab {
-                padding: 12px 24px;
-                font-size: 1.1rem;
-            }
-
-            .stat-card {
-                padding: 20px;
-            }
-
-            .stat-card i {
-                font-size: 2rem;
-            }
-
-            .stat-card h3 {
-                font-size: 1rem;
-            }
-
-            .stat-card .stat-value {
-                font-size: 1.8rem;
-            }
-
-            .games-stats-table {
-                padding: 20px 15px;
-            }
-
-            .games-stats-table h2 {
-                font-size: 1.3rem;
-            }
-
-            table {
-                font-size: 0.85rem;
-            }
-
-            thead th {
-                padding: 12px 8px;
-                font-size: 0.85rem;
-            }
-
-            tbody td {
-                padding: 12px 8px;
-            }
-
-            .back-link {
-                padding: 10px 18px;
-                font-size: 0.95rem;
-            }
+            .stats-container { padding: 12px 8px; }
+            .hero-card { padding: 18px; gap: 14px; }
+            .hero-name { font-size: 1.4rem; }
+            .hero-avatar { width: 56px; height: 56px; font-size: 1.5rem; }
+            .metric-tiles { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+            .metric-value { font-size: 1.8rem; }
+            .content-tabs { gap: 6px; padding: 6px; }
+            .content-tab span { display: none; }
+            tbody td { padding: 10px 8px; font-size: 0.9rem; }
+            .games-stats-table { padding: 16px 12px; }
         }
-
     </style>
 </head>
 <body>
@@ -426,15 +463,15 @@
 
     <script type="module" src="utils/consoleLogger.js"></script>
     <script src="auth.js?v=1"></script>
-    <script src="settings.js?t=1775088000"></script>
-    <script src="stats.js"></script>
+    <script src="settings.js?t=1775600000"></script>
+    <script src="stats.js?t=1741600003"></script>
     <script type="module">
-        import { initTopHeader } from './components/top-header.js?t=1774902001';
+        import { initTopHeader } from './components/top-header.js?t=1741340001';
         initTopHeader({ activePage: 'stats' });
     </script>
-    <script type="module" src="data/vocabularyBank.js?t=1774896000"></script>
+    <script type="module" src="data/vocabularyBank.js?t=1775600000"></script>
     <script type="module" src="components/practice-indicator.js?t=1774896000"></script>
-    <script type="module" src="components/header-score.js?t=1774899000"></script>
+    <script type="module" src="components/header-score.js?t=1741340001"></script>
     <script>
         // Password modal helper function
         function showPasswordModal(title = 'אישור פעולה') {

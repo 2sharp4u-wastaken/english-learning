@@ -21,5 +21,13 @@ export const schoolWords = [
     { word: "Classroom", translation: "כיתה", category: "school", image: "🏛️", imageUrl: "img/icons/school/classroom.png" },
     { word: "Homework", translation: "שיעורי בית", category: "school", image: "📝" },
     { word: "Test", translation: "מבחן", category: "school", image: "📄" },
-    { word: "Grade", translation: "צִיוּן", category: "school", image: "📊" }
+    { word: "Grade", translation: "צִיוּן", category: "school", image: "📊" },
+    { word: "Microscope", translation: "מיקרוסקופ", category: "school", image: "🔬" },
+    { word: "Telescope", translation: "טלסקופ", category: "school", image: "🔭" },
+    { word: "Compass", translation: "מצפן", category: "school", image: "🧭" },
+    { word: "Magnifying glass", translation: "זכוכית מגדלת", category: "school", image: "🔎" },
+    { word: "Test tube", translation: "מבחנה", category: "school", image: "🧪" },
+    { word: "Triangle ruler", translation: "סרגל משולש", category: "school", image: "📐" },
+    { word: "Paperclip", translation: "מהדק", category: "school", image: "📎" },
+    { word: "Pushpin", translation: "סיכת אצבע", category: "school", image: "📌" }
 ];

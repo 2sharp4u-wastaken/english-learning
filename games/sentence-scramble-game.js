@@ -9,6 +9,13 @@ export class SentenceScrambleGame {
         this.availableWords = [];   // Words still in the word bank
         this.isAnswerChecked = false;
 
+        // Drag state
+        this._dragSrcIndex = null;
+        this._dragMoved = false;
+        this._touchSrcIndex = null;
+        this._touchDestIndex = null;
+        this._touchMoved = false;
+
         console.log('[SentenceScramble] Initialized');
     }
 
@@ -99,6 +106,7 @@ export class SentenceScrambleGame {
     selectWord(word, originalIndex, buttonElement) {
         if (this.isAnswerChecked) return;
 
+        this.speakSentence(word);
         buttonElement.classList.add('used');
         buttonElement.disabled = true;
         this.selectedWords.push({ word, originalIndex });
@@ -116,6 +124,7 @@ export class SentenceScrambleGame {
      * Handle word deselection from answer zone (move back to word bank)
      */
     deselectWord(word, selectedIndex) {
+        this.speakSentence(word);
         if (this.isAnswerChecked) return;
 
         const wordBank = document.getElementById('scramble-word-bank');
@@ -141,7 +150,7 @@ export class SentenceScrambleGame {
     }
 
     /**
-     * Render the answer zone with selected words
+     * Render the answer zone with selected words (draggable for reordering)
      */
     renderAnswerZone() {
         const answerZone = document.getElementById('scramble-answer-zone');
@@ -151,16 +160,124 @@ export class SentenceScrambleGame {
 
         if (this.selectedWords.length === 0) {
             answerZone.innerHTML = '<div class="answer-placeholder">הקלק על מילה כדי להוסיף אותה</div>';
+            this._updatePlayBtn();
             return;
         }
+
+        this._updatePlayBtn();
 
         this.selectedWords.forEach((item, index) => {
             const wordChip = document.createElement('button');
             wordChip.className = 'scramble-answer-chip';
             wordChip.textContent = item.word;
             wordChip.title = 'לחץ להסרה';
-            wordChip.addEventListener('click', () => this.deselectWord(item.word, index));
+            wordChip.draggable = true;
+            wordChip.dataset.index = index;
+
+            wordChip.addEventListener('click', () => {
+                if (!this._dragMoved) this.deselectWord(item.word, index);
+            });
+
+            this._setupDrag(wordChip, index, answerZone);
+            this._setupTouch(wordChip, index, answerZone);
             answerZone.appendChild(wordChip);
+        });
+    }
+
+    _setupDrag(chip, index, answerZone) {
+        chip.addEventListener('dragstart', (e) => {
+            this._dragSrcIndex = index;
+            this._dragMoved = false;
+            chip.classList.add('dragging');
+            e.dataTransfer.effectAllowed = 'move';
+        });
+
+        chip.addEventListener('dragend', () => {
+            chip.classList.remove('dragging');
+            answerZone.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+            setTimeout(() => { this._dragMoved = false; }, 0);
+        });
+
+        chip.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            this._dragMoved = true;
+            e.dataTransfer.dropEffect = 'move';
+            answerZone.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+            if (index !== this._dragSrcIndex) chip.classList.add('drag-over');
+        });
+
+        chip.addEventListener('drop', (e) => {
+            e.preventDefault();
+            const src = this._dragSrcIndex;
+            const dest = index;
+            if (src !== null && src !== dest) {
+                const [moved] = this.selectedWords.splice(src, 1);
+                this.selectedWords.splice(dest, 0, moved);
+                this.renderAnswerZone();
+            }
+        });
+    }
+
+    _setupTouch(chip, index, answerZone) {
+        let ghost = null;
+        let startX, startY;
+
+        chip.addEventListener('touchstart', (e) => {
+            const t = e.touches[0];
+            startX = t.clientX;
+            startY = t.clientY;
+            this._touchSrcIndex = index;
+            this._touchDestIndex = null;
+            this._touchMoved = false;
+        }, { passive: true });
+
+        chip.addEventListener('touchmove', (e) => {
+            const t = e.touches[0];
+            const dx = t.clientX - startX;
+            const dy = t.clientY - startY;
+
+            if (!this._touchMoved && (Math.abs(dx) > 6 || Math.abs(dy) > 6)) {
+                this._touchMoved = true;
+                ghost = chip.cloneNode(true);
+                const rect = chip.getBoundingClientRect();
+                ghost.style.cssText = `position:fixed;opacity:0.8;pointer-events:none;z-index:9999;` +
+                    `width:${rect.width}px;height:${rect.height}px;border-radius:8px;transition:none;`;
+                document.body.appendChild(ghost);
+                chip.style.opacity = '0.3';
+            }
+
+            if (ghost) {
+                e.preventDefault();
+                const rect = ghost.getBoundingClientRect();
+                ghost.style.left = (t.clientX - rect.width / 2) + 'px';
+                ghost.style.top = (t.clientY - rect.height / 2) + 'px';
+                answerZone.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+                const el = document.elementFromPoint(t.clientX, t.clientY);
+                if (el?.classList.contains('scramble-answer-chip') && el !== chip) {
+                    el.classList.add('drag-over');
+                    this._touchDestIndex = parseInt(el.dataset.index);
+                } else {
+                    this._touchDestIndex = null;
+                }
+            }
+        }, { passive: false });
+
+        chip.addEventListener('touchend', () => {
+            if (ghost) {
+                ghost.remove();
+                ghost = null;
+                chip.style.opacity = '';
+            }
+            answerZone.querySelectorAll('.drag-over').forEach(c => c.classList.remove('drag-over'));
+            if (this._touchMoved && this._touchDestIndex !== null && this._touchDestIndex !== this._touchSrcIndex) {
+                const src = this._touchSrcIndex;
+                const dest = this._touchDestIndex;
+                const [moved] = this.selectedWords.splice(src, 1);
+                this.selectedWords.splice(dest, 0, moved);
+                this._touchDestIndex = null;
+                this.renderAnswerZone();
+            }
+            this._touchMoved = false;
         });
     }
 
@@ -208,7 +325,8 @@ export class SentenceScrambleGame {
         window.gameManager.saveGameState();
 
         if (isCorrect) {
-            window.gameManager.scores['scramble'] += 15;
+            window.gameManager.scores['scramble'] += 10;
+            window.gameManager.updateScore('scramble');
             if (typeof confetti === 'function') {
                 confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 } });
             }
@@ -255,9 +373,10 @@ export class SentenceScrambleGame {
             answerZone.innerHTML = '';
             correctWords.forEach((word, index) => {
                 setTimeout(() => {
-                    const chip = document.createElement('span');
+                    const chip = document.createElement('button');
                     chip.className = 'scramble-answer-chip reveal-correct';
                     chip.textContent = word;
+                    chip.addEventListener('click', () => this.speakSentence(word));
                     answerZone.appendChild(chip);
                 }, index * wordDelay);
             });
@@ -267,6 +386,20 @@ export class SentenceScrambleGame {
                 document.getElementById('scramble-next').style.display = 'block';
             }, totalTime);
         }, 500);
+    }
+
+    /**
+     * Play the words currently in the answer zone as a sentence
+     */
+    playCurrentWords() {
+        if (this.selectedWords.length === 0) return;
+        const text = this.selectedWords.map(item => item.word).join(' ');
+        this.speakSentence(text);
+    }
+
+    _updatePlayBtn() {
+        const btn = document.getElementById('scramble-play-btn');
+        if (btn) btn.disabled = this.selectedWords.length === 0;
     }
 
     /**

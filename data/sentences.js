@@ -299,7 +299,7 @@ export const sentences = [
     },
     {
         sentence: "Carrots are orange.",
-        translation: "גזר כתום.",
+        translation: "הגזרים כתומים",
         words: ["Carrots", "are", "orange."],
         blank: { position: 2, options: ["orange", "blue", "green"] },
         theme: "food",

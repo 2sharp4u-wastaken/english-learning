@@ -34,6 +34,7 @@ export const intermediateCourse = {
                     activities: ['vocabulary', 'listening', 'memory', 'scramble'],
                     unlockRequirement: null,
                     certificateId: 'cert-basic-verbs',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 12
                 },
                 {
@@ -45,6 +46,7 @@ export const intermediateCourse = {
                     activities: ['vocabulary', 'listening', 'scramble', 'fill-blanks'],
                     unlockRequirement: { topic: 'basic-verbs', mastery: 0.7 },
                     certificateId: 'cert-daily-actions',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 15
                 }
             ]
@@ -67,6 +69,7 @@ export const intermediateCourse = {
                     activities: ['vocabulary', 'listening', 'memory'],
                     unlockRequirement: { topic: 'daily-actions', mastery: 0.6 },
                     certificateId: 'cert-fruits',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 12
                 },
                 {
@@ -78,6 +81,7 @@ export const intermediateCourse = {
                     activities: ['vocabulary', 'listening', 'memory'],
                     unlockRequirement: { topic: 'fruits', mastery: 0.7 },
                     certificateId: 'cert-vegetables',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 12
                 }
             ]
@@ -100,6 +104,7 @@ export const intermediateCourse = {
                     activities: ['vocabulary', 'listening', 'memory', 'fill-blanks'],
                     unlockRequirement: { topic: 'vegetables', mastery: 0.7 },
                     certificateId: 'cert-home-places',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 12
                 },
                 {
@@ -111,6 +116,7 @@ export const intermediateCourse = {
                     activities: ['vocabulary', 'listening', 'memory', 'scramble'],
                     unlockRequirement: { topic: 'home-places', mastery: 0.7 },
                     certificateId: 'cert-city-places',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 12
                 }
             ]

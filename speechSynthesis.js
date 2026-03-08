@@ -222,12 +222,12 @@ class SpeechManager {
     }
 
     async speak(text, options = {}) {
-        // CHROME BUG WORKAROUND: Calling cancel() corrupts Chrome's speech engine
-        // New approach: Don't cancel - just skip if already speaking
+        // CHROME BUG WORKAROUND: Calling cancel() corrupts Chrome's speech engine.
+        // Instead: allow 1 item to queue so rapid taps feel responsive.
+        // If the queue already has a pending item, skip (prevents unbounded backlog).
         if (!options.allowOverlap) {
-            // If already speaking, just return immediately
-            if (this.synthesis.speaking) {
-                console.log('[Speech] Skipping - already speaking');
+            if (this.synthesis.pending) {
+                console.log('[Speech] Queue full - skipping');
                 return Promise.resolve();
             }
         }
@@ -323,7 +323,7 @@ class SpeechManager {
 
             // Properly stop any ongoing recognition and wait for it to finish
             if (this.isRecording) {
-                console.log('Stopping previous recognition session...');
+                console.log('[Speech] startRecording: stopping previous session first');
                 await this.stopRecognitionProperly();
                 // Additional delay to ensure complete cleanup
                 await new Promise(r => setTimeout(r, 200));
@@ -339,11 +339,14 @@ class SpeechManager {
 
             this.isRecording = true;
             this.currentRecordingReject = reject; // Store reject function for manual stop
+            console.log('[Speech] Recognition starting...');
 
             this.recognition.onresult = (event) => {
+                this.isRecording = false;
                 this.currentRecordingReject = null; // Clear reject function
                 const transcript = event.results[0][0].transcript.toLowerCase().trim();
                 const confidence = event.results[0][0].confidence;
+                console.log(`[Speech] Result received: "${transcript}" (confidence: ${confidence.toFixed(2)})`);
 
                 resolve({
                     transcript,
@@ -352,7 +355,21 @@ class SpeechManager {
             };
 
             this.recognition.onerror = (event) => {
+                console.error(`[Speech] Recognition onerror: "${event.error}" | isRecording=${this.isRecording} | hasReject=${!!this.currentRecordingReject}`);
                 this.isRecording = false;
+
+                if (event.error === 'aborted') {
+                    // Browser aborted the session (e.g. stop() was called, or internal abort).
+                    // We MUST settle the promise so callers don't hang and flags don't get stuck.
+                    const rejectFn = this.currentRecordingReject;
+                    this.currentRecordingReject = null;
+                    if (rejectFn) {
+                        console.warn('[Speech] Aborted — rejecting promise with RECORDING_CANCELLED to unblock caller');
+                        rejectFn(new Error('RECORDING_CANCELLED'));
+                    }
+                    return;
+                }
+
                 this.currentRecordingReject = null; // Clear reject function
 
                 let errorMessage = `Speech recognition error: ${event.error}`;
@@ -365,15 +382,13 @@ class SpeechManager {
                     errorMessage = 'לא נמצא מיקרופון. אנא חבר מיקרופון ונסה שוב.';
                 } else if (event.error === 'network') {
                     errorMessage = 'שגיאת רשת. אנא בדוק את החיבור לאינטרנט.';
-                } else if (event.error === 'aborted') {
-                    // User manually stopped - this is not an error
-                    return;
                 }
 
                 reject(new Error(errorMessage));
             };
 
             this.recognition.onend = () => {
+                console.log(`[Speech] Recognition onend | isRecording=${this.isRecording} | hasReject=${!!this.currentRecordingReject}`);
                 this.isRecording = false;
                 // If there's still a pending reject (meaning user stopped manually), call it
                 if (this.currentRecordingReject) {
@@ -386,6 +401,7 @@ class SpeechManager {
             try {
                 this.recognition.start();
             } catch (error) {
+                console.error('[Speech] recognition.start() threw:', error);
                 this.isRecording = false;
                 this.currentRecordingReject = null;
                 reject(error);
@@ -409,9 +425,29 @@ class SpeechManager {
         console.log('Speech context set to:', gameType);
     }
 
+    // Map numerals the browser may return to their English word equivalents
+    static normalizeSpokenText(text) {
+        const numeralMap = {
+            '0': 'zero', '1': 'one', '2': 'two', '3': 'three', '4': 'four',
+            '5': 'five', '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine',
+            '10': 'ten', '11': 'eleven', '12': 'twelve', '13': 'thirteen',
+            '14': 'fourteen', '15': 'fifteen', '16': 'sixteen', '17': 'seventeen',
+            '18': 'eighteen', '19': 'nineteen', '20': 'twenty', '30': 'thirty',
+            '40': 'forty', '50': 'fifty', '60': 'sixty', '70': 'seventy',
+            '80': 'eighty', '90': 'ninety', '100': 'hundred', '1000': 'thousand',
+        };
+        const trimmed = text.trim();
+        return numeralMap[trimmed] !== undefined ? numeralMap[trimmed] : text;
+    }
+
     comparePronunciation(target, spoken) {
         const targetLower = target.toLowerCase().trim();
-        const spokenLower = spoken.toLowerCase().trim();
+        const rawSpoken = spoken.toLowerCase().trim();
+        // Normalize numerals (e.g. "90" → "ninety") before comparing
+        const spokenLower = SpeechManager.normalizeSpokenText(rawSpoken);
+        if (spokenLower !== rawSpoken) {
+            console.log(`🎤 [COMPARE] Numeral normalized: "${rawSpoken}" → "${spokenLower}"`);
+        }
 
         console.log(`🎤 [COMPARE] Target: "${targetLower}" vs Spoken: "${spokenLower}"`);
 
@@ -538,4 +574,4 @@ const speechManager = new SpeechManager();
 window.speechManager = speechManager; // Make globally accessible for game modules
 
 // Verification log - check this appears in console to confirm new code is loaded
-console.log('%c[Speech Fix v3] Loaded - NO CANCEL, skip if speaking', 'color: cyan; font-weight: bold');
+console.log('%c[Speech Fix v4] Loaded - NO CANCEL, queue 1 pending allowed', 'color: cyan; font-weight: bold');

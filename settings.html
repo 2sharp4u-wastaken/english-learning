@@ -8,43 +8,22 @@
     <meta http-equiv="Expires" content="0">
     <title>הגדרות - English Learning Games</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css?t=1762332862">
+    <link rel="stylesheet" href="styles.css?t=1762332863">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* ========== Password Modal ========== */
         .password-modal {
             display: none;
             position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.7);
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.7);
             z-index: 1000;
             align-items: center;
             justify-content: center;
         }
-
-        .password-modal.show {
-            display: flex;
-        }
-
-        /* Clickable section title for word gallery */
-        .clickable-title {
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: flex;
-            align-items: center;
-        }
-
-        .clickable-title:hover {
-            color: #4facfe;
-            transform: translateX(-5px);
-        }
-
-        .clickable-title:hover i.fa-external-link-alt {
-            opacity: 1 !important;
-        }
+        .password-modal.show { display: flex; }
 
         .password-dialog {
             background: white;
@@ -52,15 +31,9 @@
             border-radius: 20px;
             max-width: 400px;
             width: 90%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
         }
-
-        .password-dialog h3 {
-            margin-bottom: 20px;
-            color: #667eea;
-            font-size: 1.5rem;
-        }
-
+        .password-dialog h3 { margin-bottom: 20px; color: #667eea; font-size: 1.5rem; }
         .password-dialog input {
             width: 100%;
             padding: 15px;
@@ -68,177 +41,126 @@
             border-radius: 10px;
             font-size: 1.1rem;
             margin-bottom: 20px;
+            box-sizing: border-box;
         }
+        .password-dialog input:focus { outline: none; border-color: #667eea; }
+        .password-error { color: #f56565; margin-bottom: 15px; display: none; }
+        .password-error.show { display: block; }
 
-        .password-dialog input:focus {
-            outline: none;
-            border-color: #667eea;
-        }
-
-        .password-error {
-            color: #f56565;
-            margin-bottom: 15px;
-            display: none;
-        }
-
-        .password-error.show {
-            display: block;
-        }
-
-        .protected-section {
-            position: relative;
-            transition: all 0.3s ease;
-        }
-
-        .protected-section.locked {
-            opacity: 0.7;
-            cursor: pointer;
-        }
-
-        .protected-section.locked::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background: rgba(245, 158, 11, 0.05);
-            border-radius: 20px;
-            pointer-events: none;
-        }
-
-        /* Password prompt buttons removed - using top bar unlock button only */
-
-        .protected-section.unlocked {
-            opacity: 1;
-        }
-
+        /* ========== Layout ========== */
         .settings-container {
             max-width: 1400px;
             margin: 0 auto;
             padding: 80px 40px 40px 40px;
         }
 
+        /* ========== Action Bar ========== */
         .settings-action-bar {
             position: sticky;
             top: 70px;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            padding: 20px;
+            padding: 16px 20px;
             border-radius: 15px;
-            margin-bottom: 30px;
-            box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
+            margin-bottom: 16px;
+            box-shadow: 0 4px 20px rgba(102,126,234,0.4);
             z-index: 100;
             display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
-            gap: 15px;
+            gap: 12px;
         }
-
         .settings-action-bar h1 {
             color: white;
-            font-size: 1.8rem;
+            font-size: 1.6rem;
             margin: 0;
             display: flex;
             align-items: center;
             gap: 10px;
         }
-
-        .action-buttons {
-            display: flex;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
+        .action-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
 
         .action-btn {
-            padding: 12px 24px;
+            padding: 10px 20px;
             border: none;
             border-radius: 50px;
-            font-size: 1rem;
+            font-size: 0.95rem;
             font-weight: 600;
             cursor: pointer;
             transition: all 0.3s ease;
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+            font-family: inherit;
+        }
+        .action-btn-back  { background: rgba(255,255,255,0.2); color: white; border: 2px solid rgba(255,255,255,0.3); }
+        .action-btn-back:hover { background: rgba(255,255,255,0.3); transform: translateY(-2px); }
+        .action-btn-save  { background: linear-gradient(135deg,#48bb78,#38a169); color: white; }
+        .action-btn-save:hover  { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(72,187,120,0.4); }
+        .action-btn-reset { background: linear-gradient(135deg,#f59e0b,#d97706); color: white; }
+        .action-btn-reset:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(245,158,11,0.4); }
+        .action-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+        /* ========== Tab Bar ========== */
+        .settings-tabs-bar {
+            display: flex;
+            gap: 4px;
+            background: rgba(255,255,255,0.97);
+            padding: 8px;
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.08);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            overflow-x: auto;
         }
 
-        .action-btn-back {
-            background: rgba(255, 255, 255, 0.2);
+        .stab {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 10px 16px;
+            border: 2px solid transparent;
+            border-radius: 10px;
+            background: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            color: #718096;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            white-space: nowrap;
+            font-family: inherit;
+            position: relative;
+        }
+        .stab:hover { background: rgba(102,126,234,0.08); color: #667eea; }
+        .stab.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             color: white;
-            border: 2px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 4px 12px rgba(102,126,234,0.4);
+        }
+        .stab-lock { font-size: 0.7em; opacity: 0.55; }
+        .stab.active .stab-lock { opacity: 0.8; }
+        .stab-protected:not(.active) { opacity: 0.75; }
+
+        /* ========== Tab Panels ========== */
+        .stab-panel { display: none; }
+        .stab-panel.active {
+            display: block;
+            animation: tabFadeIn 0.18s ease;
+        }
+        @keyframes tabFadeIn {
+            from { opacity: 0; transform: translateY(5px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        .action-btn-back:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateY(-2px);
-        }
-
-        .action-btn-save {
-            background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
-            color: white;
-        }
-
-        .action-btn-save:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(72, 187, 120, 0.4);
-        }
-
-        .action-btn-reset {
-            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
-            color: white;
-        }
-
-        .action-btn-reset:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4);
-        }
-
-        .action-btn-delete {
-            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-            color: white;
-        }
-
-        .action-btn-delete:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
-        }
-
-        .action-btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .settings-header {
-            text-align: center;
-            margin-bottom: 40px;
-            background: rgba(255, 255, 255, 0.95);
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-            display: none;
-        }
-
-        .settings-header h1 {
-            font-size: 2.5rem;
-            color: #4a5568;
-            margin-bottom: 10px;
-        }
-
-        .settings-header h1 i {
-            color: #667eea;
-            margin-left: 15px;
-        }
-
+        /* ========== Settings Section (shared by all tabs) ========== */
         .settings-section {
-            background: rgba(255, 255, 255, 0.95);
+            background: rgba(255,255,255,0.95);
             padding: 30px;
             border-radius: 20px;
-            margin-bottom: 25px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            margin-bottom: 20px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.1);
         }
-
         .settings-section h2 {
             font-size: 1.8rem;
             color: #667eea;
@@ -249,23 +171,17 @@
             align-items: center;
             gap: 12px;
         }
-
-        .settings-section h2 i {
-            font-size: 1.5rem;
-        }
+        .settings-section h2 i { font-size: 1.5rem; }
 
         .setting-item {
             margin-bottom: 25px;
             padding: 15px;
-            background: rgba(102, 126, 234, 0.05);
+            background: rgba(102,126,234,0.05);
             border-radius: 12px;
             transition: all 0.3s ease;
         }
-
-        .setting-item:hover {
-            background: rgba(102, 126, 234, 0.1);
-            transform: translateX(-5px);
-        }
+        .setting-item:last-child { margin-bottom: 0; }
+        .setting-item:hover { background: rgba(102,126,234,0.1); transform: translateX(-5px); }
 
         .setting-label {
             display: block;
@@ -274,20 +190,29 @@
             color: #4a5568;
             margin-bottom: 10px;
         }
-
         .setting-description {
             font-size: 0.9rem;
             color: #718096;
             margin-bottom: 12px;
         }
 
+        /* ========== Clickable section title ========== */
+        .clickable-title {
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+        }
+        .clickable-title:hover { color: #4facfe; transform: translateX(-5px); }
+        .clickable-title:hover i.fa-external-link-alt { opacity: 1 !important; }
+
+        /* ========== Checkbox Grid ========== */
         .checkbox-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
             gap: 12px;
             margin-top: 15px;
         }
-
         .checkbox-item {
             display: flex;
             align-items: center;
@@ -299,35 +224,10 @@
             cursor: pointer;
             transition: all 0.3s ease;
         }
-
-        .checkbox-item:hover {
-            border-color: #667eea;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
-        }
-
-        .checkbox-item input[type="checkbox"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            accent-color: #667eea;
-        }
-
-        .checkbox-item.checked {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
-        .checkbox-item.disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-        }
-
-        .checkbox-item label {
-            cursor: pointer;
-            font-weight: 500;
-            flex: 1;
-        }
-
+        .checkbox-item:hover { border-color: #667eea; box-shadow: 0 2px 8px rgba(102,126,234,0.2); }
+        .checkbox-item input[type="checkbox"] { width: 20px; height: 20px; cursor: pointer; accent-color: #667eea; }
+        .checkbox-item.checked { border-color: #667eea; background: rgba(102,126,234,0.1); }
+        .checkbox-item label { cursor: pointer; font-weight: 500; flex: 1; }
         .category-count {
             background: #667eea;
             color: white;
@@ -337,12 +237,8 @@
             font-weight: 700;
         }
 
-        .slider-container {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-        }
-
+        /* ========== Sliders ========== */
+        .slider-container { display: flex; align-items: center; gap: 15px; }
         .slider {
             flex: 1;
             height: 8px;
@@ -351,489 +247,292 @@
             outline: none;
             -webkit-appearance: none;
         }
-
         .slider::-webkit-slider-thumb {
             -webkit-appearance: none;
-            appearance: none;
-            width: 24px;
-            height: 24px;
+            width: 24px; height: 24px;
             border-radius: 50%;
             background: #667eea;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+            box-shadow: 0 2px 8px rgba(102,126,234,0.3);
         }
-
         .slider::-moz-range-thumb {
-            width: 24px;
-            height: 24px;
+            width: 24px; height: 24px;
             border-radius: 50%;
             background: #667eea;
             cursor: pointer;
-            box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
             border: none;
         }
+        .slider-value { min-width: 60px; text-align: center; font-weight: 700; color: #667eea; font-size: 1.2rem; }
 
-        .slider-value {
-            min-width: 60px;
-            text-align: center;
-            font-weight: 700;
-            color: #667eea;
-            font-size: 1.2rem;
-        }
-
-        .radio-group {
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-        }
-
+        /* ========== Radio ========== */
+        .radio-group { display: flex; flex-direction: column; gap: 10px; }
         .radio-item {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            padding: 12px;
-            background: white;
-            border-radius: 8px;
-            border: 2px solid #e2e8f0;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            display: flex; align-items: center; gap: 10px;
+            padding: 12px; background: white;
+            border-radius: 8px; border: 2px solid #e2e8f0;
+            cursor: pointer; transition: all 0.3s ease;
         }
+        .radio-item:hover { border-color: #667eea; }
+        .radio-item input[type="radio"] { width: 20px; height: 20px; cursor: pointer; accent-color: #667eea; }
+        .radio-item.selected { border-color: #667eea; background: rgba(102,126,234,0.1); }
 
-        .radio-item:hover {
-            border-color: #667eea;
+        /* ========== Toggle Switch ========== */
+        .toggle-switch { position: relative; display: inline-block; width: 60px; height: 34px; }
+        .toggle-switch input { opacity: 0; width: 0; height: 0; }
+        .toggle-slider {
+            position: absolute; cursor: pointer;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background-color: #ccc; transition: .4s; border-radius: 34px;
         }
-
-        .radio-item input[type="radio"] {
-            width: 20px;
-            height: 20px;
-            cursor: pointer;
-            accent-color: #667eea;
+        .toggle-slider:before {
+            position: absolute; content: "";
+            height: 26px; width: 26px;
+            left: 4px; bottom: 4px;
+            background-color: white; transition: .4s; border-radius: 50%;
         }
+        input:checked + .toggle-slider { background-color: #667eea; }
+        input:checked + .toggle-slider:before { transform: translateX(26px); }
 
-        .radio-item.selected {
-            border-color: #667eea;
-            background: rgba(102, 126, 234, 0.1);
-        }
-
+        /* ========== Buttons ========== */
         .button-group {
-            display: flex;
-            gap: 15px;
+            display: flex; gap: 15px;
             justify-content: center;
-            margin-top: 30px;
-            flex-wrap: wrap;
+            margin-top: 30px; flex-wrap: wrap;
         }
-
         .btn {
-            padding: 15px 40px;
-            border: none;
-            border-radius: 50px;
-            font-size: 1.1rem;
-            font-weight: 700;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
+            padding: 15px 40px; border: none;
+            border-radius: 50px; font-size: 1.1rem; font-weight: 700;
+            cursor: pointer; transition: all 0.3s ease;
+            display: inline-flex; align-items: center; gap: 10px;
+            font-family: inherit;
         }
+        .btn-primary { background: linear-gradient(135deg,#667eea,#764ba2); color: white; box-shadow: 0 4px 15px rgba(102,126,234,0.4); }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(102,126,234,0.5); }
+        .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+        .btn-secondary { background: #e2e8f0; color: #4a5568; }
+        .btn-secondary:hover { background: #cbd5e0; transform: translateY(-2px); }
+        .btn-danger { background: linear-gradient(135deg,#f56565,#e53e3e); color: white; box-shadow: 0 4px 15px rgba(245,101,101,0.4); }
+        .btn-danger:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(245,101,101,0.5); }
+        .btn-danger:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
 
-        .btn-primary {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .btn-primary:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.5);
-        }
-
-        .btn-secondary {
-            background: #e2e8f0;
-            color: #4a5568;
-        }
-
-        .btn-secondary:hover {
-            background: #cbd5e0;
-            transform: translateY(-2px);
-        }
-
-        .btn-danger {
-            background: linear-gradient(135deg, #f56565 0%, #e53e3e 100%);
-            color: white;
-            box-shadow: 0 4px 15px rgba(245, 101, 101, 0.4);
-        }
-
-        .btn-danger:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 6px 20px rgba(245, 101, 101, 0.5);
-        }
-
+        /* ========== Warning / Success messages ========== */
         .warning-message {
-            background: rgba(237, 137, 54, 0.1);
-            border: 2px solid #ed8936;
-            border-radius: 12px;
-            padding: 15px;
-            margin-top: 15px;
-            color: #c05621;
-            font-weight: 600;
-            display: none;
+            background: rgba(237,137,54,0.1); border: 2px solid #ed8936;
+            border-radius: 12px; padding: 15px; margin-top: 15px;
+            color: #c05621; font-weight: 600; display: none;
         }
-
-        .warning-message.show {
-            display: block;
-            animation: shake 0.5s ease;
-        }
-
+        .warning-message.show { display: block; animation: shake 0.5s ease; }
         @keyframes shake {
-            0%, 100% { transform: translateX(0); }
+            0%,100% { transform: translateX(0); }
             25% { transform: translateX(-10px); }
             75% { transform: translateX(10px); }
         }
-
         .success-message {
-            background: rgba(72, 187, 120, 0.1);
-            border: 2px solid #48bb78;
-            border-radius: 12px;
-            padding: 20px;
-            margin-top: 20px;
-            color: #2f855a;
-            font-weight: 600;
-            text-align: center;
-            display: none;
+            background: rgba(72,187,120,0.1); border: 2px solid #48bb78;
+            border-radius: 12px; padding: 20px; margin-top: 20px;
+            color: #2f855a; font-weight: 600; text-align: center; display: none;
         }
-
-        .success-message.show {
-            display: block;
-            animation: slideDown 0.5s ease;
-        }
-
+        .success-message.show { display: block; animation: slideDown 0.5s ease; }
         @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-20px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(-20px); }
+            to   { opacity: 1; transform: translateY(0); }
         }
 
-        .toggle-switch {
-            position: relative;
-            display: inline-block;
-            width: 60px;
-            height: 34px;
-        }
-
-        .toggle-switch input {
-            opacity: 0;
-            width: 0;
-            height: 0;
-        }
-
-        .toggle-slider {
-            position: absolute;
-            cursor: pointer;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background-color: #ccc;
-            transition: .4s;
-            border-radius: 34px;
-        }
-
-        .toggle-slider:before {
-            position: absolute;
-            content: "";
-            height: 26px;
-            width: 26px;
-            left: 4px;
-            bottom: 4px;
-            background-color: white;
-            transition: .4s;
-            border-radius: 50%;
-        }
-
-        input:checked + .toggle-slider {
-            background-color: #667eea;
-        }
-
-        input:checked + .toggle-slider:before {
-            transform: translateX(26px);
-        }
-
-        .back-link {
-            display: inline-flex;
-            align-items: center;
-            gap: 10px;
-            color: white;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 1.1rem;
-            margin-bottom: 20px;
-            padding: 10px 20px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 50px;
-            transition: all 0.3s ease;
-        }
-
-        .back-link:hover {
-            background: rgba(255, 255, 255, 0.3);
-            transform: translateX(5px);
-        }
-
-        .theme-preview {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-            gap: 15px;
-            margin-top: 15px;
-        }
-
-        .theme-option {
-            padding: 20px;
-            border-radius: 12px;
-            border: 3px solid transparent;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            text-align: center;
-            font-weight: 600;
-        }
-
-        .theme-option:hover {
-            transform: scale(1.05);
-        }
-
-        .theme-option.selected {
-            border-color: #667eea;
-            box-shadow: 0 0 20px rgba(102, 126, 234, 0.4);
-        }
-
-        .theme-classic {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .theme-modern {
-            background: linear-gradient(145deg, rgba(255, 255, 255, 0.25) 0%, rgba(255, 255, 255, 0.15) 100%);
-            backdrop-filter: blur(10px);
-            border: 2px solid rgba(255, 255, 255, 0.3);
-            color: #333;
-        }
-
-        /* ========== User Table Styles ========== */
-        .user-table-container {
-            overflow-x: auto;
-            margin-top: 15px;
-            border-radius: 12px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-        }
-
-        .user-table {
-            width: 100%;
-            border-collapse: collapse;
-            background: white;
-        }
-
-        .user-table thead {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-
-        .user-table th {
-            padding: 15px;
-            text-align: right;
-            font-weight: 600;
-            font-size: 1rem;
-        }
-
-        .user-table td {
-            padding: 12px 15px;
-            border-bottom: 1px solid #e2e8f0;
-            color: #2d3748;
-            font-weight: 500;
-        }
-
-        .user-table tbody tr:hover {
-            background: rgba(102, 126, 234, 0.05);
-        }
-
-        .user-table tbody tr:last-child td {
-            border-bottom: none;
-        }
-
+        /* ========== User Table ========== */
+        .user-table-container { overflow-x: auto; margin-top: 15px; border-radius: 12px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .user-table { width: 100%; border-collapse: collapse; background: white; }
+        .user-table thead { background: linear-gradient(135deg,#667eea,#764ba2); color: white; }
+        .user-table th { padding: 15px; text-align: right; font-weight: 600; font-size: 1rem; }
+        .user-table td { padding: 12px 15px; border-bottom: 1px solid #e2e8f0; color: #2d3748; font-weight: 500; }
+        .user-table tbody tr:hover { background: rgba(102,126,234,0.05); }
+        .user-table tbody tr:last-child td { border-bottom: none; }
         .user-status-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            padding: 4px 12px;
-            border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 600;
+            display: inline-flex; align-items: center; gap: 5px;
+            padding: 4px 12px; border-radius: 20px; font-size: 0.85rem; font-weight: 600;
         }
-
-        .user-status-badge.has-password {
-            background: rgba(72, 187, 120, 0.1);
-            color: #2f855a;
-        }
-
-        .user-status-badge.no-password {
-            background: rgba(245, 158, 11, 0.1);
-            color: #c05621;
-        }
-
+        .user-status-badge.has-password { background: rgba(72,187,120,0.1); color: #2f855a; }
+        .user-status-badge.no-password  { background: rgba(245,158,11,0.1);  color: #c05621; }
         .user-action-btn {
-            padding: 6px 12px;
-            border: none;
-            border-radius: 6px;
-            font-size: 0.85rem;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
-            display: inline-flex;
+            padding: 6px 12px; border: none; border-radius: 6px;
+            font-size: 0.85rem; font-weight: 600; cursor: pointer;
+            transition: all 0.3s ease; display: inline-flex; align-items: center; gap: 5px;
+            font-family: inherit;
+        }
+        .user-action-btn.reset         { background: rgba(245,158,11,0.1);  color: #d97706; }
+        .user-action-btn.reset:hover   { background: rgba(245,158,11,0.2); }
+        .user-action-btn.reset-practice       { background: rgba(102,126,234,0.1); color: #667eea; }
+        .user-action-btn.reset-practice:hover { background: rgba(102,126,234,0.2); }
+        .user-action-btn.reset-stats       { background: rgba(16,185,129,0.1);  color: #059669; }
+        .user-action-btn.reset-stats:hover { background: rgba(16,185,129,0.2); }
+        .user-action-btn.delete       { background: rgba(245,101,101,0.1); color: #e53e3e; }
+        .user-action-btn.delete:hover { background: rgba(245,101,101,0.2); }
+
+        /* ========== Word Image Manager ========== */
+        .wim-toolbar {
+            display: flex;
+            justify-content: space-between;
             align-items: center;
-            gap: 5px;
+            flex-wrap: wrap;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        .wim-filters-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+        .wim-select {
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            cursor: pointer;
+            background: white;
+            max-width: 260px;
+        }
+        .wim-search-input {
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            width: 200px;
+        }
+        .wim-select:focus, .wim-search-input:focus { outline: none; border-color: #667eea; }
+        .wim-toolbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+        .wim-override-count { font-size: 0.9rem; color: #718096; display: flex; align-items: center; gap: 6px; }
+
+        .wim-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+            gap: 16px;
+        }
+        .wim-card {
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-radius: 16px;
+            overflow: hidden;
+            transition: all 0.25s ease;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .wim-card:hover {
+            border-color: #a3b1f8;
+            box-shadow: 0 6px 20px rgba(102,126,234,0.15);
+            transform: translateY(-2px);
+        }
+        .wim-card.wim-has-override { border-color: #48bb78; }
+        .wim-card.wim-flash-success {
+            border-color: #48bb78;
+            background: rgba(72,187,120,0.06);
+            animation: wimPulseSuccess 0.9s ease;
+        }
+        .wim-card.wim-flash-reset { animation: wimPulseReset 0.9s ease; }
+        @keyframes wimPulseSuccess {
+            0%   { box-shadow: 0 0 0 0 rgba(72,187,120,0.5); }
+            70%  { box-shadow: 0 0 0 10px rgba(72,187,120,0); }
+            100% { box-shadow: 0 0 0 0 rgba(72,187,120,0); }
+        }
+        @keyframes wimPulseReset {
+            0%   { box-shadow: 0 0 0 0 rgba(245,101,101,0.3); }
+            70%  { box-shadow: 0 0 0 8px rgba(245,101,101,0); }
+            100% { box-shadow: 0 0 0 0 rgba(245,101,101,0); }
         }
 
-        .user-action-btn.reset {
-            background: rgba(245, 158, 11, 0.1);
-            color: #d97706;
+        .wim-preview {
+            position: relative;
+            height: 110px;
+            background: #f7f8fc;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-bottom: 1px solid #f0f0f5;
         }
-
-        .user-action-btn.reset:hover {
-            background: rgba(245, 158, 11, 0.2);
+        .wim-img { max-height: 90px; max-width: 90%; object-fit: contain; border-radius: 8px; }
+        .wim-emoji, .wim-emoji-fb { font-size: 3rem; line-height: 1; display: flex; align-items: center; }
+        .wim-badge-custom {
+            position: absolute; top: 6px; left: 6px;
+            background: #48bb78; color: white;
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 0.6rem;
         }
-
-        .user-action-btn.reset-practice {
-            background: rgba(102, 126, 234, 0.1);
-            color: #667eea;
+        .wim-word-info { padding: 8px 12px 4px; }
+        .wim-word-en  { font-weight: 700; font-size: 1rem; color: #2d3748; }
+        .wim-word-he  { font-size: 0.85rem; color: #718096; }
+        .wim-trans-overridden { color: #38a169; font-weight: 600; }
+        .wim-translation-row { display: flex; align-items: center; gap: 4px; }
+        .wim-edit-trans-btn {
+            background: none; border: none; cursor: pointer;
+            color: #a0aec0; font-size: 0.7rem; padding: 2px 4px;
+            border-radius: 4px; opacity: 0; transition: opacity 0.15s, color 0.15s;
+            flex-shrink: 0; line-height: 1;
         }
-
-        .user-action-btn.reset-practice:hover {
-            background: rgba(102, 126, 234, 0.2);
+        .wim-card:hover .wim-edit-trans-btn { opacity: 1; }
+        .wim-edit-trans-btn:hover { color: #667eea; }
+        .wim-trans-input {
+            flex: 1; padding: 3px 6px; min-width: 0;
+            border: 1.5px solid #667eea; border-radius: 6px;
+            font-size: 0.82rem; font-family: inherit;
         }
-
-        .user-action-btn.reset-stats {
-            background: rgba(16, 185, 129, 0.1);
-            color: #059669;
+        .wim-trans-input:focus { outline: none; }
+        .wim-save-trans-btn { background: #48bb78 !important; color: white !important; padding: 3px 7px; font-size: 0.72rem; flex: none; }
+        .wim-save-trans-btn:hover { background: #38a169 !important; box-shadow: none !important; }
+        .wim-cancel-trans-btn { background: #f7fafc !important; color: #718096 !important; border: 1.5px solid #e2e8f0 !important; padding: 3px 7px; font-size: 0.72rem; flex: none; }
+        .wim-cancel-trans-btn:hover { background: #fed7d7 !important; color: #e53e3e !important; border-color: #fc8181 !important; }
+        .wim-cat-tag  {
+            display: inline-block;
+            background: rgba(102,126,234,0.1); color: #667eea;
+            padding: 2px 8px; border-radius: 10px;
+            font-size: 0.75rem; font-weight: 600; margin-top: 4px;
         }
-
-        .user-action-btn.reset-stats:hover {
-            background: rgba(16, 185, 129, 0.2);
+        .wim-controls { padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 6px; }
+        .wim-url-input {
+            width: 100%; padding: 7px 10px;
+            border: 1.5px solid #e2e8f0; border-radius: 8px;
+            font-size: 0.8rem; font-family: monospace;
+            box-sizing: border-box; transition: border-color 0.2s;
         }
-
-        .user-action-btn.delete {
-            background: rgba(245, 101, 101, 0.1);
-            color: #e53e3e;
+        .wim-url-input:focus { outline: none; border-color: #667eea; }
+        .wim-upload-btn {
+            display: flex; align-items: center; justify-content: center;
+            gap: 6px; padding: 7px;
+            border: 1.5px solid #e2e8f0; border-radius: 8px;
+            font-size: 0.82rem; color: #667eea;
+            cursor: pointer; background: rgba(102,126,234,0.05);
+            transition: all 0.2s; font-weight: 600; font-family: inherit;
         }
-
-        .user-action-btn.delete:hover {
-            background: rgba(245, 101, 101, 0.2);
+        .wim-upload-btn:hover { background: rgba(102,126,234,0.12); border-color: #667eea; }
+        .wim-card-actions { display: flex; gap: 6px; }
+        .wim-btn {
+            flex: 1; padding: 7px 0; border: none; border-radius: 8px;
+            font-size: 0.82rem; font-weight: 600; cursor: pointer;
+            transition: all 0.2s ease; font-family: inherit;
+            display: flex; align-items: center; justify-content: center; gap: 4px;
         }
+        .wim-btn-save { background: linear-gradient(135deg,#667eea,#764ba2); color: white; }
+        .wim-btn-save:hover { box-shadow: 0 3px 10px rgba(102,126,234,0.4); }
+        .wim-btn-reset { background: #f7fafc; color: #718096; border: 1.5px solid #e2e8f0; }
+        .wim-btn-reset:hover { background: #fed7d7; color: #e53e3e; border-color: #fc8181; }
+        .wim-btn-dimmed { opacity: 0.4; }
+        .wim-empty { grid-column: 1/-1; text-align: center; padding: 50px; color: #a0aec0; font-size: 1.1rem; }
 
-        /* ========== Mobile Responsive ========== */
+        /* ========== Mobile ========== */
         @media (max-width: 768px) {
-            html {
-                font-size: 16px; /* Prevent iOS zoom */
-            }
-
-            .settings-container {
-                padding: 70px 15px 20px 15px;
-            }
-
-            .settings-action-bar {
-                padding: 15px;
-                top: 60px;
-            }
-
-            .settings-action-bar h1 {
-                font-size: 1.3rem;
-                width: 100%;
-                justify-content: center;
-            }
-
-            .action-buttons {
-                width: 100%;
-                justify-content: center;
-            }
-
-            .action-btn {
-                padding: 12px 20px;
-                font-size: 0.95rem;
-                min-height: 48px; /* Touch-friendly */
-            }
-
-            .settings-section {
-                padding: 25px 20px;
-            }
-
-            .settings-section h2 {
-                font-size: 1.4rem;
-            }
-
-            .setting-item {
-                flex-direction: column;
-                align-items: flex-start;
-                gap: 15px;
-            }
-
-            .setting-label {
-                width: 100%;
-            }
-
-            .setting-input {
-                width: 100%;
-            }
-
-            .slider-container {
-                width: 100%;
-            }
-
-            .button-group {
-                flex-direction: column;
-                width: 100%;
-            }
-
-            .button-group button {
-                width: 100%;
-            }
-
-            .password-dialog {
-                padding: 30px 20px;
-                max-width: 95%;
-            }
-
-            input[type="text"],
-            input[type="password"] {
-                font-size: 16px !important; /* Prevent iOS zoom */
-            }
+            html { font-size: 16px; }
+            .settings-container { padding: 70px 15px 20px 15px; }
+            .settings-action-bar { padding: 12px 15px; top: 60px; }
+            .settings-action-bar h1 { font-size: 1.2rem; }
+            .action-btn { padding: 10px 16px; font-size: 0.9rem; min-height: 44px; }
+            .settings-tabs-bar { gap: 3px; padding: 6px; }
+            .stab { padding: 8px 12px; font-size: 0.82rem; }
+            .settings-section { padding: 20px 15px; }
+            .wim-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+            .wim-toolbar { flex-direction: column; align-items: flex-start; }
+            .wim-search-input { width: 100%; }
+            .password-dialog { padding: 30px 20px; max-width: 95%; }
+            input[type="text"], input[type="password"] { font-size: 16px !important; }
         }
-
         @media (max-width: 480px) {
-            .settings-container {
-                padding: 70px 10px 15px 10px;
-            }
-
-            .settings-action-bar {
-                top: 60px;
-            }
-
-            .settings-action-bar h1 {
-                font-size: 1.2rem;
-            }
-
-            .action-btn {
-                padding: 10px 16px;
-                font-size: 0.9rem;
-            }
-
-            .settings-section {
-                padding: 20px 15px;
-            }
-
-            .settings-section h2 {
-                font-size: 1.2rem;
-            }
+            .settings-container { padding: 70px 10px 15px 10px; }
+            .stab { padding: 7px 10px; font-size: 0.78rem; }
         }
     </style>
 </head>
@@ -841,14 +540,16 @@
     <!-- Top Navigation Header is injected by components/top-header.js -->
 
     <div class="settings-container">
-        <!-- Settings Action Buttons (beneath top bar) -->
+
+        <!-- ── Action Bar ─────────────────────────────────── -->
         <div class="settings-action-bar">
             <h1>
                 <i class="fas fa-cog"></i>
                 הגדרות
             </h1>
             <div class="action-buttons">
-                <button class="action-btn action-btn-unlock" id="unlock-protected-btn" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);">
+                <button class="action-btn" id="unlock-protected-btn"
+                        style="background:linear-gradient(135deg,#f59e0b,#d97706);">
                     <i class="fas fa-lock"></i>
                     פתח הגדרות מוגנות
                 </button>
@@ -860,274 +561,365 @@
                     <i class="fas fa-undo"></i>
                     אפס הגדרות
                 </button>
-                <button class="action-btn" id="download-logs-btn" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                <button class="action-btn" id="download-logs-btn"
+                        style="background:linear-gradient(135deg,#667eea,#764ba2);">
                     <i class="fas fa-download"></i>
-                    הורד לוגים <span id="log-count-badge" style="background:rgba(255,255,255,0.3);border-radius:10px;padding:1px 7px;font-size:0.8em;"></span>
+                    הורד לוגים
+                    <span id="log-count-badge"
+                          style="background:rgba(255,255,255,0.3);border-radius:10px;padding:1px 7px;font-size:0.8em;"></span>
                 </button>
-                <button class="action-btn" id="clear-logs-btn" style="background: linear-gradient(135deg, #718096 0%, #4a5568 100%);">
+                <button class="action-btn" id="clear-logs-btn"
+                        style="background:linear-gradient(135deg,#718096,#4a5568);">
                     <i class="fas fa-trash"></i>
                     נקה לוגים
                 </button>
             </div>
         </div>
 
-        <!-- User Management -->
-        <div class="settings-section protected-section" data-protected="true">
-            <h2><i class="fas fa-users"></i>ניהול משתמשים</h2>
-
-            <div class="setting-item">
-                <label class="setting-label">משתמשים רשומים</label>
-                <p class="setting-description">נהל משתמשים (נדרשת סיסמת מנהל לפתיחת הגדרות מוגנות)</p>
-
-                <div class="user-table-container">
-                    <table class="user-table" id="user-table">
-                        <thead>
-                            <tr>
-                                <th>שם משתמש</th>
-                                <th>תאריך יצירה</th>
-                                <th>התחברות אחרונה</th>
-                                <th>סטטוס סיסמה</th>
-                                <th>איפוס סיסמה</th>
-                                <th>איפוס תרגול</th>
-                                <th>איפוס סטטיסטיקות</th>
-                                <th>מחיקה</th>
-                            </tr>
-                        </thead>
-                        <tbody id="user-table-body">
-                            <!-- Will be populated by JavaScript -->
-                        </tbody>
-                    </table>
-                </div>
-
-                <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-                    <button class="btn btn-primary" id="add-user-btn" style="display: inline-flex;">
-                        <i class="fas fa-user-plus"></i>
-                        הוסף משתמש
-                    </button>
-                </div>
-            </div>
+        <!-- ── Tab Bar ────────────────────────────────────── -->
+        <div class="settings-tabs-bar" id="settings-tabs-bar">
+            <button class="stab active" data-tab="categories">
+                <i class="fas fa-book"></i>
+                קטגוריות
+            </button>
+            <button class="stab stab-protected" data-tab="game">
+                <i class="fas fa-gamepad"></i>
+                הגדרות משחק
+                <i class="fas fa-lock stab-lock"></i>
+            </button>
+            <button class="stab stab-protected" data-tab="custom-words">
+                <i class="fas fa-magic"></i>
+                מילים מותאמות
+                <i class="fas fa-lock stab-lock"></i>
+            </button>
+            <button class="stab stab-protected" data-tab="word-images">
+                <i class="fas fa-image"></i>
+                תמונות ותרגום
+                <i class="fas fa-lock stab-lock"></i>
+            </button>
+            <button class="stab stab-protected" data-tab="users">
+                <i class="fas fa-users"></i>
+                משתמשים
+                <i class="fas fa-lock stab-lock"></i>
+            </button>
+            <button class="stab stab-protected" data-tab="advanced">
+                <i class="fas fa-cogs"></i>
+                מתקדם
+                <i class="fas fa-lock stab-lock"></i>
+            </button>
         </div>
 
-        <!-- Vocabulary Categories -->
-        <div class="settings-section">
-            <h2 class="clickable-title" onclick="window.location.href='words.html'" title="פתח מילון">
-                <i class="fas fa-book"></i>קטגוריות אוצר מילים
-                <i class="fas fa-external-link-alt" style="font-size: 0.7em; margin-right: 10px; opacity: 0.6;"></i>
-            </h2>
-            <div class="setting-item">
-                <label class="setting-label">בחר קטגוריות <span class="category-count" id="selected-count">0/13</span></label>
-                <p class="setting-description">בחר מאילו קטגוריות תרצה ללמוד מילים. מומלץ לבחור לפחות 5 קטגוריות כדי לשמור על מגוון ולהתחרות בציונים.</p>
-                <p class="setting-description" style="color: #f59e0b; font-weight: 600;">
-                    <i class="fas fa-info-circle"></i>
-                    פחות מ-5 קטגוריות = מצב אימון (ללא ציונים)
-                </p>
+        <!-- ═══════════════════════════════════════════════════
+             TAB: קטגוריות
+        ═══════════════════════════════════════════════════ -->
+        <div class="stab-panel active" id="tab-categories">
+            <div class="settings-section">
+                <h2 class="clickable-title" onclick="window.location.href='words.html'" title="פתח מילון">
+                    <i class="fas fa-book"></i>קטגוריות אוצר מילים
+                    <i class="fas fa-external-link-alt" style="font-size:0.7em;margin-right:10px;opacity:0.6;"></i>
+                </h2>
 
-                <div class="checkbox-grid" id="category-checkboxes">
-                    <!-- Will be populated by JavaScript -->
-                </div>
-
-                <div class="warning-message" id="category-warning">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    בחרת פחות מ-5 קטגוריות - המשחק יהיה במצב אימון (הציונים לא יישמרו).
-                </div>
-            </div>
-        </div>
-
-        <!-- Game Settings -->
-        <div class="settings-section protected-section" data-protected="true">
-            <h2><i class="fas fa-gamepad"></i>הגדרות משחק</h2>
-
-            <div class="setting-item">
-                <label class="setting-label">מספר שאלות למשחק</label>
-                <p class="setting-description">כמה שאלות בכל משחק</p>
-                <div class="slider-container">
-                    <input type="range" min="5" max="20" step="1" value="10" class="slider" id="questions-count">
-                    <span class="slider-value" id="questions-value">10</span>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">כמה פעמים לחץ על המילה</label>
-                <p class="setting-description">מספר הפעמים שצריך ללחוץ על המילה לפני שהתשובות מופיעות</p>
-                <div class="slider-container">
-                    <input type="range" min="1" max="5" step="1" value="3" class="slider" id="click-count">
-                    <span class="slider-value" id="clicks-value">3</span>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">מספר השמעות מותרות</label>
-                <p class="setting-description">כמה פעמים אפשר לשמוע כל מילה</p>
-                <div class="slider-container">
-                    <input type="range" min="3" max="15" step="1" value="8" class="slider" id="audio-plays">
-                    <span class="slider-value" id="plays-value">8</span>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">רמת קושי</label>
-                <p class="setting-description">בחר את רמת הקושי המתאימה לך</p>
-                <div class="radio-group">
-                    <div class="radio-item" data-value="beginner">
-                        <input type="radio" name="difficulty" value="beginner" id="diff-beginner" checked>
-                        <label for="diff-beginner">מתחיל - מילים פשוטות</label>
-                    </div>
-                    <div class="radio-item" data-value="intermediate">
-                        <input type="radio" name="difficulty" value="intermediate" id="diff-intermediate">
-                        <label for="diff-intermediate">בינוני - מילים מגוונות</label>
-                    </div>
-                    <div class="radio-item" data-value="advanced">
-                        <input type="radio" name="difficulty" value="advanced" id="diff-advanced">
-                        <label for="diff-advanced">מתקדם - מילים מאתגרות</label>
+                <div class="setting-item">
+                    <label class="setting-label">
+                        בחר קטגוריות
+                        <span class="category-count" id="selected-count">0/13</span>
+                    </label>
+                    <p class="setting-description">
+                        בחר מאילו קטגוריות תרצה ללמוד מילים. מומלץ לבחור לפחות 5 קטגוריות.
+                    </p>
+                    <p class="setting-description" style="color:#f59e0b;font-weight:600;">
+                        <i class="fas fa-info-circle"></i>
+                        פחות מ-5 קטגוריות = מצב אימון (ללא ציונים)
+                    </p>
+                    <div class="checkbox-grid" id="category-checkboxes"></div>
+                    <div class="warning-message" id="category-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        בחרת פחות מ-5 קטגוריות - המשחק יהיה במצב אימון.
                     </div>
                 </div>
             </div>
         </div>
 
-        <!-- Advanced Settings -->
-        <div class="settings-section protected-section" data-protected="true">
-            <h2><i class="fas fa-cogs"></i>הגדרות מתקדמות</h2>
+        <!-- ═══════════════════════════════════════════════════
+             TAB: הגדרות משחק
+        ═══════════════════════════════════════════════════ -->
+        <div class="stab-panel" id="tab-game">
+            <div class="settings-section">
+                <h2><i class="fas fa-gamepad"></i>הגדרות משחק</h2>
 
-            <div class="setting-item">
-                <label class="setting-label">קונפטי בהצלחה</label>
-                <p class="setting-description">הצג אנימציית קונפטי כשמשיבים נכון</p>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="show-confetti" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">התנהגות יציאה ממשחק</label>
-                <p class="setting-description">בחר מה יקרה כשיוצאים ממשחק באמצע</p>
-                <div class="radio-group" id="exit-behavior-group">
-                    <div class="radio-item" data-value="hybrid">
-                        <input type="radio" name="exitBehavior" value="hybrid" id="exit-hybrid">
-                        <label for="exit-hybrid">
-                            <strong>היברידי (מומלץ)</strong><br>
-                            <small>אישור מהיר בתחילה, שמירה אוטומטית אחרי 3 שאלות</small>
-                        </label>
-                    </div>
-                    <div class="radio-item" data-value="confirmation">
-                        <input type="radio" name="exitBehavior" value="confirmation" id="exit-confirmation">
-                        <label for="exit-confirmation">
-                            <strong>אישור תמיד</strong><br>
-                            <small>הצג חלון אישור עם אפשרות לשמור בכל יציאה</small>
-                        </label>
-                    </div>
-                    <div class="radio-item" data-value="autosave">
-                        <input type="radio" name="exitBehavior" value="autosave" id="exit-autosave">
-                        <label for="exit-autosave">
-                            <strong>שמירה אוטומטית</strong><br>
-                            <small>שמור אוטומטית ללא אישור, הצג הודעה קצרה</small>
-                        </label>
-                    </div>
-                    <div class="radio-item" data-value="smart">
-                        <input type="radio" name="exitBehavior" value="smart" id="exit-smart">
-                        <label for="exit-smart">
-                            <strong>חכם</strong><br>
-                            <small>שאלות 1-3: ללא אישור | 4+: אישור ושמירה | 8+: שמירה אוטומטית</small>
-                        </label>
+                <div class="setting-item">
+                    <label class="setting-label">מספר שאלות למשחק</label>
+                    <p class="setting-description">כמה שאלות בכל משחק</p>
+                    <div class="slider-container">
+                        <input type="range" min="5" max="20" step="1" value="10" class="slider" id="questions-count">
+                        <span class="slider-value" id="questions-value">10</span>
                     </div>
                 </div>
-            </div>
 
-            <div class="setting-item">
-                <label class="setting-label">סף שאלות ליציאה</label>
-                <p class="setting-description">מספר השאלה שבה ההתנהגות משתנה (רלוונטי להיברידי וחכם)</p>
-                <input type="range" id="exit-threshold" min="1" max="9" value="3" class="slider">
-                <div class="slider-value">
-                    <span id="exit-threshold-value">3</span> שאלות
+                <div class="setting-item">
+                    <label class="setting-label">כמה פעמים לחץ על המילה</label>
+                    <p class="setting-description">מספר הפעמים שצריך ללחוץ על המילה לפני שהתשובות מופיעות</p>
+                    <div class="slider-container">
+                        <input type="range" min="1" max="5" step="1" value="3" class="slider" id="click-count">
+                        <span class="slider-value" id="clicks-value">3</span>
+                    </div>
                 </div>
-            </div>
 
-            <div class="setting-item">
-                <label class="setting-label">שמירה אוטומטית של התקדמות</label>
-                <p class="setting-description">שמור משחקים לא גמורים ואפשר המשך מאוחר יותר</p>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="auto-save-progress" checked>
-                    <span class="toggle-slider"></span>
-                </label>
-            </div>
+                <div class="setting-item">
+                    <label class="setting-label">מספר השמעות מותרות</label>
+                    <p class="setting-description">כמה פעמים אפשר לשמוע כל מילה</p>
+                    <div class="slider-container">
+                        <input type="range" min="3" max="15" step="1" value="8" class="slider" id="audio-plays">
+                        <span class="slider-value" id="plays-value">8</span>
+                    </div>
+                </div>
 
-            <div class="setting-item">
-                <label class="setting-label">הודעות יציאה</label>
-                <p class="setting-description">הצג הודעה קצרה כשיוצאים ושומרים משחק</p>
-                <label class="toggle-switch">
-                    <input type="checkbox" id="show-exit-toast" checked>
-                    <span class="toggle-slider"></span>
-                </label>
+                <div class="setting-item">
+                    <label class="setting-label">רמת קושי</label>
+                    <p class="setting-description">בחר את רמת הקושי המתאימה לך</p>
+                    <div class="radio-group">
+                        <div class="radio-item" data-value="beginner">
+                            <input type="radio" name="difficulty" value="beginner" id="diff-beginner" checked>
+                            <label for="diff-beginner">מתחיל - מילים פשוטות</label>
+                        </div>
+                        <div class="radio-item" data-value="intermediate">
+                            <input type="radio" name="difficulty" value="intermediate" id="diff-intermediate">
+                            <label for="diff-intermediate">בינוני - מילים מגוונות</label>
+                        </div>
+                        <div class="radio-item" data-value="advanced">
+                            <input type="radio" name="difficulty" value="advanced" id="diff-advanced">
+                            <label for="diff-advanced">מתקדם - מילים מאתגרות</label>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Custom Words (Parent) -->
-        <div class="settings-section protected-section" data-protected="true" id="custom-words-section">
-            <h2><i class="fas fa-magic"></i>מילים מותאמות אישית</h2>
+        <!-- ═══════════════════════════════════════════════════
+             TAB: מילים מותאמות
+        ═══════════════════════════════════════════════════ -->
+        <div class="stab-panel" id="tab-custom-words">
+            <div class="settings-section" id="custom-words-section">
+                <h2><i class="fas fa-magic"></i>מילים מותאמות אישית</h2>
 
-            <div class="setting-item">
-                <label class="setting-label">מפתח Claude API</label>
-                <p class="setting-description">הכנס מפתח API כדי לאפשר תרגום אוטומטי. המפתח נשמר מקומית בלבד.</p>
-                <div style="display:flex;gap:10px;align-items:center;">
-                    <input type="password" id="claude-api-key"
-                           placeholder="sk-ant-..."
-                           style="flex:1;padding:12px 15px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:monospace;"
-                           autocomplete="off">
-                    <button type="button" id="api-key-toggle"
-                            style="padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;background:white;cursor:pointer;font-size:1rem;"
-                            title="הצג/הסתר מפתח">
-                        <i class="fas fa-eye"></i>
-                    </button>
-                </div>
-            </div>
-
-            <div class="setting-item">
-                <label class="setting-label">הוסף מילים באנגלית</label>
-                <p class="setting-description">הכנס מילים באנגלית מופרדות בפסיק. Claude יתרגם ויסווג אותן אוטומטית.</p>
-                <textarea id="custom-words-input"
-                          placeholder="dragon, wizard, castle, rainbow, dinosaur"
-                          rows="3"
-                          style="width:100%;padding:12px 15px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:inherit;resize:vertical;box-sizing:border-box;direction:ltr;text-align:left;"></textarea>
-                <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
-                    <button class="btn btn-primary" id="import-words-btn">
-                        <i class="fas fa-upload"></i>
-                        ייבא מילים
-                    </button>
-                    <button class="btn btn-secondary" id="save-to-source-btn" style="display:none;">
-                        <i class="fas fa-save"></i>
-                        שמור לקבצי המקור
-                    </button>
-                    <button class="btn btn-secondary" id="clear-custom-words-btn" style="display:none;">
-                        <i class="fas fa-trash"></i>
-                        מחק הכל
-                    </button>
-                </div>
-
-                <!-- Progress / Status Log -->
-                <div id="import-status" style="margin-top:15px;display:none;">
-                    <div id="import-status-bar"
-                         style="padding:12px 15px;border-radius:10px;font-weight:600;font-size:0.95rem;"></div>
-                    <div id="import-log-toggle"
-                         style="margin-top:8px;cursor:pointer;color:#667eea;font-size:0.9rem;display:none;"
-                         onclick="(function(t){const l=document.getElementById('import-log');const open=l.style.display!=='none';l.style.display=open?'none':'block';t.querySelector('i').className='fas fa-chevron-'+(open?'down':'up');t.querySelector('span').textContent=open?'פרטים':'הסתר';})(this)">
-                        <i class="fas fa-chevron-up"></i> <span>הסתר</span>
+                <div class="setting-item">
+                    <label class="setting-label">מפתח Claude API</label>
+                    <p class="setting-description">
+                        הכנס מפתח API כדי לאפשר תרגום אוטומטי. המפתח נשמר מקומית בלבד.
+                    </p>
+                    <div style="display:flex;gap:10px;align-items:center;">
+                        <input type="password" id="claude-api-key"
+                               placeholder="sk-ant-..."
+                               style="flex:1;padding:12px 15px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:monospace;"
+                               autocomplete="off">
+                        <button type="button" id="api-key-toggle"
+                                style="padding:12px 16px;border:2px solid #e2e8f0;border-radius:10px;background:white;cursor:pointer;font-size:1rem;"
+                                title="הצג/הסתר מפתח">
+                            <i class="fas fa-eye"></i>
+                        </button>
                     </div>
-                    <div id="import-log"></div>
                 </div>
-            </div>
 
-            <!-- Imported Words List -->
-            <div class="setting-item" id="custom-words-list-item" style="display:none;">
-                <label class="setting-label">מילים שיובאו <span id="custom-words-count" class="category-count">0</span></label>
-                <div id="custom-words-list"
-                     style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+                <div class="setting-item">
+                    <label class="setting-label">הוסף מילים באנגלית</label>
+                    <p class="setting-description">
+                        הכנס מילים באנגלית מופרדות בפסיק. Claude יתרגם ויסווג אותן אוטומטית.
+                    </p>
+                    <textarea id="custom-words-input"
+                              placeholder="dragon, wizard, castle, rainbow, dinosaur"
+                              rows="3"
+                              style="width:100%;padding:12px 15px;border:2px solid #e2e8f0;border-radius:10px;font-size:1rem;font-family:inherit;resize:vertical;box-sizing:border-box;direction:ltr;text-align:left;"></textarea>
+                    <div style="margin-top:12px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+                        <button class="btn btn-primary" id="import-words-btn">
+                            <i class="fas fa-upload"></i>
+                            ייבא מילים
+                        </button>
+                        <button class="btn btn-secondary" id="save-to-source-btn" style="display:none;">
+                            <i class="fas fa-save"></i>
+                            שמור לקבצי המקור
+                        </button>
+                        <button class="btn btn-secondary" id="clear-custom-words-btn" style="display:none;">
+                            <i class="fas fa-trash"></i>
+                            מחק הכל
+                        </button>
+                    </div>
+
+                    <div id="import-status" style="margin-top:15px;display:none;">
+                        <div id="import-status-bar"
+                             style="padding:12px 15px;border-radius:10px;font-weight:600;font-size:0.95rem;"></div>
+                        <div id="import-log-toggle"
+                             style="margin-top:8px;cursor:pointer;color:#667eea;font-size:0.9rem;display:none;"
+                             onclick="(function(t){const l=document.getElementById('import-log');const open=l.style.display!=='none';l.style.display=open?'none':'block';t.querySelector('i').className='fas fa-chevron-'+(open?'down':'up');t.querySelector('span').textContent=open?'פרטים':'הסתר';})(this)">
+                            <i class="fas fa-chevron-up"></i> <span>הסתר</span>
+                        </div>
+                        <div id="import-log"></div>
+                    </div>
+                </div>
+
+                <div class="setting-item" id="custom-words-list-item" style="display:none;">
+                    <label class="setting-label">
+                        מילים שיובאו
+                        <span id="custom-words-count" class="category-count">0</span>
+                    </label>
+                    <div id="custom-words-list"
+                         style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;"></div>
+                </div>
             </div>
         </div>
 
+        <!-- ═══════════════════════════════════════════════════
+             TAB: תמונות ותרגום
+        ═══════════════════════════════════════════════════ -->
+        <div class="stab-panel" id="tab-word-images">
+            <div class="settings-section">
+                <h2><i class="fas fa-image"></i>תמונות ותרגום</h2>
+
+                <div class="setting-item">
+                    <label class="setting-label"></label>החלף אימוג׳י של מילה בתמונה</label>
+                    <p class="setting-description">
+                        בחר מילה, הדבק URL של תמונה או העלה קובץ מהמחשב.
+                        התמונה תחליף את האמוג'י בכל המשחקים.
+                    </p>
+                    <p class="setting-description">
+                        אפשר גם לערוך את התרגום של המילה
+                    </p>
+                    <p class="setting-description">
+                        <i class="fas fa-info-circle" style="color:#667eea;"></i>
+                        השינויים פעילים מיידית. לשמירה קבועה בקוד המקור לחץ <strong>"שמור לקבצי המקור"</strong>
+                        (דורש שרת הפיתוח פעיל — <code>python3 server.py</code>).
+                    </p>
+                </div>
+
+                <div id="wim-container" class="wim-container"></div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             TAB: משתמשים
+        ═══════════════════════════════════════════════════ -->
+        <div class="stab-panel" id="tab-users">
+            <div class="settings-section">
+                <h2><i class="fas fa-users"></i>ניהול משתמשים</h2>
+
+                <div class="setting-item">
+                    <label class="setting-label">משתמשים רשומים</label>
+                    <p class="setting-description">נהל משתמשים (נדרשת סיסמת מנהל לפתיחת הגדרות מוגנות)</p>
+
+                    <div class="user-table-container">
+                        <table class="user-table" id="user-table">
+                            <thead>
+                                <tr>
+                                    <th>שם משתמש</th>
+                                    <th>תאריך יצירה</th>
+                                    <th>התחברות אחרונה</th>
+                                    <th>סטטוס סיסמה</th>
+                                    <th>איפוס סיסמה</th>
+                                    <th>איפוס תרגול</th>
+                                    <th>איפוס סטטיסטיקות</th>
+                                    <th>מחיקה</th>
+                                </tr>
+                            </thead>
+                            <tbody id="user-table-body"></tbody>
+                        </table>
+                    </div>
+
+                    <div style="margin-top:20px;display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn btn-primary" id="add-user-btn" style="display:inline-flex;">
+                            <i class="fas fa-user-plus"></i>
+                            הוסף משתמש
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ═══════════════════════════════════════════════════
+             TAB: מתקדם
+        ═══════════════════════════════════════════════════ -->
+        <div class="stab-panel" id="tab-advanced">
+            <div class="settings-section">
+                <h2><i class="fas fa-cogs"></i>הגדרות מתקדמות</h2>
+
+                <div class="setting-item">
+                    <label class="setting-label">קונפטי בהצלחה</label>
+                    <p class="setting-description">הצג אנימציית קונפטי כשמשיבים נכון</p>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="show-confetti" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <label class="setting-label">התנהגות יציאה ממשחק</label>
+                    <p class="setting-description">בחר מה יקרה כשיוצאים ממשחק באמצע</p>
+                    <div class="radio-group" id="exit-behavior-group">
+                        <div class="radio-item" data-value="hybrid">
+                            <input type="radio" name="exitBehavior" value="hybrid" id="exit-hybrid">
+                            <label for="exit-hybrid">
+                                <strong>היברידי (מומלץ)</strong><br>
+                                <small>אישור מהיר בתחילה, שמירה אוטומטית אחרי 3 שאלות</small>
+                            </label>
+                        </div>
+                        <div class="radio-item" data-value="confirmation">
+                            <input type="radio" name="exitBehavior" value="confirmation" id="exit-confirmation">
+                            <label for="exit-confirmation">
+                                <strong>אישור תמיד</strong><br>
+                                <small>הצג חלון אישור עם אפשרות לשמור בכל יציאה</small>
+                            </label>
+                        </div>
+                        <div class="radio-item" data-value="autosave">
+                            <input type="radio" name="exitBehavior" value="autosave" id="exit-autosave">
+                            <label for="exit-autosave">
+                                <strong>שמירה אוטומטית</strong><br>
+                                <small>שמור אוטומטית ללא אישור, הצג הודעה קצרה</small>
+                            </label>
+                        </div>
+                        <div class="radio-item" data-value="smart">
+                            <input type="radio" name="exitBehavior" value="smart" id="exit-smart">
+                            <label for="exit-smart">
+                                <strong>חכם</strong><br>
+                                <small>שאלות 1-3: ללא אישור | 4+: אישור ושמירה | 8+: שמירה אוטומטית</small>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label class="setting-label">סף שאלות ליציאה</label>
+                    <p class="setting-description">מספר השאלה שבה ההתנהגות משתנה (רלוונטי להיברידי וחכם)</p>
+                    <input type="range" id="exit-threshold" min="1" max="9" value="3" class="slider">
+                    <div class="slider-value">
+                        <span id="exit-threshold-value">3</span> שאלות
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label class="setting-label">שמירה אוטומטית של התקדמות</label>
+                    <p class="setting-description">שמור משחקים לא גמורים ואפשר המשך מאוחר יותר</p>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="auto-save-progress" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <label class="setting-label">הודעות יציאה</label>
+                    <p class="setting-description">הצג הודעה קצרה כשיוצאים ושומרים משחק</p>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="show-exit-toast" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+            </div>
+        </div>
+
+        <!-- ── Global success message ────────────────────── -->
         <div class="success-message" id="success-message">
-            <i class="fas fa-check-circle" style="font-size: 2rem; margin-bottom: 10px;"></i>
+            <i class="fas fa-check-circle" style="font-size:2rem;margin-bottom:10px;"></i>
             <div>ההגדרות נשמרו בהצלחה!</div>
         </div>
-    </div>
+
+    </div><!-- /.settings-container -->
 
     <!-- Password Modal -->
     <div class="password-modal" id="password-modal">
@@ -1145,18 +937,19 @@
         </div>
     </div>
 
-    <!-- Console Logger - Captures all console output for debugging -->
+    <!-- Console Logger -->
     <script type="module" src="utils/consoleLogger.js"></script>
     <script src="auth.js?t=1762332862"></script>
     <script src="utils/wordImporter.js?t=1775088000"></script>
     <script src="utils/fileSystemWriter.js?t=1775200000"></script>
-    <script src="settings.js?t=1775200000"></script>
+    <script src="utils/wordImageManager.js?t=1780000001"></script>
+    <script src="settings.js?t=1780000001"></script>
     <script type="module">
-        import { initTopHeader } from './components/top-header.js?t=1774902001';
+        import { initTopHeader } from './components/top-header.js?t=1741340001';
         initTopHeader({ activePage: 'settings' });
     </script>
-    <script type="module" src="data/vocabularyBank.js?t=1774896000"></script>
+    <script type="module" src="data/vocabularyBank.js?t=1780000001"></script>
     <script type="module" src="components/practice-indicator.js?t=1774896000"></script>
-    <script type="module" src="components/header-score.js?t=1774899000"></script>
+    <script type="module" src="components/header-score.js?t=1741340001"></script>
 </body>
 </html>

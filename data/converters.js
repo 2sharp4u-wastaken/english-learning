@@ -71,6 +71,34 @@ export function convertToPronunciation(vocabularyBank) {
     }));
 }
 
+// Convert for picture-match game — hear a word, pick the correct picture
+export function convertToPictureMatch(vocabularyBank) {
+    return vocabularyBank.map(item => {
+        const pool = vocabularyBank.filter(w => w.word !== item.word && w.category === item.category);
+        const fallback = vocabularyBank.filter(w => w.word !== item.word);
+        const distSrc = pool.length >= 3 ? pool : fallback;
+        const distractors = distSrc
+            .sort(() => Math.random() - 0.5)
+            .slice(0, 3)
+            .map(w => ({ word: w.word, picture: w.image, imageUrl: w.imageUrl }));
+
+        const correct = { word: item.word, picture: item.image, imageUrl: item.imageUrl };
+        const all = [correct, ...distractors].sort(() => Math.random() - 0.5);
+        const correctIdx = all.findIndex(o => o.word === item.word);
+
+        return {
+            word: item.word,
+            hebrew: item.translation,
+            picture: item.image,
+            imageUrl: item.imageUrl,
+            options: all,
+            correct: correctIdx,
+            difficulty: 'beginner',
+            category: item.category
+        };
+    });
+}
+
 // Convert for listening game - show English words as options
 export function convertToListening(vocabularyBank) {
     console.log('📋 [CONVERTER] convertToListening() called at', new Date().toISOString());

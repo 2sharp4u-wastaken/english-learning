@@ -159,3 +159,96 @@
         font-size: 1rem;
     }
 }
+
+/* ── Memory game personal-best table inside completion screen ── */
+
+.memory-pb-section {
+    margin: 24px auto 0;
+    width: 100%;
+    max-width: 480px;
+}
+
+.memory-pb-section h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.memory-pb-section h3 i {
+    color: #FFD700;
+    margin-left: 6px;
+}
+
+.memory-pb-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 0.95rem;
+}
+
+.memory-pb-table thead {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.memory-pb-table thead th {
+    padding: 10px 8px;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+}
+
+.memory-pb-table tbody td {
+    padding: 9px 8px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.memory-pb-table tr.memory-pb-current td {
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+    font-weight: 700;
+}
+
+.memory-pb-table .pb-score {
+    font-weight: 800;
+    color: #FFD700;
+}
+
+.memory-pb-table .pb-not-played {
+    opacity: 0.45;
+    font-size: 0.88em;
+    font-style: italic;
+}
+
+.memory-total-score {
+    font-weight: 800;
+    font-size: 1.15em;
+    color: #FFD700;
+}
+
+.memory-personal-best {
+    color: #FFD700;
+    font-weight: 800;
+    font-size: 1.05em;
+    margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .memory-pb-section {
+        max-width: 100%;
+    }
+
+    .memory-pb-table {
+        font-size: 0.85rem;
+    }
+
+    .memory-pb-table thead th,
+    .memory-pb-table tbody td {
+        padding: 8px 5px;
+    }
+}

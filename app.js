@@ -15,6 +15,7 @@ import { allCourses } from './data/courses/index.js';
 import { MemoryGame } from './games/memory-game.js';
 import { SentenceScrambleGame } from './games/sentence-scramble-game.js';
 import { FillBlanksGame } from './games/fill-blanks-game.js';
+import { WordJourneyGame } from './games/word-journey-game.js?t=1773001200';
 
 class AppManager {
     constructor() {
@@ -95,6 +96,9 @@ class AppManager {
         window.memoryGame = this.memoryGame;
         window.scrambleGame = this.scrambleGame;
         window.fillBlanksGame = this.fillBlanksGame;
+
+        this.wordJourneyGame = new WordJourneyGame();
+        window.wordJourneyGame = this.wordJourneyGame;
 
         console.log('[AppManager] Game instances created');
     }
@@ -694,11 +698,6 @@ class AppManager {
         this.setupScreenNavigation();
 
         console.log('[AppManager] All managers initialized successfully');
-
-        // Once managers and userProgress are ready, refresh home card stats.
-        if (window.gamificationManager?.updateAllGameCards) {
-            window.gamificationManager.updateAllGameCards();
-        }
     }
 
     updatePracticeModeIndicator() {
@@ -755,9 +754,9 @@ class AppManager {
             window.gameManager.refreshPracticeDataContext();
         }
 
-        // Refresh practice badge/count and all card stats after user switch.
-        if (window.gamificationManager?.updateAllGameCards) {
-            window.gamificationManager.updateAllGameCards();
+        // Refresh practice badge after user switch.
+        if (window.gamificationManager?.updatePracticeModeCard) {
+            window.gamificationManager.updatePracticeModeCard();
         }
 
         console.log(`Switched to user: ${userName}`);
@@ -806,8 +805,8 @@ class AppManager {
                 if (window.gameManager?.refreshPracticeDataContext) {
                     window.gameManager.refreshPracticeDataContext();
                 }
-                if (window.gamificationManager?.updateAllGameCards) {
-                    window.gamificationManager.updateAllGameCards();
+                if (window.gamificationManager?.updatePracticeModeCard) {
+                    window.gamificationManager.updatePracticeModeCard();
                 }
             }, 100);
         });
@@ -940,7 +939,11 @@ class AppManager {
     migrateUserProgress(oldProgress) {
         // Migrate to latest version (version 3 - with course system)
         if (oldProgress.version === 3) {
-            return oldProgress;  // Already latest
+            // Patch missing fields added after v3 was released
+            if (typeof oldProgress.totalPoints !== 'number') {
+                oldProgress.totalPoints = 0;
+            }
+            return oldProgress;
         }
 
         console.log(`Migrating user progress from v${oldProgress.version || 1} to v3...`);
@@ -998,6 +1001,9 @@ class AppManager {
             courses: {},  // { courseId: { unlocked, startedDate, currentUnit, currentTopic } }
             topicProgress: {},  // { topicId: { unlocked, started, mastery, completedActivities, certificateEarned } }
             certificates: [],  // [{ id, topicId, topicName, earnedDate, score }]
+
+            // Score totals
+            totalPoints: 0,  // All-time accumulated raw score across all games
 
             // Coins economy
             coins: 0,
@@ -1128,8 +1134,52 @@ class AppManager {
             this.userProgress.lastPlayDate = today;
         }
 
+        // Award topic certificate if game was launched from a topic
+        const topicId = window.gameManager?.currentTopicId;
+        if (topicId && this.certificateManager && this.courseManager) {
+            this._checkAndAwardTopicCertificate(topicId, gameType, score);
+            window.gameManager.currentTopicId = null;
+        }
+
         this.saveUserProgress();
         this.checkAchievements();
+    }
+
+    _checkAndAwardTopicCertificate(topicId, gameType, score) {
+        const topicData = this.courseManager.getTopic(topicId);
+        if (!topicData) return;
+        const { topic, unit } = topicData;
+
+        const threshold = topic.milestone?.scoreThreshold ?? 70;
+        if (score < threshold) return;
+
+        // Award certificate if not already earned
+        if (topic.certificateId && !this.certificateManager.hasCertificate(topic.certificateId)) {
+            this.certificateManager.awardCertificate({
+                id: topic.certificateId,
+                topicId,
+                topicName: topic.nameHebrew || topic.name,
+                score
+            });
+
+            this.coinManager?.awardTopicComplete();
+
+            // Show cert modal after the game completion screen has settled
+            setTimeout(() => this.showCertificateModal(topic.nameHebrew || topic.name, score), 2000);
+
+            this.renderCertificateGallery();
+        }
+
+        // Unlock the next topic in the unit
+        this._unlockNextTopic(topicId, unit);
+    }
+
+    _unlockNextTopic(topicId, unit) {
+        if (!unit?.topics) return;
+        const idx = unit.topics.findIndex(t => t.id === topicId);
+        if (idx !== -1 && idx < unit.topics.length - 1) {
+            this.courseManager.unlockTopic(unit.topics[idx + 1].id);
+        }
     }
 
     loadAchievements() {
@@ -1236,7 +1286,8 @@ class AppManager {
 
 // Initialize app manager
 let appManager;
-document.addEventListener('DOMContentLoaded', () => {
+function initAppManager() {
+    if (appManager) return; // prevent double-init
     appManager = new AppManager();
     // Make it accessible as window.app for gameLogic.js
     window.app = appManager;
@@ -1247,7 +1298,16 @@ document.addEventListener('DOMContentLoaded', () => {
             window.gamificationManager.init();
         }
     }, 500);
-});
+}
+
+// Guard: if DOMContentLoaded has already fired (can happen when _loader.js top-level
+// await causes the event to fire before this module's listener is registered), call
+// directly. Otherwise register normally.
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initAppManager);
+} else {
+    initAppManager();
+}
 
 // When the parent imports words from settings.html (another tab), sync them into
 // this tab's in-memory gameData without requiring a page reload.

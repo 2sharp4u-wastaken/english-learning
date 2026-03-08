@@ -329,9 +329,10 @@ export async function checkGrammarBeginnerAnswer(question, selectedAnswer) {
         feedback.textContent = 'מעולה! 🎉';
         feedback.className = 'feedback correct';
 
-        // Award points
+        // Award points using scoreManager
         const points = Math.max(0, 10 - this.currentQuestionAttempts + 1);
-        this.scores['grammar-beginner'] = (this.scores['grammar-beginner'] || 0) + points;
+        window.scoreManager.addPoints('grammar-beginner', points);
+        this.scores['grammar-beginner'] = window.scoreManager.getScore('grammar-beginner');
         this.updateScore('grammar-beginner');
 
         // Confetti and correct sound

@@ -198,6 +198,11 @@ export function addLetterToWord(letter, button) {
     // Mark button as used
     button.classList.add('used');
 
+    // Speak the letter aloud
+    if (typeof speechManager !== 'undefined') {
+        speechManager.speak(letter.toUpperCase()).catch(() => {});
+    }
+
     // Enable check button if word has letters
     document.getElementById('check-word').disabled = this.builtWord.length === 0;
 }
@@ -264,9 +269,10 @@ export async function checkBuiltWord() {
         feedback.textContent = fbData.text;
         feedback.className = 'feedback correct';
 
-        // Award points based on attempts (10 minus number of tries)
+        // Award points based on attempts using scoreManager
         const points = Math.max(0, 10 - this.currentQuestionAttempts);
-        this.scores.reading += points;
+        window.scoreManager.addPoints('reading', points);
+        this.scores.reading = window.scoreManager.getScore('reading');
         this.updateScore('reading');
 
         // Disable all buttons

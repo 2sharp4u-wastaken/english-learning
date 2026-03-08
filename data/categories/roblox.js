@@ -24,7 +24,7 @@ export const robloxWords = [
     { word: "Robux", translation: "רובוקס", category: "roblox", image: "💎" },
     { word: "Trade", translation: "סַחַר", category: "roblox", image: "🔄" },
     { word: "Group", translation: "קבוצה", category: "roblox", image: "👥" },
-    { word: "Server", translation: "שרת", category: "roblox", image: "☁️" },
+    { word: "Server", translation: "שרת (מחשב)", category: "roblox", image: "☁️", imageUrl: "img/icons/roblox/server.png" },
     { word: "Update", translation: "עדכון", category: "roblox", image: "🔄" },
     { word: "Event", translation: "אירוע", category: "roblox", image: "🎉" },
     { word: "Roleplay", translation: "משחק תפקידים", category: "roblox", image: "🎭" },

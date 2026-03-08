@@ -30,6 +30,7 @@ export const beginnerVocabCourse = {
                     activities: ['vocabulary', 'listening', 'memory'],
                     unlockRequirement: null,  // First topic always unlocked
                     certificateId: 'cert-basic-colors',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 10
                 },
                 {
@@ -41,6 +42,7 @@ export const beginnerVocabCourse = {
                     activities: ['vocabulary', 'listening', 'scramble'],
                     unlockRequirement: { topic: 'basic-colors', mastery: 0.7 },
                     certificateId: 'cert-more-colors',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 8
                 }
             ]
@@ -63,6 +65,7 @@ export const beginnerVocabCourse = {
                     activities: ['vocabulary', 'listening', 'memory'],
                     unlockRequirement: { topic: 'more-colors', mastery: 0.6 },
                     certificateId: 'cert-numbers-1-10',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 10
                 },
                 {
@@ -74,6 +77,7 @@ export const beginnerVocabCourse = {
                     activities: ['vocabulary', 'listening', 'fill-blanks'],
                     unlockRequirement: { topic: 'numbers-1-10', mastery: 0.7 },
                     certificateId: 'cert-numbers-11-20',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 10
                 }
             ]
@@ -96,6 +100,7 @@ export const beginnerVocabCourse = {
                     activities: ['vocabulary', 'listening', 'memory'],
                     unlockRequirement: { topic: 'numbers-11-20', mastery: 0.6 },
                     certificateId: 'cert-farm-animals',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 12
                 },
                 {
@@ -107,6 +112,7 @@ export const beginnerVocabCourse = {
                     activities: ['vocabulary', 'listening', 'scramble'],
                     unlockRequirement: { topic: 'farm-animals', mastery: 0.7 },
                     certificateId: 'cert-wild-animals',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 12
                 },
                 {
@@ -118,6 +124,7 @@ export const beginnerVocabCourse = {
                     activities: ['vocabulary', 'listening', 'memory'],
                     unlockRequirement: { topic: 'wild-animals', mastery: 0.7 },
                     certificateId: 'cert-pets',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 10
                 }
             ]
@@ -140,6 +147,7 @@ export const beginnerVocabCourse = {
                     activities: ['vocabulary', 'listening', 'memory', 'fill-blanks'],
                     unlockRequirement: { topic: 'pets', mastery: 0.7 },
                     certificateId: 'cert-face-body',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 12
                 }
             ]
@@ -162,6 +170,7 @@ export const beginnerVocabCourse = {
                     activities: ['vocabulary', 'listening', 'memory', 'scramble'],
                     unlockRequirement: { topic: 'face-body', mastery: 0.7 },
                     certificateId: 'cert-family-members',
+                    milestone: { scoreThreshold: 70 },
                     estimatedMinutes: 10
                 }
             ]

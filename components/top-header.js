@@ -20,6 +20,7 @@ const GAMES = [
     { id: 'memory',          icon: 'fa-th',          label: 'זיכרון',     title: 'זיכרון - מצא את הזוגות' },
     { id: 'scramble',        icon: 'fa-random',      label: 'סידור',      title: 'סידור משפטים' },
     { id: 'fill-blanks',     icon: 'fa-fill-drip',   label: 'השלמה',      title: 'השלם את המשפט' },
+    { id: 'word-journey',    icon: 'fa-route',       label: 'מסע',        title: 'מסע המילים' },
 ];
 
 // Inline styles applied to the header when it is visible and fixed.
@@ -178,6 +179,10 @@ function setupHomeEvents() {
 
         if (typeof gameManager !== 'undefined' && gameManager.populateResumeGames) {
             gameManager.populateResumeGames();
+        }
+        // Show all-time total score when outside any game
+        if (window.gameManager?.updateTotalScoreDisplay) {
+            window.gameManager.updateTotalScoreDisplay();
         }
         topGameBtns.forEach(b => b.classList.remove('active'));
         topScreenBtns.forEach(b => b.classList.remove('active'));

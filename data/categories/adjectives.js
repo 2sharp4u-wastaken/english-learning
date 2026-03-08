@@ -37,6 +37,13 @@ export const adjectivesWords = [
     { word: "Important", translation: "חשוב", category: "adjectives", image: "⭐" },
     { word: "Early", translation: "מוקדם", category: "adjectives", image: "🌅" },
     { word: "Late", translation: "מאוחר", category: "adjectives", image: "🌙" },
-    { word: "Very", translation: "מאוד", category: "adjectives", image: "📊" },
-    { word: "More", translation: "עוד", category: "adjectives", image: "➕" }
+    { word: "Very", translation: "מאוד", category: "adjectives", image: "📊", imageUrl: "img/icons/adjectives/very.jpg" },
+    { word: "More", translation: "עוד", category: "adjectives", image: "➕" },
+    { word: "Up", translation: "למעלה", category: "adjectives", image: "⬆️" },
+    { word: "Down", translation: "למטה", category: "adjectives", image: "⬇️" },
+    { word: "Left", translation: "שמאל", category: "adjectives", image: "⬅️" },
+    { word: "Right", translation: "ימין", category: "adjectives", image: "➡️" },
+    { word: "On", translation: "על", category: "adjectives", image: "📍" },
+    { word: "Under", translation: "תחת", category: "adjectives", image: "👇" },
+    { word: "Style", translation: "סגנון", category: "adjectives", image: "✨" }
 ];

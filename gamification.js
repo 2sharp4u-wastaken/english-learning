@@ -28,6 +28,10 @@ class GamificationManager {
         console.log('✅ Gamification Manager initialized');
     }
 
+    updateAllGameCards() {
+        this.updatePracticeModeCard();
+    }
+
     getFallbackPracticeWords() {
         const settings = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
         const selectedCategories = settings.selectedCategories || [];
@@ -56,110 +60,17 @@ class GamificationManager {
 
         return filteredVocabulary
             .filter(word => {
-                const key = `${word.word}_${word.category}`;
-                const stats = wordMastery[key];
+                const key = `${word.word.toLowerCase()}_${word.category}`;
+                const stats = wordMastery[key] || wordMastery[`${word.word}_${word.category}`];
                 return !!(stats && stats.totalAttempts > 0 && stats.masteryLevel < 0.5);
             })
             .sort((a, b) => {
-                const statsA = wordMastery[`${a.word}_${a.category}`];
-                const statsB = wordMastery[`${b.word}_${b.category}`];
+                const statsA = wordMastery[`${a.word.toLowerCase()}_${a.category}`] || wordMastery[`${a.word}_${a.category}`];
+                const statsB = wordMastery[`${b.word.toLowerCase()}_${b.category}`] || wordMastery[`${b.word}_${b.category}`];
                 const accuracyA = statsA && statsA.totalAttempts > 0 ? statsA.correctAttempts / statsA.totalAttempts : 0;
                 const accuracyB = statsB && statsB.totalAttempts > 0 ? statsB.correctAttempts / statsB.totalAttempts : 0;
                 return accuracyA - accuracyB;
             });
-    }
-
-    updateAllGameCards() {
-        const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading', 'memory', 'practice', 'abc'];
-        gameTypes.forEach(gameType => {
-            if (gameType === 'practice') {
-                this.updatePracticeModeCard();
-            } else {
-                this.updateGameCardProgress(gameType);
-            }
-        });
-    }
-
-    updateGameCardProgress(gameType) {
-        if (!window.app || !window.app.userProgress) return;
-
-        const stats = this.getGameMasteryStats(gameType);
-        const card = document.querySelector(`.game-card[data-game="${gameType}"]`);
-        if (!card) return;
-
-        // Update stats badges
-        const masteredEl = card.querySelector('.stat-mastered');
-        const learningEl = card.querySelector('.stat-learning');
-        const strugglingEl = card.querySelector('.stat-struggling');
-
-        if (masteredEl) masteredEl.textContent = `${stats.masteredWords} 🌟`;
-        if (learningEl) learningEl.textContent = `${stats.learningWords} 📚`;
-        if (strugglingEl) strugglingEl.textContent = `${stats.strugglingWords} ⚠️`;
-    }
-
-    getGameMasteryStats(gameType) {
-        if (!window.app || !window.app.userProgress) {
-            return {
-                totalWords: 0,
-                masteredWords: 0,
-                learningWords: 0,
-                strugglingWords: 0,
-                newWords: 0,
-                averageMastery: 0
-            };
-        }
-
-        const wordMastery = window.app.userProgress.wordMastery || {};
-        const settings = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
-        const selectedCategories = settings.selectedCategories || [];
-        const hasCategoryFilter = Array.isArray(selectedCategories) && selectedCategories.length > 0;
-
-        let totalWords = 0;
-        let masteredWords = 0;
-        let learningWords = 0;
-        let strugglingWords = 0;
-        let newWords = 0;
-        let totalMastery = 0;
-
-        // Get all words from vocabulary data
-        const allWords = window.vocabularyBank || [];
-
-        allWords.forEach(wordObj => {
-            // If specific categories are selected, skip words outside them.
-            if (hasCategoryFilter && !selectedCategories.includes(wordObj.category)) return;
-
-            const key = `${wordObj.word}_${wordObj.category}`;
-            const stats = wordMastery[key];
-
-            if (stats && stats.masteryLevel !== undefined) {
-                totalWords++;
-                totalMastery += stats.masteryLevel;
-
-                if (stats.masteryLevel >= 0.8) {
-                    masteredWords++;
-                } else if (stats.masteryLevel >= 0.5) {
-                    learningWords++;
-                } else if (stats.masteryLevel > 0) {
-                    strugglingWords++;
-                } else {
-                    newWords++;
-                }
-            } else {
-                newWords++;
-                totalWords++;
-            }
-        });
-
-        const averageMastery = totalWords > 0 ? totalMastery / totalWords : 0;
-
-        return {
-            totalWords,
-            masteredWords,
-            learningWords,
-            strugglingWords,
-            newWords,
-            averageMastery
-        };
     }
 
     updatePracticeModeCard() {
@@ -237,9 +148,11 @@ class StreakManager {
 
     checkMilestone(days) {
         const milestones = [7, 14, 30, 60, 100];
-        if (milestones.includes(days)) {
-            this.celebrateStreak(days);
-        }
+        if (!milestones.includes(days)) return;
+        const celebratedKey = `streakMilestoneCelebrated_${days}`;
+        if (localStorage.getItem(celebratedKey)) return;
+        localStorage.setItem(celebratedKey, '1');
+        this.celebrateStreak(days);
     }
 
     celebrateStreak(days) {
@@ -381,10 +294,10 @@ class CollectionManager {
         return allWords
             .filter(word => !hasCategoryFilter || selectedCategories.includes(word.category))
             .map(word => {
-                const key = `${word.word}_${word.category}`;
+                const key = `${word.word.toLowerCase()}_${word.category}`;
                 return {
                     ...word,
-                    ...(masteryData[key] || {
+                    ...(masteryData[key] || masteryData[`${word.word}_${word.category}`] || {
                         totalAttempts: 0,
                         correctAttempts: 0,
                         masteryLevel: 0

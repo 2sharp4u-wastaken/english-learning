@@ -160,9 +160,10 @@ export async function checkVocabularyAnswer(selectedIndex, correctIndex) {
 
     if (isCorrect) {
         buttons[selectedIndex].classList.add('correct');
-        console.log('🏆 [VOCABULARY] Before score increment:', this.scores.vocabulary);
-        this.scores.vocabulary += 10;
-        console.log('🏆 [VOCABULARY] After score increment:', this.scores.vocabulary);
+        // Use scoreManager to add points (persists across sessions)
+        window.scoreManager.addPoints('vocabulary', 10);
+        // Update local score for consistency
+        this.scores.vocabulary = window.scoreManager.getScore('vocabulary');
 
         // Trigger confetti if enabled
         try {

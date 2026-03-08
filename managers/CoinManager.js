@@ -144,9 +144,15 @@ export class CoinManager {
      * Update coin display in UI
      */
     updateCoinDisplay() {
-        const coinDisplays = document.querySelectorAll('.coin-balance, #user-coins, .coins-display span');
-        coinDisplays.forEach(display => {
-            display.textContent = this.userProgress.coins;
+        const balance = this.userProgress.coins;
+        // Target all known coin display elements by ID
+        ['hub-coin-balance', 'topics-coin-balance', 'profile-coin-count', 'user-coins'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = balance;
+        });
+        // Legacy class-based selectors
+        document.querySelectorAll('.coin-balance, .coins-display span').forEach(el => {
+            el.textContent = balance;
         });
     }
 
@@ -391,7 +397,13 @@ export class CoinManager {
      */
     saveProgress() {
         try {
-            localStorage.setItem('userProgress', JSON.stringify(this.userProgress));
+            if (window.app?.saveUserProgress) {
+                window.app.saveUserProgress();
+            } else {
+                // Fallback: save to the user-suffixed key using currentUser
+                const userId = localStorage.getItem('currentUser') || 'O';
+                localStorage.setItem(`userProgress_${userId}`, JSON.stringify(this.userProgress));
+            }
         } catch (error) {
             console.error('[CoinManager] Error saving progress:', error);
         }

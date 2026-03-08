@@ -15,89 +15,94 @@ let currentWord = '';
 export async function loadPracticeQuestion(question) {
     // Prevent double-loading
     if (isLoadingQuestion) {
-        console.log('Already loading practice question, skipping...');
+        console.warn('[Practice] loadPracticeQuestion blocked — isLoadingQuestion is still true. Previous load may have thrown without cleanup.');
         return;
     }
 
     isLoadingQuestion = true;
-    console.log('Loading practice question:', question);
+    console.log('[Practice] Loading question:', question?.word);
 
-    // Clear feedback from previous question
-    const feedback = document.getElementById('practice-feedback');
-    if (feedback) {
-        feedback.textContent = '';
-        feedback.className = 'feedback';
-    }
-
-    // Cancel any ongoing speech first
-    if (window.speechManager) {
-        speechManager.cancelSpeech();
-    }
-
-    // Store current word for playback
-    currentWord = question.word;
-
-    // Clear and set word
-    const wordElement = document.getElementById('practice-word');
-    if (wordElement) {
-        wordElement.textContent = ''; // Clear first
-        setTimeout(() => {
-            wordElement.textContent = question.word;
-        }, 50); // Small delay to ensure visual update
-    }
-
-    // Add picture and Hebrew translation
-    const pictureElement = document.getElementById('practice-picture');
-    const hebrewElement = document.getElementById('practice-hebrew');
-
-    // Render picture (image or emoji)
-    if (pictureElement) {
-        renderPicture(pictureElement, question);
-    }
-    if (hebrewElement) {
-        hebrewElement.textContent = question.hebrew || '';
-        hebrewElement.style.display = 'block';
-    }
-
-    // Reset recording state
-    const recordBtn = document.getElementById('practice-record-btn');
-    const nextBtn = document.getElementById('practice-next');
-
-    if (recordBtn) {
-        recordBtn.classList.remove('recording');
-        recordBtn.disabled = false;
-        recordBtn.style.opacity = '';
-        recordBtn.style.cursor = '';
-    }
-    if (feedback) {
-        feedback.textContent = '';
-        feedback.className = 'feedback';
-    }
-    if (nextBtn) nextBtn.style.display = 'none';
-
-    // Auto-play the word audio when question loads
     try {
-        await speechManager.speakWord(question.word, '', 'practice');
-    } catch (error) {
-        console.error('Error playing word audio:', error);
-    }
+        // Clear feedback from previous question
+        const feedback = document.getElementById('practice-feedback');
+        if (feedback) {
+            feedback.textContent = '';
+            feedback.className = 'feedback';
+        }
 
-    console.log('Practice question loaded successfully');
-    isLoadingQuestion = false;
+        // Cancel any ongoing speech first
+        if (window.speechManager) {
+            speechManager.cancelSpeech();
+        }
+
+        // Store current word for playback
+        currentWord = question.word;
+
+        // Clear and set word
+        const wordElement = document.getElementById('practice-word');
+        if (wordElement) {
+            wordElement.textContent = ''; // Clear first
+            setTimeout(() => {
+                wordElement.textContent = question.word;
+            }, 50); // Small delay to ensure visual update
+        }
+
+        // Add picture and Hebrew translation
+        const pictureElement = document.getElementById('practice-picture');
+        const hebrewElement = document.getElementById('practice-hebrew');
+
+        // Render picture (image or emoji)
+        if (pictureElement) {
+            renderPicture(pictureElement, question);
+        }
+        if (hebrewElement) {
+            hebrewElement.textContent = question.hebrew || '';
+            hebrewElement.style.display = 'block';
+        }
+
+        // Reset recording state
+        const recordBtn = document.getElementById('practice-record-btn');
+        const nextBtn = document.getElementById('practice-next');
+
+        if (recordBtn) {
+            recordBtn.classList.remove('recording');
+            recordBtn.disabled = false;
+            recordBtn.style.opacity = '';
+            recordBtn.style.cursor = '';
+        }
+        if (feedback) {
+            feedback.textContent = '';
+            feedback.className = 'feedback';
+        }
+        if (nextBtn) nextBtn.style.display = 'none';
+
+        // Auto-play the word audio when question loads
+        try {
+            await speechManager.speakWord(question.word, '', 'practice');
+        } catch (error) {
+            console.error('[Practice] Error playing word audio:', error);
+        }
+
+        console.log('[Practice] Question loaded successfully:', question?.word);
+    } finally {
+        isLoadingQuestion = false;
+    }
 }
 
 export async function togglePracticeRecording() {
     const recordBtn = document.getElementById('practice-record-btn');
     const feedback = document.getElementById('practice-feedback');
 
+    console.log(`[Practice] togglePracticeRecording | isRecording=${speechManager.isRecording} | isProcessingRecording=${isProcessingRecording}`);
+
     if (!recordBtn) {
-        console.error('Record button not found');
+        console.error('[Practice] Record button not found');
         return;
     }
 
     // If already recording, stop it
     if (speechManager.isRecording) {
-        console.log('Stopping recording...');
+        console.log('[Practice] Stopping active recording...');
         try {
             await speechManager.stopRecording();
             recordBtn.classList.remove('recording');
@@ -108,14 +113,14 @@ export async function togglePracticeRecording() {
                 feedback.className = 'feedback';
             }
         } catch (error) {
-            console.error('Error stopping recording:', error);
+            console.error('[Practice] Error stopping recording:', error);
         }
         return;
     }
 
     // Prevent concurrent recording attempts
     if (isProcessingRecording) {
-        console.log('Already processing a recording, please wait...');
+        console.warn('[Practice] BLOCKED: isProcessingRecording=true — previous startRecording() promise has not settled. Check for a hung onerror(aborted) above.');
         return;
     }
 

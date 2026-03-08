@@ -374,7 +374,12 @@ export class CourseManager {
      */
     saveProgress() {
         try {
-            localStorage.setItem('userProgress', JSON.stringify(this.userProgress));
+            if (window.app?.saveUserProgress) {
+                window.app.saveUserProgress();
+            } else {
+                const userId = localStorage.getItem('currentUser') || 'O';
+                localStorage.setItem(`userProgress_${userId}`, JSON.stringify(this.userProgress));
+            }
         } catch (error) {
             console.error('[CourseManager] Error saving progress:', error);
         }

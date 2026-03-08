@@ -22,5 +22,16 @@ export const sportsWords = [
     { word: "Champion", translation: "אלוף", category: "sports", image: "🏆" },
     { word: "Stadium", translation: "אצטדיון", category: "sports", image: "🏟️" },
     { word: "Sport", translation: "ספורט", category: "sports", image: "🎯" },
-    { word: "Yoga", translation: "יוגה", category: "sports", image: "🧘" }
+    { word: "Yoga", translation: "יוגה", category: "sports", image: "🧘" },
+    { word: "Ping pong", translation: "פינג פונג", category: "sports", image: "🏓" },
+    { word: "Badminton", translation: "בדמינטון", category: "sports", image: "🏸" },
+    { word: "Billiards", translation: "ביליארד", category: "sports", image: "🎱" },
+    { word: "Gold medal", translation: "מדליית זהב", category: "sports", image: "🥇" },
+    { word: "Martial arts", translation: "אומנויות לחימה", category: "sports", image: "🥋" },
+    { word: "Fencing", translation: "סייף", category: "sports", image: "🤺" },
+    { word: "Rock climbing", translation: "טיפוס סלעים", category: "sports", image: "🧗" },
+    { word: "Weightlifting", translation: "הרמת משקולות", category: "sports", image: "🏋️" },
+    { word: "Diving", translation: "צלילה", category: "sports", image: "🤿" },
+    { word: "Horse racing", translation: "מרוץ סוסים", category: "sports", image: "🏇" },
+    { word: "Handball", translation: "כדוריד", category: "sports", image: "🤾" }
 ];

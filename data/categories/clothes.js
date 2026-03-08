@@ -33,5 +33,9 @@ export const clothesWords = [
     { word: "Suit", translation: "חליפה", category: "clothes", image: "🤵" },
     { word: "Tie", translation: "עניבה", category: "clothes", image: "👔" },
     { word: "Mask", translation: "מסכה", category: "clothes", image: "🎭" },
-    { word: "Shoe", translation: "נעל", category: "clothes", image: "👟" }
+    { word: "Shoe", translation: "נעל", category: "clothes", image: "👟" },
+    { word: "Crown", translation: "כתר", category: "clothes", image: "👑" },
+    { word: "Sunglasses", translation: "משקפי שמש", category: "clothes", image: "🕶️" },
+    { word: "Lipstick", translation: "שפתון", category: "clothes", image: "💄" },
+    { word: "Luggage", translation: "מזוודה", category: "clothes", image: "🧳" }
 ];

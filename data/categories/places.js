@@ -4,8 +4,8 @@
 
 export const placesWords = [
     { word: "Park", translation: "פארק", category: "places", image: "🌳" },
-    { word: "Zoo", translation: "גן חיות", category: "places", image: "🦁" },
-    { word: "Store", translation: "חנות", category: "places", image: "🏪" },
+    { word: "Zoo", translation: "גן חיות", category: "places", image: "🦁", imageUrl: "img/icons/places/zoo.jpg" },
+    { word: "Store", translation: "חנות", category: "places", image: "🏪", imageUrl: "img/icons/places/store.jpg" },
     { word: "Market", translation: "שוק", category: "places", image: "🛒" },
     { word: "Hospital", translation: "בית חולים", category: "places", image: "🏥" },
     { word: "Beach", translation: "חוף ים", category: "places", image: "🏖️" },
@@ -20,5 +20,16 @@ export const placesWords = [
     { word: "Cinema", translation: "קולנוע", category: "places", image: "🎬" },
     { word: "Hotel", translation: "מלון", category: "places", image: "🏨" },
     { word: "Museum", translation: "מוזיאון", category: "places", image: "🏛️" },
-    { word: "Church", translation: "כנסייה", category: "places", image: "⛪" }
+    { word: "Church", translation: "כנסייה", category: "places", image: "⛪" },
+    { word: "Castle", translation: "טירה", category: "places", image: "🏰" },
+    { word: "Bank", translation: "בנק", category: "places", image: "🏦" },
+    { word: "Post office", translation: "דואר", category: "places", image: "🏤" },
+    { word: "Factory", translation: "מפעל", category: "places", image: "🏭" },
+    { word: "Synagogue", translation: "בית כנסת", category: "places", image: "🕍" },
+    { word: "Mosque", translation: "מסגד", category: "places", image: "🕌" },
+    { word: "Bridge", translation: "גשר", category: "places", image: "🌉" },
+    { word: "Tower", translation: "מגדל", category: "places", image: "🗼" },
+    { word: "Tent", translation: "אוהל", category: "places", image: "⛺" },
+    { word: "Circus", translation: "קרקס", category: "places", image: "🎪" },
+    { word: "Trip", translation: "טיול", category: "places", image: "🚗" }
 ];

@@ -26,6 +26,7 @@ export class MemoryGame {
         ];
         this.currentLevelIndex = 0;
         this.currentGridColumns = 4;
+        this._boardGeneration = 0; // incremented each render; used to detect stale listeners
 
         console.log('[MemoryGame] Initialized');
     }
@@ -37,6 +38,26 @@ export class MemoryGame {
     loadQuestion(question) {
         this.removeCompletionScreen();
         this.hideFeedback();
+
+        // ── Flip-on-load diagnostic ────────────────────────────────────────────
+        {
+            const container = document.getElementById('memory-game-container');
+            const containerDisplay = container ? getComputedStyle(container).display : 'MISSING';
+            const grid = document.getElementById('memory-grid');
+            const orphanFlipped = grid ? grid.querySelectorAll('.memory-card.flipped').length : 'MISSING';
+            console.log('[MemoryGame:DIAG] loadQuestion called', {
+                level: question?.level,
+                wordCount: Array.isArray(question?.words) ? question.words.length : 0,
+                containerDisplay,
+                orphanFlippedCards: orphanFlipped,
+                isProcessing: this.isProcessing,
+                flippedCards: [...this.flippedCards],
+                docReadyState: document.readyState,
+            });
+            // EXPANDED — flippedCards as string so it never gets collapsed in DevTools
+            console.log('[MemoryGame:DIAG] loadQuestion flippedCards (raw):', JSON.stringify(this.flippedCards), '| isProcessing:', this.isProcessing, '| cards.length:', this.cards.length);
+        }
+        // ──────────────────────────────────────────────────────────────────────
 
         // Normalize and filter words from the question
         this.sourceWords = (Array.isArray(question.words) ? question.words : [])
@@ -91,6 +112,11 @@ export class MemoryGame {
 
         this.createCardPairs();
         this.renderGameBoard();
+        // Block clicks for 400ms after render to absorb ghost clicks.
+        // Mobile browsers synthesize a click ~300ms after touchend; if the board
+        // appears under the user's finger (e.g. while navigating between games),
+        // that synthetic click would silently add a card to flippedCards.
+        this._boardLockedUntil = Date.now() + 400;
         this.updateStats();
         this.setFinishButtonVisible(false);
         this.playGameStartSound();
@@ -124,7 +150,10 @@ export class MemoryGame {
             });
         });
 
-        this.cards = this.cards.sort(() => Math.random() - 0.5);
+        for (let i = this.cards.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+            [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+        }
     }
 
     /**
@@ -139,6 +168,33 @@ export class MemoryGame {
             return;
         }
 
+        // ── Flip-on-load diagnostic ────────────────────────────────────────────
+        const containerPrevDisplay = container.style.display;
+        const containerComputedDisplay = getComputedStyle(container).display;
+        const gridPrevChildCount = grid.children.length;
+        const t0 = performance.now();
+
+        console.log('[MemoryGame:DIAG] renderGameBoard called', {
+            docReadyState: document.readyState,
+            containerStyleDisplay: containerPrevDisplay,
+            containerComputedDisplay,
+            gridPrevChildCount,
+            timestamp: t0.toFixed(1),
+        });
+
+        // Check whether a .flipped class is somehow already on grid children
+        const preFlippedCount = grid.querySelectorAll('.memory-card.flipped').length;
+        if (preFlippedCount > 0) {
+            console.warn(`[MemoryGame:DIAG] ${preFlippedCount} card(s) already had .flipped BEFORE renderGameBoard cleared the grid`);
+        }
+        // ──────────────────────────────────────────────────────────────────────
+
+        // Bump generation so any stale click listeners from the old board
+        // are silently ignored instead of mutating the new board's state.
+        this._boardGeneration++;
+        const thisBoardGeneration = this._boardGeneration;
+        console.log('[MemoryGame:DIAG] renderGameBoard generation:', thisBoardGeneration);
+
         grid.innerHTML = '';
 
         const cardsCount = this.cards.length;
@@ -148,17 +204,61 @@ export class MemoryGame {
         grid.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
 
         this.cards.forEach((card, index) => {
-            const cardElement = this.createCardElement(card, index);
+            const cardElement = this.createCardElement(card, index, thisBoardGeneration);
             grid.appendChild(cardElement);
         });
 
         container.style.display = 'block';
+
+        // ── Post-render flip check (runs on next two frames) ──────────────────
+        // If any card shows as .flipped immediately after render (before any click),
+        // that's the bug. Also check computed transform to catch CSS-only flips.
+        requestAnimationFrame(() => {
+            const flippedAfterFrame1 = grid.querySelectorAll('.memory-card.flipped');
+            if (flippedAfterFrame1.length > 0) {
+                console.warn(`[MemoryGame:DIAG] Frame 1: ${flippedAfterFrame1.length} card(s) are .flipped without user interaction`, {
+                    indices: Array.from(flippedAfterFrame1).map(el => el.dataset.index)
+                });
+            }
+
+            requestAnimationFrame(() => {
+                const flippedAfterFrame2 = grid.querySelectorAll('.memory-card.flipped');
+                const t1 = performance.now();
+                const firstCardInner = grid.querySelector('.memory-card-inner');
+                const computedTransform = firstCardInner ? getComputedStyle(firstCardInner).transform : 'N/A';
+                const hasTransition = firstCardInner
+                    ? getComputedStyle(firstCardInner).transition
+                    : 'N/A';
+
+                console.log('[MemoryGame:DIAG] Frame 2 state', {
+                    flippedCardCount: flippedAfterFrame2.length,
+                    flippedIndices: Array.from(flippedAfterFrame2).map(el => el.dataset.index),
+                    firstCardComputedTransform: computedTransform,
+                    firstCardTransition: hasTransition,
+                    renderMs: (t1 - t0).toFixed(1),
+                    containerVisible: getComputedStyle(container).display !== 'none',
+                });
+
+                if (flippedAfterFrame2.length > 0) {
+                    console.error('[MemoryGame:DIAG] BUG CONFIRMED: cards are visually flipped at render time. See above for computed style clues.');
+                }
+            });
+        });
+        // ──────────────────────────────────────────────────────────────────────
     }
 
     /**
      * Create a single card element
      */
-    createCardElement(card, index) {
+    createCardElement(card, index, boardGeneration) {
+        // ── Flip-on-load diagnostic ────────────────────────────────────────────
+        if (card.isFlipped || card.isMatched) {
+            console.warn(`[MemoryGame:DIAG] createCardElement: card[${index}] has unexpected state at render time`, {
+                id: card.id, isFlipped: card.isFlipped, isMatched: card.isMatched
+            });
+        }
+        // ──────────────────────────────────────────────────────────────────────
+
         const cardDiv = document.createElement('div');
         cardDiv.className = 'memory-card';
         cardDiv.dataset.index = index;
@@ -210,17 +310,54 @@ export class MemoryGame {
         cardInner.appendChild(cardFront);
         cardDiv.appendChild(cardInner);
 
-        cardDiv.addEventListener('click', () => this.handleCardClick(index));
+        cardDiv.addEventListener('click', () => {
+            // Guard: if a newer board has been rendered since this element was created,
+            // this is a stale listener — ignore it entirely to prevent phantom flips.
+            if (boardGeneration !== undefined && boardGeneration !== this._boardGeneration) {
+                console.warn('[MemoryGame:DIAG] STALE LISTENER BLOCKED — generation mismatch', {
+                    listenerGeneration: boardGeneration,
+                    currentGeneration: this._boardGeneration,
+                    index,
+                });
+                return;
+            }
+            this.handleCardClick(index);
+        });
 
         return cardDiv;
     }
 
     /**
-     * Handle card click
+     * Handle card click - plays word audio on any card click
      */
     async handleCardClick(index) {
         const card = this.cards[index];
+
+        // ── Click diagnostic ───────────────────────────────────────────────────
+        console.log('[MemoryGame:DIAG] handleCardClick', {
+            index,
+            cardExists: !!card,
+            isProcessing: this.isProcessing,
+            cardIsFlipped: card?.isFlipped,
+            cardIsMatched: card?.isMatched,
+            flippedCards_BEFORE_push: JSON.stringify(this.flippedCards),
+        });
+        // Only warn if the first card of a pair somehow appeared without being clicked
+        // (i.e. this is neither the legitimate 2nd card of a pair, nor a re-click on a flipped/matched card)
+        if (this.flippedCards.length > 0 && !card?.isFlipped && !card?.isMatched && !this.isProcessing) {
+            console.warn('[MemoryGame:DIAG] REAL PHANTOM — flippedCards has entry before this first-card click:', JSON.stringify(this.flippedCards));
+        }
+        // ──────────────────────────────────────────────────────────────────────
+
         if (!card) return;
+
+        // Ghost-click guard: ignore clicks fired within 400ms of board render.
+        // These are synthetic clicks from mobile touch events on the navigation tap.
+        if (this._boardLockedUntil && Date.now() < this._boardLockedUntil) {
+            const msRemaining = this._boardLockedUntil - Date.now();
+            console.log('[MemoryGame:DIAG] Ghost click blocked — board locked for', msRemaining, 'ms more', { index });
+            return;
+        }
 
         // Allow replaying pronunciation on already matched cards.
         if (card.isMatched) {
@@ -229,12 +366,18 @@ export class MemoryGame {
         }
 
         if (this.isProcessing) return;
+
+        // Play word audio on ANY card click (before flipping) - for hearing pronunciation
+        if (card?.wordObj) {
+            await this.playRevealAudio(card);
+        }
+
         if (card.isFlipped) return;
 
         this.flipCard(index, true);
         this.cardFlipCount[index] = (this.cardFlipCount[index] || 0) + 1;
         this.playFlipSound();
-        this.playRevealAudio(card);
+        // Remove audio call after flip - it was already played above
         this.flippedCards.push(index);
 
         if (this.flippedCards.length === 2) {
@@ -248,8 +391,21 @@ export class MemoryGame {
             // Safety: force-release the lock after 2s if THIS processing event got stuck.
             // Guard with token to avoid clobbering a subsequent pair's processing state.
             const safetyFlipped = [...this.flippedCards];
+            const safetyToken = token;
             setTimeout(() => {
-                if (this.isProcessing && this.processingToken === token) {
+                // ── Safety-timer diagnostic ────────────────────────────────────
+                const tokenMismatch = this.processingToken !== safetyToken;
+                console.log('[MemoryGame:DIAG] safety timeout fired', {
+                    safetyToken,
+                    currentToken: this.processingToken,
+                    tokenMismatch,
+                    isProcessing: this.isProcessing,
+                    safetyFlipped: JSON.stringify(safetyFlipped),
+                    currentFlippedCards: JSON.stringify(this.flippedCards),
+                    currentCards_length: this.cards.length,
+                });
+                // ──────────────────────────────────────────────────────────────
+                if (this.isProcessing && this.processingToken === safetyToken) {
                     console.warn('[MemoryGame] Force-releasing stuck isProcessing lock');
                     safetyFlipped.forEach(i => {
                         if (this.cards[i] && !this.cards[i].isMatched) {
@@ -274,7 +430,8 @@ export class MemoryGame {
         const card = this.cards[index];
         card.isFlipped = flipped;
 
-        const cardElement = document.querySelector(`[data-index="${index}"]`);
+        const grid = document.getElementById('memory-grid');
+        const cardElement = grid?.querySelector(`[data-index="${index}"]`);
         if (cardElement) {
             cardElement.classList.toggle('flipped', flipped);
         }
@@ -287,6 +444,17 @@ export class MemoryGame {
         const [index1, index2] = this.flippedCards;
         const card1 = this.cards[index1];
         const card2 = this.cards[index2];
+
+        // ── checkForMatch diagnostic ───────────────────────────────────────────
+        console.log('[MemoryGame:DIAG] checkForMatch', {
+            flippedCards: JSON.stringify(this.flippedCards),
+            index1, index2,
+            card1: card1 ? { id: card1.id, pairId: card1.pairId, isFlipped: card1.isFlipped, isMatched: card1.isMatched } : 'MISSING',
+            card2: card2 ? { id: card2.id, pairId: card2.pairId, isFlipped: card2.isFlipped, isMatched: card2.isMatched } : 'MISSING',
+            card1_flipCount: this.cardFlipCount[index1],
+            card2_flipCount: this.cardFlipCount[index2],
+        });
+        // ──────────────────────────────────────────────────────────────────────
 
         // Guard: stale check fired after flippedCards was already cleared by a safety timeout.
         if (!card1 || !card2) {
@@ -318,11 +486,18 @@ export class MemoryGame {
         const pointsEarned = basePoints + comboBonus + firstTryBonus;
         this.runningScore += pointsEarned;
 
+        // Sync live score to header
+        if (window.gameManager) {
+            window.gameManager.scores['memory'] = this.runningScore;
+            window.gameManager.updateScore('memory');
+        }
+
         this.cards[index1].isMatched = true;
         this.cards[index2].isMatched = true;
 
-        const cardElement1 = document.querySelector(`[data-index="${index1}"]`);
-        const cardElement2 = document.querySelector(`[data-index="${index2}"]`);
+        const grid = document.getElementById('memory-grid');
+        const cardElement1 = grid?.querySelector(`[data-index="${index1}"]`);
+        const cardElement2 = grid?.querySelector(`[data-index="${index2}"]`);
 
         if (cardElement1) cardElement1.classList.add('matched');
         if (cardElement2) cardElement2.classList.add('matched');
@@ -374,6 +549,24 @@ export class MemoryGame {
         this.playMismatchSound();
 
         setTimeout(() => {
+            // ── Stale-timer diagnostic ─────────────────────────────────────────
+            const card1StillExists = !!this.cards[index1];
+            const card2StillExists = !!this.cards[index2];
+            const isStale = !card1StillExists || !card2StillExists ||
+                this.cards[index1]?.isMatched || this.cards[index2]?.isMatched;
+            if (isStale) {
+                console.warn('[MemoryGame:DIAG] handleMismatch timeout fired but board was reset! Stale timer.', {
+                    index1, index2,
+                    card1StillExists, card2StillExists,
+                    card1Matched: this.cards[index1]?.isMatched,
+                    card2Matched: this.cards[index2]?.isMatched,
+                    currentFlippedCards: JSON.stringify(this.flippedCards),
+                    currentCards_length: this.cards.length,
+                });
+            } else {
+                console.log('[MemoryGame:DIAG] handleMismatch timeout fired (clean)', { index1, index2 });
+            }
+            // ──────────────────────────────────────────────────────────────────
             this.flipCard(index1, false);
             this.flipCard(index2, false);
             this.flippedCards = [];
@@ -382,7 +575,7 @@ export class MemoryGame {
     }
 
     /**
-     * Handle level completion — show brief summary then advance via GameManager
+     * Handle level completion — show full summary screen and wait for user action
      */
     handleGameComplete() {
         const levelConfig = this.levelConfigs[this.currentLevelIndex];
@@ -395,8 +588,10 @@ export class MemoryGame {
         console.log(`[MemoryGame] Level ${levelConfig.level} complete. Score: ${metrics.score}, stars: ${metrics.stars}`);
 
         if (window.gameManager) {
-            window.gameManager.scores['memory'] += metrics.score;
+            window.scoreManager.addPoints('memory', metrics.score);
+            window.gameManager.scores['memory'] = window.scoreManager.getScore('memory');
         }
+        const totalScore = window.gameManager?.scores?.memory ?? metrics.score;
 
         this.hideBoardForSummary();
 
@@ -405,6 +600,23 @@ export class MemoryGame {
         const headingHtml = isLastLevel
             ? `<i class="fas fa-trophy"></i> משחק הושלם!`
             : `<i class="fas fa-arrow-up"></i> רמה ${levelConfig.level} הושלמה!`;
+
+        const levelKey = String(levelConfig.level);
+        const pbTableHtml = this.buildPersonalBestTable(levelKey);
+
+        const actionButtonsHtml = isLastLevel
+            ? `<button class="restart-game-btn memory-completion-restart">
+                   <i class="fas fa-redo"></i> שחק שוב
+               </button>
+               <button class="choose-game-btn memory-completion-home">
+                   <i class="fas fa-home"></i> בחר משחק אחר
+               </button>`
+            : `<button class="restart-game-btn memory-completion-advance">
+                   <i class="fas fa-arrow-left"></i> רמה ${levelConfig.level + 1}
+               </button>
+               <button class="choose-game-btn memory-completion-home">
+                   <i class="fas fa-home"></i> בחר משחק אחר
+               </button>`;
 
         const completionDiv = this.buildSummaryCard(`
             <div class="completion-content">
@@ -419,21 +631,20 @@ export class MemoryGame {
                         <p>${this.moves} מהלכים · ${timeElapsed} שניות</p>
                         ${metrics.maxCombo >= 2 ? `<p>🔥 קומבו מקסימלי: ×${metrics.maxCombo}</p>` : ''}
                         <p>תגמול: +${levelCoins} מטבעות</p>
-                        ${personalBestInfo?.best
-                            ? `<p class="memory-personal-best-line">
-                                שיא אישי: ${personalBestInfo.best.score ?? metrics.score} נק׳
-                                · ${personalBestInfo.best.timeSeconds ?? timeElapsed} שניות
-                                · ${personalBestInfo.best.moves ?? this.moves} מהלכים
-                               </p>`
-                            : ''
-                        }
-                        ${personalBestInfo?.isNewBest ? `<p class="memory-personal-best">🏆 שיא אישי! חדש לרמה זו</p>` : ''}
+                        ${isLastLevel
+                            ? `<p class="memory-total-score">סה״כ: ${totalScore} נק׳</p>`
+                            : `<p>ניקוד צבור: ${totalScore} נק׳</p>`}
+                        ${personalBestInfo?.isNewBest ? `<p class="memory-personal-best">🏆 שיא אישי חדש!</p>` : ''}
                     </div>
+                </div>
+                ${pbTableHtml}
+                <div class="completion-actions">
+                    ${actionButtonsHtml}
                 </div>
             </div>
         `);
 
-        if (metrics.stars === 3 && typeof confetti === 'function') {
+        if (metrics.stars >= 3 && typeof confetti === 'function') {
             confetti({ particleCount: 80, spread: 60, origin: { y: 0.5 } });
         }
 
@@ -450,6 +661,20 @@ export class MemoryGame {
                 if (window.gameManager?.saveGameScoreToHistory) {
                     window.gameManager.saveGameScoreToHistory('memory', totalScore);
                 }
+                // Reconcile totalPoints: points are already persisted incrementally via updateScore(),
+                // so only add the remaining delta (handles the edge case where scores differ).
+                if (window.app?.userProgress && window.gameManager) {
+                    const alreadyPersisted = window.gameManager.lastPersistedScores?.['memory'] || 0;
+                    const adjustment = totalScore - alreadyPersisted;
+                    if (adjustment !== 0) {
+                        window.app.userProgress.totalPoints = Math.max(0, (window.app.userProgress.totalPoints || 0) + adjustment);
+                    }
+                    if (window.gameManager.lastPersistedScores) {
+                        window.gameManager.lastPersistedScores['memory'] = totalScore;
+                    }
+                    window.app.saveUserProgress();
+                }
+                window.gameManager?.updateTotalScoreDisplay();
                 if (window.gamificationManager?.updateGameCardProgress) {
                     window.gamificationManager.updateGameCardProgress('memory');
                 }
@@ -458,15 +683,92 @@ export class MemoryGame {
             }
         }
 
-        // Auto-advance after showing stars (GameManager drives the next level or endGame)
-        setTimeout(() => {
-            completionDiv.remove();
-            if (window.gameManager) {
-                window.gameManager.currentQuestionIndex++;
-                window.gameManager.saveGameState();
-                window.gameManager.loadQuestion('memory');
+        // Wire up action buttons — user drives the transition
+        const advanceBtn = completionDiv.querySelector('.memory-completion-advance');
+        const restartBtn = completionDiv.querySelector('.memory-completion-restart');
+        const homeBtn = completionDiv.querySelector('.memory-completion-home');
+
+        if (advanceBtn) {
+            advanceBtn.addEventListener('click', () => {
+                completionDiv.remove();
+                if (window.gameManager) {
+                    window.gameManager.currentQuestionIndex++;
+                    window.gameManager.saveGameState();
+                    window.gameManager.loadQuestion('memory');
+                }
+            });
+        }
+
+        if (restartBtn) {
+            restartBtn.addEventListener('click', () => {
+                completionDiv.remove();
+                if (window.gameManager) {
+                    window.gameManager.restartGame('memory');
+                }
+            });
+        }
+
+        if (homeBtn) {
+            homeBtn.addEventListener('click', () => {
+                window.location.replace('index.html');
+            });
+        }
+    }
+
+    /**
+     * Build the personal-best table for all levels, highlighting currentLevelKey.
+     * Mirrors the "שיאים במשחק הזיכרון" table in stats.js.
+     */
+    buildPersonalBestTable(currentLevelKey) {
+        const allBests = this.loadAllPersonalBests();
+        const levelCount = this.levelConfigs.length;
+        let rows = '';
+
+        for (let i = 1; i <= levelCount; i++) {
+            const key = String(i);
+            const rec = allBests[key];
+            const isCurrent = key === currentLevelKey;
+            const rowClass = isCurrent ? ' class="memory-pb-current"' : '';
+
+            if (rec) {
+                rows += `
+                    <tr${rowClass}>
+                        <td>${i}</td>
+                        <td class="pb-score">${rec.score ?? 0}</td>
+                        <td>${rec.timeSeconds != null ? rec.timeSeconds + ' שנ׳' : '—'}</td>
+                        <td>${rec.moves ?? '—'}</td>
+                        <td>${this.renderStars(rec.stars ?? 0)}</td>
+                    </tr>
+                `;
+            } else {
+                rows += `
+                    <tr${rowClass}>
+                        <td>${i}</td>
+                        <td colspan="4" class="pb-not-played">טרם שוחקה</td>
+                    </tr>
+                `;
             }
-        }, 2500);
+        }
+
+        return `
+            <div class="memory-pb-section">
+                <h3><i class="fas fa-trophy"></i> שיאים אישיים</h3>
+                <table class="memory-pb-table">
+                    <thead>
+                        <tr>
+                            <th>רמה</th>
+                            <th>ניקוד</th>
+                            <th>זמן</th>
+                            <th>מהלכים</th>
+                            <th>כוכבים</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${rows}
+                    </tbody>
+                </table>
+            </div>
+        `;
     }
 
     /**
@@ -545,7 +847,8 @@ export class MemoryGame {
             this.cards.forEach((card, index) => {
                 if (card.isMatched) return;
                 card.isMatched = true;
-                const cardElement = document.querySelector(`[data-index="${index}"]`);
+                const grid = document.getElementById('memory-grid');
+                const cardElement = grid?.querySelector(`[data-index="${index}"]`);
                 if (cardElement) {
                     cardElement.classList.add('matched');
                     this.applyMatchedPairGradient(cardElement, card.pairId ?? 0);
@@ -738,7 +1041,7 @@ export class MemoryGame {
     }
 
     showMatchFeedback(cardIndex, points, isFirstTry, combo) {
-        const cardEl = document.querySelector(`[data-index="${cardIndex}"]`);
+        const cardEl = document.getElementById('memory-grid')?.querySelector(`[data-index="${cardIndex}"]`);
         if (!cardEl) return;
 
         const popup = document.createElement('div');
@@ -822,6 +1125,15 @@ export class MemoryGame {
 
     playRevealAudio(card) {
         if (!card?.wordObj) return;
+
+        // ── Audio diagnostic ───────────────────────────────────────────────────
+        console.log('[MemoryGame:DIAG] playRevealAudio', {
+            word: card.wordObj.word,
+            cardIsFlipped: card.isFlipped,
+            cardIsMatched: card.isMatched,
+            flippedCards: JSON.stringify(this.flippedCards),
+        });
+        // ──────────────────────────────────────────────────────────────────────
 
         // Always speak the English word — Hebrew TTS is unreliable across devices
         // and would speak garbled output (raw Unicode bytes) when no Hebrew voice is installed.
@@ -971,6 +1283,24 @@ export class MemoryGame {
     /**
      * Clean up and hide game
      */
+    /**
+     * Cancel any in-progress flip when the user navigates away mid-game.
+     * Unflips the pending card(s) so the DOM and data model stay in sync,
+     * preventing the "phantom flipped card" bug on the next resume.
+     */
+    cancelFlipInProgress() {
+        if (this.flippedCards.length === 0) return;
+        console.log('[MemoryGame] cancelFlipInProgress — unflipping', this.flippedCards);
+        this.flippedCards.forEach(index => {
+            if (this.cards[index] && !this.cards[index].isMatched) {
+                this.flipCard(index, false);
+            }
+        });
+        this.flippedCards = [];
+        this.isProcessing = false;
+        this._boardLockedUntil = 0;
+    }
+
     cleanup() {
         const container = document.getElementById('memory-game-container');
         if (container) container.style.display = 'none';

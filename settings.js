@@ -22,7 +22,11 @@ class SettingsManager {
             { id: 'places', name: 'מקומות', wordCount: 18 },
             { id: 'time', name: 'זמן', wordCount: 20 },
             { id: 'weather', name: 'מזג אוויר', wordCount: 15 },
-            { id: 'sports', name: 'ספורט', wordCount: 18 }
+            { id: 'sports', name: 'ספורט', wordCount: 29 },
+            { id: 'transportation', name: 'תחבורה', wordCount: 26 },
+            { id: 'tools', name: 'כלים וציוד', wordCount: 16 },
+            { id: 'signs', name: 'שלטים וסמלים', wordCount: 12 },
+            { id: 'music', name: 'מוזיקה', wordCount: 11 }
         ];
 
         this.isPasswordUnlocked = false;
@@ -78,6 +82,63 @@ class SettingsManager {
         console.log('Password protection setup complete');
 
         this.setupCustomWordsSection();
+        this.initTabs();
+    }
+
+    // ── Tab switching ──────────────────────────────────────────
+
+    initTabs() {
+        const bar = document.getElementById('settings-tabs-bar');
+        if (!bar) return;
+
+        const tabBtns  = bar.querySelectorAll('.stab');
+        const panels   = document.querySelectorAll('.stab-panel');
+        let _wimReady  = false;
+
+        tabBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                const tab         = btn.dataset.tab;
+                const isProtected = btn.classList.contains('stab-protected');
+
+                // Show password modal if tab is protected and not yet unlocked
+                if (isProtected && !this.isPasswordUnlocked) {
+                    const modal      = document.getElementById('password-modal');
+                    const pwInput    = document.getElementById('password-input');
+                    const errorDiv   = document.getElementById('password-error');
+                    if (modal) {
+                        modal.classList.add('show');
+                        if (pwInput)  { pwInput.value = ''; pwInput.focus(); }
+                        if (errorDiv) errorDiv.classList.remove('show');
+                    }
+                    return;
+                }
+
+                // Switch active tab + panel
+                tabBtns.forEach(b => b.classList.remove('active'));
+                panels.forEach(p  => p.classList.remove('active'));
+                btn.classList.add('active');
+                const panel = document.getElementById(`tab-${tab}`);
+                if (panel) panel.classList.add('active');
+
+                // Lazy-init the word image manager on first visit
+                if (tab === 'word-images' && !_wimReady) {
+                    _wimReady = true;
+                    const container = document.getElementById('wim-container');
+                    if (container && window.wordImageManager) {
+                        window.wordImageManager.init(container);
+                    }
+                }
+            });
+        });
+    }
+
+    // Called after successful password unlock — updates tab button UI
+    _onTabsUnlock() {
+        document.querySelectorAll('.stab-protected').forEach(btn => {
+            btn.classList.remove('stab-protected');
+            const lock = btn.querySelector('.stab-lock');
+            if (lock) lock.remove();
+        });
     }
 
     setupPasswordProtection() {
@@ -168,12 +229,6 @@ class SettingsManager {
                 this.isPasswordUnlocked = true;
                 modal.classList.remove('show');
 
-                // Remove visual indication from protected sections
-                document.querySelectorAll('.protected-section').forEach(s => {
-                    s.classList.remove('locked');
-                    s.classList.add('unlocked');
-                });
-
                 // Update unlock button
                 if (unlockBtn) {
                     unlockBtn.innerHTML = '<i class="fas fa-unlock"></i> הגדרות פתוחות';
@@ -182,6 +237,9 @@ class SettingsManager {
                     unlockBtn.style.opacity = '0.7';
                     unlockBtn.style.cursor = 'not-allowed';
                 }
+
+                // Unlock tab buttons (remove lock icons + protected class)
+                this._onTabsUnlock();
 
                 // No alert - just visual feedback from button change
             } else {
@@ -268,30 +326,39 @@ class SettingsManager {
         const container = document.getElementById('category-checkboxes');
         if (!container) return; // Skip if element doesn't exist (not on settings page)
 
-        // Inject custom categories from imported words if not already in the list
-        try {
-            const customWords = JSON.parse(localStorage.getItem('customWords_global') || '[]');
-            const knownIds = new Set(this.categories.map(c => c.id));
-            const extraCats = {};
-            customWords.forEach(w => {
-                if (w.category && !knownIds.has(w.category)) {
-                    extraCats[w.category] = (extraCats[w.category] || 0) + 1;
-                }
-            });
-            Object.entries(extraCats).forEach(([catId, count]) => {
+        // Use live vocabularyBank for dynamic counts (includes custom words from localStorage).
+        // vocabularyBank.js is a module and runs before DOMContentLoaded, so it is available here.
+        const vocab = window.vocabularyBank || [];
+
+        // Build per-category live counts
+        const liveCounts = {};
+        vocab.forEach(w => {
+            if (w.category) liveCounts[w.category] = (liveCounts[w.category] || 0) + 1;
+        });
+
+        // Inject any categories not yet in the known list.
+        // Prefer vocabularyBank; fall back to localStorage custom words if bank not ready.
+        const knownIds = new Set(this.categories.map(c => c.id));
+        const wordSource = vocab.length > 0 ? vocab : (() => {
+            try { return JSON.parse(localStorage.getItem('customWords_global') || '[]'); } catch (e) { return []; }
+        })();
+        wordSource.forEach(w => {
+            if (w.category && !knownIds.has(w.category)) {
+                knownIds.add(w.category);
                 this.categories.push({
-                    id: catId,
-                    name: catId === 'custom' ? 'מותאם אישית' : catId,
-                    wordCount: count
+                    id: w.category,
+                    name: w.category === 'custom' ? 'מותאם אישית' : w.category,
+                    wordCount: 0
                 });
-                knownIds.add(catId);
-            });
-        } catch (e) { /* ignore */ }
+            }
+        });
 
         container.innerHTML = '';
 
         this.categories.forEach(category => {
             const isChecked = this.settings.selectedCategories.includes(category.id);
+            // Use live count when vocabularyBank is loaded; fall back to static wordCount
+            const wordCount = vocab.length > 0 ? (liveCounts[category.id] || 0) : category.wordCount;
             const div = document.createElement('div');
             div.className = `checkbox-item ${isChecked ? 'checked' : ''}`;
             div.dataset.categoryId = category.id;
@@ -302,7 +369,7 @@ class SettingsManager {
                        value="${category.id}"
                        ${isChecked ? 'checked' : ''}>
                 <label for="cat-${category.id}">
-                    ${category.name} (${category.wordCount})
+                    ${category.name} (${wordCount})
                 </label>
             `;
 

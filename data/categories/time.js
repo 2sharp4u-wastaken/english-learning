@@ -23,5 +23,6 @@ export const timeWords = [
     { word: "Summer", translation: "קיץ", category: "time", image: "☀️" },
     { word: "Winter", translation: "חורף", category: "time", image: "❄️" },
     { word: "Season", translation: "עונה", category: "time", image: "🍂" },
-    { word: "Fall", translation: "סתיו", category: "time", image: "🍂" }
+    { word: "Fall", translation: "סתיו", category: "time", image: "🍂" },
+    { word: "Spring", translation: "אביב", category: "time", image: "🌸" }
 ];

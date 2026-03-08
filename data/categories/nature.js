@@ -29,5 +29,13 @@ export const natureWords = [
     { word: "Island", translation: "אי", category: "nature", image: "🏝️" },
     { word: "Volcano", translation: "הר געש", category: "nature", image: "🌋" },
     { word: "Thunder", translation: "רעם", category: "nature", image: "🌩️" },
-    { word: "Lightning", translation: "ברק", category: "nature", image: "⚡" }
+    { word: "Lightning", translation: "ברק", category: "nature", image: "⚡" },
+    { word: "Tornado", translation: "טורנדו", category: "nature", image: "🌪️" },
+    { word: "Comet", translation: "שביט", category: "nature", image: "☄️" },
+    { word: "Cactus", translation: "קקטוס", category: "nature", image: "🌵" },
+    { word: "Palm tree", translation: "דקל", category: "nature", image: "🌴" },
+    { word: "Rose", translation: "ורד", category: "nature", image: "🌹" },
+    { word: "Sunflower", translation: "חמנייה", category: "nature", image: "🌻" },
+    { word: "Tulip", translation: "צבעוני", category: "nature", image: "🌷" },
+    { word: "Coral", translation: "אלמוג", category: "nature", image: "🪸" }
 ];

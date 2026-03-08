@@ -52,5 +52,9 @@ export const actionsWords = [
     { word: "Count", translation: "לספור", category: "actions", image: "🔢" },
     { word: "Visit", translation: "לבקר", category: "actions", image: "🏠" },
     { word: "Share", translation: "לחלוק", category: "actions", image: "🤲" },
-    { word: "Climb", translation: "לטפס", category: "actions", image: "🧗" }
+    { word: "Climb", translation: "לטפס", category: "actions", image: "🧗" },
+    { word: "Try", translation: "לנסות", category: "actions", image: "💪" },
+    { word: "Hold", translation: "להחזיק", category: "actions", image: "🤲" },
+    { word: "Push", translation: "לדחוף", category: "actions", image: "👉" },
+    { word: "Stay", translation: "להישאר", category: "actions", image: "🧍" }
 ];

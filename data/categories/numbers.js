@@ -51,5 +51,6 @@ export const numbersWords = [
     { word: "Twenty-one", translation: "עשרים ואחת", category: "numbers", image: "2️⃣1️⃣" },
     { word: "Thirty-one", translation: "שלושים ואחת", category: "numbers", image: "3️⃣1️⃣" },
     { word: "Forty-one", translation: "ארבעים ואחת", category: "numbers", image: "4️⃣1️⃣" },
-    { word: "Fifty-one", translation: "חמישים ואחת", category: "numbers", image: "5️⃣1️⃣" }
+    { word: "Fifty-one", translation: "חמישים ואחת", category: "numbers", image: "5️⃣1️⃣" },
+    { word: "Double", translation: "כפול", category: "numbers", image: "2️⃣" }
 ];

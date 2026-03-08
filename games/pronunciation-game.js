@@ -249,7 +249,10 @@ export async function processPronunciationResult(result) {
 
     if (comparison.accuracy >= 0.7) {
         if (feedback) feedback.className = 'feedback correct';
-        this.scores.pronunciation += Math.round(comparison.accuracy * 10);
+        // Use scoreManager to add points (persists across sessions)
+        const points = Math.round(comparison.accuracy * 10);
+        window.scoreManager.addPoints('pronunciation', points);
+        this.scores.pronunciation = window.scoreManager.getScore('pronunciation');
 
         // Trigger confetti if enabled
         try {

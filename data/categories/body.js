@@ -32,5 +32,6 @@ export const bodyWords = [
     { word: "Muscle", translation: "שריר", category: "body", image: "💪" },
     { word: "Nail", translation: "ציפורן", category: "body", image: "💅" },
     { word: "Beard", translation: "זקן", category: "body", image: "🧔" },
-    { word: "Human", translation: "אדם", category: "body", image: "👤" }
+    { word: "Human", translation: "אדם", category: "body", image: "👤" },
+    { word: "Haircut", translation: "תספורת", category: "body", image: "✂️" }
 ];
