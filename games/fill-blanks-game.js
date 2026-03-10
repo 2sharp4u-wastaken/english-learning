@@ -48,7 +48,8 @@ export class FillBlanksGame {
 
         const hintEl = document.getElementById('fill-blanks-hint');
         if (hintEl) {
-            hintEl.textContent = `🇮🇱 ${sentence.translation}`;
+            hintEl.dataset.hebrewHint = sentence.translation;
+            hintEl.textContent = `🇮🇱 ${window.getHebrew(sentence.translation)}`;
         }
 
         const themeEl = document.getElementById('fill-blanks-theme');

@@ -11,9 +11,7 @@ import http.server
 import json
 import mimetypes
 import os
-import shutil
 import socketserver
-import subprocess
 import urllib.request
 from pathlib import Path
 from typing import Optional
@@ -57,8 +55,6 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
             self._write_image(data)
         elif self.path == '/api/fetch-image':
             self._fetch_image(data)
-        elif self.path == '/api/rebuild-phonetic-index':
-            self._rebuild_phonetic_index()
         else:
             self._reply(404, {'error': 'unknown endpoint'})
 
@@ -124,36 +120,6 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
         dest.write_bytes(image_bytes)
         saved_rel = str(dest.relative_to(BASE_DIR))
         self._reply(200, {'ok': True, 'path': saved_rel})
-
-    def _rebuild_phonetic_index(self):
-        """Run the phonetic-data generation script and stream its output."""
-        node = shutil.which('node')
-        if not node:
-            self._reply(500, {'error': 'node not found on PATH'})
-            return
-        script = BASE_DIR / 'scripts' / 'generate-phonetic-data.js'
-        try:
-            result = subprocess.run(
-                [node, str(script)],
-                cwd=str(BASE_DIR),
-                capture_output=True,
-                text=True,
-                timeout=120,
-            )
-            ok = result.returncode == 0
-            print(f'[rebuild-phonetic-index] exit={result.returncode}')
-            if result.stdout:
-                print(result.stdout[-500:])   # last 500 chars to keep logs tidy
-            if result.stderr:
-                print(result.stderr[-300:])
-            self._reply(
-                200 if ok else 500,
-                {'ok': ok, 'stdout': result.stdout[-1000:], 'stderr': result.stderr[-500:]},
-            )
-        except subprocess.TimeoutExpired:
-            self._reply(504, {'error': 'script timed out'})
-        except Exception as e:
-            self._reply(500, {'error': str(e)})
 
     # ── Helpers ─────────────────────────────────────────────────────
 

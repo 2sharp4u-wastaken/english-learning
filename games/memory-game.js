@@ -143,7 +143,7 @@ export class MemoryGame {
                 id: `translation-${index}`,
                 pairId: index,
                 type: 'translation',
-                content: wordObj.translation,
+                content: wordObj.hebrew,
                 wordObj: wordObj,
                 isFlipped: false,
                 isMatched: false

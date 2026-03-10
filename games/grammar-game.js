@@ -47,7 +47,7 @@ export function loadGrammarQuestion(question) {
 
     const hebrewEl = document.getElementById('grammar-hebrew');
     if (hebrewEl) {
-        hebrewEl.textContent = question.hebrewSentence || question.translation || '';
+        window.setHebrew(hebrewEl, question.hebrewSentence || question.translation || '');
     }
 
     const optionsContainer = document.getElementById('grammar-options');

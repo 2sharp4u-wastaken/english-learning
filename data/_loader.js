@@ -1,6 +1,12 @@
 // Main data loader for English Learning Games
 // Imports all vocabulary categories and exports combined game data
 
+// ── Nikud utilities — must be imported first so window.getHebrew / setHebrew
+//    are defined synchronously before any game module tries to use them. ──────
+import { getHebrew, setHebrew, loadNikudMap, enrichVocabularyBank } from '../utils/nikud.js';
+window.getHebrew = getHebrew;
+window.setHebrew = setHebrew;
+
 // Import all category modules (single source of truth: categories/_index.js)
 import {
     animalsWords, colorsWords, numbersWords, foodWords, bodyWords,
@@ -27,7 +33,7 @@ import {
     convertToPronunciation,
     convertToListening,
     convertToPictureMatch
-} from './converters.js?t=1773200000';
+} from './converters.js?t=1775800000';
 
 // Import phonetics system
 import { initializePhonetics, selectDistractors } from './phonetics.js';
@@ -74,6 +80,11 @@ try {
 
 // Make vocabulary accessible for phonetics BEFORE initialization
 window.vocabularyBank = vocabularyBank;
+
+// ── Nikud enrichment — load map and set w.hebrew on all words ────────────────
+// This runs concurrently with phonetics init; words without a map entry will
+// fetch from the Nakdan API automatically and persist the result.
+const nikudMap = await enrichVocabularyBank(vocabularyBank, await loadNikudMap());
 
 // Initialize phonetic distractor system BEFORE converting listening data
 console.log('🎯 Loading phonetic distractor system...');
@@ -162,6 +173,9 @@ window.refreshCustomWords = function () {
         // Extend vocabularyBank first so distractor generation has the full pool
         vocabularyBank.push(...newWords);
         window.vocabularyBank = vocabularyBank;
+
+        // Enrich new words with nikud inline (fetches from API for any missing)
+        await enrichVocabularyBank(newWords, nikudMap);
 
         // Slice index where new words start (they were pushed to the end)
         const startIdx = vocabularyBank.length - newWords.length;

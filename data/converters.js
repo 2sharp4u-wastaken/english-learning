@@ -4,36 +4,36 @@
 import { selectDistractors } from './phonetics.js';
 
 // Function to generate Hebrew options for vocabulary questions
-function generateHebrewOptions(correctTranslation, category, vocabularyBank) {
+function generateHebrewOptions(correctHebrew, category, vocabularyBank) {
     // Prefer same category, fallback to all, ensure uniqueness and no collisions
     const pool = [
-        ...vocabularyBank.filter(w => w.category === category && w.translation !== correctTranslation),
-        ...vocabularyBank.filter(w => w.translation !== correctTranslation)
+        ...vocabularyBank.filter(w => w.category === category && w.hebrew !== correctHebrew),
+        ...vocabularyBank.filter(w => w.hebrew !== correctHebrew)
     ];
     const seen = new Set();
     const distractors = [];
     for (const item of pool.sort(() => Math.random() - 0.5)) {
         if (distractors.length === 3) break;
-        if (!seen.has(item.translation)) {
-            seen.add(item.translation);
-            distractors.push(item.translation);
+        if (!seen.has(item.hebrew)) {
+            seen.add(item.hebrew);
+            distractors.push(item.hebrew);
         }
     }
-    const set = new Set([correctTranslation, ...distractors]);
+    const set = new Set([correctHebrew, ...distractors]);
     const options = Array.from(set).sort(() => Math.random() - 0.5);
-    const correctIndex = options.indexOf(correctTranslation);
+    const correctIndex = options.indexOf(correctHebrew);
     return { options, correct: correctIndex };
 }
 
 // Convert vocabularyBank to vocabulary game format
 export function convertToVocabulary(vocabularyBank) {
     return vocabularyBank.map(item => {
-        const { options, correct } = generateHebrewOptions(item.translation, item.category, vocabularyBank);
+        const { options, correct } = generateHebrewOptions(item.hebrew, item.category, vocabularyBank);
 
         return {
             word: item.word,
             pronunciation: `/${item.word.toLowerCase()}/`, // Simple pronunciation
-            hebrew: item.translation,
+            hebrew: item.hebrew,
             picture: item.image,
             imageUrl: item.imageUrl, // Support for real images
             options: options,
@@ -50,7 +50,7 @@ export function convertToReading(vocabularyBank) {
         word: item.word.toUpperCase(),
         picture: item.image,
         imageUrl: item.imageUrl, // Support for real images
-        hebrew: item.translation,
+        hebrew: item.hebrew,
         phonics: item.word.split('').join('-'),
         extraLetters: ["M", "T", "R", "S", "N", "L"], // Common extra letters
         difficulty: "beginner",
@@ -63,7 +63,7 @@ export function convertToPronunciation(vocabularyBank) {
     return vocabularyBank.map(item => ({
         word: item.word,
         phonetic: `/${item.word.toLowerCase()}/`,
-        hebrew: item.translation,
+        hebrew: item.hebrew,
         picture: item.image,
         imageUrl: item.imageUrl, // Support for real images
         difficulty: "beginner",
@@ -97,7 +97,7 @@ export function convertToPictureMatch(vocabularyBank) {
 
         return {
             word: item.word,
-            hebrew: item.translation,
+            hebrew: item.hebrew,
             picture: item.image,
             imageUrl: item.imageUrl,
             options: all,
@@ -148,7 +148,7 @@ export function convertToListening(vocabularyBank) {
 
         return {
             word: item.word,
-            hebrew: item.translation,
+            hebrew: item.hebrew,
             picture: item.image,
             imageUrl: item.imageUrl, // Support for real images
             options: options,

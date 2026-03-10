@@ -56,6 +56,9 @@ class SettingsManager {
             autoSaveProgress: true, // Whether to save incomplete games
             showExitToast: true, // Show toast notification on exit
 
+            // Display
+            showNikud: true,
+
             // Custom words (Parent)
             claudeApiKey: ''
         };
@@ -660,6 +663,11 @@ class SettingsManager {
             this.settings.showConfetti = e.target.checked;
         });
 
+        // Show nikud toggle
+        document.getElementById('show-nikud').addEventListener('change', (e) => {
+            this.settings.showNikud = e.target.checked;
+        });
+
         // Exit behavior radio buttons
         document.querySelectorAll('input[name="exitBehavior"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
@@ -785,6 +793,7 @@ class SettingsManager {
 
         // Update advanced settings
         document.getElementById('show-confetti').checked = this.settings.showConfetti;
+        document.getElementById('show-nikud').checked = this.settings.showNikud !== false;
 
         // Update exit behavior settings
         const exitBehavior = this.settings.exitBehavior || 'hybrid';
@@ -887,7 +896,7 @@ class SettingsManager {
             } else if (progress.status === 'success' || progress.status === 'partial') {
                 this.showImportStatus(progress.status === 'success' ? 'success' : 'error', progress.message);
                 this.renderCustomWordsList();
-                this._rebuildPhoneticIndex();
+                this._rebuildPhoneticIndexInline(progress.words || []);
             } else if (progress.status === 'error') {
                 this.showImportStatus('error', progress.message);
             }
@@ -896,18 +905,38 @@ class SettingsManager {
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> שמור לקבצי המקור'; }
     }
 
-    async _rebuildPhoneticIndex() {
-        this.appendConsoleLine({ message: '🔄 מחדש אינדקס פונטי...', type: 'info' });
+    async _rebuildPhoneticIndexInline(newWords) {
+        if (!newWords.length) return;
+        this.appendConsoleLine({ message: '🔄 מעדכן אינדקס פונטי...', type: 'info' });
         try {
-            const res = await fetch('/api/rebuild-phonetic-index', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
-            const data = await res.json();
-            if (data.ok) {
-                this.appendConsoleLine({ message: '✅ האינדקס הפונטי עודכן בהצלחה', type: 'success' });
-            } else {
-                this.appendConsoleLine({ message: `⚠️ עדכון אינדקס פונטי נכשל: ${data.error || data.stderr || 'שגיאה לא ידועה'}`, type: 'error' });
+            // Load current index
+            const r = await fetch('/data/phonetic-index.json');
+            const currentIndex = r.ok ? await r.json() : {};
+
+            // Compute entries for new words using full vocabulary bank
+            const allWords = window.vocabularyBank || [];
+            const updates = {};
+            for (const w of newWords) {
+                if (!window.computePhoneticEntry) break;
+                updates[w.word.toLowerCase()] = window.computePhoneticEntry(w.word, allWords);
+            }
+
+            if (!Object.keys(updates).length) {
+                this.appendConsoleLine({ message: '⚠️ computePhoneticEntry לא זמין — דלג על עדכון אינדקס', type: 'error' });
+                return;
+            }
+
+            const updatedIndex = { ...currentIndex, ...updates };
+            const wr = await fetch('/api/write-text', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ path: 'data/phonetic-index.json', content: JSON.stringify(updatedIndex, null, 2) })
+            });
+            if ((await wr.json()).ok) {
+                this.appendConsoleLine({ message: `✅ האינדקס הפונטי עודכן (${newWords.length} מילים חדשות)`, type: 'success' });
             }
         } catch (e) {
-            this.appendConsoleLine({ message: `⚠️ לא ניתן להגיע לשרת לצורך עדכון האינדקס: ${e.message}`, type: 'error' });
+            this.appendConsoleLine({ message: `⚠️ שגיאה בעדכון אינדקס פונטי: ${e.message}`, type: 'error' });
         }
     }
 

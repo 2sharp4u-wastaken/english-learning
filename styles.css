@@ -5412,6 +5412,33 @@ body::before {
     opacity: 1;
 }
 
+/* Nikud toggle button — mirrors case-toggle-btn style */
+.nikud-toggle-btn {
+    position: static;
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid rgba(255, 255, 255, 0.4);
+    color: white;
+    padding: 8px 14px;
+    border-radius: var(--radius-md);
+    font-size: 1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    z-index: 10;
+    font-family: inherit;
+}
+.nikud-toggle-btn .nikud-on        { opacity: 1; }
+.nikud-toggle-btn .nikud-off-label { opacity: 0.4; }
+/* When active (nikud enabled) highlight the nikud version */
+.nikud-toggle-btn.active .nikud-on        { opacity: 1; }
+.nikud-toggle-btn.active .nikud-off-label { opacity: 0.4; }
+/* When inactive (nikud disabled) highlight plain version */
+.nikud-toggle-btn:not(.active) .nikud-on        { opacity: 0.4; }
+.nikud-toggle-btn:not(.active) .nikud-off-label { opacity: 1; }
+
 .case-toggle-btn:hover {
     background: rgba(255, 255, 255, 0.25);
 }

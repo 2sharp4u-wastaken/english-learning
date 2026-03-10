@@ -85,7 +85,8 @@ export class SentenceScrambleGame {
     updateHintDisplay() {
         const hintEl = document.getElementById('scramble-hint');
         if (hintEl && this.currentSentence) {
-            hintEl.textContent = `🇮🇱 ${this.currentSentence.translation}`;
+            hintEl.dataset.hebrewHint = this.currentSentence.translation;
+            hintEl.textContent = `🇮🇱 ${window.getHebrew(this.currentSentence.translation)}`;
         }
 
         const themeEl = document.getElementById('scramble-theme');

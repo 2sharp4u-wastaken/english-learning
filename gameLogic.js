@@ -97,6 +97,16 @@ class GameManager {
             }
         };
 
+        // Immediate nikud toggle — update all currently displayed Hebrew elements
+        window.addEventListener('nikud-changed', () => {
+            document.querySelectorAll('[data-hebrew-source]').forEach(el => {
+                el.textContent = window.getHebrew?.(el.dataset.hebrewSource) || el.dataset.hebrewSource;
+            });
+            document.querySelectorAll('[data-hebrew-hint]').forEach(el => {
+                el.textContent = `🇮🇱 ${window.getHebrew?.(el.dataset.hebrewHint) || el.dataset.hebrewHint}`;
+            });
+        });
+
         // Bind game module methods to this instance
         this.loadVocabularyQuestion = VocabularyGame.loadVocabularyQuestion.bind(this);
         this.onVocabularyManualAudio = VocabularyGame.onVocabularyManualAudio.bind(this);

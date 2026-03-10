@@ -55,7 +55,7 @@ export async function loadPronunciationQuestion(question) {
         renderPicture(pictureElement, question);
     }
     if (hebrewElement) {
-        hebrewElement.textContent = question.hebrew || '';
+        window.setHebrew(hebrewElement, question.hebrew || '');
         hebrewElement.style.display = 'block';
     }
 

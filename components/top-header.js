@@ -74,6 +74,10 @@ function buildHeaderHTML(activePage) {
                 <span class="case-upper">ABC</span>
                 <span class="case-lower">abc</span>
             </button>
+            <button class="nikud-toggle-btn" id="nikud-toggle" title="הצג/הסתר ניקוד (אֶ/א)">
+                <span class="nikud-on">אֶ</span>
+                <span class="nikud-off-label">א</span>
+            </button>
             <a href="stats.html" class="header-icon-btn${statsClass}" id="stats-btn" title="סטטיסטיקות">
                 <i class="fas fa-chart-line"></i>
             </a>
@@ -334,6 +338,29 @@ export function initTopHeader(options = {}) {
     // Wire the global case toggle button
     document.getElementById('global-case-toggle')?.addEventListener('click', () => {
         toggleCase();
+    });
+
+    // Initialise nikud state from localStorage (for pages that don't load nikud.js)
+    if (window._showNikud === undefined) {
+        try {
+            const s = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
+            window._showNikud = s.showNikud !== false;
+        } catch (_) { window._showNikud = true; }
+    }
+    // Sync button visual to current state
+    document.getElementById('nikud-toggle')?.classList.toggle('active', window._showNikud !== false);
+
+    // Wire the nikud toggle button
+    document.getElementById('nikud-toggle')?.addEventListener('click', () => {
+        const next = window._showNikud === false; // flip
+        window._showNikud = next;
+        document.getElementById('nikud-toggle')?.classList.toggle('active', next);
+        try {
+            const s = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
+            s.showNikud = next;
+            localStorage.setItem('englishLearningSettings', JSON.stringify(s));
+        } catch (_) {}
+        window.dispatchEvent(new CustomEvent('nikud-changed'));
     });
 
     if (activePage === 'home') {

@@ -54,7 +54,7 @@ export async function loadReadingQuestion(question) {
     }
 
     if (hebrewElement) {
-        hebrewElement.textContent = question.hebrew || '';
+        window.setHebrew(hebrewElement, question.hebrew || '');
         hebrewElement.style.visibility = 'visible';
         hebrewElement.style.opacity = '1';
     }
@@ -305,7 +305,7 @@ export async function checkBuiltWord() {
 
             // Ensure Hebrew word is visible
             if (hebrewElement && question.hebrew) {
-                hebrewElement.textContent = question.hebrew;
+                window.setHebrew(hebrewElement, question.hebrew);
                 hebrewElement.style.visibility = 'visible';
                 hebrewElement.style.opacity = '1';
             }

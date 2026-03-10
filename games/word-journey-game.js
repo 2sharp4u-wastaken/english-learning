@@ -202,7 +202,7 @@ export class WordJourneyGame {
             <div class="wj-discover-card">
                 <div class="wj-discover-emoji"></div>
                 <div class="wj-discover-word">${q.word}</div>
-                <div class="wj-discover-translation">${q.translation}</div>
+                <div class="wj-discover-translation" data-hebrew-source="${q.hebrew}">${window.getHebrew(q.hebrew)}</div>
             </div>
         `;
         renderPicture(area.querySelector('.wj-discover-emoji'), { picture: q.image, imageUrl: q.imageUrl, word: q.word, category: q.category });
@@ -378,7 +378,7 @@ export class WordJourneyGame {
                     </div>
                     <div class="words-row">
                         <div class="target-word" id="wj-spell-word">${q.word}</div>
-                        <div class="hebrew-translation">${q.translation}</div>
+                        <div class="hebrew-translation" data-hebrew-source="${q.hebrew}">${window.getHebrew(q.hebrew)}</div>
                     </div>
                     <div class="controls-row">
                         <button class="play-audio" id="wj-spell-audio" aria-label="השמע מילה">
@@ -577,7 +577,7 @@ export class WordJourneyGame {
                     </div>
                     <div class="words-row">
                         <div class="target-word">${q.word}</div>
-                        <div class="hebrew-translation">${q.translation}</div>
+                        <div class="hebrew-translation" data-hebrew-source="${q.hebrew}">${window.getHebrew(q.hebrew)}</div>
                     </div>
                     <div class="controls-row">
                         <button class="record-btn-icon" id="wj-record-btn" aria-label="הקלט את ההגייה שלך">
@@ -779,7 +779,7 @@ export class WordJourneyGame {
             });
             this.recallCards.push({
                 id: `img-${i}`, type: 'translation',
-                content: w.translation, image: w.image, imageUrl: w.imageUrl,
+                content: w.hebrew, image: w.image, imageUrl: w.imageUrl,
                 wordKey: w.word, category: w.category, flipped: false, matched: false
             });
         });
