@@ -3,41 +3,10 @@
 
 import { renderPicture } from '../utils/imageRenderer.js';
 
-// State for case mode (uppercase by default)
-let useLowercaseMode = false;
-
-// Toggle between uppercase and lowercase display
-export function toggleReadingCase() {
-    useLowercaseMode = !useLowercaseMode;
-
-    // Update toggle button visual state
-    const toggleBtn = document.getElementById('reading-case-toggle');
-    if (toggleBtn) {
-        toggleBtn.classList.toggle('lowercase-mode', useLowercaseMode);
-    }
-
-    // Add/remove lowercase-mode class to containers (for CSS text-transform override)
-    const letterBank = document.getElementById('letter-bank');
-    const builtWord = document.getElementById('built-word');
-    if (letterBank) letterBank.classList.toggle('lowercase-mode', useLowercaseMode);
-    if (builtWord) builtWord.classList.toggle('lowercase-mode', useLowercaseMode);
-
-    // Update all visible letters
-    document.querySelectorAll('#letter-bank .letter-btn, #built-word .letter-btn').forEach(btn => {
-        const originalLetter = btn.dataset.letter;
-        if (originalLetter) {
-            btn.textContent = useLowercaseMode ? originalLetter.toLowerCase() : originalLetter.toUpperCase();
-        }
-        // Set inline style to override CSS text-transform
-        btn.style.textTransform = useLowercaseMode ? 'none' : '';
-    });
-
-    console.log(`[Reading] Case mode: ${useLowercaseMode ? 'lowercase' : 'uppercase'}`);
-}
-
-// Get display letter based on case mode
+// Always store letters as lowercase; CSS text-transform handles the display case
+// (body.lowercase-mode → text-transform: none; default → text-transform: uppercase via .letter-btn)
 function getDisplayLetter(letter) {
-    return useLowercaseMode ? letter.toLowerCase() : letter.toUpperCase();
+    return letter.toLowerCase();
 }
 
 export async function loadReadingQuestion(question) {
@@ -187,12 +156,8 @@ export function addLetterToWord(letter, button) {
     const letterBtn = document.createElement('button');
     letterBtn.className = 'letter-btn';
     letterBtn.textContent = getDisplayLetter(letter);
-    letterBtn.dataset.letter = letter; // Store original for case toggling
+    letterBtn.dataset.letter = letter;
     letterBtn.style.pointerEvents = 'none';
-    // Override CSS text-transform when in lowercase mode
-    if (useLowercaseMode) {
-        letterBtn.style.textTransform = 'none';
-    }
     builtWordElement.appendChild(letterBtn);
 
     // Mark button as used

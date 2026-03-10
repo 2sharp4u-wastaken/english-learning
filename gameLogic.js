@@ -9,10 +9,10 @@ const debugLog = (...args) => { if (DEBUG) console.log(...args); };
 const SENTENCE_THEMES = new Set(['animals', 'colors', 'daily', 'family', 'food', 'greetings', 'numbers', 'school']);
 
 // Import game modules
-import * as VocabularyGame from './games/vocabulary-game.js?t=1762595926';
+import * as VocabularyGame from './games/vocabulary-game.js?t=1773075344';
 import * as GrammarGame from './games/grammar-game.js?t=1774903002';
 import * as GrammarBeginnerGame from './games/grammar-beginner-game.js';
-import * as ListeningGame from './games/listening-game.js?t=1762609545';
+import * as ListeningGame from './games/listening-game.js?t=1773075344';
 import * as PronunciationGame from './games/pronunciation-game.js?t=1771785500';
 import * as ReadingGame from './games/reading-game.js?t=1742000000';
 import * as PracticeGame from './games/practice-game.js';
@@ -99,6 +99,7 @@ class GameManager {
 
         // Bind game module methods to this instance
         this.loadVocabularyQuestion = VocabularyGame.loadVocabularyQuestion.bind(this);
+        this.onVocabularyManualAudio = VocabularyGame.onVocabularyManualAudio.bind(this);
         this.checkVocabularyAnswer = VocabularyGame.checkVocabularyAnswer.bind(this);
         this.loadGrammarQuestion = GrammarGame.loadGrammarQuestion.bind(this);
         this.checkGrammarAnswer = GrammarGame.checkGrammarAnswer.bind(this);
@@ -106,6 +107,7 @@ class GameManager {
         this.checkGrammarBeginnerAnswer = GrammarBeginnerGame.checkGrammarBeginnerAnswer.bind(this);
         this.loadListeningQuestion = ListeningGame.loadListeningQuestion.bind(this);
         this.showListeningHebrew = ListeningGame.showListeningHebrew.bind(this);
+        this.onListeningAudioComplete = ListeningGame.onListeningAudioComplete.bind(this);
         this.checkListeningAnswer = ListeningGame.checkListeningAnswer.bind(this);
         this.loadPronunciationQuestion = PronunciationGame.loadPronunciationQuestion.bind(this);
         this.toggleRecording = PronunciationGame.toggleRecording.bind(this);
@@ -115,7 +117,6 @@ class GameManager {
         this.addLetterToWord = ReadingGame.addLetterToWord.bind(this);
         this.clearBuiltWord = ReadingGame.clearBuiltWord.bind(this);
         this.checkBuiltWord = ReadingGame.checkBuiltWord.bind(this);
-        this.toggleReadingCase = ReadingGame.toggleReadingCase.bind(this);
         this.loadPracticeQuestion = PracticeGame.loadPracticeQuestion.bind(this);
         this.togglePracticeRecording = PracticeGame.togglePracticeRecording.bind(this);
         this.processPracticeResult = PracticeGame.processPracticeResult.bind(this);
@@ -1202,183 +1203,180 @@ class GameManager {
     }
 
     setupEventListeners() {
-        // Game selector buttons - direct switching
-        const gameBtns = document.querySelectorAll('.game-btn');
-        if (gameBtns) {
-            gameBtns.forEach(btn => {
-                // Remove any existing listeners by replacing the button
-                // This prevents duplicate listeners if setupEventListeners is called multiple times
-                const clone = btn.cloneNode(true);
-                btn.parentNode.replaceChild(clone, btn);
+        // Tear down any previous listeners before re-registering
+        if (this._eventController) this._eventController.abort();
+        this._eventController = new AbortController();
+        const { signal } = this._eventController;
 
-                clone.addEventListener('click', (e) => {
-                    e.preventDefault();
-                    // Get gameType from the button element (e.currentTarget)
-                    const gameType = e.currentTarget?.dataset?.game;
-                    if (gameType) {
-                        this.switchGame(gameType);
-                    } else {
-                        console.warn('Game button clicked without data-game attribute:', e.currentTarget);
-                    }
-                });
-            });
-        }
+        this._setupGameSelectorListeners(signal);
+        this._setupVocabularyListeners(signal);
+        this._setupGrammarListeners(signal);
+        this._setupPronunciationListeners(signal);
+        this._setupListeningListeners(signal);
+        this._setupPictureMatchListeners(signal);
+        this._setupReadingListeners(signal);
+        this._setupPracticeListeners(signal);
+        this._setupABCListeners(signal);
+        this._setupSpaceKeyListener(signal);
+        this._setupResetListeners(signal);
+    }
 
-        // Vocabulary game events
-        const vocabAudioElement = document.getElementById('vocab-audio');
-        if (vocabAudioElement) {
-            vocabAudioElement.addEventListener('click', () => {
+    _setupGameSelectorListeners(signal) {
+        document.querySelectorAll('.game-btn').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                e.preventDefault();
+                const gameType = e.currentTarget?.dataset?.game;
+                if (gameType) {
+                    this.switchGame(gameType);
+                } else {
+                    console.warn('Game button clicked without data-game attribute:', e.currentTarget);
+                }
+            }, { signal });
+        });
+    }
+
+    _setupVocabularyListeners(signal) {
+        const vocabAudio = document.getElementById('vocab-audio');
+        if (vocabAudio) {
+            vocabAudio.addEventListener('click', () => {
                 if (this.currentGame === 'vocabulary') {
                     this.isManualVocabPlayPending = true;
                 }
                 this.playCurrentQuestionAudio();
-            });
-        }
-        
-        const vocabNextElement = document.getElementById('vocab-next');
-        if (vocabNextElement) {
-            vocabNextElement.addEventListener('click', () => {
-                this.loadQuestion('vocabulary');
-            });
+            }, { signal });
         }
 
-        // Grammar game events
-        const grammarNextElement = document.getElementById('grammar-next');
-        if (grammarNextElement) {
-            grammarNextElement.addEventListener('click', () => {
-                this.loadQuestion('grammar');
-            });
+        const vocabNext = document.getElementById('vocab-next');
+        if (vocabNext) {
+            vocabNext.addEventListener('click', () => this.loadQuestion('vocabulary'), { signal });
+        }
+    }
+
+    _setupGrammarListeners(signal) {
+        const grammarNext = document.getElementById('grammar-next');
+        if (grammarNext) {
+            grammarNext.addEventListener('click', () => this.loadQuestion('grammar'), { signal });
         }
 
-        // Grammar Beginner game events
-        const grammarBeginnerNextElement = document.getElementById('grammar-beginner-next');
-        if (grammarBeginnerNextElement) {
-            grammarBeginnerNextElement.addEventListener('click', () => {
-                this.loadQuestion('grammar-beginner');
-            });
+        const grammarBeginnerNext = document.getElementById('grammar-beginner-next');
+        if (grammarBeginnerNext) {
+            grammarBeginnerNext.addEventListener('click', () => this.loadQuestion('grammar-beginner'), { signal });
+        }
+    }
+
+    _setupPronunciationListeners(signal) {
+        const listen = document.getElementById('pronunciation-listen');
+        if (listen) {
+            listen.addEventListener('click', () => this.playCurrentQuestionAudio(), { signal });
         }
 
-        // Pronunciation game events
-        const pronunciationListenElement = document.getElementById('pronunciation-listen');
-        if (pronunciationListenElement) {
-            pronunciationListenElement.addEventListener('click', () => {
-                this.playCurrentQuestionAudio();
-            });
-        }
-        
-        const recordBtnElement = document.getElementById('record-btn');
-        if (recordBtnElement) {
-            recordBtnElement.addEventListener('click', () => {
-                this.toggleRecording();
-            });
-        }
-        
-        const pronunciationNextElement = document.getElementById('pronunciation-next');
-        if (pronunciationNextElement) {
-            pronunciationNextElement.addEventListener('click', () => {
-                this.loadQuestion('pronunciation');
-            });
+        const recordBtn = document.getElementById('record-btn');
+        if (recordBtn) {
+            recordBtn.addEventListener('click', () => this.toggleRecording(), { signal });
         }
 
-        // Listening game events
-        const listeningAudioElement = document.getElementById('listening-audio');
-        if (listeningAudioElement) {
-            listeningAudioElement.addEventListener('click', () => {
-                this.playCurrentQuestionAudio();
-            });
+        const next = document.getElementById('pronunciation-next');
+        if (next) {
+            next.addEventListener('click', () => this.loadQuestion('pronunciation'), { signal });
         }
-        
-        const listeningNextElement = document.getElementById('listening-next');
-        if (listeningNextElement) {
-            listeningNextElement.addEventListener('click', () => {
-                this.loadQuestion('listening');
-            });
+    }
+
+    _setupListeningListeners(signal) {
+        const audio = document.getElementById('listening-audio');
+        if (audio) {
+            audio.addEventListener('click', () => this.playCurrentQuestionAudio(), { signal });
         }
 
-        // Picture Match game events
-        const pictureMatchAudioEl = document.getElementById('picture-match-audio');
-        if (pictureMatchAudioEl) {
-            pictureMatchAudioEl.addEventListener('click', () => {
-                this.playCurrentQuestionAudio();
-            });
+        const next = document.getElementById('listening-next');
+        if (next) {
+            next.addEventListener('click', () => this.loadQuestion('listening'), { signal });
         }
-        const pictureMatchNextEl = document.getElementById('picture-match-next');
-        if (pictureMatchNextEl) {
-            pictureMatchNextEl.addEventListener('click', () => {
-                this.loadQuestion('picture-match');
-            });
+    }
+
+    _setupPictureMatchListeners(signal) {
+        const audio = document.getElementById('picture-match-audio');
+        if (audio) {
+            audio.addEventListener('click', () => this.playCurrentQuestionAudio(), { signal });
         }
 
-        // Reading game events
-        const readingAudioElement = document.getElementById('reading-audio');
-        if (readingAudioElement) {
-            readingAudioElement.addEventListener('click', () => {
-                this.playCurrentQuestionAudio();
-            });
+        const next = document.getElementById('picture-match-next');
+        if (next) {
+            next.addEventListener('click', () => this.loadQuestion('picture-match'), { signal });
         }
-        
-        const clearWordElement = document.getElementById('clear-word');
-        if (clearWordElement) {
-            clearWordElement.addEventListener('click', () => {
+    }
+
+    _setupReadingListeners(signal) {
+        const audio = document.getElementById('reading-audio');
+        if (audio) {
+            audio.addEventListener('click', () => this.playCurrentQuestionAudio(), { signal });
+        }
+
+        const clearWord = document.getElementById('clear-word');
+        if (clearWord) {
+            clearWord.addEventListener('click', () => {
                 debugLog('Clear word button clicked');
                 this.clearBuiltWord();
-            });
+            }, { signal });
         } else {
             console.error('clear-word element not found during setup');
         }
-        
-        const checkWordElement = document.getElementById('check-word');
-        if (checkWordElement) {
-            checkWordElement.addEventListener('click', () => {
-                this.checkBuiltWord();
-            });
-        }
-        
-        const readingNextElement = document.getElementById('reading-next');
-        if (readingNextElement) {
-            readingNextElement.addEventListener('click', () => {
-                this.loadQuestion('reading');
-            });
+
+        const checkWord = document.getElementById('check-word');
+        if (checkWord) {
+            checkWord.addEventListener('click', () => this.checkBuiltWord(), { signal });
         }
 
-        // Practice game events
-        const practiceRecordBtn = document.getElementById('practice-record-btn');
-        if (practiceRecordBtn) {
-            practiceRecordBtn.addEventListener('click', () => {
-                this.togglePracticeRecording();
-            });
+        const next = document.getElementById('reading-next');
+        if (next) {
+            next.addEventListener('click', () => this.loadQuestion('reading'), { signal });
+        }
+    }
+
+    _setupPracticeListeners(signal) {
+        const recordBtn = document.getElementById('practice-record-btn');
+        if (recordBtn) {
+            recordBtn.addEventListener('click', () => this.togglePracticeRecording(), { signal });
         }
 
-        const practiceListenNative = document.getElementById('practice-listen-native');
-        if (practiceListenNative) {
-            practiceListenNative.addEventListener('click', () => {
-                this.playNativePronunciation();
-            });
+        const listenNative = document.getElementById('practice-listen-native');
+        if (listenNative) {
+            listenNative.addEventListener('click', () => this.playNativePronunciation(), { signal });
         }
 
-        const practiceNext = document.getElementById('practice-next');
-        if (practiceNext) {
-            practiceNext.addEventListener('click', () => {
-                this.loadQuestion('practice');
-            });
+        const next = document.getElementById('practice-next');
+        if (next) {
+            next.addEventListener('click', () => this.loadQuestion('practice'), { signal });
         }
 
-        // ABC game events
-        const abcAudioBtn = document.getElementById('abc-audio');
-        if (abcAudioBtn) {
-            abcAudioBtn.addEventListener('click', () => {
-                this.playABCLetterAudio();
-            });
+        const exitBtn = document.getElementById('practice-exit-btn');
+        if (exitBtn) {
+            exitBtn.addEventListener('click', () => this.showWelcomeScreen(), { signal });
+        }
+    }
+
+    _setupABCListeners(signal) {
+        const audioBtn = document.getElementById('abc-audio');
+        if (audioBtn) {
+            audioBtn.addEventListener('click', () => this.playABCLetterAudio(), { signal });
         }
 
-        const abcNextBtn = document.getElementById('abc-next');
-        if (abcNextBtn) {
-            abcNextBtn.addEventListener('click', () => {
-                this.loadQuestion('abc');
-            });
+        const next = document.getElementById('abc-next');
+        if (next) {
+            next.addEventListener('click', () => this.loadQuestion('abc'), { signal });
         }
 
-        // Space key shortcut: click whichever next-question button is currently visible
+        const masteryReset = document.getElementById('abc-reset-mastery-btn');
+        if (masteryReset) {
+            masteryReset.addEventListener('click', () => {
+                if (confirm('האם אתה בטוח שברצונך לאפס את השליטה בכל האותיות? תצטרך ללמוד אותן מחדש.')) {
+                    this.resetABCMastery();
+                    this.resetCurrentGame();
+                }
+            }, { signal });
+        }
+    }
+
+    _setupSpaceKeyListener(signal) {
         document.addEventListener('keydown', (e) => {
             if (e.code !== 'Space') return;
             const tag = document.activeElement?.tagName?.toLowerCase();
@@ -1393,9 +1391,10 @@ class GameManager {
                     break;
                 }
             }
-        });
+        }, { signal });
+    }
 
-        // Reset game button events for all games (except practice which has exit button)
+    _setupResetListeners(signal) {
         const gameTypes = ['vocab', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'scramble', 'fill-blanks', 'memory', 'word-journey', 'picture-match'];
         gameTypes.forEach(gameType => {
             const resetBtn = document.getElementById(`${gameType}-reset-btn`);
@@ -1404,37 +1403,9 @@ class GameManager {
                     if (confirm('האם אתה בטוח שברצונך לאפס את המשחק? כל ההתקדמות תאבד.')) {
                         this.resetCurrentGame();
                     }
-                });
+                }, { signal });
             }
         });
-
-        // ABC mastery reset button
-        const abcMasteryResetBtn = document.getElementById('abc-reset-mastery-btn');
-        if (abcMasteryResetBtn) {
-            abcMasteryResetBtn.addEventListener('click', () => {
-                if (confirm('האם אתה בטוח שברצונך לאפס את השליטה בכל האותיות? תצטרך ללמוד אותן מחדש.')) {
-                    this.resetABCMastery();
-                    // Restart the game with fresh questions
-                    this.resetCurrentGame();
-                }
-            });
-        }
-
-        // Reading game case toggle
-        const readingCaseToggle = document.getElementById('reading-case-toggle');
-        if (readingCaseToggle) {
-            readingCaseToggle.addEventListener('click', () => {
-                this.toggleReadingCase();
-            });
-        }
-
-        // Practice mode exit button
-        const practiceExitBtn = document.getElementById('practice-exit-btn');
-        if (practiceExitBtn) {
-            practiceExitBtn.addEventListener('click', () => {
-                this.showWelcomeScreen();
-            });
-        }
     }
 
     loadGameData() {
@@ -2355,106 +2326,19 @@ class GameManager {
                 this.audioPlaysLeft--;
                 this.updateAllPlayCounters(this.currentGame);
 
-                // In listening game: reveal options after audio plays
+                // Delegate post-audio logic to each game module
                 if (this.currentGame === 'listening') {
-                    debugLog('📢 [AUDIO] Audio finished playing for listening game');
-                    debugLog('📢 [AUDIO] listeningAudioPlayed flag is:', this.listeningAudioPlayed);
-                    this.showListeningHebrew();
-
-                    // Reveal options after first audio play
-                    if (!this.listeningAudioPlayed) {
-                        debugLog('📢 [AUDIO] First audio play - revealing options now');
-                        const optionsContainer = document.getElementById('listening-options');
-                        const optionButtons = optionsContainer?.querySelectorAll('.option-btn');
-                        debugLog('📢 [AUDIO] Found', optionButtons?.length || 0, 'option buttons to reveal');
-                        optionButtons?.forEach((btn, i) => {
-                            btn.classList.remove('listening-option-hidden');
-                            btn.disabled = false;
-                            debugLog('📢 [AUDIO] Option', i, 'revealed - disabled:', btn.disabled);
-                        });
-
-                        // Clear the listening prompt
-                        const feedback = document.getElementById('listening-feedback');
-                        if (feedback) {
-                            feedback.textContent = '';
-                            feedback.className = 'feedback';
-                        }
-
-                        // Focus first option after reveal
-                        const firstListeningOption = optionsContainer?.querySelector('.option-btn');
-                        if (firstListeningOption) firstListeningOption.focus();
-
-                        this.listeningAudioPlayed = true;
-                        debugLog('📢 [AUDIO] listeningAudioPlayed flag set to TRUE');
-                    } else {
-                        debugLog('📢 [AUDIO] Subsequent audio play - options already revealed');
-                    }
-                }
-
-                // In vocabulary game: reveal options after 3 audio plays
-                if (this.currentGame === 'vocabulary') {
+                    debugLog('📢 [AUDIO] Delegating to onListeningAudioComplete');
+                    this.onListeningAudioComplete();
+                } else if (this.currentGame === 'vocabulary') {
                     const isManualPlay = !!this.isManualVocabPlayPending;
                     this.isManualVocabPlayPending = false;
                     if (!isManualPlay) {
                         debugLog('📢 [AUDIO] Ignoring non-manual vocabulary playback for counting');
                         return;
                     }
-
-                    // Increment play count
-                    this.vocabPlayCount = (this.vocabPlayCount || 0) + 1;
-                    const requiredClicks = this.vocabRequiredClicks || 3;
-                    const clicksLeft = requiredClicks - this.vocabPlayCount;
-
-                    debugLog('📢 [AUDIO] Audio finished playing for vocabulary game');
-                    debugLog('📢 [AUDIO] vocabPlayCount:', this.vocabPlayCount, '/', requiredClicks);
-
-                    const feedback = document.getElementById('vocab-feedback');
-                    const audioHint = document.getElementById('vocab-audio-hint');
-
-                    // Check if we've reached required plays
-                    if (!this.vocabularyAudioPlayed) {
-                        if (clicksLeft > 0) {
-                            // Still need more plays - update feedback
-                            debugLog('📢 [AUDIO] Need', clicksLeft, 'more plays');
-                            if (audioHint) {
-                                audioHint.textContent = `השמע עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}`;
-                                audioHint.hidden = false;
-                                audioHint.classList.add('show');
-                            }
-                        } else {
-                            // Reached required plays - reveal options
-                            debugLog('📢 [AUDIO] Required plays reached - revealing vocabulary options now');
-
-                            if (audioHint) {
-                                audioHint.textContent = '';
-                                audioHint.hidden = true;
-                                audioHint.classList.remove('show');
-                            }
-
-                            if (feedback) {
-                                feedback.textContent = '';
-                                feedback.className = 'feedback';
-                            }
-
-                            const optionsContainer = document.getElementById('vocab-options');
-                            const optionButtons = optionsContainer?.querySelectorAll('.option-btn');
-                            debugLog('📢 [AUDIO] Found', optionButtons?.length || 0, 'option buttons to reveal');
-                            optionButtons?.forEach((btn, i) => {
-                                btn.classList.remove('vocab-option-hidden');
-                                btn.disabled = false;
-                                debugLog('📢 [AUDIO] Option', i, 'revealed - disabled:', btn.disabled);
-                            });
-
-                            // Focus first option after reveal
-                            const firstVocabOption = optionsContainer?.querySelector('.option-btn');
-                            if (firstVocabOption) firstVocabOption.focus();
-
-                            this.vocabularyAudioPlayed = true;
-                            debugLog('📢 [AUDIO] vocabularyAudioPlayed flag set to TRUE');
-                        }
-                    } else {
-                        debugLog('📢 [AUDIO] Subsequent audio play - vocabulary options already revealed');
-                    }
+                    debugLog('📢 [AUDIO] Delegating to onVocabularyManualAudio');
+                    this.onVocabularyManualAudio();
                 }
             } catch (error) {
                 console.warn('Could not play audio:', error);

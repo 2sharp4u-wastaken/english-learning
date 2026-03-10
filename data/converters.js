@@ -74,13 +74,22 @@ export function convertToPronunciation(vocabularyBank) {
 // Convert for picture-match game — hear a word, pick the correct picture
 export function convertToPictureMatch(vocabularyBank) {
     return vocabularyBank.map(item => {
-        const pool = vocabularyBank.filter(w => w.word !== item.word && w.category === item.category);
-        const fallback = vocabularyBank.filter(w => w.word !== item.word);
+        // Exclude words that share the same image as the correct answer (would look identical)
+        const pool = vocabularyBank.filter(w => w.word !== item.word && w.image !== item.image && w.category === item.category);
+        const fallback = vocabularyBank.filter(w => w.word !== item.word && w.image !== item.image);
         const distSrc = pool.length >= 3 ? pool : fallback;
-        const distractors = distSrc
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 3)
-            .map(w => ({ word: w.word, picture: w.image, imageUrl: w.imageUrl }));
+
+        // Pick 3 distractors with unique images
+        const distractors = [];
+        const usedImages = new Set([item.image]);
+        const shuffled = [...distSrc].sort(() => Math.random() - 0.5);
+        for (const w of shuffled) {
+            if (distractors.length >= 3) break;
+            if (!usedImages.has(w.image)) {
+                usedImages.add(w.image);
+                distractors.push({ word: w.word, picture: w.image, imageUrl: w.imageUrl });
+            }
+        }
 
         const correct = { word: item.word, picture: item.image, imageUrl: item.imageUrl };
         const all = [correct, ...distractors].sort(() => Math.random() - 0.5);

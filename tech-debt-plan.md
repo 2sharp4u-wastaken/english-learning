@@ -31,10 +31,10 @@ Reference file: `tech-debt-plan.md` in project root
 - [x] C1 — Remove `GameManager.loadSettings()` (`gameLogic.js:424`); replaced with `applySettings(settings)` method; AppManager.saveSettings() now pushes settings to gameManager via `applySettings()`
 - [x] C2 — Elect `ScoreManager` as sole source of truth: removed `GameManager.scores{}` parallel copy, updated all `games/*.js` to use `scoreManager` directly, removed redundant sync lines
 
-## Phase D — Event Listener & Audio Refactor (~2 hours) [ ]
+## Phase D — Event Listener & Audio Refactor (~2 hours) [x]
 
-- [ ] D1 — Extract game-specific logic from `playCurrentQuestionAudio()` into respective game modules (listening reveal → `listening-game.js`, vocabulary reveal → `vocabulary-game.js`)
-- [ ] D2 — Fix `setupEventListeners()`: add teardown before re-wiring, split into per-game registration functions
+- [x] D1 — Extract game-specific logic from `playCurrentQuestionAudio()` into respective game modules (listening reveal → `listening-game.js`, vocabulary reveal → `vocabulary-game.js`)
+- [x] D2 — Fix `setupEventListeners()`: add teardown before re-wiring, split into per-game registration functions
 
 ## Phase E — Module Pattern Consistency (~2 hours) [ ]
 
@@ -70,3 +70,4 @@ Reference file: `tech-debt-plan.md` in project root
 - **Phase A** — A1 (files committed in prior session), A2 (ScoreManager game types), A3 (categories already in settings.js)
 - **Phase B** — B1–B7 all done: dead code removed, getGameName/getGameIcon use GameRegistry, getPracticeWords single-pass, debugLog wrapper, wordImageManager converted to ES module
 - **Phase C** — C1 (loadSettings→applySettings, AppManager.saveSettings pushes to gameManager), C2 (GameManager.scores removed, all games write directly to scoreManager)
+- **Phase D** — D1 (listening/vocabulary post-audio logic extracted to `onListeningAudioComplete`/`onVocabularyManualAudio` in game modules), D2 (`setupEventListeners` split into 11 per-game helpers with AbortController teardown)

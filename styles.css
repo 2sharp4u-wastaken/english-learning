@@ -2313,7 +2313,7 @@ body::before {
 
     #listening-game .word-picture,
     #pronunciation-game .word-picture {
-        font-size: 6rem !important;
+        font-size: 2.2rem !important;
     }
 
     /* Progress bar */
@@ -2443,7 +2443,8 @@ body::before {
 #vocabulary-game .game-board,
 #grammar-game .game-board,
 #listening-game .game-board,
-#pronunciation-game .game-board {
+#pronunciation-game .game-board,
+#picture-match-game .game-board {
     display: flex;
     flex-direction: column;
     gap: 8px; /* Reduced for maximum space */
@@ -2511,7 +2512,7 @@ body::before {
 
 /* Listening game picture styles */
 #listening-game .word-picture {
-    font-size: 8rem !important;
+    font-size: 2.94rem !important;
     display: block;
     text-align: center;
     margin: 10px auto; /* Reduced from 20px for better fit */
@@ -3639,7 +3640,8 @@ body::before {
     border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     padding: 12px 25px;
     display: flex;
-    align-items: center;
+    flex-wrap: nowrap;
+    align-items: flex-start;
     justify-content: space-between;
     gap: 20px;
     box-shadow: 0 4px 20px rgba(102, 126, 234, 0.4);
@@ -3652,7 +3654,7 @@ body::before {
     display: flex;
     align-items: center;
     gap: 25px;
-    flex: 1;
+    flex: 1 1 auto;
 }
 
 .app-logo {
@@ -3803,9 +3805,13 @@ body::before {
 
 .header-right {
     display: flex;
+    flex-wrap: wrap-reverse;
     align-items: center;
-    gap: 15px;
-    flex: 0 0 auto;
+    justify-content: flex-end;
+    gap: 10px;
+    flex: 1 1 auto;
+    border-right: 2px solid rgba(255, 255, 255, 0.3);
+    padding-right: 20px;
 }
 
 .header-icon-btn {
@@ -5380,13 +5386,6 @@ body::before {
     margin: 0;
 }
 
-#reading-case-toggle {
-    display: inline-flex;
-    visibility: visible;
-    opacity: 1;
-    flex-shrink: 0;
-}
-
 /* Keep reading top bar height aligned with the standard compact game headers */
 #reading-game .progress-container .question-counter {
     margin-bottom: 0;
@@ -5415,6 +5414,59 @@ body::before {
 
 .case-toggle-btn:hover {
     background: rgba(255, 255, 255, 0.25);
+}
+
+/* Global case toggle button in header — visual state driven by body.lowercase-mode */
+body.lowercase-mode .case-toggle-btn .case-upper {
+    opacity: 0.4;
+}
+body.lowercase-mode .case-toggle-btn .case-lower {
+    opacity: 1;
+}
+
+/* ============================================================
+   GLOBAL LETTER CASE — all game English text elements
+   Default: uppercase. Override: body.lowercase-mode → natural case.
+   ============================================================ */
+
+/* Default uppercase for game English text */
+#vocab-word,
+.target-word,
+#pronunciation-comparison-target,
+#grammar-sentence,
+#grammar-options .option-btn,
+#listening-options .option-btn,
+.fill-blanks-option,
+.fill-word,
+.fill-blank-slot,
+.scramble-word-btn,
+.scramble-answer-chip,
+.memory-card-word,
+.verb-text,
+.wj-slot,
+.wj-discover-word,
+.picture-match-word {
+    text-transform: uppercase;
+}
+
+/* Lowercase override when body.lowercase-mode is active */
+body.lowercase-mode #vocab-word,
+body.lowercase-mode .target-word,
+body.lowercase-mode #pronunciation-comparison-target,
+body.lowercase-mode #grammar-sentence,
+body.lowercase-mode #grammar-options .option-btn,
+body.lowercase-mode #listening-options .option-btn,
+body.lowercase-mode .fill-blanks-option,
+body.lowercase-mode .fill-word,
+body.lowercase-mode .fill-blank-slot,
+body.lowercase-mode .scramble-word-btn,
+body.lowercase-mode .scramble-answer-chip,
+body.lowercase-mode .memory-card-word,
+body.lowercase-mode .verb-text,
+body.lowercase-mode .wj-slot,
+body.lowercase-mode .wj-discover-word,
+body.lowercase-mode .picture-match-word {
+    text-transform: none;
 }
 
 /* ABC Completion/Mastery Message */
@@ -7717,12 +7769,28 @@ body::before {
 }
 
 /* ── Picture Match standalone game ── */
+#picture-match-game .word-picture {
+    font-size: 8rem !important;
+    display: block;
+    text-align: center;
+    margin: 0 auto;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, 0.2));
+}
+.picture-match-word {
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    text-align: center;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+    letter-spacing: 1px;
+}
 .picture-match-card {
     background: rgba(255,255,255,0.12);
     border-radius: 20px;
     padding: 16px 20px;
     width: 100%;
     max-width: 400px;
+    margin: 0 auto;
 }
 .picture-match-layout-vertical {
     display: flex;
@@ -7731,7 +7799,7 @@ body::before {
     gap: 10px;
 }
 .picture-match-option-img {
-    font-size: 2.8rem;
+    font-size: 4.5rem;
     line-height: 1;
     display: block;
     margin-bottom: 2px;
@@ -7750,8 +7818,8 @@ body::before {
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 12px 8px;
-    min-height: 96px;
+    padding: 16px 8px;
+    min-height: 120px;
     font-size: 0.9rem;
 }
 /* Disabled Next button visual feedback */

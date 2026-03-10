@@ -3,7 +3,7 @@
 // Covers words used as answers and distractors in sentence games
 
 export const adjectivesWords = [
-    { word: "Big", translation: "גדול", category: "adjectives", image: "🐘" },
+    { word: "Big", translation: "גדול", category: "adjectives", image: "🐘", imageUrl: "img/icons/adjectives/big.png" },
     { word: "Small", translation: "קטן", category: "adjectives", image: "🐭" },
     { word: "Fast", translation: "מהיר", category: "adjectives", image: "🏎️" },
     { word: "Slow", translation: "איטי", category: "adjectives", image: "🐢" },

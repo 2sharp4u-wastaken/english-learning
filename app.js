@@ -15,7 +15,7 @@ import { allCourses } from './data/courses/index.js';
 import { MemoryGame } from './games/memory-game.js';
 import { SentenceScrambleGame } from './games/sentence-scramble-game.js';
 import { FillBlanksGame } from './games/fill-blanks-game.js';
-import { WordJourneyGame } from './games/word-journey-game.js?t=1773001200';
+import { WordJourneyGame } from './games/word-journey-game.js?t=1775700000';
 
 class AppManager {
     constructor() {

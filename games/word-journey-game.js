@@ -366,7 +366,7 @@ export class WordJourneyGame {
         ).join('');
 
         const tilesHtml = q.tiles.map((letter, i) =>
-            `<button class="letter-btn wj-letter-tile" data-tile="${i}" data-letter="${letter}">${letter.toUpperCase()}</button>`
+            `<button class="letter-btn wj-letter-tile" data-tile="${i}" data-letter="${letter}">${letter.toLowerCase()}</button>`
         ).join('');
 
         area.innerHTML = `
@@ -462,7 +462,7 @@ export class WordJourneyGame {
 
         const slots = document.querySelectorAll('#wj-answer-slots .wj-slot');
         if (slots[slotIdx]) {
-            slots[slotIdx].textContent = letter.toUpperCase();
+            slots[slotIdx].textContent = letter.toLowerCase();
             slots[slotIdx].classList.add('filled');
         }
 
@@ -954,11 +954,30 @@ export class WordJourneyGame {
     }
 
     buildOptions(targetWord, allWords) {
-        const distractors = allWords
-            .filter(w => w.word !== targetWord.word)
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 3);
-        return [targetWord, ...distractors].sort(() => Math.random() - 0.5);
+        const bank = window.vocabularyBank || allWords;
+        const masteryKey = `${targetWord.word}_${targetWord.category}`;
+        const wordMastery = window.app?.userProgress?.wordMastery || {};
+        const masteryLevel = wordMastery[masteryKey]?.masteryLevel || 0;
+
+        let distractorObjs = [];
+        if (window.selectDistractors) {
+            const distractorWords = window.selectDistractors(targetWord.word, masteryLevel, bank);
+            distractorObjs = distractorWords
+                .map(w => bank.find(b => b.word.toLowerCase() === w.toLowerCase()))
+                .filter(Boolean);
+        }
+
+        // Pad with journey words if phonetic selection came up short
+        if (distractorObjs.length < 3) {
+            const used = new Set([targetWord.word, ...distractorObjs.map(d => d.word)]);
+            const fromJourney = allWords
+                .filter(w => !used.has(w.word))
+                .sort(() => Math.random() - 0.5)
+                .slice(0, 3 - distractorObjs.length);
+            distractorObjs.push(...fromJourney);
+        }
+
+        return [targetWord, ...distractorObjs.slice(0, 3)].sort(() => Math.random() - 0.5);
     }
 
     buildSpellTiles(word) {

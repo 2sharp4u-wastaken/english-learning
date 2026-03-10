@@ -887,12 +887,28 @@ class SettingsManager {
             } else if (progress.status === 'success' || progress.status === 'partial') {
                 this.showImportStatus(progress.status === 'success' ? 'success' : 'error', progress.message);
                 this.renderCustomWordsList();
+                this._rebuildPhoneticIndex();
             } else if (progress.status === 'error') {
                 this.showImportStatus('error', progress.message);
             }
         });
 
         if (btn) { btn.disabled = false; btn.innerHTML = '<i class="fas fa-save"></i> שמור לקבצי המקור'; }
+    }
+
+    async _rebuildPhoneticIndex() {
+        this.appendConsoleLine({ message: '🔄 מחדש אינדקס פונטי...', type: 'info' });
+        try {
+            const res = await fetch('/api/rebuild-phonetic-index', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
+            const data = await res.json();
+            if (data.ok) {
+                this.appendConsoleLine({ message: '✅ האינדקס הפונטי עודכן בהצלחה', type: 'success' });
+            } else {
+                this.appendConsoleLine({ message: `⚠️ עדכון אינדקס פונטי נכשל: ${data.error || data.stderr || 'שגיאה לא ידועה'}`, type: 'error' });
+            }
+        } catch (e) {
+            this.appendConsoleLine({ message: `⚠️ לא ניתן להגיע לשרת לצורך עדכון האינדקס: ${e.message}`, type: 'error' });
+        }
     }
 
     async runImport() {

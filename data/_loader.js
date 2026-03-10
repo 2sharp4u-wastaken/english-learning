@@ -27,10 +27,10 @@ import {
     convertToPronunciation,
     convertToListening,
     convertToPictureMatch
-} from './converters.js?t=1762593312';
+} from './converters.js?t=1773200000';
 
 // Import phonetics system
-import { initializePhonetics } from './phonetics.js';
+import { initializePhonetics, selectDistractors } from './phonetics.js';
 
 // Combine all vocabulary into single bank
 const vocabularyBank = [
@@ -84,6 +84,11 @@ try {
     console.warn('⚠️  Phonetic system failed to initialize:', error);
     console.warn('⚠️  Falling back to category-based distractors');
 }
+
+// Expose selectDistractors globally so any game can use it without needing
+// a direct import from phonetics.js. New games showing English word options
+// should call: window.selectDistractors(word, masteryLevel, vocabularyBank)
+window.selectDistractors = selectDistractors;
 
 // Apply converters to create game-specific data formats
 // Note: convertToListening now runs AFTER phonetics is initialized

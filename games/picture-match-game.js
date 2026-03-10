@@ -17,10 +17,10 @@ export async function loadPictureMatchQuestion(question) {
     const hebrewEl = document.getElementById('picture-match-hebrew');
 
     if (pictureEl) pictureEl.textContent = '🔊';
-    if (hebrewEl) {
-        hebrewEl.textContent = question.hebrew || '';
-        hebrewEl.style.display = 'block';
-    }
+    if (hebrewEl) hebrewEl.style.display = 'none';
+
+    const wordEl = document.getElementById('picture-match-word');
+    if (wordEl) wordEl.textContent = question.word || '';
 
     // Reset plays counter
     this.audioPlaysLeft = this.settings?.audioPlaysAllowed || 8;

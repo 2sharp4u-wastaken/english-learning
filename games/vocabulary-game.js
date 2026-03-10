@@ -137,6 +137,53 @@ export async function loadVocabularyQuestion(question) {
     }
 }
 
+// Called from playCurrentQuestionAudio() after a confirmed manual play finishes.
+// Tracks play count and reveals options once the required number is reached.
+export function onVocabularyManualAudio() {
+    this.vocabPlayCount = (this.vocabPlayCount || 0) + 1;
+    const requiredClicks = this.vocabRequiredClicks || 3;
+    const clicksLeft = requiredClicks - this.vocabPlayCount;
+
+    console.log('📢 [VOCABULARY] Manual play count:', this.vocabPlayCount, '/', requiredClicks);
+
+    const feedback = document.getElementById('vocab-feedback');
+    const audioHint = document.getElementById('vocab-audio-hint');
+
+    if (!this.vocabularyAudioPlayed) {
+        if (clicksLeft > 0) {
+            if (audioHint) {
+                audioHint.textContent = `השמע עוד ${clicksLeft} ${clicksLeft === 1 ? 'פעם' : 'פעמים'}`;
+                audioHint.hidden = false;
+                audioHint.classList.add('show');
+            }
+        } else {
+            // Required plays reached — reveal options
+            if (audioHint) {
+                audioHint.textContent = '';
+                audioHint.hidden = true;
+                audioHint.classList.remove('show');
+            }
+            if (feedback) {
+                feedback.textContent = '';
+                feedback.className = 'feedback';
+            }
+
+            const optionsContainer = document.getElementById('vocab-options');
+            const optionButtons = optionsContainer?.querySelectorAll('.option-btn');
+            console.log('📢 [VOCABULARY] Required plays reached - revealing', optionButtons?.length || 0, 'options');
+            optionButtons?.forEach(btn => {
+                btn.classList.remove('vocab-option-hidden');
+                btn.disabled = false;
+            });
+
+            const firstOption = optionsContainer?.querySelector('.option-btn');
+            if (firstOption) firstOption.focus();
+
+            this.vocabularyAudioPlayed = true;
+        }
+    }
+}
+
 export async function checkVocabularyAnswer(selectedIndex, correctIndex) {
     const buttons = document.querySelectorAll('#vocab-options .option-btn');
     const feedback = document.getElementById('vocab-feedback');

@@ -9,6 +9,8 @@
  *   initTopHeader({ activePage: 'settings' }); // settings.html
  */
 
+import { toggle as toggleCase, init as initCase } from '../utils/caseManager.js';
+
 const GAMES = [
     { id: 'vocabulary',      icon: 'fa-book',        label: 'אוצר מילים', title: 'בונה אוצר מילים' },
     { id: 'grammar',         icon: 'fa-spell-check', label: 'דקדוק',      title: 'תרגול דקדוק' },
@@ -16,11 +18,12 @@ const GAMES = [
     { id: 'pronunciation',   icon: 'fa-microphone',  label: 'הגייה',      title: 'הגייה' },
     { id: 'listening',       icon: 'fa-headphones',  label: 'הקשבה',      title: 'הקשבה' },
     { id: 'reading',         icon: 'fa-book-open',   label: 'קריאה',      title: 'איית אותי' },
-    { id: 'abc',             icon: 'fa-font',        label: 'ABC',         title: 'ABC אותיות' },
+    { id: 'abc',             icon: 'fa-font',        label: 'אותיות',     title: 'אותיות' },
     { id: 'memory',          icon: 'fa-th',          label: 'זיכרון',     title: 'זיכרון - מצא את הזוגות' },
     { id: 'scramble',        icon: 'fa-random',      label: 'סידור',      title: 'סידור משפטים' },
     { id: 'fill-blanks',     icon: 'fa-fill-drip',   label: 'השלמה',      title: 'השלם את המשפט' },
     { id: 'word-journey',    icon: 'fa-route',       label: 'מסע',        title: 'מסע המילים' },
+    { id: 'picture-match',   icon: 'fa-image',       label: 'תמונות',     title: 'מילה לתמונה' },
 ];
 
 // Inline styles applied to the header when it is visible and fixed.
@@ -67,6 +70,10 @@ function buildHeaderHTML(activePage) {
             </nav>
         </div>
         <div class="header-right">
+            <button class="case-toggle-btn" id="global-case-toggle" title="החלף רישיות (ABC / abc)">
+                <span class="case-upper">ABC</span>
+                <span class="case-lower">abc</span>
+            </button>
             <a href="stats.html" class="header-icon-btn${statsClass}" id="stats-btn" title="סטטיסטיקות">
                 <i class="fas fa-chart-line"></i>
             </a>
@@ -320,6 +327,14 @@ export function initTopHeader(options = {}) {
 
     // Inject the header as the very first element inside <body>
     document.body.insertAdjacentHTML('afterbegin', buildHeaderHTML(activePage));
+
+    // Restore persisted case mode (applies body class + updates button visual)
+    initCase();
+
+    // Wire the global case toggle button
+    document.getElementById('global-case-toggle')?.addEventListener('click', () => {
+        toggleCase();
+    });
 
     if (activePage === 'home') {
         setupHomeEvents();

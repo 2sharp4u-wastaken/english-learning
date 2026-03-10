@@ -126,6 +126,34 @@ export async function loadListeningQuestion(question) {
     console.log('📢 [LISTENING] Question loaded successfully');
 }
 
+// Called from playCurrentQuestionAudio() after a manual re-play finishes.
+// Reveals options if this is the first time audio has played.
+export function onListeningAudioComplete() {
+    console.log('📢 [LISTENING] onListeningAudioComplete called, listeningAudioPlayed:', this.listeningAudioPlayed);
+    this.showListeningHebrew();
+
+    if (!this.listeningAudioPlayed) {
+        const optionsContainer = document.getElementById('listening-options');
+        const optionButtons = optionsContainer?.querySelectorAll('.option-btn');
+        console.log('📢 [LISTENING] First manual play - revealing', optionButtons?.length || 0, 'options');
+        optionButtons?.forEach(btn => {
+            btn.classList.remove('listening-option-hidden');
+            btn.disabled = false;
+        });
+
+        const feedback = document.getElementById('listening-feedback');
+        if (feedback) {
+            feedback.textContent = '';
+            feedback.className = 'feedback';
+        }
+
+        const firstOption = optionsContainer?.querySelector('.option-btn');
+        if (firstOption) firstOption.focus();
+
+        this.listeningAudioPlayed = true;
+    }
+}
+
 export function showListeningHebrew() {
     const hebrewElement = document.getElementById('listening-hebrew');
     if (hebrewElement && hebrewElement.textContent) {
