@@ -162,7 +162,7 @@ export { gameData, difficultyLevels, grammarCategories };
 // Called when another tab saves new custom words (storage event).
 // Diffs localStorage vs in-memory vocabularyBank, converts new words with full
 // bank context (for correct distractors), and appends to gameData.
-window.refreshCustomWords = function () {
+window.refreshCustomWords = async function () {
     try {
         const fresh = JSON.parse(localStorage.getItem('customWords_global') || '[]');
         const existingSet = new Set(vocabularyBank.map(w => w.word.toLowerCase()));
