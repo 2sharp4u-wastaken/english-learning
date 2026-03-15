@@ -11,7 +11,7 @@ const SENTENCE_THEMES = new Set(['animals', 'colors', 'daily', 'family', 'food',
 // Import game modules
 import * as VocabularyGame from './games/vocabulary-game.js?t=1773075344';
 import * as GrammarGame from './games/grammar-game.js?t=1774903002';
-import * as GrammarBeginnerGame from './games/grammar-beginner-game.js';
+import * as GrammarBeginnerGame from './games/grammar-beginner-game.js?t=1742041200';
 import * as ListeningGame from './games/listening-game.js?t=1773075344';
 import * as PronunciationGame from './games/pronunciation-game.js?t=1771785500';
 import * as ReadingGame from './games/reading-game.js?t=1742000000';
@@ -97,15 +97,7 @@ class GameManager {
             }
         };
 
-        // Immediate nikud toggle — update all currently displayed Hebrew elements
-        window.addEventListener('nikud-changed', () => {
-            document.querySelectorAll('[data-hebrew-source]').forEach(el => {
-                el.textContent = window.getHebrew?.(el.dataset.hebrewSource) || el.dataset.hebrewSource;
-            });
-            document.querySelectorAll('[data-hebrew-hint]').forEach(el => {
-                el.textContent = `🇮🇱 ${window.getHebrew?.(el.dataset.hebrewHint) || el.dataset.hebrewHint}`;
-            });
-        });
+        // nikud-changed is handled centrally by utils/nikudDOM.js
 
         // Bind game module methods to this instance
         this.loadVocabularyQuestion = VocabularyGame.loadVocabularyQuestion.bind(this);

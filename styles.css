@@ -1045,6 +1045,15 @@ body::before {
     margin-bottom: 15px;
 }
 
+.english-sentence-display {
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: #3a3a6e;
+    margin-bottom: 12px;
+    letter-spacing: 0.03em;
+    text-align: center;
+}
+
 .play-sentence-btn,
 .play-subject-btn {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -1329,18 +1338,16 @@ body::before {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     border: none;
     color: white;
-    padding: 14px 28px;
-    border-radius: 15px;
-    font-size: 1.1rem;
-    font-weight: 600;
+    width: 70px;
+    height: 70px;
+    border-radius: 50%;
+    font-size: 1.6rem;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 10px;
+    justify-content: center;
     transition: all 0.3s ease;
     box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-    min-width: 130px;
-    justify-content: center;
 }
 
 .sentence-play-btn:hover {
@@ -5472,7 +5479,8 @@ body.lowercase-mode .case-toggle-btn .case-lower {
 .verb-text,
 .wj-slot,
 .wj-discover-word,
-.picture-match-word {
+.picture-match-word,
+.english-sentence-display {
     text-transform: uppercase;
 }
 
@@ -5492,7 +5500,8 @@ body.lowercase-mode .memory-card-word,
 body.lowercase-mode .verb-text,
 body.lowercase-mode .wj-slot,
 body.lowercase-mode .wj-discover-word,
-body.lowercase-mode .picture-match-word {
+body.lowercase-mode .picture-match-word,
+body.lowercase-mode .english-sentence-display {
     text-transform: none;
 }
 

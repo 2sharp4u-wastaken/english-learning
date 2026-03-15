@@ -72,7 +72,7 @@ async function renderWhoSaysIt(question, gameBoard) {
     gameBoard.innerHTML = `
         <div class="grammar-beginner-card">
             <div class="instruction-area">
-                <div class="instruction-hebrew">${question.instruction}</div>
+                <div class="english-sentence-display">${sentenceCase(question.sentenceAudio)}</div>
                 <button class="play-sentence-btn" id="play-sentence">
                     <i class="fas fa-volume-up"></i>
                     <span>השמע שוב</span>
@@ -80,13 +80,13 @@ async function renderWhoSaysIt(question, gameBoard) {
             </div>
             <div class="predicate-hint">
                 <span class="predicate-image">${question.predicate.image}</span>
-                <span class="predicate-hebrew">${question.predicate.hebrew}</span>
+                <span class="predicate-hebrew" data-hebrew-source="${question.predicate.hebrew}">${window.getHebrew(question.predicate.hebrew)}</span>
             </div>
             <div class="subject-options" id="grammar-beginner-options">
                 ${question.options.map((opt, idx) => `
                     <button class="subject-option-btn" data-index="${idx}" data-key="${opt.key}">
                         <span class="subject-image">${opt.image}</span>
-                        <span class="subject-hebrew">${opt.hebrew}</span>
+                        <span class="subject-hebrew" data-hebrew-source="${opt.hebrew}">${window.getHebrew(opt.hebrew)}</span>
                     </button>
                 `).join('')}
             </div>
@@ -122,12 +122,12 @@ async function renderCompleteSound(question, gameBoard) {
     gameBoard.innerHTML = `
         <div class="grammar-beginner-card">
             <div class="instruction-area">
-                <div class="instruction-hebrew">${question.instruction}</div>
+                <div class="english-sentence-display">${sentenceCase(question.fullSentence)}</div>
             </div>
             <div class="sentence-builder">
                 <div class="subject-display">
                     <span class="subject-image-large">${question.subjectImage}</span>
-                    <span class="subject-hebrew">${question.subjectHebrew}</span>
+                    <span class="subject-hebrew" data-hebrew-source="${question.subjectHebrew}">${window.getHebrew(question.subjectHebrew)}</span>
                     <button class="play-sentence-btn" id="play-subject">
                         <i class="fas fa-volume-up"></i>
                         <span>השמע שוב</span>
@@ -136,7 +136,7 @@ async function renderCompleteSound(question, gameBoard) {
                 <div class="verb-blank">___</div>
                 <div class="predicate-display">
                     <span class="predicate-image-large">${question.predicate.image}</span>
-                    <span class="predicate-hebrew">${question.predicate.hebrew}</span>
+                    <span class="predicate-hebrew" data-hebrew-source="${question.predicate.hebrew}">${window.getHebrew(question.predicate.hebrew)}</span>
                 </div>
             </div>
             <div class="verb-options" id="grammar-beginner-options">
@@ -182,30 +182,23 @@ async function renderSoundsRight(question, gameBoard) {
     gameBoard.innerHTML = `
         <div class="grammar-beginner-card">
             <div class="instruction-area">
-                <div class="instruction-hebrew">${question.instruction}</div>
+                <div class="english-sentence-display">${sentenceCase(question.correctAnswer)}</div>
             </div>
             <div class="context-display">
                 <div class="context-item">
                     <span class="subject-image-large">${question.subjectImage}</span>
-                    <span class="context-hebrew">${question.subjectHebrew}</span>
+                    <span class="context-hebrew" data-hebrew-source="${question.subjectHebrew}">${window.getHebrew(question.subjectHebrew)}</span>
                 </div>
                 <div class="context-item">
                     <span class="predicate-image-large">${question.predicateImage}</span>
-                    <span class="context-hebrew">${question.predicateHebrew}</span>
+                    <span class="context-hebrew" data-hebrew-source="${question.predicateHebrew}">${window.getHebrew(question.predicateHebrew)}</span>
                 </div>
             </div>
             <div class="sentence-options" id="grammar-beginner-options">
-                ${question.options.map((opt, idx) => `
-                    <div class="sentence-option-group">
-                        <button class="sentence-play-btn" data-sentence="${opt.sentence}" data-action="play">
-                            <i class="fas fa-volume-up"></i>
-                            <span>שמע ${idx + 1}</span>
-                        </button>
-                        <button class="sentence-select-btn" data-sentence="${opt.sentence}" data-action="select">
-                            <i class="fas fa-check"></i>
-                            <span>בחר ${idx + 1}</span>
-                        </button>
-                    </div>
+                ${question.options.map((opt) => `
+                    <button class="sentence-play-btn" data-sentence="${opt.sentence}">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
                 `).join('')}
             </div>
             <div class="gb-translation" id="gb-translation" style="display:none"></div>
@@ -213,14 +206,11 @@ async function renderSoundsRight(question, gameBoard) {
         <div class="feedback" id="grammar-beginner-feedback"></div>
     `;
 
-    // Play buttons speak the sentence; select buttons submit the answer
+    // Each speaker button plays the sentence and submits it as the answer
     document.querySelectorAll('#grammar-beginner-options button').forEach(btn => {
         btn.addEventListener('click', () => {
-            if (btn.dataset.action === 'play') {
-                speechManager.speakSentence(btn.dataset.sentence);
-            } else {
-                checkGrammarBeginnerAnswer.call(this, question, btn.dataset.sentence);
-            }
+            speechManager.speakSentence(btn.dataset.sentence);
+            checkGrammarBeginnerAnswer.call(this, question, btn.dataset.sentence);
         });
     });
 }
@@ -230,7 +220,7 @@ async function renderMatchPicture(question, gameBoard) {
     gameBoard.innerHTML = `
         <div class="grammar-beginner-card">
             <div class="instruction-area">
-                <div class="instruction-hebrew">${question.instruction}</div>
+                <div class="english-sentence-display">${sentenceCase(question.sentenceAudio)}</div>
                 <button class="play-sentence-btn" id="play-sentence">
                     <i class="fas fa-volume-up"></i>
                     <span>השמע שוב</span>
@@ -238,13 +228,13 @@ async function renderMatchPicture(question, gameBoard) {
             </div>
             <div class="match-predicate-display">
                 <span class="predicate-emoji">${question.predicate.image}</span>
-                <span class="predicate-hebrew-label">${question.predicate.hebrew}</span>
+                <span class="predicate-hebrew-label" data-hebrew-source="${question.predicate.hebrew}">${window.getHebrew(question.predicate.hebrew)}</span>
             </div>
             <div class="subject-options match-picture-options" id="grammar-beginner-options">
                 ${question.options.map((opt, idx) => `
                     <button class="subject-option-btn" data-index="${idx}" data-key="${opt.key}">
                         <span class="subject-image">${opt.image}</span>
-                        <span class="subject-hebrew">${opt.hebrew}</span>
+                        <span class="subject-hebrew" data-hebrew-source="${opt.hebrew}">${window.getHebrew(opt.hebrew)}</span>
                     </button>
                 `).join('')}
             </div>
@@ -314,7 +304,7 @@ export async function checkGrammarBeginnerAnswer(question, selectedAnswer) {
     function showTranslation() {
         const translationEl = document.getElementById('gb-translation');
         if (translationEl && question.hebrewSentence) {
-            translationEl.textContent = question.hebrewSentence;
+            window.setHebrew(translationEl, question.hebrewSentence);
             translationEl.style.display = 'block';
             // Trigger flash animation each time it's shown
             translationEl.classList.remove('gb-flash');
@@ -372,6 +362,12 @@ export async function checkGrammarBeginnerAnswer(question, selectedAnswer) {
         this.saveGameState();
         if (nextBtn) nextBtn.style.display = 'block';
     }
+}
+
+// Helper: capitalize first letter of a sentence (leaves rest as-is for CSS to handle)
+function sentenceCase(str) {
+    if (!str) return str;
+    return str.charAt(0).toUpperCase() + str.slice(1);
 }
 
 // Helper: delay

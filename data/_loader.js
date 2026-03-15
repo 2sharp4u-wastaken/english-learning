@@ -4,6 +4,7 @@
 // ── Nikud utilities — must be imported first so window.getHebrew / setHebrew
 //    are defined synchronously before any game module tries to use them. ──────
 import { getHebrew, setHebrew, loadNikudMap, enrichVocabularyBank } from '../utils/nikud.js';
+import { initNikudDOM } from '../utils/nikudDOM.js?t=1775840000';
 window.getHebrew = getHebrew;
 window.setHebrew = setHebrew;
 
@@ -21,7 +22,7 @@ import {
 import { grammarQuestions, grammarCategories } from './grammarQuestions.js?t=1774903002';
 
 // Import grammar beginner data (audio-visual grammar for non-readers)
-import { generateGrammarBeginnerQuestions } from './grammarBeginnerData.js';
+import { subjects, predicates, generateGrammarBeginnerQuestions } from './grammarBeginnerData.js';
 
 // Import ABC alphabet data
 import { alphabet, generateABCQuestions } from './abcData.js';
@@ -85,6 +86,26 @@ window.vocabularyBank = vocabularyBank;
 // This runs concurrently with phonetics init; words without a map entry will
 // fetch from the Nakdan API automatically and persist the result.
 const nikudMap = await enrichVocabularyBank(vocabularyBank, await loadNikudMap());
+// Make map available globally so nikudDOM.js can reuse it without re-fetching
+window.nikudMap = nikudMap;
+// Start DOM scanner (enriches all Hebrew text nodes in the page, including UI)
+initNikudDOM();
+
+// ── Enrich grammar data using the same nikud map ─────────────────────────────
+// subjects and predicates are mutated in-place so generateGrammarBeginnerQuestions
+// picks up the nikud-enriched fields when it runs below.
+for (const subj of Object.values(subjects)) {
+    subj.hebrew = nikudMap[subj.hebrew] || subj.hebrew;
+}
+for (const pred of predicates) {
+    pred.hebrew       = nikudMap[pred.hebrew]       || pred.hebrew;
+    pred.hebrewFem    = nikudMap[pred.hebrewFem]    || pred.hebrewFem;
+    pred.hebrewPlural = nikudMap[pred.hebrewPlural] || pred.hebrewPlural;
+}
+for (const q of grammarQuestions) {
+    if (q.hebrewSentence)    q.hebrewSentence    = nikudMap[q.hebrewSentence]    || q.hebrewSentence;
+    if (q.hebrewExplanation) q.hebrewExplanation = nikudMap[q.hebrewExplanation] || q.hebrewExplanation;
+}
 
 // Initialize phonetic distractor system BEFORE converting listening data
 console.log('🎯 Loading phonetic distractor system...');

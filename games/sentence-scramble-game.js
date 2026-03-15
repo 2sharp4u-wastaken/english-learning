@@ -39,6 +39,7 @@ export class SentenceScrambleGame {
 
         this.renderSentence();
         this.updateHintDisplay();
+        this.speakSentence(question.sentence);
     }
 
     /**

@@ -16,6 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).parent.parent
 CATEGORIES_DIR = ROOT / 'data' / 'categories'
+DATA_DIR = ROOT / 'data'
 NIKUD_MAP_PATH = ROOT / 'data' / 'nikud-map.json'
 NAKDAN_URL = 'https://nakdan-u1-0.loadbalancer.dicta.org.il/api'
 BATCH_SIZE = 50  # translations per API request
@@ -39,6 +40,38 @@ def extract_translations_from_categories():
             if t and t not in seen:
                 seen.add(t)
                 translations.append(t)
+    return translations
+
+
+def extract_grammar_hebrew():
+    """Extract Hebrew strings from grammarBeginnerData.js and grammarQuestions.js."""
+    translations = []
+    seen = set()
+
+    def add(t):
+        t = t.strip()
+        if t and t not in seen:
+            seen.add(t)
+            translations.append(t)
+
+    # grammarBeginnerData.js — subjects.hebrew and predicates.hebrew/hebrewFem/hebrewPlural
+    beginner_file = DATA_DIR / 'grammarBeginnerData.js'
+    if beginner_file.exists():
+        content = beginner_file.read_text(encoding='utf-8')
+        for field in ('hebrew', 'hebrewFem', 'hebrewPlural'):
+            for m in re.finditer(rf'{field}:\s*["\']([^"\']+)["\']', content):
+                add(m.group(1))
+
+    # grammarQuestions.js — hebrewSentence and hebrewExplanation
+    questions_file = DATA_DIR / 'grammarQuestions.js'
+    if questions_file.exists():
+        content = questions_file.read_text(encoding='utf-8')
+        for field in ('hebrewSentence', 'hebrewExplanation'):
+            for m in re.finditer(rf'{field}:\s*"([^"]+)"', content):
+                add(m.group(1))
+            for m in re.finditer(rf"{field}:\s*'([^']+)'", content):
+                add(m.group(1))
+
     return translations
 
 
@@ -129,6 +162,43 @@ def enrich(translations_to_fetch, existing_map=None):
     return updated
 
 
+HEBREW_WORD_RE = re.compile(r'[\u05D0-\u05EA]+')
+
+# Directories to skip when scanning source files for UI strings
+SKIP_DIRS = {'.git', 'node_modules', '__pycache__', 'scripts', '.claude'}
+# Files that are already covered by the specific extractors above
+SKIP_FILES = {
+    'nikud-map.json', 'phonetic-index.json',
+    '_index.js',  # just re-exports
+}
+
+def extract_ui_hebrew_words():
+    """Extract individual Hebrew words from all JS and HTML source files.
+
+    The runtime DOM scanner does word-by-word replacement, so we need individual
+    words (not just phrases) in the map.  This function feeds that requirement.
+    """
+    words = set()
+
+    for ext_glob in ('**/*.js', '**/*.html'):
+        for f in ROOT.glob(ext_glob):
+            # Skip unwanted directories
+            if any(part in SKIP_DIRS for part in f.parts):
+                continue
+            if f.name in SKIP_FILES:
+                continue
+            try:
+                content = f.read_text(encoding='utf-8')
+                for m in HEBREW_WORD_RE.finditer(content):
+                    w = m.group(0)
+                    if len(w) >= 2:  # skip single-letter match noise
+                        words.add(w)
+            except Exception:
+                pass
+
+    return sorted(words)
+
+
 def main():
     print('🔤 Nikud Map Builder\n' + '=' * 40)
 
@@ -139,8 +209,20 @@ def main():
         print(f'Loaded existing map: {len(existing)} entries')
 
     # Extract all translations from source files
-    all_translations = extract_translations_from_categories()
-    print(f'Found {len(all_translations)} unique translations in category files')
+    category_translations = extract_translations_from_categories()
+    grammar_translations = extract_grammar_hebrew()
+    ui_words = extract_ui_hebrew_words()
+
+    seen: set = set()
+    all_translations = []
+    for t in category_translations + grammar_translations + ui_words:
+        if t not in seen:
+            seen.add(t)
+            all_translations.append(t)
+
+    print(f'Found {len(category_translations)} unique translations in category files')
+    print(f'Found {len(grammar_translations)} unique Hebrew strings in grammar files')
+    print(f'Found {len(ui_words)} unique Hebrew words across all source files')
 
     missing = [t for t in all_translations if t not in existing and not has_nikud(t)]
     print(f'Missing from map: {len(missing)}\n')

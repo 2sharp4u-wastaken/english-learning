@@ -23,6 +23,7 @@ export class FillBlanksGame {
         if (container) container.style.display = 'block';
 
         this.renderSentence();
+        this.speakSentence(question.sentence);
     }
 
     /**

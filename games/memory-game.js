@@ -297,7 +297,7 @@ export class MemoryGame {
             }
             const wordSpan = document.createElement('div');
             wordSpan.className = 'memory-card-word';
-            wordSpan.textContent = safeContent;
+            window.setHebrew(wordSpan, card.content || '—');
             wordSpan.style.fontSize = safeContent.length > 10 ? '0.95em' : '1.1em';
             cardFront.appendChild(wordSpan);
         }

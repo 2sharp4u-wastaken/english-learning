@@ -177,7 +177,7 @@ export async function checkGrammarAnswer(selectedIndex, correctIndex, question) 
 
         let html = `<strong>${baseText}</strong><br>${fullSentence}`;
         if (ruleExplanation) {
-            html += `<br>${ruleExplanation}`;
+            html += `<br>${window.getHebrew?.(ruleExplanation) || ruleExplanation}`;
         }
 
         feedback.innerHTML = html;
