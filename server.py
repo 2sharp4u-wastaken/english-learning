@@ -12,11 +12,12 @@ import json
 import mimetypes
 import os
 import socketserver
+import sys
 import urllib.request
 from pathlib import Path
 from typing import Optional
 
-PORT      = 3000
+PORT      = int(sys.argv[1]) if len(sys.argv) > 1 else 3000
 BASE_DIR  = Path(__file__).parent.resolve()   # project root
 
 
