@@ -6,9 +6,9 @@
 Transform the app from a collection of independent games into a guided learning system where Word Journey is the entry point for all new words, and other games are unlocked progressively as the child builds vocabulary.
 
 ## Current Status
-- **Phase:** Phase 7 complete, Phase 8 next
-- **Last session:** 2026-03-18 — Phase 7 Profile Expansion implemented
-- **Next up:** Phase 8 — Stats Overhaul (words learned in overview, per-word journey status, category completion, velocity)
+- **Phase:** Phase 9 complete, Phase 10 next
+- **Last session:** 2026-03-18 — Phase 8 Stats Overhaul and Phase 9 Completion Screen Overhaul implemented
+- **Next up:** Phase 10 — Course & Certificate Rewiring
 
 ---
 
@@ -145,20 +145,20 @@ Transform the app from a collection of independent games into a guided learning 
 - [x] Add unlocked games display (always-open vs gated, lock icons)
 - [x] Add weekly activity calendar (7-day dot row, tracked via activityDates in userProgress)
 
-### Phase 8 — Stats Overhaul `🟢 Sonnet`
-- [ ] Add "Words Learned" to Overview hero tile
-- [ ] Add per-word journey status to Words panel (which stages done)
-- [ ] Add category completion view ("Animals: 12/20 mastered")
-- [ ] Add learning velocity ("X words per week")
-- [ ] Add "Words Learned" leaderboard to Hall of Fame
-- [ ] Add time spent learning metric
+### Phase 8 — Stats Overhaul `🟢 Sonnet` ✅
+- [x] Add "Words Learned" to Overview hero tile
+- [x] Add per-word journey status to Words panel (which stages done)
+- [x] Add category completion view ("Animals: 12/20 mastered")
+- [x] Add learning velocity ("X words per week")
+- [x] Add "Words Learned" leaderboard to Hall of Fame
+- [x] Add time spent learning metric
 
-### Phase 9 — Completion Screen Overhaul (all games) `🔴 Opus`
-- [ ] Expand `.game-complete` to show word mastery progress per word
-- [ ] Add "Next recommended game" button
-- [ ] Add coins earned animation
-- [ ] Variable progress bar based on actual question count
-- [ ] Adjust audio play limits per tier (Learn: unlimited, Practice: 8, Challenge: 5)
+### Phase 9 — Completion Screen Overhaul (all games) `🔴 Opus` ✅
+- [x] Expand `.game-complete` to show word mastery progress per word
+- [x] Add "Next recommended game" button
+- [x] Add coins earned animation
+- [x] Variable progress bar based on actual question count
+- [x] Adjust audio play limits per tier (Learn: unlimited, Practice: 8, Challenge: 5)
 
 ### Phase 10 — Course & Certificate Rewiring `🔴 Opus`
 - [ ] Wire `completeActivity()` from ALL games (not just course-launched)
@@ -230,3 +230,5 @@ checkAndUnlockGames() {
 | 2026-03-16 | 6 | Phase 5 complete: removed 12 game buttons + practice from header, added back-button + game-name display during active games (setHeaderMode hub/game), persistent coin display (header-coins wired to CoinManager), score hidden on hub / shown in games, case toggle moved to Settings → Advanced (lowercase toggle synced with caseManager), nikud toggle removed from header (already in settings). |
 | 2026-03-18 | 7 | Phase 6 complete: Hebrew vocalization toggle (wired to WJ Discover TTS), learning pace radio (3/5/8 words), game unlock override toggle (bypasses all gates + home card), simplified exit to 2 options, removed threshold/auto-save/toast controls, removed practice/competitive mode UI, fixed settings bridge (SettingsManager now writes v2_ key; GameManager merges ls+app settings). |
 | 2026-03-18 | 8 | Phase 7 complete: Profile Expansion — replaced Topics Done with Words Learned stat, 6-level learning progress bar, priority-based recommendation card (WJ→new games→course→default), word collection sticker book (emoji+word+translation grid), unlocked games display (open vs locked), weekly activity calendar (7-day dots with activityDates tracking), milestone certificates (1/10/25/50/100 words, auto-awarded on graduation). |
+| 2026-03-18 | 9 | Phase 8 complete: Stats Overhaul — added Words Learned overview metric, per-word Word Journey status, category completion view, learning velocity, time spent learning, and Hall of Fame leaderboard based on learned words; shared progress now persists total learning time and per-word journey progress for stats. |
+| 2026-03-18 | 10 | Phase 9 complete: Completion Screen Overhaul — expanded completion screens with per-word mastery cards, animated coins earned, variable progress bar, next recommended action, Memory completion parity, and tier-based audio play limits (Learn unlimited, Practice 8, Challenge/Test 5); PLAN.md status synced. |
