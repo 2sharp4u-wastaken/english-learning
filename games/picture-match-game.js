@@ -22,9 +22,8 @@ export async function loadPictureMatchQuestion(question) {
     const wordEl = document.getElementById('picture-match-word');
     if (wordEl) wordEl.textContent = question.word || '';
 
-    // Reset plays counter
-    this.audioPlaysLeft = this.settings?.audioPlaysAllowed || 8;
-    this.updateAllPlayCounters('picture-match');
+    // Reset plays counter by tier
+    this.resetAudioPlayCounter('picture-match');
 
     // Build picture option buttons (hidden + disabled until audio plays)
     question.options.forEach((opt, i) => {
@@ -42,8 +41,7 @@ export async function loadPictureMatchQuestion(question) {
     // Auto-play then reveal options
     try {
         await speechManager.speakWord(question.word, '', 'picture-match');
-        this.audioPlaysLeft--;
-        this.updateAllPlayCounters('picture-match');
+        this.consumeAudioPlay('picture-match');
 
         const optionBtns = optionsContainer.querySelectorAll('.option-btn');
         optionBtns.forEach(b => {

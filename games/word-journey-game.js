@@ -1060,8 +1060,9 @@ export class WordJourneyGame {
      * @param {number} percentage    Accuracy 0-100
      * @param {number} coinsEarned   Coins awarded for this run
      * @param {number} learnedCount  Total learned words across all journeys
+     * @param {Object|null} recommendation  Next recommended action descriptor
      */
-    showCelebration(gm, gameArea, words, percentage, coinsEarned, learnedCount) {
+    showCelebration(gm, gameArea, words, percentage, coinsEarned, learnedCount, recommendation = null) {
         const passed = percentage >= 60;
         const stars = percentage >= 80 ? '⭐⭐⭐' : percentage >= 60 ? '⭐⭐' : '⭐';
 
@@ -1100,7 +1101,7 @@ export class WordJourneyGame {
                     </div>
                     ` : ''}
                     <div class="wj-celeb-stat">
-                        <span class="wj-celeb-stat-num">+${coinsEarned}🪙</span>
+                        <span class="wj-celeb-stat-num"><span data-coins-earned-number>+0</span>🪙</span>
                         <span class="wj-celeb-stat-label">מטבעות</span>
                     </div>
                 </div>
@@ -1113,6 +1114,10 @@ export class WordJourneyGame {
                     <button class="restart-game-btn wj-more-words-btn">
                         <i class="fas fa-arrow-left"></i> ללמוד עוד מילים
                     </button>
+                    ${recommendation ? `
+                    <button class="next-recommended-btn wj-next-recommended-btn">
+                        <i class="fas fa-forward"></i> ${recommendation.label}
+                    </button>` : ''}
                     <button class="choose-game-btn wj-hub-btn">
                         <i class="fas fa-home"></i> חזור לבית
                     </button>
@@ -1131,6 +1136,12 @@ export class WordJourneyGame {
         celebDiv.querySelector('.wj-hub-btn').addEventListener('click', () => {
             gm.showWelcomeScreen();
         });
+
+        celebDiv.querySelector('.wj-next-recommended-btn')?.addEventListener('click', () => {
+            recommendation?.action?.();
+        });
+
+        gm.animateCompletionCoins?.(celebDiv, coinsEarned);
 
         // Big confetti burst for the full journey completion
         try {

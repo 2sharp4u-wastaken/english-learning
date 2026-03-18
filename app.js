@@ -15,7 +15,7 @@ import { allCourses } from './data/courses/index.js';
 import { MemoryGame } from './games/memory-game.js';
 import { SentenceScrambleGame } from './games/sentence-scramble-game.js';
 import { FillBlanksGame } from './games/fill-blanks-game.js';
-import { WordJourneyGame } from './games/word-journey-game.js?t=1776100001';
+import { WordJourneyGame } from './games/word-journey-game.js?t=1776200001';
 
 // ── V2 storage isolation ──────────────────────────────────────────────────────
 // All v2 localStorage keys carry this prefix to avoid colliding with v1 keys.

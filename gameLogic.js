@@ -12,12 +12,12 @@ const SENTENCE_THEMES = new Set(['animals', 'colors', 'daily', 'family', 'food',
 import * as VocabularyGame from './games/vocabulary-game.js?t=1776003000';
 import * as GrammarGame from './games/grammar-game.js?t=1774903002';
 import * as GrammarBeginnerGame from './games/grammar-beginner-game.js?t=1742041200';
-import * as ListeningGame from './games/listening-game.js?t=1773075344';
+import * as ListeningGame from './games/listening-game.js?t=1776200001';
 import * as PronunciationGame from './games/pronunciation-game.js?t=1771785500';
 import * as ReadingGame from './games/reading-game.js?t=1776006000';
 import * as PracticeGame from './games/practice-game.js';
 import * as ABCGame from './games/abc-game.js';
-import * as PictureMatchGame from './games/picture-match-game.js';
+import * as PictureMatchGame from './games/picture-match-game.js?t=1776200001';
 import { generateABCQuestions, areAllLettersMastered, getUnmasteredLetterCount } from './data/abcData.js';
 import { generateGrammarBeginnerQuestions } from './data/grammarBeginnerData.js';
 import { getRandomSentences } from './data/sentences.js';
@@ -56,6 +56,7 @@ class GameManager {
         // In-game timer: total elapsed while playing (ms). Only shown on game completion.
         this.gameElapsedMs = 0;
         this.gameSessionStartAt = null;  // When current session started (leave/resume resets)
+        this.gameCoinHistoryStartIndex = 0;
 
         // Session streak tracking for morale feedback
         this.sessionCorrectStreak = 0;
@@ -413,7 +414,7 @@ class GameManager {
     applySettings(settings) {
         this.settings = settings;
         this.totalQuestions = settings.questionsPerGame || GAME_CONFIG.MAX_QUESTIONS;
-        this.audioPlaysLeft = settings.audioPlaysAllowed || GAME_CONFIG.MAX_AUDIO_PLAYS;
+        this.audioPlaysLeft = this.getAudioPlayLimit(this.currentGame);
         this.clickRepeatCount = settings.clickRepeatCount || GAME_CONFIG.WRONG_OPTIONS_COUNT;
         this.showPictures = settings.showPictures || false;
         this.selectedCategories = settings.selectedCategories || [];
@@ -432,6 +433,51 @@ class GameManager {
             showPictures: false,
             showConfetti: true
         };
+    }
+
+    getGameTier(gameType) {
+        const learnGames = new Set(['word-journey', 'abc']);
+        const practiceGames = new Set(['listening', 'picture-match', 'memory', 'grammar-beginner', 'practice']);
+        const challengeGames = new Set(['reading', 'pronunciation', 'fill-blanks', 'scramble', 'grammar', 'vocabulary']);
+
+        if (learnGames.has(gameType)) return 'learn';
+        if (practiceGames.has(gameType)) return 'practice';
+        if (challengeGames.has(gameType)) return 'challenge';
+        return 'practice';
+    }
+
+    getAudioPlayLimit(gameType = this.currentGame) {
+        switch (this.getGameTier(gameType)) {
+            case 'learn':
+                return Infinity;
+            case 'challenge':
+                return 5;
+            case 'practice':
+            default:
+                return 8;
+        }
+    }
+
+    resetAudioPlayCounter(gameType = this.currentGame) {
+        this.audioPlaysLeft = this.getAudioPlayLimit(gameType);
+        this.updateAllPlayCounters(gameType);
+        return this.audioPlaysLeft;
+    }
+
+    consumeAudioPlay(gameType = this.currentGame) {
+        if (!Number.isFinite(this.audioPlaysLeft)) {
+            this.updateAllPlayCounters(gameType);
+            return true;
+        }
+
+        if (this.audioPlaysLeft <= 0) {
+            this.updateAllPlayCounters(gameType);
+            return false;
+        }
+
+        this.audioPlaysLeft--;
+        this.updateAllPlayCounters(gameType);
+        return true;
     }
 
     enableOptionKeyboardNavigation(containerId) {
@@ -727,6 +773,7 @@ class GameManager {
         this.totalQuestions = gameState.totalQuestions;
         this.gameElapsedMs = gameState.gameElapsedMs || 0;
         this.gameSessionStartAt = Date.now();
+        this.gameCoinHistoryStartIndex = window.app?.userProgress?.coinHistory?.length || 0;
         this.isGameActive = true;
 
         // Word Journey: pre-load internal stage state before performGameSwitch calls loadStage
@@ -1735,6 +1782,7 @@ class GameManager {
                 this.lastPersistedScores[gameType] = 0;
                 this.gameElapsedMs = 0;
                 this.gameSessionStartAt = null; // Reset so we get a fresh start time
+                this.gameCoinHistoryStartIndex = window.app?.userProgress?.coinHistory?.length || 0;
 
             }
             // Start timing for non-practice games
@@ -1744,6 +1792,9 @@ class GameManager {
                 if (!this.gameSessionStartAt) {
                     this.gameSessionStartAt = Date.now();
                 }
+            }
+            if (this.isResuming) {
+                this.gameCoinHistoryStartIndex = window.app?.userProgress?.coinHistory?.length || 0;
             }
             this.isGameActive = true;
 
@@ -2243,8 +2294,7 @@ class GameManager {
     }
 
     loadQuestion(gameType) {
-        this.audioPlaysLeft = GAME_CONFIG.MAX_AUDIO_PLAYS;
-        this.updateAllPlayCounters(gameType);
+        this.resetAudioPlayCounter(gameType);
         try {
             debugLog(`Loading question ${this.currentQuestionIndex + 1} for ${gameType}`);
 
@@ -2335,7 +2385,7 @@ class GameManager {
         if (!container) return;
         const counters = container.querySelectorAll('.plays-left');
         counters.forEach(counter => {
-            counter.textContent = this.audioPlaysLeft;
+            counter.textContent = Number.isFinite(this.audioPlaysLeft) ? this.audioPlaysLeft : '∞';
         });
     }
 
@@ -2375,8 +2425,7 @@ class GameManager {
                 this.isPlayingAudio = false;
                 debugLog('📢 [AUDIO] Audio playback complete, button unlocked');
 
-                this.audioPlaysLeft--;
-                this.updateAllPlayCounters(this.currentGame);
+                this.consumeAudioPlay(this.currentGame);
 
                 // Delegate post-audio logic to each game module
                 if (this.currentGame === 'listening') {
@@ -2404,6 +2453,145 @@ class GameManager {
                 }
             }
         }
+    }
+
+    getCompletionAnsweredCount(gameType, fallbackTotal = this.totalQuestions) {
+        if (gameType === 'word-journey' && window.wordJourneyGame) {
+            return window.wordJourneyGame.totalScoredQuestions || fallbackTotal;
+        }
+        return Math.min(this.currentQuestionIndex, fallbackTotal);
+    }
+
+    getCompletionProgressPercent(answeredCount, actualCount) {
+        if (!actualCount) return 0;
+        return Math.max(0, Math.min(100, Math.round((answeredCount / actualCount) * 100)));
+    }
+
+    getSessionCoinsEarned() {
+        const history = window.app?.userProgress?.coinHistory || [];
+        return history
+            .slice(this.gameCoinHistoryStartIndex || 0)
+            .filter(entry => entry && entry.amount > 0)
+            .reduce((sum, entry) => sum + entry.amount, 0);
+    }
+
+    animateCompletionCoins(completionRoot, totalCoinsEarned) {
+        if (!completionRoot) return;
+        const numberEl = completionRoot.querySelector('[data-coins-earned-number]');
+        const sparkleEl = completionRoot.querySelector('[data-coins-earned-sparkle]');
+        if (!numberEl) return;
+
+        const finalValue = Math.max(0, Number(totalCoinsEarned) || 0);
+        if (finalValue === 0) {
+            numberEl.textContent = '+0';
+            return;
+        }
+
+        const durationMs = 900;
+        const startedAt = performance.now();
+
+        const tick = (now) => {
+            const progress = Math.min(1, (now - startedAt) / durationMs);
+            const eased = 1 - Math.pow(1 - progress, 3);
+            const current = Math.round(finalValue * eased);
+            numberEl.textContent = `+${current}`;
+
+            if (progress < 1) {
+                requestAnimationFrame(tick);
+            } else {
+                if (sparkleEl) {
+                    sparkleEl.classList.add('show');
+                    setTimeout(() => sparkleEl.classList.remove('show'), 1200);
+                }
+            }
+        };
+
+        requestAnimationFrame(tick);
+    }
+
+    _findVocabularyEntryByWord(word, preferredCategory = null) {
+        if (!word) return null;
+        const normalized = String(word).replace(/[.,!?;:]+$/g, '').toLowerCase();
+        const bank = window.vocabularyBank || [];
+
+        if (preferredCategory) {
+            const preferred = bank.find(entry =>
+                entry.category === preferredCategory &&
+                entry.word.toLowerCase() === normalized
+            );
+            if (preferred) return preferred;
+        }
+
+        return bank.find(entry => entry.word.toLowerCase() === normalized) || null;
+    }
+
+    getSessionWordProgress(gameType) {
+        if (!this.progressManager) return [];
+
+        const sessionMap = new Map();
+        const addWord = (word, category) => {
+            if (!word || !category) return;
+            const key = `${String(word).toLowerCase()}_${category}`;
+            if (sessionMap.has(key)) return;
+
+            const stats = this.progressManager.getWordStats(word, category);
+            const learned = this.progressManager.isWordLearned(word, category);
+            const learnedEntry = this.progressManager.learnedWords?.[key] || null;
+            const bankEntry = this._findVocabularyEntryByWord(word, category);
+            const accuracy = stats?.totalAttempts
+                ? Math.round(((stats.correctAttempts || 0) / stats.totalAttempts) * 100)
+                : 0;
+
+            sessionMap.set(key, {
+                key,
+                word,
+                category,
+                hebrew: bankEntry?.hebrew || bankEntry?.translation || '',
+                masteryPct: Math.round((stats?.masteryLevel || 0) * 100),
+                accuracyPct: accuracy,
+                attempts: stats?.totalAttempts || 0,
+                learned,
+                journeyScore: learnedEntry?.journeyScore ?? null
+            });
+        };
+
+        (this.shuffledQuestions || []).forEach(question => {
+            if (!question) return;
+
+            if (question.word && question.category) {
+                addWord(question.word, question.category);
+                return;
+            }
+
+            if (question.blank?.options?.[0]) {
+                const vocabEntry = this._findVocabularyEntryByWord(question.blank.options[0], question.theme);
+                if (vocabEntry) addWord(vocabEntry.word, vocabEntry.category);
+                return;
+            }
+
+            if (question.predicate?.word) {
+                const vocabEntry = this._findVocabularyEntryByWord(question.predicate.word, question.theme);
+                if (vocabEntry) addWord(vocabEntry.word, vocabEntry.category);
+            }
+        });
+
+        return Array.from(sessionMap.values()).slice(0, 8);
+    }
+
+    getCompletionRecommendation(gameType) {
+        const recommendation = window.app?.getRecommendation?.();
+        if (!recommendation) return null;
+
+        return {
+            label: recommendation.label || 'המשחק הבא',
+            action: () => {
+                try {
+                    recommendation.action?.();
+                } catch (error) {
+                    console.warn('Failed to run completion recommendation:', error);
+                }
+            }
+        };
     }
 
 
@@ -2449,18 +2637,52 @@ class GameManager {
                 // Create practice session completion screen
                 const completionDiv = document.createElement('div');
                 completionDiv.className = 'game-complete';
+                const practiceWordProgress = this.getSessionWordProgress('practice');
+                const recommendation = this.getCompletionRecommendation('practice');
                 completionDiv.innerHTML = `
                     <div class="completion-content">
                         <div class="completion-icon">🎯</div>
                         <h2>סיימת את סבב התרגול!</h2>
                         <div class="practice-summary">
-                            <p>תרגלת ${this.practiceWordsCount} מילים ב-2 סיבובים</p>
+                            <p>תרגלת ${this.practiceWordsCount} מילים לחיזוק</p>
                             <p class="practice-encouragement">המשך לתרגל כדי לשפר את השליטה במילים!</p>
                         </div>
+                        ${practiceWordProgress.length > 0 ? `
+                            <div class="completion-words-section">
+                                <h3><i class="fas fa-seedling"></i> המילים שחיזקת עכשיו</h3>
+                                <div class="completion-word-list">
+                                    ${practiceWordProgress.map(word => `
+                                        <div class="completion-word-card ${word.learned ? 'learned' : ''}">
+                                            <div class="completion-word-top">
+                                                <div class="completion-word-title">
+                                                    <span class="completion-word-en">${word.word}</span>
+                                                    ${word.hebrew ? `<span class="completion-word-he" data-hebrew-source="${word.hebrew}">${window.getHebrew(word.hebrew)}</span>` : ''}
+                                                </div>
+                                                <span class="completion-word-badge ${word.learned ? 'learned' : 'practicing'}">
+                                                    ${word.learned ? 'נלמדה' : 'בתרגול'}
+                                                </span>
+                                            </div>
+                                            <div class="completion-word-bar">
+                                                <div class="completion-word-bar-fill" style="width:${word.masteryPct}%"></div>
+                                            </div>
+                                            <div class="completion-word-meta">
+                                                <span>שליטה ${word.masteryPct}%</span>
+                                                <span>דיוק ${word.accuracyPct}%</span>
+                                                <span>${word.attempts} ניסיונות</span>
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            </div>
+                        ` : ''}
                         <div class="completion-actions">
-                            <button class="continue-practice-btn">
+                            <button class="continue-practice-btn restart-game-btn">
                                 <i class="fas fa-redo"></i> המשך לתרגל
                             </button>
+                            ${recommendation ? `
+                            <button class="next-recommended-btn" data-action="recommended">
+                                <i class="fas fa-forward"></i> ${recommendation.label}
+                            </button>` : ''}
                             <button class="choose-game-btn">
                                 <i class="fas fa-home"></i> חזור לדף הבית
                             </button>
@@ -2479,6 +2701,7 @@ class GameManager {
 
                 // Add event listeners
                 const continueBtn = completionDiv.querySelector('.continue-practice-btn');
+                const recommendationBtn = completionDiv.querySelector('[data-action="recommended"]');
                 const homeBtn = completionDiv.querySelector('.choose-game-btn');
 
                 if (continueBtn) {
@@ -2491,6 +2714,12 @@ class GameManager {
                 if (homeBtn) {
                     homeBtn.addEventListener('click', () => {
                         this.showWelcomeScreen();
+                    });
+                }
+
+                if (recommendationBtn && recommendation) {
+                    recommendationBtn.addEventListener('click', () => {
+                        recommendation.action();
                     });
                 }
 
@@ -2608,13 +2837,21 @@ class GameManager {
                 return;
             }
 
+            const sessionCoinsEarned = this.getSessionCoinsEarned();
+            const answeredCount = this.getCompletionAnsweredCount(gameType, this.totalQuestions);
+            const actualQuestionCount = gameType === 'word-journey'
+                ? answeredCount
+                : (this.totalQuestions || answeredCount || 1);
+            const completionProgressPct = this.getCompletionProgressPercent(answeredCount, actualQuestionCount);
+            const sessionWordProgress = this.getSessionWordProgress(gameType);
+            const recommendation = this.getCompletionRecommendation(gameType);
+
             // ── Word Journey: custom celebration screen ──────────────────────
             if (gameType === 'word-journey' && window.wordJourneyGame?.showCelebration) {
                 const wj = window.wordJourneyGame;
-                const coinsEarned = this.coinManager ? (20 + (percentage === 100 ? 30 : 0)) : 0;
                 const learnedCount = window.app?.progressManager?.getLearnedWordCount() || 0;
                 for (const child of gameArea.children) child.style.display = 'none';
-                wj.showCelebration(this, gameArea, wj.words || [], percentage, coinsEarned, learnedCount);
+                wj.showCelebration(this, gameArea, wj.words || [], percentage, sessionCoinsEarned, learnedCount, recommendation);
                 this.isGameActive = false;
                 try {
                     if (typeof appManager !== 'undefined' && appManager?.updateProgress) {
@@ -2636,10 +2873,54 @@ class GameManager {
             completionDiv.className = 'game-complete';
             const timeText = this.formatGameTime(totalGameTimeMs);
             const endGameStars = percentage >= 80 ? '⭐⭐⭐' : percentage >= 60 ? '⭐⭐' : '⭐';
+            const performance = this.scoreManager.getPerformanceRating(percentage);
+            const wordProgressHtml = sessionWordProgress.length > 0 ? `
+                <div class="completion-words-section">
+                    <h3><i class="fas fa-book-open"></i> התקדמות במילים מהמשחק</h3>
+                    <div class="completion-word-list">
+                        ${sessionWordProgress.map(word => `
+                            <div class="completion-word-card ${word.learned ? 'learned' : ''}">
+                                <div class="completion-word-top">
+                                    <div class="completion-word-title">
+                                        <span class="completion-word-en">${word.word}</span>
+                                        ${word.hebrew ? `<span class="completion-word-he" data-hebrew-source="${word.hebrew}">${window.getHebrew(word.hebrew)}</span>` : ''}
+                                    </div>
+                                    <span class="completion-word-badge ${word.learned ? 'learned' : 'practicing'}">
+                                        ${word.learned ? 'נלמדה' : 'בתרגול'}
+                                    </span>
+                                </div>
+                                <div class="completion-word-bar">
+                                    <div class="completion-word-bar-fill" style="width:${word.masteryPct}%"></div>
+                                </div>
+                                <div class="completion-word-meta">
+                                    <span>שליטה ${word.masteryPct}%</span>
+                                    <span>דיוק ${word.accuracyPct}%</span>
+                                    ${word.journeyScore != null ? `<span>מסע ${word.journeyScore}%</span>` : `<span>${word.attempts} ניסיונות</span>`}
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            ` : '';
+            const recommendationButtonHtml = recommendation ? `
+                <button class="next-recommended-btn" data-action="recommended">
+                    <i class="fas fa-forward"></i> ${recommendation.label}
+                </button>
+            ` : '';
             completionDiv.innerHTML = `
                 <div class="completion-content">
-                    <h2><i class="fas fa-trophy"></i> משחק הושלם!</h2>
+                    <div class="completion-icon">${performance.emoji}</div>
+                    <h2>${performance.label}</h2>
                     <div class="completion-stars">${endGameStars}</div>
+                    <div class="completion-progress-card">
+                        <div class="completion-progress-head">
+                            <span>התקדמות המשחק</span>
+                            <strong>${answeredCount}/${actualQuestionCount}</strong>
+                        </div>
+                        <div class="completion-progress-track">
+                            <div class="completion-progress-fill" style="width:${completionProgressPct}%"></div>
+                        </div>
+                    </div>
                     <div class="score-display">
                         <div class="score-circle">
                             <span class="score-number">${percentage}%</span>
@@ -2647,13 +2928,25 @@ class GameManager {
                         </div>
                         <div class="score-details">
                             <p><strong>ניקוד סופי:</strong> ${finalScore}/${maxPossibleScore}</p>
+                            <p><strong>רמת ביצוע:</strong> ${performance.labelEn}</p>
                             ${timeText ? `<p class="game-time"><strong>זמן כולל:</strong> ${timeText}</p>` : ''}
                         </div>
                     </div>
+                    <div class="completion-coins-card">
+                        <div class="completion-coins-title">
+                            <i class="fas fa-coins"></i> מטבעות שהרווחת
+                        </div>
+                        <div class="completion-coins-value">
+                            <span class="completion-coins-number" data-coins-earned-number>+0</span>
+                            <span class="completion-coins-sparkle" data-coins-earned-sparkle>✨</span>
+                        </div>
+                    </div>
+                    ${wordProgressHtml}
                     <div class="completion-actions">
                         <button class="restart-game-btn" data-game="${gameType}">
                             <i class="fas fa-redo"></i> שחק שוב
                         </button>
+                        ${recommendationButtonHtml}
                         <button class="choose-game-btn">
                             <i class="fas fa-home"></i> בחר משחק אחר
                         </button>
@@ -2665,6 +2958,7 @@ class GameManager {
 
             // Add event listeners to buttons (can't use onclick in innerHTML)
             const restartBtn = completionDiv.querySelector('.restart-game-btn');
+            const recommendationBtn = completionDiv.querySelector('[data-action="recommended"]');
             const chooseBtn = completionDiv.querySelector('.choose-game-btn');
 
             if (restartBtn) {
@@ -2675,11 +2969,18 @@ class GameManager {
 
             if (chooseBtn) {
                 chooseBtn.addEventListener('click', () => {
-                    window.location.replace('index.html');
+                    this.showWelcomeScreen();
+                });
+            }
+
+            if (recommendationBtn && recommendation) {
+                recommendationBtn.addEventListener('click', () => {
+                    recommendation.action();
                 });
             }
 
             this.isGameActive = false;
+            this.animateCompletionCoins(completionDiv, sessionCoinsEarned);
 
             debugLog(`${gameType} game ended successfully`);
             // Update overall app achievements/progress if available (skip in practice mode)

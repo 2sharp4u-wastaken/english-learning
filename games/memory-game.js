@@ -599,6 +599,22 @@ export class MemoryGame {
         const headingHtml = isLastLevel
             ? `<i class="fas fa-trophy"></i> משחק הושלם!`
             : `<i class="fas fa-arrow-up"></i> רמה ${levelConfig.level} הושלמה!`;
+        const recommendation = isLastLevel ? window.gameManager?.getCompletionRecommendation?.('memory') : null;
+        const levelWordProgress = (this.gameWords || []).map(wordObj => {
+            const stats = window.gameManager?.progressManager?.getWordStats?.(wordObj.word, wordObj.category) || null;
+            const learned = window.gameManager?.progressManager?.isWordLearned?.(wordObj.word, wordObj.category) || false;
+            const accuracy = stats?.totalAttempts
+                ? Math.round(((stats.correctAttempts || 0) / stats.totalAttempts) * 100)
+                : 0;
+            return {
+                word: wordObj.word,
+                hebrew: wordObj.hebrew || '',
+                learned,
+                masteryPct: Math.round((stats?.masteryLevel || 0) * 100),
+                accuracyPct: accuracy,
+                attempts: stats?.totalAttempts || 0
+            };
+        }).slice(0, 8);
 
         const levelKey = String(levelConfig.level);
         const pbTableHtml = this.buildPersonalBestTable(levelKey);
@@ -607,6 +623,9 @@ export class MemoryGame {
             ? `<button class="restart-game-btn memory-completion-restart">
                    <i class="fas fa-redo"></i> שחק שוב
                </button>
+               ${recommendation ? `<button class="next-recommended-btn memory-completion-recommended">
+                   <i class="fas fa-forward"></i> ${recommendation.label}
+               </button>` : ''}
                <button class="choose-game-btn memory-completion-home">
                    <i class="fas fa-home"></i> בחר משחק אחר
                </button>`
@@ -636,12 +655,50 @@ export class MemoryGame {
                         ${personalBestInfo?.isNewBest ? `<p class="memory-personal-best">🏆 שיא אישי חדש!</p>` : ''}
                     </div>
                 </div>
+                <div class="completion-coins-card">
+                    <div class="completion-coins-title">
+                        <i class="fas fa-coins"></i> מטבעות מהרמה
+                    </div>
+                    <div class="completion-coins-value">
+                        <span class="completion-coins-number" data-coins-earned-number>+0</span>
+                        <span class="completion-coins-sparkle" data-coins-earned-sparkle>✨</span>
+                    </div>
+                </div>
+                ${levelWordProgress.length > 0 ? `
+                <div class="completion-words-section">
+                    <h3><i class="fas fa-brain"></i> מילים שתרגלת ברמה הזאת</h3>
+                    <div class="completion-word-list">
+                        ${levelWordProgress.map(word => `
+                            <div class="completion-word-card ${word.learned ? 'learned' : ''}">
+                                <div class="completion-word-top">
+                                    <div class="completion-word-title">
+                                        <span class="completion-word-en">${word.word}</span>
+                                        ${word.hebrew ? `<span class="completion-word-he" data-hebrew-source="${word.hebrew}">${window.getHebrew(word.hebrew)}</span>` : ''}
+                                    </div>
+                                    <span class="completion-word-badge ${word.learned ? 'learned' : 'practicing'}">
+                                        ${word.learned ? 'נלמדה' : 'בתרגול'}
+                                    </span>
+                                </div>
+                                <div class="completion-word-bar">
+                                    <div class="completion-word-bar-fill" style="width:${word.masteryPct}%"></div>
+                                </div>
+                                <div class="completion-word-meta">
+                                    <span>שליטה ${word.masteryPct}%</span>
+                                    <span>דיוק ${word.accuracyPct}%</span>
+                                    <span>${word.attempts} ניסיונות</span>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>` : ''}
                 ${pbTableHtml}
                 <div class="completion-actions">
                     ${actionButtonsHtml}
                 </div>
             </div>
         `);
+
+        window.gameManager?.animateCompletionCoins?.(completionDiv, levelCoins);
 
         if (metrics.stars >= 3 && typeof confetti === 'function') {
             confetti({ particleCount: 80, spread: 60, origin: { y: 0.5 } });
@@ -685,6 +742,7 @@ export class MemoryGame {
         // Wire up action buttons — user drives the transition
         const advanceBtn = completionDiv.querySelector('.memory-completion-advance');
         const restartBtn = completionDiv.querySelector('.memory-completion-restart');
+        const recommendationBtn = completionDiv.querySelector('.memory-completion-recommended');
         const homeBtn = completionDiv.querySelector('.memory-completion-home');
 
         if (advanceBtn) {
@@ -709,7 +767,13 @@ export class MemoryGame {
 
         if (homeBtn) {
             homeBtn.addEventListener('click', () => {
-                window.location.replace('index.html');
+                window.gameManager?.showWelcomeScreen?.();
+            });
+        }
+
+        if (recommendationBtn && recommendation) {
+            recommendationBtn.addEventListener('click', () => {
+                recommendation.action();
             });
         }
     }

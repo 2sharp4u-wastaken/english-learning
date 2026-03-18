@@ -112,8 +112,7 @@ export async function loadListeningQuestion(question) {
         if (firstOption) firstOption.focus();
 
         this.listeningAudioPlayed = true;
-        this.audioPlaysLeft--;
-        this.updateAllPlayCounters('listening');
+        this.consumeAudioPlay('listening');
     } catch (error) {
         console.error('Error auto-playing word audio:', error);
         // If auto-play fails, show prompt to click play button
