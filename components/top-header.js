@@ -11,20 +11,22 @@
 
 import { toggle as toggleCase, init as initCase } from '../utils/caseManager.js';
 
-const GAMES = [
-    { id: 'vocabulary',      icon: 'fa-book',        label: 'אוצר מילים', title: 'בונה אוצר מילים' },
-    { id: 'grammar',         icon: 'fa-spell-check', label: 'דקדוק',      title: 'תרגול דקדוק' },
-    { id: 'grammar-beginner',icon: 'fa-volume-up',   label: 'דקדוק+',     title: 'דקדוק למתחילים - למידה בהאזנה' },
-    { id: 'pronunciation',   icon: 'fa-microphone',  label: 'הגייה',      title: 'הגייה' },
-    { id: 'listening',       icon: 'fa-headphones',  label: 'הקשבה',      title: 'הקשבה' },
-    { id: 'reading',         icon: 'fa-book-open',   label: 'קריאה',      title: 'איית אותי' },
-    { id: 'abc',             icon: 'fa-font',        label: 'אותיות',     title: 'אותיות' },
-    { id: 'memory',          icon: 'fa-th',          label: 'זיכרון',     title: 'זיכרון - מצא את הזוגות' },
-    { id: 'scramble',        icon: 'fa-random',      label: 'סידור',      title: 'סידור משפטים' },
-    { id: 'fill-blanks',     icon: 'fa-fill-drip',   label: 'השלמה',      title: 'השלם את המשפט' },
-    { id: 'word-journey',    icon: 'fa-route',       label: 'מסע',        title: 'מסע המילים' },
-    { id: 'picture-match',   icon: 'fa-image',       label: 'תמונות',     title: 'מילה לתמונה' },
-];
+/** Game metadata — used for back-button game name display */
+const GAME_NAMES = {
+    'vocabulary':       { icon: 'fa-book',        name: 'מבחן מילים' },
+    'grammar':          { icon: 'fa-spell-check', name: 'תרגול דקדוק' },
+    'grammar-beginner': { icon: 'fa-volume-up',   name: 'דקדוק למתחילים' },
+    'pronunciation':    { icon: 'fa-microphone',  name: 'הגייה' },
+    'listening':        { icon: 'fa-headphones',  name: 'הקשבה' },
+    'reading':          { icon: 'fa-book-open',   name: 'איית אותי' },
+    'abc':              { icon: 'fa-font',        name: 'אותיות' },
+    'memory':           { icon: 'fa-th',          name: 'זיכרון' },
+    'scramble':         { icon: 'fa-random',      name: 'סידור משפטים' },
+    'fill-blanks':      { icon: 'fa-fill-drip',   name: 'השלם את המשפט' },
+    'word-journey':     { icon: 'fa-route',       name: 'מסע המילים' },
+    'picture-match':    { icon: 'fa-image',       name: 'מילה לתמונה' },
+    'practice':         { icon: 'fa-bullseye',    name: 'תרגול' },
+};
 
 // Inline styles applied to the header when it is visible and fixed.
 // Used on non-home pages (always shown) and on home page once user logs in.
@@ -37,17 +39,8 @@ const FIXED_STYLE = 'position: fixed; top: 0; left: 0; right: 0; width: 100%; z-
 function buildHeaderHTML(activePage) {
     const isHome = activePage === 'home';
 
-    const gameButtons = GAMES.map(g => `
-            <button class="top-game-btn" data-game="${g.id}" title="${g.title}">
-                <i class="fas ${g.icon}"></i>
-                <span>${g.label}</span>
-            </button>`).join('');
-
     const statsClass    = activePage === 'stats'    ? ' active' : '';
     const settingsClass = activePage === 'settings' ? ' active' : '';
-
-    // Score display shown on all pages for consistent header layout
-    const scoreHTML = '<span class="header-score" id="header-score">ניקוד: <span id="current-score">0</span></span>';
 
     // Header starts hidden on home (shown after login), always visible on other pages
     const headerStyle  = isHome ? 'display: none;' : `display: flex; ${FIXED_STYLE}`;
@@ -59,21 +52,28 @@ function buildHeaderHTML(activePage) {
                 <i class="fas fa-graduation-cap"></i>
                 <span>לומדים אנגלית</span>
             </div>
-            <nav class="top-game-nav">
-                ${gameButtons}
-                ${isHome ? `
-                <button class="top-game-btn" data-game="practice" id="practice-top-btn" title="מצב תרגול">
-                    <i class="fas fa-bullseye"></i>
-                    <span>תרגול</span>
-                    <span class="practice-badge" id="practice-badge"></span>
-                </button>` : ''}
-            </nav>
+            <!-- Back button + game name — visible during active games only -->
+            <div class="header-game-info" id="header-game-info" style="display: none;">
+                <button class="header-back-btn" id="header-back-btn" title="חזרה לבית">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <span class="header-game-name" id="header-game-name"></span>
+            </div>
         </div>
         <div class="header-right">
+            <!-- Score — always visible -->
+            <span class="header-score" id="header-score">ניקוד: <span id="current-score">0</span></span>
+            <!-- Coins — always visible -->
+            <div class="header-coins" id="header-coins" title="מטבעות">
+                <i class="fas fa-coins"></i>
+                <span id="header-coin-count">0</span>
+            </div>
+            <!-- Case toggle — always visible -->
             <button class="case-toggle-btn" id="global-case-toggle" title="החלף רישיות (ABC / abc)">
                 <span class="case-upper">ABC</span>
                 <span class="case-lower">abc</span>
             </button>
+            <!-- Nikud toggle — always visible -->
             <button class="nikud-toggle-btn" id="nikud-toggle" title="הצג/הסתר ניקוד (אֶ/א)">
                 <span class="nikud-on">אֶ</span>
                 <span class="nikud-off-label">א</span>
@@ -86,10 +86,7 @@ function buildHeaderHTML(activePage) {
             </a>
             <div class="header-user-info" id="header-user-info">
                 <div class="header-user-avatar" id="header-user-avatar">O</div>
-                <div class="header-user-details">
-                    <span class="header-user-name" id="header-user-name">User</span>
-                    ${scoreHTML}
-                </div>
+                <span class="header-user-name" id="header-user-name">User</span>
             </div>
             <button class="header-icon-btn" id="header-logout-btn" title="התנתק">
                 <i class="fas fa-sign-out-alt"></i>
@@ -123,56 +120,23 @@ function updateUserInfo() {
 
 function setupHomeEvents() {
     const topHeader  = document.getElementById('top-header');
-    const topGameBtns = document.querySelectorAll('.top-game-btn');
-    const topScreenBtns = document.querySelectorAll('.top-screen-btn');
     const statsBtn   = document.getElementById('stats-btn');
     const settingsBtn = document.getElementById('settings-btn');
-
-    function refreshPracticeButtonOnHome(retries = 12) {
-        if (window.gamificationManager?.updatePracticeModeCard) {
-            window.gamificationManager.updatePracticeModeCard();
-            return;
-        }
-        if (retries <= 0) return;
-        setTimeout(() => refreshPracticeButtonOnHome(retries - 1), 250);
-    }
 
     // Show the header after login
     function showHeader() {
         updateUserInfo();
         topHeader.style.cssText = `display: flex; ${FIXED_STYLE}`;
         document.querySelector('.app-layout')?.classList.add('header-mode');
-        // Sync content offset to actual header height (may be taller than 80px if it wraps)
+        setHeaderMode('hub');
         requestAnimationFrame(() => {
             syncHeaderOffset('home');
             watchHeaderHeight('home');
         });
-        // Ensure practice entrypoint is recalculated after header visibility changes.
-        refreshPracticeButtonOnHome();
     }
 
-    // Game nav buttons → switch game in gameManager
-    topGameBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
-            const gameType = btn.dataset.game;
-            if (!gameType) return;
-
-            const go = () => {
-                if (window.gameManager) {
-                    topGameBtns.forEach(b => b.classList.remove('active'));
-                    btn.classList.add('active');
-                    topScreenBtns.forEach(b => b.classList.remove('active'));
-                    window.gameManager.switchGame(gameType);
-                } else {
-                    setTimeout(go, 100);
-                }
-            };
-            go();
-        });
-    });
-
-    // Logo → show welcome screen
-    document.getElementById('header-home-btn')?.addEventListener('click', () => {
+    // Navigate back to hub (shared by logo click + back button)
+    function navigateToHub() {
         if (typeof gameManager !== 'undefined' && gameManager.isGameActive) {
             const saved = gameManager.saveGameState();
             if (saved) gameManager.showToast('המשחק נשמר בהצלחה');
@@ -191,13 +155,21 @@ function setupHomeEvents() {
         if (typeof gameManager !== 'undefined' && gameManager.populateResumeGames) {
             gameManager.populateResumeGames();
         }
-        // Show all-time total score when outside any game
         if (window.gameManager?.updateTotalScoreDisplay) {
             window.gameManager.updateTotalScoreDisplay();
         }
-        topGameBtns.forEach(b => b.classList.remove('active'));
-        topScreenBtns.forEach(b => b.classList.remove('active'));
-    });
+        // Refresh hero card and lock states with current save/progress data
+        if (typeof window.updateHomeCardStates === 'function') {
+            window.updateHomeCardStates();
+        }
+        setHeaderMode('hub');
+    }
+
+    // Logo → show welcome screen
+    document.getElementById('header-home-btn')?.addEventListener('click', navigateToHub);
+
+    // Back button → same as logo
+    document.getElementById('header-back-btn')?.addEventListener('click', navigateToHub);
 
     // Logout
     document.getElementById('header-logout-btn')?.addEventListener('click', () => {
@@ -236,14 +208,6 @@ function setupOtherPageEvents() {
         window.location.replace('index.html');
     });
 
-    // Game nav buttons → navigate to index.html#game
-    document.querySelectorAll('.top-game-btn[data-game]').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const game = btn.dataset.game;
-            if (game) window.location.replace(`index.html#${game}`);
-        });
-    });
-
     // User-info pill → navigate to user hub
     document.getElementById('header-user-info')?.addEventListener('click', () => {
         window.location.replace('index.html#user-hub');
@@ -257,27 +221,50 @@ function setupOtherPageEvents() {
         }
     });
 
-    // Auth events — use correct event name ('user-logged-in', not 'userLoggedIn')
+    // Auth events
     window.addEventListener('user-logged-in', updateUserInfo);
     updateUserInfo();
 }
 
 // ---------------------------------------------------------------------------
-// Active state sync (hash + stored last screen)
+// Header mode toggling — hub vs game
 // ---------------------------------------------------------------------------
 
-function applyActiveNavFromHash() {
-    const hash = window.location.hash ? window.location.hash.substring(1) : '';
-    const topGameBtns = document.querySelectorAll('.top-game-btn');
-    const topScreenBtns = document.querySelectorAll('.top-screen-btn');
+/**
+ * Switch the header between 'hub' mode (home screen) and 'game' mode (active game).
+ * In hub mode: logo visible, back/game-name hidden, stats/settings/logout visible, score hidden.
+ * In game mode: logo hidden, back/game-name visible, stats/settings/logout hidden, score visible.
+ */
+function setHeaderMode(mode) {
+    const header = document.getElementById('top-header');
+    if (!header) return;
 
-    topGameBtns.forEach(b => b.classList.remove('active'));
-    topScreenBtns.forEach(b => b.classList.remove('active'));
+    const gameInfo = document.getElementById('header-game-info');
+    const logo     = document.getElementById('header-home-btn');
 
-    if (!hash) return;
+    if (mode === 'game') {
+        header.classList.add('game-active');
+        if (logo) logo.style.display = 'none';
+        if (gameInfo) gameInfo.style.display = 'flex';
+    } else {
+        header.classList.remove('game-active');
+        if (logo) logo.style.display = '';
+        if (gameInfo) gameInfo.style.display = 'none';
+    }
+}
 
-    const gameBtn = document.querySelector(`.top-game-btn[data-game="${hash}"]`);
-    if (gameBtn) gameBtn.classList.add('active');
+/**
+ * Show the active game name + back button in the header.
+ * Called from gameLogic.js performGameSwitch().
+ */
+function showGameInHeader(gameType) {
+    const meta = GAME_NAMES[gameType];
+    if (!meta) return;
+
+    const nameEl = document.getElementById('header-game-name');
+    if (nameEl) nameEl.textContent = meta.name;
+
+    setHeaderMode('game');
 }
 
 
@@ -332,7 +319,7 @@ export function initTopHeader(options = {}) {
     // Inject the header as the very first element inside <body>
     document.body.insertAdjacentHTML('afterbegin', buildHeaderHTML(activePage));
 
-    // Restore persisted case mode (applies body class + updates button visual)
+    // Restore persisted case mode (applies body class)
     initCase();
 
     // Wire the global case toggle button
@@ -340,7 +327,7 @@ export function initTopHeader(options = {}) {
         toggleCase();
     });
 
-    // Initialise nikud state from localStorage (for pages that don't load nikud.js)
+    // Initialise nikud state from localStorage
     if (window._showNikud === undefined) {
         try {
             const s = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
@@ -365,25 +352,14 @@ export function initTopHeader(options = {}) {
 
     if (activePage === 'home') {
         setupHomeEvents();
-        // Home header exists now; refresh practice state once systems are ready.
-        setTimeout(() => {
-            if (window.gamificationManager?.updatePracticeModeCard) {
-                window.gamificationManager.updatePracticeModeCard();
-            }
-        }, 300);
     } else {
         setupOtherPageEvents();
-        // Non-home pages: header is always visible, sync offset immediately
-        // Use rAF to ensure layout is calculated before measuring
         requestAnimationFrame(() => {
             syncHeaderOffset(activePage);
             watchHeaderHeight(activePage);
         });
     }
-
-    applyActiveNavFromHash();
-    window.addEventListener('hashchange', applyActiveNavFromHash);
 }
 
 // Exported so home page can call it after the header becomes visible (post-login)
-export { syncHeaderOffset, watchHeaderHeight };
+export { syncHeaderOffset, watchHeaderHeight, showGameInHeader, setHeaderMode };

@@ -625,16 +625,12 @@
                         <span class="category-count" id="selected-count">0/13</span>
                     </label>
                     <p class="setting-description">
-                        בחר מאילו קטגוריות תרצה ללמוד מילים. מומלץ לבחור לפחות 5 קטגוריות.
-                    </p>
-                    <p class="setting-description" style="color:#f59e0b;font-weight:600;">
-                        <i class="fas fa-info-circle"></i>
-                        פחות מ-5 קטגוריות = מצב אימון (ללא ציונים)
+                        בחר מאילו קטגוריות תרצה ללמוד מילים.
                     </p>
                     <div class="checkbox-grid" id="category-checkboxes"></div>
                     <div class="warning-message" id="category-warning">
                         <i class="fas fa-exclamation-triangle"></i>
-                        בחרת פחות מ-5 קטגוריות - המשחק יהיה במצב אימון.
+                        חובה לבחור לפחות קטגוריה אחת!
                     </div>
                 </div>
             </div>
@@ -689,6 +685,43 @@
                         <div class="radio-item" data-value="advanced">
                             <input type="radio" name="difficulty" value="advanced" id="diff-advanced">
                             <label for="diff-advanced">מתקדם - מילים מאתגרות</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="setting-item">
+                    <label class="setting-label">הגיית מילה בעברית</label>
+                    <p class="setting-description">השמע את התרגום בעברית אחרי כל מילה אנגלית במסע המילים</p>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="hebrew-vocalization" checked>
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
+                    <label class="setting-label">קצב למידה</label>
+                    <p class="setting-description">כמה מילים חדשות ללמוד בכל מסע מילים</p>
+                    <div class="radio-group">
+                        <div class="radio-item" data-value="slow">
+                            <input type="radio" name="learningPace" value="slow" id="pace-slow">
+                            <label for="pace-slow">
+                                <strong>איטי</strong><br>
+                                <small>3 מילים לכל מסע</small>
+                            </label>
+                        </div>
+                        <div class="radio-item" data-value="normal">
+                            <input type="radio" name="learningPace" value="normal" id="pace-normal" checked>
+                            <label for="pace-normal">
+                                <strong>רגיל</strong><br>
+                                <small>5 מילים לכל מסע</small>
+                            </label>
+                        </div>
+                        <div class="radio-item" data-value="fast">
+                            <input type="radio" name="learningPace" value="fast" id="pace-fast">
+                            <label for="pace-fast">
+                                <strong>מהיר</strong><br>
+                                <small>8 מילים לכל מסע</small>
+                            </label>
                         </div>
                     </div>
                 </div>
@@ -850,6 +883,15 @@
                 </div>
 
                 <div class="setting-item">
+                    <label class="setting-label">אותיות קטנות באנגלית</label>
+                    <p class="setting-description">הצג אותיות קטנות (abc) במקום גדולות (ABC)</p>
+                    <label class="toggle-switch">
+                        <input type="checkbox" id="show-lowercase">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+
+                <div class="setting-item">
                     <label class="setting-label">קונפטי בהצלחה</label>
                     <p class="setting-description">הצג אנימציית קונפטי כשמשיבים נכון</p>
                     <label class="toggle-switch">
@@ -862,60 +904,28 @@
                     <label class="setting-label">התנהגות יציאה ממשחק</label>
                     <p class="setting-description">בחר מה יקרה כשיוצאים ממשחק באמצע</p>
                     <div class="radio-group" id="exit-behavior-group">
-                        <div class="radio-item" data-value="hybrid">
-                            <input type="radio" name="exitBehavior" value="hybrid" id="exit-hybrid">
-                            <label for="exit-hybrid">
-                                <strong>היברידי (מומלץ)</strong><br>
-                                <small>אישור מהיר בתחילה, שמירה אוטומטית אחרי 3 שאלות</small>
+                        <div class="radio-item" data-value="autosave">
+                            <input type="radio" name="exitBehavior" value="autosave" id="exit-autosave" checked>
+                            <label for="exit-autosave">
+                                <strong>שמירה אוטומטית (מומלץ)</strong><br>
+                                <small>שמור התקדמות ויצא ללא אישור</small>
                             </label>
                         </div>
                         <div class="radio-item" data-value="confirmation">
                             <input type="radio" name="exitBehavior" value="confirmation" id="exit-confirmation">
                             <label for="exit-confirmation">
                                 <strong>אישור תמיד</strong><br>
-                                <small>הצג חלון אישור עם אפשרות לשמור בכל יציאה</small>
-                            </label>
-                        </div>
-                        <div class="radio-item" data-value="autosave">
-                            <input type="radio" name="exitBehavior" value="autosave" id="exit-autosave">
-                            <label for="exit-autosave">
-                                <strong>שמירה אוטומטית</strong><br>
-                                <small>שמור אוטומטית ללא אישור, הצג הודעה קצרה</small>
-                            </label>
-                        </div>
-                        <div class="radio-item" data-value="smart">
-                            <input type="radio" name="exitBehavior" value="smart" id="exit-smart">
-                            <label for="exit-smart">
-                                <strong>חכם</strong><br>
-                                <small>שאלות 1-3: ללא אישור | 4+: אישור ושמירה | 8+: שמירה אוטומטית</small>
+                                <small>הצג חלון אישור לפני כל יציאה</small>
                             </label>
                         </div>
                     </div>
                 </div>
 
                 <div class="setting-item">
-                    <label class="setting-label">סף שאלות ליציאה</label>
-                    <p class="setting-description">מספר השאלה שבה ההתנהגות משתנה (רלוונטי להיברידי וחכם)</p>
-                    <input type="range" id="exit-threshold" min="1" max="9" value="3" class="slider">
-                    <div class="slider-value">
-                        <span id="exit-threshold-value">3</span> שאלות
-                    </div>
-                </div>
-
-                <div class="setting-item">
-                    <label class="setting-label">שמירה אוטומטית של התקדמות</label>
-                    <p class="setting-description">שמור משחקים לא גמורים ואפשר המשך מאוחר יותר</p>
+                    <label class="setting-label">עקוף נעילת משחקים</label>
+                    <p class="setting-description">אפשר גישה לכל המשחקים ללא קשר למספר המילים שנלמדו</p>
                     <label class="toggle-switch">
-                        <input type="checkbox" id="auto-save-progress" checked>
-                        <span class="toggle-slider"></span>
-                    </label>
-                </div>
-
-                <div class="setting-item">
-                    <label class="setting-label">הודעות יציאה</label>
-                    <p class="setting-description">הצג הודעה קצרה כשיוצאים ושומרים משחק</p>
-                    <label class="toggle-switch">
-                        <input type="checkbox" id="show-exit-toast" checked>
+                        <input type="checkbox" id="game-unlock-override">
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
@@ -953,16 +963,16 @@
     <script src="utils/fileSystemWriter.js?t=1775200000"></script>
     <script type="module" src="utils/wordImageManager.js?t=1780000002"></script>
     <script type="module" src="utils/phoneticCompute.js?t=1775800000"></script>
-    <script src="settings.js?t=1780000001"></script>
+    <script src="settings.js?t=1742508000"></script>
     <script type="module">
-        import { initTopHeader } from './components/top-header.js?t=1775800000';
+        import { initTopHeader } from './components/top-header.js?t=1776006000';
         initTopHeader({ activePage: 'settings' });
     </script>
     <script type="module" src="data/vocabularyBank.js?t=1780000001"></script>
     <script type="module" src="components/practice-indicator.js?t=1774896000"></script>
     <script type="module" src="components/header-score.js?t=1741340001"></script>
     <script type="module">
-        import { initNikudDOM } from './utils/nikudDOM.js?t=1775840000';
+        import { initNikudDOM } from './utils/nikudDOM.js?t=1773784000';
         initNikudDOM();
     </script>
 </body>

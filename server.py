@@ -56,6 +56,8 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
             self._write_image(data)
         elif self.path == '/api/fetch-image':
             self._fetch_image(data)
+        elif self.path == '/api/enrich-nikud':
+            self._enrich_nikud(data)
         else:
             self._reply(404, {'error': 'unknown endpoint'})
 
@@ -121,6 +123,22 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
         dest.write_bytes(image_bytes)
         saved_rel = str(dest.relative_to(BASE_DIR))
         self._reply(200, {'ok': True, 'path': saved_rel})
+
+    def _enrich_nikud(self, data):
+        """Proxy to the Nakdan nikud API — bypasses browser CORS restrictions."""
+        payload = json.dumps(data).encode('utf-8')
+        req = urllib.request.Request(
+            'https://nakdan-u1-0.loadbalancer.dicta.org.il/api',
+            data=payload,
+            headers={'Content-Type': 'application/json', 'User-Agent': 'Mozilla/5.0'},
+            method='POST',
+        )
+        try:
+            with urllib.request.urlopen(req, timeout=15) as resp:
+                result = json.loads(resp.read())
+            self._reply(200, result)
+        except Exception as e:
+            self._reply(502, {'error': f'nakdan proxy failed: {e}'})
 
     # ── Helpers ─────────────────────────────────────────────────────
 

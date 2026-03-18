@@ -4,7 +4,7 @@
 // ── Nikud utilities — must be imported first so window.getHebrew / setHebrew
 //    are defined synchronously before any game module tries to use them. ──────
 import { getHebrew, setHebrew, loadNikudMap, enrichVocabularyBank } from '../utils/nikud.js';
-import { initNikudDOM } from '../utils/nikudDOM.js?t=1775840000';
+import { initNikudDOM } from '../utils/nikudDOM.js?t=1773784000';
 window.getHebrew = getHebrew;
 window.setHebrew = setHebrew;
 

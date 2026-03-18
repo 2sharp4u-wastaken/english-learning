@@ -146,7 +146,7 @@ export class CoinManager {
     updateCoinDisplay() {
         const balance = this.userProgress.coins;
         // Target all known coin display elements by ID
-        ['hub-coin-balance', 'topics-coin-balance', 'profile-coin-count', 'user-coins'].forEach(id => {
+        ['hub-coin-balance', 'topics-coin-balance', 'profile-coin-count', 'user-coins', 'header-coin-count'].forEach(id => {
             const el = document.getElementById(id);
             if (el) el.textContent = balance;
         });

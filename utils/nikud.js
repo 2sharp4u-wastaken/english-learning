@@ -63,7 +63,8 @@ export async function loadNikudMap() {
 export async function fetchNikudFromAPI(translations) {
     if (!translations.length) return {};
     try {
-        const r = await fetch('https://nakdan-u1-0.loadbalancer.dicta.org.il/api', {
+        // Proxy via local server to avoid browser CORS restrictions on the external Nakdan API
+        const r = await fetch('/api/enrich-nikud', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ task: 'nakdan', genre: 'modern', data: translations.join('\n') })

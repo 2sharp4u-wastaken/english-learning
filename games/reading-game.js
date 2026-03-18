@@ -163,9 +163,9 @@ export function addLetterToWord(letter, button) {
     // Mark button as used
     button.classList.add('used');
 
-    // Speak the letter aloud
+    // Speak the letter aloud — lowercase so TTS says "k" not "Capital K"
     if (typeof speechManager !== 'undefined') {
-        speechManager.speak(letter.toUpperCase()).catch(() => {});
+        speechManager.speak(letter.toLowerCase()).catch(() => {});
     }
 
     // Enable check button if word has letters

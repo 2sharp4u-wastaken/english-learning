@@ -160,6 +160,146 @@
     }
 }
 
+/* ── Word Journey celebration screen ─────────────────────────── */
+
+.wj-celebration {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: auto;
+    padding: 28px 20px 36px;
+}
+
+.wj-celeb-top-emoji {
+    font-size: 3rem;
+    margin-bottom: 4px;
+    animation: wjBounce 0.8s ease;
+}
+
+@keyframes wjBounce {
+    0%, 100% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    60% { transform: scale(0.95); }
+}
+
+.wj-celebration h2 {
+    font-size: 1.9rem;
+    margin-bottom: 8px;
+}
+
+.wj-celebration .completion-stars {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+
+.wj-celeb-stats {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.wj-celeb-stat {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+}
+
+.wj-celeb-stat-gold {
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+}
+
+.wj-celeb-stat-num {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+}
+
+.wj-celeb-stat-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.wj-celeb-stat-gold .wj-celeb-stat-num {
+    color: #FFD700;
+}
+
+.wj-celeb-encourage {
+    color: rgba(255, 200, 100, 0.9);
+    font-size: 1rem;
+    margin-bottom: 14px;
+}
+
+.wj-celeb-words {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 14px 0 24px;
+    max-width: 420px;
+    margin-inline: auto;
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+
+.wj-celeb-word-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.09);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 1rem;
+    direction: rtl;
+}
+
+.wj-celeb-word-en {
+    font-weight: 700;
+    color: #7ee8fa;
+    font-family: monospace;
+    font-size: 1.05rem;
+    direction: ltr;
+}
+
+.wj-celeb-word-sep {
+    color: rgba(255,255,255,0.3);
+    flex-shrink: 0;
+}
+
+.wj-celeb-word-he {
+    color: rgba(255, 255, 255, 0.85);
+    flex: 1;
+}
+
+.wj-celeb-word-badge {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+    .wj-celeb-stats {
+        gap: 8px;
+    }
+    .wj-celeb-stat {
+        padding: 10px 12px;
+        min-width: 68px;
+    }
+    .wj-celeb-stat-num {
+        font-size: 1.3rem;
+    }
+    .wj-celebration h2 {
+        font-size: 1.5rem;
+    }
+}
+
 /* ── Memory game personal-best table inside completion screen ── */
 
 .memory-pb-section {

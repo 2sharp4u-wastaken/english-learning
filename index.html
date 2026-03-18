@@ -8,8 +8,8 @@
     <meta http-equiv="Expires" content="0">
     <title>English Learning Games - לומדים אנגלית בכיף</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css?t=1742041200">
-    <link rel="stylesheet" href="game-completion-styles.css">
+    <link rel="stylesheet" href="styles.css?t=1773794398">
+    <link rel="stylesheet" href="game-completion-styles.css?t=1776001000">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -24,110 +24,181 @@
             <!-- Welcome Screen -->
             <div id="welcome-screen" class="game-content">
                 <div class="welcome-container">
-                    <h1 class="welcome-title">🎉 ברוך הבא לעולם האנגלית! 🎉</h1>
+                    <h1 class="welcome-title">ברוך הבא לעולם האנגלית!</h1>
                     <div class="home-hero-row">
-                        <p class="welcome-subtitle">בחר משחק כדי להתחיל ללמוד!</p>
                         <div class="home-streak-widget" id="home-streak-widget">
                             <div class="home-streak-flame">🔥</div>
                             <div class="home-streak-count" id="streak-count">0</div>
                             <div class="home-streak-label">ימים ברצף</div>
                         </div>
+                        <div class="home-words-learned" id="home-words-learned">
+                            <div class="home-words-count" id="words-learned-count">0</div>
+                            <div class="home-words-label">מילים נלמדו</div>
+                        </div>
                     </div>
 
-                    <div class="game-cards-grid">
-                        <div class="game-card" data-game="vocabulary">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">📚</div>
-                                <h3>בונה אוצר מילים</h3>
-                                <p>למד מילים חדשות באנגלית</p>
+                    <!-- Continue Learning Hero Card -->
+                    <div class="continue-hero" id="continue-hero">
+                        <div class="continue-hero-icon" id="continue-hero-icon">🗺️</div>
+                        <div class="continue-hero-text">
+                            <h2 id="continue-hero-title">התחל ללמוד!</h2>
+                            <p id="continue-hero-subtitle">למד מילים חדשות במסע המילים</p>
+                        </div>
+                        <button class="continue-hero-btn" id="continue-hero-btn">בוא נתחיל</button>
+                    </div>
+
+                    <!-- Tier: Learn -->
+                    <div class="tier-section" data-tier="learn">
+                        <div class="tier-header">
+                            <span class="tier-label">למידה</span>
+                            <span class="tier-badge tier-badge-learn">תמיד פתוח</span>
+                        </div>
+                        <div class="game-cards-grid">
+                            <div class="game-card" data-game="word-journey">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🗺️</div>
+                                    <h3>מסע המילים</h3>
+                                    <p>למד מילים חדשות שלב אחר שלב</p>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="abc">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🔤</div>
+                                    <h3>ABC אותיות</h3>
+                                    <p>למד אותיות גדולות וקטנות</p>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="game-card" data-game="grammar">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">✏️</div>
-                                <h3>תרגול דקדוק</h3>
-                                <p>שפר את הדקדוק שלך</p>
+                    <!-- Tier: Practice -->
+                    <div class="tier-section" data-tier="practice">
+                        <div class="tier-header">
+                            <span class="tier-label">תרגול</span>
+                            <span class="tier-badge tier-badge-practice">תרגול מילים</span>
+                        </div>
+                        <div class="game-cards-grid">
+                            <div class="game-card" data-game="listening" data-gate="5 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">👂</div>
+                                    <h3>משחק הקשבה</h3>
+                                    <p>שפר את ההקשבה שלך</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="picture-match" data-gate="5 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🖼️</div>
+                                    <h3>מילה לתמונה</h3>
+                                    <p>שמע מילה ובחר את התמונה הנכונה</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="memory">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🃏</div>
+                                    <h3>משחק זיכרון</h3>
+                                    <p>מצא זוגות של מילים ותמונות</p>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="grammar-beginner">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🔊</div>
+                                    <h3>דקדוק למתחילים</h3>
+                                    <p>למד דקדוק בהאזנה</p>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="game-card" data-game="grammar-beginner">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">🔊</div>
-                                <h3>דקדוק למתחילים</h3>
-                                <p>למד דקדוק בהאזנה</p>
+                    <!-- Tier: Challenge -->
+                    <div class="tier-section" data-tier="challenge">
+                        <div class="tier-header">
+                            <span class="tier-label">אתגר</span>
+                            <span class="tier-badge tier-badge-challenge">למתקדמים</span>
+                        </div>
+                        <div class="game-cards-grid">
+                            <div class="game-card" data-game="reading" data-gate="10 מילים + ABC 60%">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">📖</div>
+                                    <h3>משחק קריאה</h3>
+                                    <p>למד לקרוא מילים באנגלית</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="pronunciation" data-gate="10 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🎤</div>
+                                    <h3>משחק הגייה</h3>
+                                    <p>תרגל את ההגייה שלך</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="fill-blanks" data-gate="30 מילים + 2 נושאים">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">✍️</div>
+                                    <h3>השלם את המשפט</h3>
+                                    <p>בחר את המילה הנכונה להשלמת המשפט</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="scramble" data-gate="30 מילים + 2 נושאים">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🔀</div>
+                                    <h3>סידור משפטים</h3>
+                                    <p>סדר את המילים לכדי משפט נכון</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="grammar" data-gate="50 מילים + 3 נושאים">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">✏️</div>
+                                    <h3>תרגול דקדוק</h3>
+                                    <p>שפר את הדקדוק שלך</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
                             </div>
                         </div>
+                    </div>
 
-                        <div class="game-card" data-game="pronunciation">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">🎤</div>
-                                <h3>משחק הגייה</h3>
-                                <p>תרגל את ההגייה שלך</p>
-                            </div>
+                    <!-- Tier: Test -->
+                    <div class="tier-section" data-tier="test">
+                        <div class="tier-header">
+                            <span class="tier-label">מבחן</span>
+                            <span class="tier-badge tier-badge-test">בדיקת ידע</span>
                         </div>
-
-                        <div class="game-card" data-game="listening">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">👂</div>
-                                <h3>משחק הקשבה</h3>
-                                <p>שפר את ההקשבה שלך</p>
-                            </div>
-                        </div>
-
-                        <div class="game-card" data-game="reading">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">📖</div>
-                                <h3>משחק קריאה</h3>
-                                <p>למד לקרוא מילים באנגלית</p>
-                            </div>
-                        </div>
-
-                        <div class="game-card" data-game="abc">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">🔤</div>
-                                <h3>ABC אותיות</h3>
-                                <p>למד אותיות גדולות וקטנות</p>
-                            </div>
-                        </div>
-
-                        <div class="game-card" data-game="memory">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">🃏</div>
-                                <h3>משחק זיכרון</h3>
-                                <p>מצא זוגות של מילים ותמונות</p>
-                            </div>
-                        </div>
-
-                        <div class="game-card" data-game="scramble">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">🔀</div>
-                                <h3>סידור משפטים</h3>
-                                <p>סדר את המילים לכדי משפט נכון</p>
-                            </div>
-                        </div>
-
-                        <div class="game-card" data-game="fill-blanks">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">✍️</div>
-                                <h3>השלם את המשפט</h3>
-                                <p>בחר את המילה הנכונה להשלמת המשפט</p>
-                            </div>
-                        </div>
-
-                        <div class="game-card" data-game="word-journey">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">🗺️</div>
-                                <h3>מסע המילים</h3>
-                                <p>למד מילים חדשות שלב אחר שלב</p>
-                            </div>
-                        </div>
-
-                        <div class="game-card" data-game="picture-match">
-                            <div class="game-card-main">
-                                <div class="game-card-icon">🖼️</div>
-                                <h3>מילה לתמונה</h3>
-                                <p>שמע מילה ובחר את התמונה הנכונה</p>
+                        <div class="game-cards-grid">
+                            <div class="game-card" data-game="vocabulary" data-gate="10 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">📝</div>
+                                    <h3>מבחן מילים</h3>
+                                    <p>בדוק אם אתה זוכר את המילים שלמדת</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -668,9 +739,9 @@
                             <div class="profile-stat-label">ימי רצף</div>
                         </div>
                         <div class="profile-stat-card">
-                            <div class="profile-stat-icon">🎯</div>
-                            <div class="profile-stat-value" id="profile-topics-done">0</div>
-                            <div class="profile-stat-label">נושאים הושלמו</div>
+                            <div class="profile-stat-icon">📚</div>
+                            <div class="profile-stat-value" id="profile-words-learned">0</div>
+                            <div class="profile-stat-label">מילים נלמדו</div>
                         </div>
                         <div class="profile-stat-card">
                             <div class="profile-stat-icon">🌟</div>
@@ -683,11 +754,45 @@
                             <div class="profile-stat-label">תעודות</div>
                         </div>
                     </div>
+                    <!-- Learning Progress Bar -->
+                    <div class="profile-section">
+                        <div class="learning-progress-bar" id="learning-progress-bar">
+                            <div class="learning-progress-header">
+                                <span class="learning-progress-level" id="learning-progress-level">מתחיל</span>
+                                <span class="learning-progress-count" id="learning-progress-count">0 / 5 מילים</span>
+                            </div>
+                            <div class="learning-progress-track">
+                                <div class="learning-progress-fill" id="learning-progress-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="learning-progress-next" id="learning-progress-next">עוד 5 מילים לשלב הבא!</div>
+                        </div>
+                    </div>
+
                     <div class="profile-section">
                         <h3 class="profile-section-title">התעודות שלי</h3>
                         <div class="profile-certificates-grid" id="profile-certificates-grid">
                             <div class="no-certs-msg">עוד אין תעודות. סיים נושא כדי לקבל תעודה! 🎓</div>
                         </div>
+                    </div>
+
+                    <!-- Word Collection (Sticker Book) -->
+                    <div class="profile-section">
+                        <h3 class="profile-section-title">אוסף המילים שלי</h3>
+                        <div class="word-collection-grid" id="word-collection-grid">
+                            <div class="no-words-msg">עוד לא למדת מילים. התחל מסע מילים כדי לאסוף! 🗺️</div>
+                        </div>
+                    </div>
+
+                    <!-- Unlocked Games -->
+                    <div class="profile-section">
+                        <h3 class="profile-section-title">המשחקים שלי</h3>
+                        <div class="unlocked-games-grid" id="unlocked-games-grid"></div>
+                    </div>
+
+                    <!-- Weekly Activity Calendar -->
+                    <div class="profile-section">
+                        <h3 class="profile-section-title">הפעילות שלי השבוע</h3>
+                        <div class="activity-calendar" id="activity-calendar"></div>
                     </div>
 
                     <!-- Chime Selector -->
@@ -891,24 +996,131 @@
     <script type="module" src="utils/consoleLogger.js?t=1768159313"></script>
 
     <script src="auth.js?t=1762332862"></script>
-    <script src="settings.js?t=1775600000"></script>
-    <script type="module" src="data/_loader.js?t=1775840000"></script>
-    <script src="speechSynthesis.js?t=1772600000"></script>
+    <script src="settings.js?t=1742508000"></script>
+    <script type="module" src="data/_loader.js?t=1773784000"></script>
+    <script src="speechSynthesis.js?t=1742300000"></script>
     <script src="feedback.js"></script>
     <script src="audio-effects.js"></script>
     <script src="gamification.js"></script>
     <script type="module">
-        import { initTopHeader } from './components/top-header.js?t=1775800000';
+        import { initTopHeader, showGameInHeader, setHeaderMode } from './components/top-header.js?t=1742301000';
         initTopHeader({ activePage: 'home' });
+        // Expose to gameLogic.js (separate module scope)
+        window.showGameInHeader = showGameInHeader;
+        window.setHeaderMode = setHeaderMode;
     </script>
-    <script type="module" src="gameLogic.js?t=1775800000"></script>
-    <script type="module" src="app.js?t=1773001200"></script>
+    <script type="module" src="gameLogic.js?t=1776100001"></script>
+    <script type="module" src="app.js?t=1776100001"></script>
 
     <script>
         // Welcome Screen Handler
         document.addEventListener('DOMContentLoaded', () => {
             const welcomeScreen = document.getElementById('welcome-screen');
             const gameCards = document.querySelectorAll('.game-card');
+
+            // ── Update card lock states + hero card from userProgress ──
+            function updateHomeCardStates() {
+                const progress = window.app?.userProgress;
+                const gameUnlocks = progress?.gameUnlocks || {};
+                const learnedCount = Object.keys(progress?.learnedWords || {}).length;
+                const overrideActive = window.app?.settings?.gameUnlockOverride === true;
+
+                // Update words learned counter
+                const wordsCountEl = document.getElementById('words-learned-count');
+                if (wordsCountEl) wordsCountEl.textContent = learnedCount;
+
+                // Apply locked/unlocked class to gated cards
+                document.querySelectorAll('.game-card[data-gate]').forEach(card => {
+                    const gameType = card.dataset.game;
+                    const gateText = card.dataset.gate;
+                    const unlockEntry = gameUnlocks[gameType];
+                    const isUnlocked = overrideActive || unlockEntry?.unlocked === true;
+
+                    if (isUnlocked) {
+                        card.classList.remove('locked');
+                    } else {
+                        card.classList.add('locked');
+                        const lockText = card.querySelector('.lock-text');
+                        if (lockText) lockText.textContent = gateText;
+                    }
+                });
+
+                // Update hero card recommendation
+                updateHeroCard(learnedCount, gameUnlocks);
+            }
+
+            function updateHeroCard(learnedCount, gameUnlocks) {
+                const icon = document.getElementById('continue-hero-icon');
+                const title = document.getElementById('continue-hero-title');
+                const subtitle = document.getElementById('continue-hero-subtitle');
+                const btn = document.getElementById('continue-hero-btn');
+                const hero = document.getElementById('continue-hero');
+                if (!hero) return;
+
+                // Default: recommend Word Journey
+                let targetGame = 'word-journey';
+                let heroIcon = '🗺️';
+                let heroTitle = 'התחל ללמוד!';
+                let heroSubtitle = 'למד מילים חדשות במסע המילים';
+                let heroBtn = 'בוא נתחיל';
+
+                if (learnedCount === 0) {
+                    // Check for a saved word-journey game with meaningful progress
+                    // (entering the game for a moment and going back should NOT trigger resume)
+                    const userId = localStorage.getItem('currentUser') || 'default';
+                    const savedWJ = localStorage.getItem(`savedGame_${userId}_word-journey`);
+                    let hasMeaningfulProgress = false;
+                    if (savedWJ) {
+                        try {
+                            const state = JSON.parse(savedWJ);
+                            hasMeaningfulProgress = (state.currentQuestionIndex > 0) ||
+                                                    (state.wjStageIndex > 0) ||
+                                                    (state.score > 0);
+                        } catch (_) { hasMeaningfulProgress = true; }
+                    }
+                    if (hasMeaningfulProgress) {
+                        heroTitle = 'המשך את המסע!';
+                        heroSubtitle = 'יש לך משחק שמור - המשך מהמקום שעצרת';
+                        heroBtn = 'המשך מסע';
+                    } else {
+                        // Brand new user (or only viewed the first question)
+                        heroTitle = 'בוא נתחיל!';
+                        heroSubtitle = 'למד את המילים הראשונות שלך במסע המילים';
+                        heroBtn = 'התחל מסע';
+                    }
+                } else if (learnedCount < 5) {
+                    heroTitle = 'כל הכבוד!';
+                    heroSubtitle = `למדת ${learnedCount} מילים! עוד ${5 - learnedCount} מילים לפתיחת משחקים חדשים`;
+                    heroBtn = 'המשך ללמוד';
+                } else if (learnedCount < 10) {
+                    // Check for newly unlocked games
+                    const justUnlocked = ['listening', 'picture-match'].find(g => gameUnlocks[g]?.unlocked);
+                    if (justUnlocked) {
+                        const names = { 'listening': 'הקשבה 👂', 'picture-match': 'מילה לתמונה 🖼️' };
+                        heroIcon = '🎉';
+                        heroTitle = 'משחק חדש נפתח!';
+                        heroSubtitle = `נסה את משחק ${names[justUnlocked] || justUnlocked}`;
+                        heroBtn = 'שחק עכשיו';
+                        targetGame = justUnlocked;
+                    } else {
+                        heroTitle = 'ממשיכים!';
+                        heroSubtitle = `${learnedCount} מילים! עוד ${10 - learnedCount} לפתיחת משחקי אתגר`;
+                        heroBtn = 'למד עוד';
+                    }
+                } else {
+                    heroTitle = 'מצוין!';
+                    heroSubtitle = `למדת כבר ${learnedCount} מילים! המשך להתקדם`;
+                    heroBtn = 'למד עוד מילים';
+                }
+
+                if (icon) icon.textContent = heroIcon;
+                if (title) title.textContent = heroTitle;
+                if (subtitle) subtitle.textContent = heroSubtitle;
+                if (btn) btn.textContent = heroBtn;
+
+                // Store target game for click handler
+                hero.dataset.targetGame = targetGame;
+            }
 
             // Function to show welcome screen
             function showWelcomeScreen() {
@@ -927,6 +1139,26 @@
                     gameManager.populateResumeGames();
                 }
 
+                // Refresh lock states and hero card
+                updateHomeCardStates();
+            }
+
+            // Hero card click handler
+            const heroCard = document.getElementById('continue-hero');
+            if (heroCard) {
+                heroCard.addEventListener('click', () => {
+                    const targetGame = heroCard.dataset.targetGame || 'word-journey';
+                    const switchToGame = () => {
+                        if (window.gameManager) {
+                            welcomeScreen.classList.remove('active');
+                            welcomeScreen.style.display = 'none';
+                            window.gameManager.switchGame(targetGame);
+                        } else {
+                            setTimeout(switchToGame, 100);
+                        }
+                    };
+                    switchToGame();
+                });
             }
 
             // Handle game card clicks
@@ -944,20 +1176,16 @@
                             return;
                         }
 
-                        // Special handling for practice mode - check if there are words to practice
-                        if (gameType === 'practice') {
-                            const practiceWordCount = window.gamificationManager?.getPracticeWordCount(true) || 0;
-                            if (practiceWordCount === 0) {
-                                // Show toast message instead of entering game
-                                if (window.gameManager) {
-                                    window.gameManager.showToast(
-                                        'אין מילים לתרגול! המשך לשחק במשחקים אחרים',
-                                        'fa-info-circle',
-                                        '#10b981'
-                                    );
-                                }
-                                return;
+                        // Block click on locked cards
+                        if (card.classList.contains('locked')) {
+                            if (window.gameManager) {
+                                window.gameManager.showToast(
+                                    card.dataset.gate ? `נדרש: ${card.dataset.gate}` : 'המשחק נעול',
+                                    'fa-lock',
+                                    '#f59e0b'
+                                );
                             }
+                            return;
                         }
 
                         const switchToGame = () => {
@@ -1018,6 +1246,19 @@
                     });
                 }
             });
+
+            // Expose to global scope so gameLogic.js showWelcomeScreen can refresh
+            window.updateHomeCardStates = updateHomeCardStates;
+
+            // Initial card state update (runs after app.js loads)
+            const waitForApp = () => {
+                if (window.app?.userProgress) {
+                    updateHomeCardStates();
+                } else {
+                    setTimeout(waitForApp, 200);
+                }
+            };
+            waitForApp();
 
             // Handle hash URLs (e.g., index.html#vocabulary)
             function handleHashNavigation() {

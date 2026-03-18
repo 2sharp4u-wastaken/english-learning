@@ -67,22 +67,19 @@ export async function loadVocabularyQuestion(question) {
             hebrewElement.style.display = 'none';
         }
 
-        // Create options (hidden initially)
+        // V2 Word Test: show options immediately (cold-recall, no audio gating)
         optionsContainer.innerHTML = '';
         optionsContainer.style.display = 'grid';
 
         const options = question.options;
         const correctIndex = question.correct;
 
-        console.log('📢 [VOCABULARY] Creating', options.length, 'option buttons (hidden initially)');
         options.forEach((option, index) => {
             const button = document.createElement('button');
-            button.className = 'option-btn vocab-option-hidden'; // Hidden initially
+            button.className = 'option-btn';
             button.textContent = option;
             button.setAttribute('role', 'button');
             button.tabIndex = 0;
-            button.disabled = true; // Disabled until audio plays
-            console.log('📢 [VOCABULARY] Option', index, ':', option, '- disabled:', button.disabled);
             button.addEventListener('click', () => {
                 this.checkVocabularyAnswer(index, correctIndex);
             });
@@ -95,41 +92,22 @@ export async function loadVocabularyQuestion(question) {
             optionsContainer.appendChild(button);
         });
 
-        // Store question data and initialize play count
-        const requiredClicks = this.clickRepeatCount || 3;
+        // Word Test: options visible immediately, no audio requirement
         this.currentVocabularyQuestion = question;
         this.vocabPlayCount = 0;
-        this.vocabRequiredClicks = requiredClicks;
-        this.vocabularyAudioPlayed = false;
+        this.vocabRequiredClicks = 0;
+        this.vocabularyAudioPlayed = true; // skip audio gate
         this.isManualVocabPlayPending = false;
-
-        // Always show the initial required count as soon as the question appears.
-        if (audioHint && requiredClicks > 0) {
-            audioHint.textContent = `השמע עוד ${requiredClicks} ${requiredClicks === 1 ? 'פעם' : 'פעמים'}`;
-            audioHint.hidden = false;
-            audioHint.classList.add('show');
-        }
 
         // Reset next button
         document.getElementById('vocab-next').style.display = 'none';
 
-        // Enable arrow-key navigation (will work once options are revealed)
+        // Enable arrow-key navigation
         this.enableOptionKeyboardNavigation('vocab-options');
 
-        // Auto-play the word audio when question loads (consistent with other games)
-        console.log('📢 [VOCABULARY] Auto-playing word on question load');
-        try {
-            await speechManager.speakWord(question.word, '', 'vocabulary');
-            console.log('📢 [VOCABULARY] Auto-play complete - waiting for user plays:', requiredClicks);
-        } catch (error) {
-            console.error('Error auto-playing word audio:', error);
-            // If auto-play fails, show full prompt
-            if (audioHint) {
-                audioHint.textContent = `לחץ על ההשמעה ${requiredClicks} פעמים`;
-                audioHint.hidden = false;
-                audioHint.classList.add('show');
-            }
-        }
+        // Focus first option for keyboard accessibility
+        const firstOption = optionsContainer.querySelector('.option-btn');
+        if (firstOption) firstOption.focus();
 
         console.log('📢 [VOCABULARY] Question loaded successfully');
     } catch (error) {
@@ -141,7 +119,7 @@ export async function loadVocabularyQuestion(question) {
 // Tracks play count and reveals options once the required number is reached.
 export function onVocabularyManualAudio() {
     this.vocabPlayCount = (this.vocabPlayCount || 0) + 1;
-    const requiredClicks = this.vocabRequiredClicks || 3;
+    const requiredClicks = this.vocabRequiredClicks ?? 3;
     const clicksLeft = requiredClicks - this.vocabPlayCount;
 
     console.log('📢 [VOCABULARY] Manual play count:', this.vocabPlayCount, '/', requiredClicks);

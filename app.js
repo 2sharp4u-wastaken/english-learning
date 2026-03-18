@@ -2,7 +2,7 @@
 
 // Import Manager Classes
 import { ScoreManager } from './managers/ScoreManager.js';
-import { ProgressManager } from './managers/ProgressManager.js';
+import { ProgressManager } from './managers/ProgressManager.js?t=1776100001';
 import { GameRegistry, gameRegistry } from './managers/GameRegistry.js';
 import { CourseManager } from './managers/CourseManager.js';
 import { CertificateManager } from './managers/CertificateManager.js';
@@ -15,7 +15,12 @@ import { allCourses } from './data/courses/index.js';
 import { MemoryGame } from './games/memory-game.js';
 import { SentenceScrambleGame } from './games/sentence-scramble-game.js';
 import { FillBlanksGame } from './games/fill-blanks-game.js';
-import { WordJourneyGame } from './games/word-journey-game.js?t=1775700000';
+import { WordJourneyGame } from './games/word-journey-game.js?t=1776100001';
+
+// ── V2 storage isolation ──────────────────────────────────────────────────────
+// All v2 localStorage keys carry this prefix to avoid colliding with v1 keys.
+// (v1 and v2 also run on different ports, but the prefix adds an explicit layer.)
+const V2_STORAGE_PREFIX = 'v2_';
 
 class AppManager {
     constructor() {
@@ -515,11 +520,10 @@ class AppManager {
         const streakEl = document.getElementById('profile-streak');
         if (streakEl) streakEl.textContent = this.userProgress?.streakDays || 0;
 
-        // Topics done (from CourseManager stats)
-        const topicsDoneEl = document.getElementById('profile-topics-done');
-        if (topicsDoneEl && this.courseManager) {
-            const stats = this.courseManager.getStats();
-            topicsDoneEl.textContent = stats.completedTopics;
+        // Words learned (from ProgressManager)
+        const wordsLearnedEl = document.getElementById('profile-words-learned');
+        if (wordsLearnedEl && this.progressManager) {
+            wordsLearnedEl.textContent = this.progressManager.getLearnedWordCount();
         }
 
         // Words mastered – use ProgressManager mastery stats when available
@@ -543,33 +547,19 @@ class AppManager {
         const certsEl = document.getElementById('profile-certs-count');
         if (certsEl) certsEl.textContent = (this.userProgress?.certificates || []).length;
 
-        // Recommended next step (next topic to work on)
-        const nextActionContainer = document.getElementById('profile-next-action');
-        const nextActionBtn = document.getElementById('profile-next-btn');
-        if (nextActionContainer && nextActionBtn && this.courseManager) {
-            const recommendation = this.courseManager.getNextRecommendedTopic();
+        // Learning progress bar
+        this.renderLearningProgressBar();
 
-            if (recommendation && recommendation.topic && recommendation.course) {
-                const { topic, course } = recommendation;
-                const courseName = course.nameHebrew || course.name || '';
-                const topicName = topic.nameHebrew || topic.name || '';
-
-                nextActionBtn.textContent = `${courseName} • ${topicName}`;
-                nextActionBtn.onclick = () => {
-                    const activities = topic.activities || [];
-                    const defaultActivity = activities[0] || 'vocabulary';
-                    this.startTopicActivity(topic.id, defaultActivity, topic);
-                };
-
-                nextActionContainer.style.display = 'block';
-            } else {
-                nextActionContainer.style.display = 'none';
-                nextActionBtn.onclick = null;
-            }
-        }
+        // Recommended next step — priority-based
+        this.renderRecommendedAction();
 
         // Certificates gallery
         this.renderCertificateGallery();
+
+        // Phase 7 — word collection, unlocked games, weekly calendar
+        this.renderWordCollection();
+        this.renderUnlockedGames();
+        this.renderActivityCalendar();
     }
 
     renderCertificateGallery() {
@@ -589,6 +579,330 @@ class AppManager {
                 <div class="mini-cert-date">${cert.earnedDate || ''}</div>
             </div>
         `).join('');
+    }
+
+    // ============================================================
+    // PHASE 7 - Learning Progress Bar
+    // ============================================================
+
+    renderLearningProgressBar() {
+        const levelEl = document.getElementById('learning-progress-level');
+        const countEl = document.getElementById('learning-progress-count');
+        const fillEl = document.getElementById('learning-progress-fill');
+        const nextEl = document.getElementById('learning-progress-next');
+        if (!levelEl || !countEl || !fillEl || !nextEl) return;
+
+        const learned = this.progressManager?.getLearnedWordCount() || 0;
+
+        // Level thresholds
+        const levels = [
+            { min: 0,   max: 5,   name: 'מתחיל',     icon: '🌱' },
+            { min: 5,   max: 10,  name: 'חוקר',       icon: '🔍' },
+            { min: 10,  max: 25,  name: 'לומד מיומן', icon: '📖' },
+            { min: 25,  max: 50,  name: 'מומחה',      icon: '🌟' },
+            { min: 50,  max: 100, name: 'אלוף',       icon: '🏆' },
+            { min: 100, max: 200, name: 'אגדה!',      icon: '👑' },
+        ];
+
+        let current = levels[levels.length - 1];
+        for (const lvl of levels) {
+            if (learned < lvl.max) {
+                current = lvl;
+                break;
+            }
+        }
+
+        const progress = learned >= current.max
+            ? 100
+            : Math.round(((learned - current.min) / (current.max - current.min)) * 100);
+        const remaining = current.max - learned;
+
+        levelEl.textContent = `${current.icon} ${current.name}`;
+        countEl.textContent = `${learned} / ${current.max} מילים`;
+        fillEl.style.width = `${progress}%`;
+
+        if (remaining > 0) {
+            nextEl.textContent = `עוד ${remaining} מילים לשלב הבא!`;
+        } else {
+            nextEl.textContent = 'הגעת לשלב הגבוה ביותר! 🎉';
+        }
+    }
+
+    // ============================================================
+    // PHASE 7 - Recommended Action Card
+    // ============================================================
+
+    renderRecommendedAction() {
+        const container = document.getElementById('profile-next-action');
+        const btn = document.getElementById('profile-next-btn');
+        if (!container || !btn) return;
+
+        const recommendation = this.getRecommendation();
+
+        if (recommendation) {
+            btn.textContent = recommendation.label;
+            btn.onclick = recommendation.action;
+            container.style.display = 'block';
+        } else {
+            container.style.display = 'none';
+            btn.onclick = null;
+        }
+    }
+
+    getRecommendation() {
+        const learnedCount = this.progressManager?.getLearnedWordCount() || 0;
+        const gm = this.gameManager;
+
+        // Priority 1: No words learned yet → start Word Journey
+        if (learnedCount === 0) {
+            return {
+                label: '🗺️ התחל מסע מילים — למד מילים חדשות!',
+                action: () => gm?.startGame('word-journey')
+            };
+        }
+
+        // Priority 2: Has < 5 words → keep learning with Word Journey
+        if (learnedCount < 5) {
+            return {
+                label: `🗺️ המשך ללמוד מילים (${learnedCount}/5)`,
+                action: () => gm?.startGame('word-journey')
+            };
+        }
+
+        // Priority 3: Check for newly unlockable games to try
+        if (this.progressManager) {
+            const unlocks = this.progressManager.gameUnlocks || {};
+            const gameLabels = {
+                'listening':     '👂 נסה את משחק ההאזנה!',
+                'picture-match': '🖼️ נסה את משחק התמונות!',
+                'reading':       '📖 נסה את משחק הקריאה!',
+                'pronunciation': '🗣️ נסה את משחק ההגייה!',
+                'vocabulary':    '📝 נסה את מבחן המילים!',
+                'fill-blanks':   '✏️ נסה את משחק השלמת המשפטים!',
+                'scramble':      '🔀 נסה את משחק ערבוב המילים!',
+                'grammar':       '📐 נסה את משחק הדקדוק!',
+            };
+
+            for (const [gameType, label] of Object.entries(gameLabels)) {
+                const entry = unlocks[gameType];
+                // Unlocked but never played → suggest it
+                if (entry?.unlocked && entry.unlockedDate) {
+                    const mastery = this.progressManager.wordMastery || {};
+                    const playedThisGame = Object.values(mastery).some(
+                        w => w.gameTypeStats?.[gameType]
+                    );
+                    if (!playedThisGame) {
+                        return {
+                            label,
+                            action: () => gm?.startGame(gameType)
+                        };
+                    }
+                }
+            }
+        }
+
+        // Priority 4: Course recommendation
+        if (this.courseManager) {
+            const rec = this.courseManager.getNextRecommendedTopic();
+            if (rec?.topic && rec?.course) {
+                const courseName = rec.course.nameHebrew || rec.course.name || '';
+                const topicName = rec.topic.nameHebrew || rec.topic.name || '';
+                return {
+                    label: `📚 ${courseName} • ${topicName}`,
+                    action: () => {
+                        const activities = rec.topic.activities || [];
+                        this.startTopicActivity(rec.topic.id, activities[0] || 'vocabulary', rec.topic);
+                    }
+                };
+            }
+        }
+
+        // Priority 5: Default — learn more words
+        return {
+            label: '🗺️ למד עוד מילים במסע המילים!',
+            action: () => gm?.startGame('word-journey')
+        };
+    }
+
+    // ============================================================
+    // PHASE 7 - Word Collection (Sticker Book)
+    // ============================================================
+
+    renderWordCollection() {
+        const grid = document.getElementById('word-collection-grid');
+        if (!grid) return;
+
+        const learnedWords = this.progressManager?.getLearnedWords() || {};
+        const keys = Object.keys(learnedWords);
+
+        if (keys.length === 0) {
+            grid.innerHTML = '<div class="no-words-msg">עוד לא למדת מילים. התחל מסע מילים כדי לאסוף! 🗺️</div>';
+            return;
+        }
+
+        // Look up full word data from vocabularyBank
+        const bank = window.vocabularyBank || [];
+        const bankMap = {};
+        for (const w of bank) {
+            bankMap[`${w.word.toLowerCase()}_${w.category}`] = w;
+        }
+
+        // Sort by graduation date (most recent first)
+        const sorted = keys.sort((a, b) => {
+            const da = learnedWords[a].graduatedDate || '';
+            const db = learnedWords[b].graduatedDate || '';
+            return db.localeCompare(da);
+        });
+
+        grid.innerHTML = sorted.map(key => {
+            const entry = learnedWords[key];
+            const wordData = bankMap[key];
+            const emoji = wordData?.image || '📝';
+            const word = wordData?.word || key.split('_')[0];
+            const translation = wordData?.translation || '';
+
+            return `
+                <div class="word-sticker" title="${word} — ${translation}">
+                    <span class="word-sticker-emoji">${emoji}</span>
+                    <div class="word-sticker-word">${word}</div>
+                    <div class="word-sticker-translation">${translation}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ============================================================
+    // PHASE 7 - Unlocked Games Display
+    // ============================================================
+
+    renderUnlockedGames() {
+        const grid = document.getElementById('unlocked-games-grid');
+        if (!grid) return;
+
+        const gameInfo = [
+            { type: 'word-journey',    icon: '🗺️', name: 'מסע מילים' },
+            { type: 'abc',             icon: '🔤', name: 'ABC' },
+            { type: 'memory',          icon: '🧠', name: 'זיכרון' },
+            { type: 'grammar-beginner',icon: '📐', name: 'דקדוק מתחילים' },
+            { type: 'listening',       icon: '👂', name: 'האזנה' },
+            { type: 'picture-match',   icon: '🖼️', name: 'תמונות' },
+            { type: 'reading',         icon: '📖', name: 'קריאה' },
+            { type: 'pronunciation',   icon: '🗣️', name: 'הגייה' },
+            { type: 'vocabulary',      icon: '📝', name: 'מבחן מילים' },
+            { type: 'fill-blanks',     icon: '✏️', name: 'השלמה' },
+            { type: 'scramble',        icon: '🔀', name: 'ערבוב' },
+            { type: 'grammar',         icon: '📐', name: 'דקדוק' },
+        ];
+
+        const unlocks = this.progressManager?.gameUnlocks || {};
+        // Games that are always open
+        const alwaysOpen = new Set(['word-journey', 'abc', 'memory', 'grammar-beginner']);
+
+        grid.innerHTML = gameInfo.map(g => {
+            const isOpen = alwaysOpen.has(g.type) || unlocks[g.type]?.unlocked;
+            const cls = isOpen ? 'unlocked' : 'locked';
+            const lockIcon = isOpen ? '' : ' 🔒';
+            return `
+                <div class="game-badge ${cls}">
+                    <span class="game-badge-icon">${g.icon}</span>
+                    <span>${g.name}${lockIcon}</span>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ============================================================
+    // PHASE 7 - Weekly Activity Calendar
+    // ============================================================
+
+    renderActivityCalendar() {
+        const container = document.getElementById('activity-calendar');
+        if (!container) return;
+
+        const dayNames = ['א׳', 'ב׳', 'ג׳', 'ד׳', 'ה׳', 'ו׳', 'ש׳'];
+        const today = new Date();
+        const todayDay = today.getDay(); // 0=Sun
+
+        // Get activity dates from userProgress
+        const activityDates = this.userProgress?.activityDates || [];
+        const activitySet = new Set(activityDates);
+
+        // Build last 7 days (Sun–Sat of this week)
+        const weekStart = new Date(today);
+        weekStart.setDate(today.getDate() - todayDay); // Go to Sunday
+
+        const days = [];
+        for (let i = 0; i < 7; i++) {
+            const d = new Date(weekStart);
+            d.setDate(weekStart.getDate() + i);
+            const dateStr = d.toISOString().slice(0, 10);
+            const isActive = activitySet.has(dateStr);
+            const isToday = i === todayDay;
+            days.push({ name: dayNames[i], isActive, isToday });
+        }
+
+        container.innerHTML = days.map(d => {
+            const dotClass = `activity-day-dot${d.isActive ? ' active' : ''}${d.isToday ? ' today' : ''}`;
+            const checkmark = d.isActive ? '✓' : '';
+            return `
+                <div class="activity-day">
+                    <span class="activity-day-name">${d.name}</span>
+                    <div class="${dotClass}">${checkmark}</div>
+                </div>
+            `;
+        }).join('');
+    }
+
+    // ============================================================
+    // PHASE 7 - Milestone Certificates
+    // ============================================================
+
+    static MILESTONES = [
+        { id: 'milestone-first-word',     count: 1,   name: 'המילה הראשונה!',  icon: '🌱', nameEn: 'First Word' },
+        { id: 'milestone-word-explorer',   count: 10,  name: 'חוקר מילים',      icon: '🔍', nameEn: 'Word Explorer' },
+        { id: 'milestone-word-master',     count: 25,  name: 'מומחה מילים',     icon: '🌟', nameEn: 'Word Master' },
+        { id: 'milestone-word-champion',   count: 50,  name: 'אלוף המילים',     icon: '🏆', nameEn: 'Word Champion' },
+        { id: 'milestone-word-legend',     count: 100, name: 'אגדת המילים',     icon: '👑', nameEn: 'Word Legend' },
+    ];
+
+    checkMilestoneCertificates(learnedCount) {
+        if (!this.userProgress) return;
+
+        const certs = this.userProgress.certificates || [];
+        if (!this.userProgress.certificates) {
+            this.userProgress.certificates = [];
+        }
+
+        const earnedIds = new Set(certs.map(c => c.id));
+        const newlyEarned = [];
+
+        for (const m of AppManager.MILESTONES) {
+            if (learnedCount >= m.count && !earnedIds.has(m.id)) {
+                const cert = {
+                    id: m.id,
+                    topicId: m.id,
+                    topicName: `${m.icon} ${m.name}`,
+                    earnedDate: new Date().toISOString().split('T')[0],
+                    score: 100,
+                    timestamp: Date.now(),
+                    isMilestone: true,
+                    milestoneCount: m.count,
+                };
+                this.userProgress.certificates.push(cert);
+                newlyEarned.push(cert);
+                console.log(`[V2] Milestone earned: ${m.name} (${m.count} words)`);
+            }
+        }
+
+        if (newlyEarned.length > 0) {
+            this.saveUserProgress();
+            // Re-sync CertificateManager
+            if (this.certificateManager) {
+                this.certificateManager.userProgress = this.userProgress;
+            }
+        }
+
+        return newlyEarned;
     }
 
     // ============================================================
@@ -921,7 +1235,7 @@ class AppManager {
             userId = localStorage.getItem('currentUser') || 'O';
         }
 
-        const storageKey = `userProgress_${userId}`;
+        const storageKey = `${V2_STORAGE_PREFIX}userProgress_${userId}`;
         const saved = localStorage.getItem(storageKey);
 
         if (saved) {
@@ -937,27 +1251,29 @@ class AppManager {
     }
 
     migrateUserProgress(oldProgress) {
-        // Migrate to latest version (version 3 - with course system)
-        if (oldProgress.version === 3) {
-            // Patch missing fields added after v3 was released
-            if (typeof oldProgress.totalPoints !== 'number') {
-                oldProgress.totalPoints = 0;
-            }
+        // Already at latest version — just patch any fields added after the version was cut
+        if (oldProgress.version === 4) {
+            if (typeof oldProgress.totalPoints !== 'number') oldProgress.totalPoints = 0;
+            if (typeof oldProgress.totalLearningTimeMs !== 'number') oldProgress.totalLearningTimeMs = 0;
+            oldProgress.bestScores = { ...this.getDefaultProgress().bestScores, ...(oldProgress.bestScores || {}) };
+            if (!oldProgress.learnedWords) oldProgress.learnedWords = {};
+            if (!oldProgress.wordJourneyProgress) oldProgress.wordJourneyProgress = {};
+            if (!oldProgress.gameUnlocks) oldProgress.gameUnlocks = this.getDefaultProgress().gameUnlocks;
             return oldProgress;
         }
 
-        console.log(`Migrating user progress from v${oldProgress.version || 1} to v3...`);
+        console.log(`Migrating user progress from v${oldProgress.version || 1} to v4...`);
 
-        // Start with existing data
         let migratedProgress = { ...oldProgress };
+        migratedProgress.bestScores = { ...this.getDefaultProgress().bestScores, ...(migratedProgress.bestScores || {}) };
 
-        // Migrate v1 → v2 (word mastery)
+        // v1 → v2 (word mastery)
         if (!migratedProgress.version || migratedProgress.version < 2) {
             migratedProgress.wordMastery = migratedProgress.wordMastery || {};
         }
 
-        // Migrate v2 → v3 (course system)
-        if (migratedProgress.version < 3) {
+        // v2 → v3 (course system)
+        if (!migratedProgress.version || migratedProgress.version < 3) {
             migratedProgress.courses = migratedProgress.courses || {};
             migratedProgress.topicProgress = migratedProgress.topicProgress || {};
             migratedProgress.certificates = migratedProgress.certificates || [];
@@ -966,15 +1282,26 @@ class AppManager {
             migratedProgress.coinHistory = migratedProgress.coinHistory || [];
             migratedProgress.lastLoginDate = migratedProgress.lastLoginDate || null;
             migratedProgress.studentName = migratedProgress.studentName || null;
+            migratedProgress.totalPoints = migratedProgress.totalPoints || 0;
         }
 
-        migratedProgress.version = 3;
+        // v3 → v4 (learning system: learnedWords + gameUnlocks)
+        if (!migratedProgress.version || migratedProgress.version < 4) {
+            migratedProgress.learnedWords = migratedProgress.learnedWords || {};
+            migratedProgress.wordJourneyProgress = migratedProgress.wordJourneyProgress || {};
+            migratedProgress.gameUnlocks = migratedProgress.gameUnlocks || this.getDefaultProgress().gameUnlocks;
+        }
 
-        // Save migrated progress
+        if (typeof migratedProgress.totalLearningTimeMs !== 'number') {
+            migratedProgress.totalLearningTimeMs = 0;
+        }
+
+        migratedProgress.version = 4;
+
         this.userProgress = migratedProgress;
         this.saveUserProgress();
 
-        console.log('Migration complete to v3');
+        console.log('Migration complete to v4');
         return migratedProgress;
     }
 
@@ -983,12 +1310,18 @@ class AppManager {
             hasPlayedBefore: false,
             totalGamesPlayed: 0,
             bestScores: {
+                'word-journey': 0,
                 vocabulary: 0,
                 grammar: 0,
+                'grammar-beginner': 0,
                 pronunciation: 0,
                 listening: 0,
                 reading: 0,
-                memory: 0
+                abc: 0,
+                memory: 0,
+                'picture-match': 0,
+                scramble: 0,
+                'fill-blanks': 0
             },
             streakDays: 0,
             lastPlayDate: null,
@@ -1004,6 +1337,7 @@ class AppManager {
 
             // Score totals
             totalPoints: 0,  // All-time accumulated raw score across all games
+            totalLearningTimeMs: 0,
 
             // Coins economy
             coins: 0,
@@ -1014,7 +1348,25 @@ class AppManager {
             // User profile
             studentName: null,
 
-            version: 3  // Data structure version for migrations
+            // V2 learning system (v4)
+            learnedWords: {},  // { "word_category": { graduatedDate, journeyScore, journeyCompletions, reinforcedIn, lastPracticed } }
+            wordJourneyProgress: {}, // { "word_category": { completedStages, startedDate, completedDate, lastUpdated } }
+            gameUnlocks: {     // Per-game unlock state
+                "word-journey":     { unlocked: true,  unlockedDate: null },
+                "abc":              { unlocked: true,  unlockedDate: null },
+                "memory":           { unlocked: true,  unlockedDate: null },
+                "grammar-beginner": { unlocked: true,  unlockedDate: null },
+                "listening":        { unlocked: false, requirement: "5 מילים שנלמדו",          requiredCount: 5 },
+                "picture-match":    { unlocked: false, requirement: "5 מילים שנלמדו",          requiredCount: 5 },
+                "reading":          { unlocked: false, requirement: "10 מילים + ABC 60%",       requiredCount: 10, requiredAbcMastery: 0.6 },
+                "pronunciation":    { unlocked: false, requirement: "10 מילים שנלמדו",         requiredCount: 10 },
+                "fill-blanks":      { unlocked: false, requirement: "30 מילים + 2 נושאים",     requiredCount: 30, requiredTopics: 2 },
+                "scramble":         { unlocked: false, requirement: "30 מילים + 2 נושאים",     requiredCount: 30, requiredTopics: 2 },
+                "grammar":          { unlocked: false, requirement: "50 מילים + 3 נושאים",     requiredCount: 50, requiredTopics: 3 },
+                "vocabulary":       { unlocked: false, requirement: "10 מילים שנלמדו",         requiredCount: 10 },
+            },
+
+            version: 4  // Data structure version for migrations
         };
     }
 
@@ -1031,7 +1383,20 @@ class AppManager {
             userId = localStorage.getItem('currentUser') || 'O';
         }
 
-        const storageKey = `userProgress_${userId}`;
+        // Track today's activity date
+        const todayStr = new Date().toISOString().slice(0, 10);
+        if (!this.userProgress.activityDates) {
+            this.userProgress.activityDates = [];
+        }
+        if (!this.userProgress.activityDates.includes(todayStr)) {
+            this.userProgress.activityDates.push(todayStr);
+            // Keep only last 60 days to limit storage growth
+            if (this.userProgress.activityDates.length > 60) {
+                this.userProgress.activityDates = this.userProgress.activityDates.slice(-60);
+            }
+        }
+
+        const storageKey = `${V2_STORAGE_PREFIX}userProgress_${userId}`;
         try {
             localStorage.setItem(storageKey, JSON.stringify(this.userProgress));
         } catch (error) {
@@ -1067,6 +1432,32 @@ class AppManager {
         this.saveUserProgress();
     }
 
+    /**
+     * Return the subset of vocabulary that a given game type is allowed to use.
+     * Gated games (anything that requires learned words) get only words the child
+     * has graduated through Word Journey. Ungated games get the full bank.
+     *
+     * @param {string} gameType
+     * @returns {Array<Object>} Word objects { word, translation, category, image, imageUrl? }
+     */
+    getFilteredWordsForGame(gameType) {
+        // Games that always get the full vocabulary
+        const UNGATED_GAMES = new Set(['word-journey', 'abc', 'memory', 'grammar-beginner', 'practice']);
+        if (UNGATED_GAMES.has(gameType)) {
+            return window.vocabularyBank || [];
+        }
+
+        const learnedWords = this.userProgress?.learnedWords || {};
+        const learnedKeys = new Set(Object.keys(learnedWords)); // "word_category" format
+
+        if (learnedKeys.size === 0) {
+            return []; // No learned words yet — caller should show "learn first" prompt
+        }
+
+        const bank = window.vocabularyBank || [];
+        return bank.filter(w => learnedKeys.has(`${w.word.toLowerCase()}_${w.category}`));
+    }
+
     calculateMastery(wordStats) {
         // Calculate mastery level (0-1) based on performance
         // Criteria: 3 attempts, 90% accuracy, 2 consecutive correct
@@ -1091,7 +1482,7 @@ class AppManager {
     }
 
     loadSettings() {
-        const saved = localStorage.getItem('englishLearningSettings');
+        const saved = localStorage.getItem(`${V2_STORAGE_PREFIX}englishLearningSettings`);
         return saved ? JSON.parse(saved) : {
             soundEnabled: true,
             speechRate: 0.9,
@@ -1102,7 +1493,7 @@ class AppManager {
     }
 
     saveSettings() {
-        localStorage.setItem('englishLearningSettings', JSON.stringify(this.settings));
+        localStorage.setItem(`${V2_STORAGE_PREFIX}englishLearningSettings`, JSON.stringify(this.settings));
         window.gameManager?.applySettings(this.settings);
     }
 

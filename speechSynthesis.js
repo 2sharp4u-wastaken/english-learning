@@ -41,60 +41,33 @@ class SpeechManager {
     initializeVoices() {
         this.voices = this.synthesis.getVoices();
 
-        if (this.voices.length === 0) {
-            this.synthesis.onvoiceschanged = () => {
-                this.voices = this.synthesis.getVoices();
-                this.selectVoices();
-            };
-        } else {
+        // Always register onvoiceschanged: Chrome loads system voices immediately
+        // but Google voices arrive asynchronously in a second event. Without this,
+        // selectVoices() runs on the partial list (system only) and never upgrades.
+        this.synthesis.onvoiceschanged = () => {
+            this.voices = this.synthesis.getVoices();
+            this.selectVoices();
+        };
+
+        if (this.voices.length > 0) {
             this.selectVoices();
         }
     }
 
     selectVoices() {
-        // Check if user has manually selected a preferred voice
-        const preferredVoiceURI = localStorage.getItem('preferredVoiceURI');
-        if (preferredVoiceURI) {
-            const userSelectedVoice = this.voices.find(v => v.voiceURI === preferredVoiceURI);
-            if (userSelectedVoice && userSelectedVoice.lang.startsWith('en')) {
-                this.englishVoice = userSelectedVoice;
-                console.log('Using user-selected voice:', this.englishVoice.name);
-            }
-        }
+        // Fixed target voice — always use Google UK English Male
+        const TARGET_VOICE = 'Google UK English Male';
 
-        // If no user preference or not found, use automatic selection
+        this.englishVoice = this.voices.find(v => v.name === TARGET_VOICE);
+
         if (!this.englishVoice) {
-            // Priority list for high-quality English voices
-            const preferredEnglishVoices = [
-                'Samantha', // macOS - natural sounding
-                'Google US English', // Chrome - high quality
-                'Microsoft Zira', // Windows - clear
-                'Microsoft David', // Windows - clear male
-                'Alex', // macOS - high quality male
-                'Karen', // macOS - clear female
-            ];
-
-            // Find all English voices
-            const englishVoices = this.voices.filter(voice =>
-                voice.lang.startsWith('en-US') || voice.lang.startsWith('en-GB') || voice.lang.startsWith('en')
-            );
-
-            // Try to find a preferred high-quality voice
-            this.englishVoice = englishVoices.find(voice =>
-                preferredEnglishVoices.some(preferred => voice.name.includes(preferred))
-            );
-
-            // If no preferred voice found, use first en-US, then en-GB, then any English
-            if (!this.englishVoice) {
-                this.englishVoice = englishVoices.find(v => v.lang.startsWith('en-US')) ||
-                                   englishVoices.find(v => v.lang.startsWith('en-GB')) ||
-                                   englishVoices[0];
-            }
-
-            // Log all available English voices for debugging
-            if (englishVoices.length > 0) {
-                console.log('Available English voices:', englishVoices.map(v => `${v.name} (${v.lang})`));
-            }
+            // Target not yet loaded (Google voices arrive async) — log what's available
+            console.log('[Speech] Target voice not found yet. Available voices:', this.voices.map(v => `${v.name} (${v.lang})`));
+            // Temporary fallback until onvoiceschanged fires again with Google voices
+            const englishVoices = this.voices.filter(v => v.lang.startsWith('en'));
+            this.englishVoice = englishVoices.find(v => v.lang.startsWith('en-US')) ||
+                               englishVoices.find(v => v.lang.startsWith('en-GB')) ||
+                               englishVoices[0];
         }
 
         // Hebrew voice selection
@@ -284,6 +257,30 @@ class SpeechManager {
             await this.speak(sentence);
         } catch (error) {
             console.warn('Speech synthesis failed:', error);
+        }
+    }
+
+    /**
+     * Speak an English word followed by its Hebrew translation.
+     * Used in Word Journey (Discover stage) and other gated games where
+     * Hebrew vocalization is enabled.
+     *
+     * @param {string} word              English word to speak
+     * @param {string} hebrewText        Hebrew translation text (plain, no nikud)
+     * @param {Object} [options]
+     * @param {string} [options.gameContext]
+     * @param {boolean} [options.allowOverlap=false]
+     * @param {boolean} [options.playHebrew=true]   Set false to skip Hebrew part
+     */
+    async speakWordWithTranslation(word, hebrewText, options = {}) {
+        try {
+            await this.speakWord(word, '', options.gameContext, options.allowOverlap);
+            if (hebrewText && options.playHebrew !== false) {
+                await new Promise(resolve => setTimeout(resolve, 350));
+                await this.speakHebrew(hebrewText);
+            }
+        } catch (error) {
+            console.warn('speakWordWithTranslation failed:', error);
         }
     }
 
@@ -574,4 +571,4 @@ const speechManager = new SpeechManager();
 window.speechManager = speechManager; // Make globally accessible for game modules
 
 // Verification log - check this appears in console to confirm new code is loaded
-console.log('%c[Speech Fix v4] Loaded - NO CANCEL, queue 1 pending allowed', 'color: cyan; font-weight: bold');
+console.log('%c[Speech Fix v7] Loaded - fixed voice: Google UK English Male', 'color: cyan; font-weight: bold');

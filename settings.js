@@ -43,21 +43,17 @@ class SettingsManager {
             clickRepeatCount: 3,
             audioPlaysAllowed: 8,
             difficulty: 'beginner',
-
-            // Display settings (hidden from UI)
-            showPictures: false,
+            hebrewVocalization: true,
+            learningPace: 'normal', // 'slow' (3 words) | 'normal' (5 words) | 'fast' (8 words)
 
             // Advanced settings
             showConfetti: true,
-
-            // Exit behavior settings
-            exitBehavior: 'hybrid', // Options: 'hybrid', 'confirmation', 'autosave', 'smart'
-            exitThreshold: 3, // Question number where behavior changes (for hybrid/smart)
-            autoSaveProgress: true, // Whether to save incomplete games
-            showExitToast: true, // Show toast notification on exit
+            exitBehavior: 'autosave', // 'autosave' | 'confirmation'
+            gameUnlockOverride: false,
 
             // Display
             showNikud: true,
+            lowercaseMode: false,
 
             // Custom words (Parent)
             claudeApiKey: ''
@@ -304,6 +300,8 @@ class SettingsManager {
     saveSettings() {
         try {
             localStorage.setItem('englishLearningSettings', JSON.stringify(this.settings));
+            // Bridge to v2 storage key so GameManager reads the latest settings
+            localStorage.setItem('v2_englishLearningSettings', JSON.stringify(this.settings));
             // Also save difficulty to current user's per-user progress
             const userId = this.getCurrentUserId();
             if (userId) {
@@ -387,13 +385,7 @@ class SettingsManager {
         const total = this.categories.length;
         const countElement = document.getElementById('selected-count');
         countElement.textContent = `${count}/${total}`;
-
-        // Less than 5 = practice mode (orange), 5+ = competitive mode (green)
-        if (count < 5) {
-            countElement.style.background = '#f59e0b'; // Orange for practice mode
-        } else {
-            countElement.style.background = '#48bb78'; // Green for competitive mode
-        }
+        countElement.style.background = '#48bb78';
     }
 
     validateCategorySelection() {
@@ -401,13 +393,8 @@ class SettingsManager {
         const warning = document.getElementById('category-warning');
 
         if (count < 1) {
-            warning.textContent = 'חובה לבחור לפחות קטגוריה אחת!';
             warning.classList.add('show');
             return false;
-        } else if (count < 5) {
-            warning.textContent = `בחרת ${count} קטגוריות - המשחק יהיה במצב אימון (הציונים לא יישמרו).`;
-            warning.classList.add('show');
-            return true; // Allow but warn
         } else {
             warning.classList.remove('show');
             return true;
@@ -668,6 +655,31 @@ class SettingsManager {
             this.settings.showNikud = e.target.checked;
         });
 
+        // Lowercase mode toggle — syncs with caseManager's localStorage key
+        document.getElementById('show-lowercase')?.addEventListener('change', (e) => {
+            this.settings.lowercaseMode = e.target.checked;
+            document.body.classList.toggle('lowercase-mode', e.target.checked);
+            try {
+                localStorage.setItem('globalLetterCase', e.target.checked ? 'lowercase' : 'uppercase');
+            } catch (_) {}
+        });
+
+        // Hebrew vocalization toggle
+        document.getElementById('hebrew-vocalization')?.addEventListener('change', (e) => {
+            this.settings.hebrewVocalization = e.target.checked;
+        });
+
+        // Learning pace radios
+        document.querySelectorAll('input[name="learningPace"]').forEach(radio => {
+            radio.addEventListener('change', (e) => {
+                this.settings.learningPace = e.target.value;
+                document.querySelectorAll('[name="learningPace"]').forEach(r => {
+                    r.closest('.radio-item').classList.remove('selected');
+                });
+                e.target.closest('.radio-item').classList.add('selected');
+            });
+        });
+
         // Exit behavior radio buttons
         document.querySelectorAll('input[name="exitBehavior"]').forEach(radio => {
             radio.addEventListener('change', (e) => {
@@ -681,20 +693,9 @@ class SettingsManager {
             });
         });
 
-        // Exit threshold slider
-        document.getElementById('exit-threshold').addEventListener('input', (e) => {
-            this.settings.exitThreshold = parseInt(e.target.value);
-            document.getElementById('exit-threshold-value').textContent = this.settings.exitThreshold;
-        });
-
-        // Auto save progress toggle
-        document.getElementById('auto-save-progress').addEventListener('change', (e) => {
-            this.settings.autoSaveProgress = e.target.checked;
-        });
-
-        // Show exit toast toggle
-        document.getElementById('show-exit-toast').addEventListener('change', (e) => {
-            this.settings.showExitToast = e.target.checked;
+        // Game unlock override toggle
+        document.getElementById('game-unlock-override')?.addEventListener('change', (e) => {
+            this.settings.gameUnlockOverride = e.target.checked;
         });
 
         // Save button (top bar)
@@ -794,18 +795,37 @@ class SettingsManager {
         // Update advanced settings
         document.getElementById('show-confetti').checked = this.settings.showConfetti;
         document.getElementById('show-nikud').checked = this.settings.showNikud !== false;
+        const lowercaseEl = document.getElementById('show-lowercase');
+        if (lowercaseEl) {
+            // Read from caseManager's storage key as source of truth
+            const caseMode = localStorage.getItem('globalLetterCase') || 'uppercase';
+            lowercaseEl.checked = caseMode === 'lowercase';
+        }
+
+        // Update Hebrew vocalization
+        const hebrewVocEl = document.getElementById('hebrew-vocalization');
+        if (hebrewVocEl) hebrewVocEl.checked = this.settings.hebrewVocalization !== false;
+
+        // Update learning pace
+        const pace = this.settings.learningPace || 'normal';
+        const paceEl = document.getElementById(`pace-${pace}`);
+        if (paceEl) {
+            paceEl.checked = true;
+            paceEl.closest('.radio-item').classList.add('selected');
+        }
 
         // Update exit behavior settings
-        const exitBehavior = this.settings.exitBehavior || 'hybrid';
-        document.getElementById(`exit-${exitBehavior}`).checked = true;
-        document.querySelector(`input[value="${exitBehavior}"]`).closest('.radio-item').classList.add('selected');
+        const exitBehavior = ['autosave', 'confirmation'].includes(this.settings.exitBehavior)
+            ? this.settings.exitBehavior : 'autosave';
+        const exitEl = document.getElementById(`exit-${exitBehavior}`);
+        if (exitEl) {
+            exitEl.checked = true;
+            exitEl.closest('.radio-item').classList.add('selected');
+        }
 
-        const exitThreshold = this.settings.exitThreshold || 3;
-        document.getElementById('exit-threshold').value = exitThreshold;
-        document.getElementById('exit-threshold-value').textContent = exitThreshold;
-
-        document.getElementById('auto-save-progress').checked = this.settings.autoSaveProgress !== false;
-        document.getElementById('show-exit-toast').checked = this.settings.showExitToast !== false;
+        // Update game unlock override
+        const unlockOverrideEl = document.getElementById('game-unlock-override');
+        if (unlockOverrideEl) unlockOverrideEl.checked = this.settings.gameUnlockOverride === true;
 
         // Populate API key field
         const apiKeyInput = document.getElementById('claude-api-key');

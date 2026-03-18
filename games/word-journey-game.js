@@ -141,6 +141,14 @@ export class WordJourneyGame {
             this.totalScoredQuestions += stageScore.total;
         }
 
+        if (this.gm?.progressManager && Array.isArray(this.words) && this.words.length > 0) {
+            this.gm.progressManager.recordJourneyStageCompletion(this.words, this.stageId);
+            if (window.app?.userProgress) {
+                window.app.userProgress.wordJourneyProgress = this.gm.progressManager.getWordJourneyProgress();
+                window.app.saveUserProgress?.();
+            }
+        }
+
         document.querySelectorAll('.wj-journey-step').forEach(step => {
             if (step.dataset.stage === this.stageId) step.classList.replace('active', 'completed');
         });
@@ -218,7 +226,12 @@ export class WordJourneyGame {
         const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
         let speechPromise;
         if (typeof speechManager !== 'undefined') {
-            speechPromise = speechManager.speakWord(q.word, '', 'word-journey').catch(() => {});
+            const hebrewOn = this.gm?.settings?.hebrewVocalization !== false;
+            if (hebrewOn && q.hebrew) {
+                speechPromise = speechManager.speakWordWithTranslation(q.word, q.hebrew, { gameContext: 'word-journey' }).catch(() => {});
+            } else {
+                speechPromise = speechManager.speakWord(q.word, '', 'word-journey').catch(() => {});
+            }
         } else {
             speechPromise = Promise.resolve();
         }
@@ -455,9 +468,9 @@ export class WordJourneyGame {
         this.spellTileUsed[tileIdx] = true;
         tile.classList.add('used');
 
-        // Speak the letter
+        // Speak the letter — use lowercase so TTS says "k" not "Capital K"
         if (typeof speechManager !== 'undefined') {
-            speechManager.speak(letter.toUpperCase()).catch(() => {});
+            speechManager.speak(letter.toLowerCase()).catch(() => {});
         }
 
         const slots = document.querySelectorAll('#wj-answer-slots .wj-slot');
@@ -1032,6 +1045,97 @@ export class WordJourneyGame {
             const settings = typeof SettingsManager !== 'undefined' ? SettingsManager.getSettings() : null;
             if (settings?.showConfetti && typeof confetti !== 'undefined') {
                 confetti({ particleCount: 80, spread: 60, origin: { y: 0.6 } });
+            }
+        } catch (_) {}
+    }
+
+    // ── Celebration screen (Phase 2) ─────────────────────────────────────────
+    /**
+     * Show the Word Journey completion celebration instead of the generic endGame screen.
+     * Called by gameLogic.js → endGame() when gameType === 'word-journey'.
+     *
+     * @param {Object} gm            GameManager instance
+     * @param {Element} gameArea     The game area element to render into
+     * @param {Array}  words         Word objects shown in this journey
+     * @param {number} percentage    Accuracy 0-100
+     * @param {number} coinsEarned   Coins awarded for this run
+     * @param {number} learnedCount  Total learned words across all journeys
+     */
+    showCelebration(gm, gameArea, words, percentage, coinsEarned, learnedCount) {
+        const passed = percentage >= 60;
+        const stars = percentage >= 80 ? '⭐⭐⭐' : percentage >= 60 ? '⭐⭐' : '⭐';
+
+        const wordCards = words.map(w => {
+            const hebrewText = window.getHebrew?.(w.hebrew) || w.hebrew || w.translation || '';
+            return `
+                <div class="wj-celeb-word-card">
+                    <span class="wj-celeb-word-en">${w.word}</span>
+                    <span class="wj-celeb-word-sep">—</span>
+                    <span class="wj-celeb-word-he">${hebrewText}</span>
+                    ${passed ? '<span class="wj-celeb-word-badge">⭐</span>' : ''}
+                </div>`;
+        }).join('');
+
+        const celebDiv = document.createElement('div');
+        celebDiv.className = 'game-complete wj-celebration';
+        celebDiv.innerHTML = `
+            <div class="completion-content">
+                <div class="wj-celeb-top-emoji">🎉</div>
+                <h2>מסע מילים הושלם!</h2>
+                <div class="completion-stars">${stars}</div>
+
+                <div class="wj-celeb-stats">
+                    <div class="wj-celeb-stat">
+                        <span class="wj-celeb-stat-num">${percentage}%</span>
+                        <span class="wj-celeb-stat-label">דיוק</span>
+                    </div>
+                    ${passed ? `
+                    <div class="wj-celeb-stat wj-celeb-stat-gold">
+                        <span class="wj-celeb-stat-num">${words.length}</span>
+                        <span class="wj-celeb-stat-label">מילים נלמדו</span>
+                    </div>
+                    <div class="wj-celeb-stat">
+                        <span class="wj-celeb-stat-num">${learnedCount}</span>
+                        <span class="wj-celeb-stat-label">סה"כ במאגר</span>
+                    </div>
+                    ` : ''}
+                    <div class="wj-celeb-stat">
+                        <span class="wj-celeb-stat-num">+${coinsEarned}🪙</span>
+                        <span class="wj-celeb-stat-label">מטבעות</span>
+                    </div>
+                </div>
+
+                ${!passed ? `<p class="wj-celeb-encourage">נסה שוב — צריך 60% כדי ללמוד את המילים!</p>` : ''}
+
+                <div class="wj-celeb-words">${wordCards}</div>
+
+                <div class="completion-actions">
+                    <button class="restart-game-btn wj-more-words-btn">
+                        <i class="fas fa-arrow-left"></i> ללמוד עוד מילים
+                    </button>
+                    <button class="choose-game-btn wj-hub-btn">
+                        <i class="fas fa-home"></i> חזור לבית
+                    </button>
+                </div>
+            </div>
+        `;
+
+        gameArea.appendChild(celebDiv);
+
+        celebDiv.querySelector('.wj-more-words-btn').addEventListener('click', () => {
+            celebDiv.remove();
+            for (const child of gameArea.children) child.style.display = '';
+            gm.startGame('word-journey');
+        });
+
+        celebDiv.querySelector('.wj-hub-btn').addEventListener('click', () => {
+            gm.showWelcomeScreen();
+        });
+
+        // Big confetti burst for the full journey completion
+        try {
+            if (typeof confetti !== 'undefined') {
+                confetti({ particleCount: 140, spread: 80, origin: { y: 0.5 } });
             }
         } catch (_) {}
     }

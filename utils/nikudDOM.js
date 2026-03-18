@@ -98,7 +98,30 @@ function processTextNode(node, map) {
     // Cases A & B — data-hebrew-source already set (by setHebrew, template literal, etc.)
     if (parent.dataset.hebrewSource !== undefined) {
         const stored = parent.dataset.hebrewSource;
-        if (NIKUD_RE.test(stored)) return; // Case A — already correct
+        const storedBase = stripNikud(stored);
+
+        // If the DOM text no longer matches what was stored, the element's content was replaced
+        // externally (e.g. a new game question set a different instruction). Re-enrich and update.
+        if (raw !== stored && raw !== storedBase) {
+            const enriched = enrichString(raw, map);
+            if (enriched) {
+                parent.dataset.hebrewSource = enriched;
+                parent.textContent = window._showNikud !== false ? enriched : raw;
+            } else {
+                parent.dataset.hebrewSource = raw;
+                // textContent is already raw — nothing to change
+            }
+            return;
+        }
+
+        if (NIKUD_RE.test(stored)) {
+            // Case A — stored already enriched; restore display if textContent drifted back to plain
+            // (happens when game code sets plain text that matches the stored base string)
+            if (window._showNikud !== false && !NIKUD_RE.test(raw)) {
+                parent.textContent = stored;
+            }
+            return;
+        }
         // Case B — lazy enrich plain stored value
         const enriched = stored.replace(HEBREW_WORD, w => map[w] || w);
         if (enriched !== stored) {

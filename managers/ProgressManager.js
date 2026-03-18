@@ -7,6 +7,9 @@ export class ProgressManager {
         this.topicProgress = {};
         this.courseProgress = {};
         this.certificates = [];
+        this.learnedWords = {};   // V2: graduated words
+        this.wordJourneyProgress = {}; // V2: per-word Word Journey stage completion
+        this.gameUnlocks = {};    // V2: per-game unlock state
 
         // Mastery thresholds
         this.thresholds = {
@@ -29,6 +32,9 @@ export class ProgressManager {
         this.topicProgress = userProgress.topicProgress || {};
         this.courseProgress = userProgress.courses || {};
         this.certificates = userProgress.certificates || [];
+        this.learnedWords = userProgress.learnedWords || {};
+        this.wordJourneyProgress = userProgress.wordJourneyProgress || {};
+        this.gameUnlocks = userProgress.gameUnlocks || {};
     }
 
     // ==========================================
@@ -446,6 +452,188 @@ export class ProgressManager {
     }
 
     // ==========================================
+    // V2 LEARNING SYSTEM — WORD GRADUATION
+    // ==========================================
+
+    /**
+     * Graduate a word after successful Word Journey completion.
+     * If the word was already graduated, updates journeyCompletions and score.
+     * @param {string} word
+     * @param {string} category
+     * @param {number} journeyScore  0-100 percentage accuracy for this journey run
+     */
+    graduateWord(word, category, journeyScore) {
+        const key = `${word.toLowerCase()}_${category}`;
+        const today = new Date().toISOString().slice(0, 10);
+        const allJourneyStages = ['discover', 'listen-match', 'spell-tiles', 'say-word', 'recall'];
+
+        if (this.learnedWords[key]) {
+            // Re-run — update completions count and best score
+            this.learnedWords[key].journeyCompletions++;
+            if (journeyScore > this.learnedWords[key].journeyScore) {
+                this.learnedWords[key].journeyScore = journeyScore;
+            }
+            this.learnedWords[key].lastPracticed = today;
+        } else {
+            this.learnedWords[key] = {
+                graduatedDate: today,
+                journeyScore,
+                journeyCompletions: 1,
+                reinforcedIn: [],
+                lastPracticed: today,
+            };
+        }
+
+        const existingJourney = this.wordJourneyProgress[key] || {
+            completedStages: [],
+            startedDate: today,
+        };
+        this.wordJourneyProgress[key] = {
+            ...existingJourney,
+            completedStages: [...new Set([...(existingJourney.completedStages || []), ...allJourneyStages])],
+            completed: true,
+            completedDate: today,
+            lastUpdated: today,
+        };
+    }
+
+    /**
+     * Record that a learned word was practiced in a specific game.
+     * @param {string} word
+     * @param {string} category
+     * @param {string} gameType
+     */
+    recordWordReinforcement(word, category, gameType) {
+        const key = `${word.toLowerCase()}_${category}`;
+        if (!this.learnedWords[key]) return;
+        const today = new Date().toISOString().slice(0, 10);
+        if (!this.learnedWords[key].reinforcedIn.includes(gameType)) {
+            this.learnedWords[key].reinforcedIn.push(gameType);
+        }
+        this.learnedWords[key].lastPracticed = today;
+    }
+
+    /**
+     * Get all learned word entries.
+     * @returns {Object} { "word_category": { graduatedDate, journeyScore, ... } }
+     */
+    getLearnedWords() {
+        return { ...this.learnedWords };
+    }
+
+    /**
+     * Record that a Word Journey stage was completed for a set of words.
+     * @param {Array<{word: string, category: string}>} words
+     * @param {string} stageId
+     */
+    recordJourneyStageCompletion(words, stageId) {
+        if (!Array.isArray(words) || words.length === 0 || !stageId) return;
+
+        const today = new Date().toISOString().slice(0, 10);
+        words.forEach(({ word, category }) => {
+            if (!word || !category) return;
+            const key = `${word.toLowerCase()}_${category}`;
+            const existing = this.wordJourneyProgress[key] || {
+                completedStages: [],
+                startedDate: today,
+            };
+
+            this.wordJourneyProgress[key] = {
+                ...existing,
+                completedStages: existing.completedStages.includes(stageId)
+                    ? existing.completedStages
+                    : [...existing.completedStages, stageId],
+                lastUpdated: today,
+            };
+        });
+    }
+
+    /**
+     * Get all persisted per-word Word Journey progress entries.
+     * @returns {Object}
+     */
+    getWordJourneyProgress() {
+        return { ...this.wordJourneyProgress };
+    }
+
+    /**
+     * Count how many distinct words have been graduated.
+     * @returns {number}
+     */
+    getLearnedWordCount() {
+        return Object.keys(this.learnedWords).length;
+    }
+
+    /**
+     * Check whether a specific word has been graduated.
+     * @param {string} word
+     * @param {string} category
+     * @returns {boolean}
+     */
+    isWordLearned(word, category) {
+        const key = `${word.toLowerCase()}_${category}`;
+        return key in this.learnedWords;
+    }
+
+    /**
+     * Count how many topics have any completed activities (used as a proxy for
+     * "topics done" in unlock gate evaluation).
+     * @returns {number}
+     */
+    getCompletedTopicCount() {
+        return Object.values(this.topicProgress).filter(
+            t => t.completedActivities && t.completedActivities.length > 0
+        ).length;
+    }
+
+    // ==========================================
+    // V2 LEARNING SYSTEM — GAME UNLOCKS
+    // ==========================================
+
+    /**
+     * Get the unlock status for a specific game type.
+     * @param {string} gameType
+     * @returns {Object|null}  The gameUnlocks entry, or null if unknown.
+     */
+    getGameUnlockStatus(gameType) {
+        return this.gameUnlocks[gameType] || null;
+    }
+
+    /**
+     * Evaluate unlock gates and update gameUnlocks in-place.
+     * Should be called after every word graduation and after ABC game completion.
+     *
+     * @param {number} learnedCount   Number of graduated words
+     * @param {number} topicsDone     Number of topics with any activity completed
+     * @param {number} abcMastery     ABC mastery percentage (0-100)
+     * @returns {string[]}  List of game IDs that were newly unlocked in this call
+     */
+    checkAndUnlockGames(learnedCount, topicsDone, abcMastery = 0) {
+        const today = new Date().toISOString().slice(0, 10);
+        const newlyUnlocked = [];
+
+        const tryUnlock = (gameType, condition) => {
+            const entry = this.gameUnlocks[gameType];
+            if (entry && !entry.unlocked && condition) {
+                entry.unlocked = true;
+                entry.unlockedDate = today;
+                newlyUnlocked.push(gameType);
+            }
+        };
+
+        tryUnlock('listening',     learnedCount >= 5);
+        tryUnlock('picture-match', learnedCount >= 5);
+        tryUnlock('reading',       learnedCount >= 10 && abcMastery >= 60);
+        tryUnlock('pronunciation', learnedCount >= 10);
+        tryUnlock('fill-blanks',   learnedCount >= 30 && topicsDone >= 2);
+        tryUnlock('scramble',      learnedCount >= 30 && topicsDone >= 2);
+        tryUnlock('grammar',       learnedCount >= 50 && topicsDone >= 3);
+        tryUnlock('vocabulary',    learnedCount >= 10);
+
+        return newlyUnlocked;
+    }
+
+    // ==========================================
     // PERSISTENCE
     // ==========================================
 
@@ -458,7 +646,10 @@ export class ProgressManager {
             wordMastery: { ...this.wordMastery },
             topicProgress: { ...this.topicProgress },
             courses: { ...this.courseProgress },
-            certificates: [...this.certificates]
+            certificates: [...this.certificates],
+            learnedWords: { ...this.learnedWords },
+            wordJourneyProgress: { ...this.wordJourneyProgress },
+            gameUnlocks: { ...this.gameUnlocks },
         };
     }
 
@@ -478,6 +669,15 @@ export class ProgressManager {
         }
         if (data.certificates) {
             this.certificates = [...data.certificates];
+        }
+        if (data.learnedWords) {
+            this.learnedWords = { ...data.learnedWords };
+        }
+        if (data.wordJourneyProgress) {
+            this.wordJourneyProgress = { ...data.wordJourneyProgress };
+        }
+        if (data.gameUnlocks) {
+            this.gameUnlocks = { ...data.gameUnlocks };
         }
     }
 }
