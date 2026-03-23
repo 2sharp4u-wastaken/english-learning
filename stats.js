@@ -1,6 +1,7 @@
 // Stats Page JavaScript
 
 const V2_STORAGE_PREFIX = 'v2_';
+const MEMORY_MAX_STARS = 4;
 
 // userId → { displayName, name } — populated at init so renderers can show real names
 let _usersMap = {};
@@ -53,7 +54,10 @@ const gameNames = {
     memory: { name: 'משחק זיכרון', icon: '🧠' },
     'picture-match': { name: 'מילה לתמונה', icon: '🖼️' },
     scramble: { name: 'סידור משפטים', icon: '🔀' },
-    'fill-blanks': { name: 'השלם את המשפט', icon: '✏️' }
+    'fill-blanks': { name: 'השלם את המשפט', icon: '✏️' },
+    'true-or-not': { name: 'נכון או לא?', icon: '✅' },
+    'word-builder': { name: 'בונה משפטים', icon: '🔨' },
+    'story-time': { name: 'זמן סיפור', icon: '📖' }
 };
 
 // ---------------------------------------------------------------------------
@@ -108,7 +112,6 @@ function getDefaultProgress() {
         streakDays: 0,
         lastPlayDate: null,
         totalCorrectAnswers: 0,
-        preferredDifficulty: 'beginner',
         wordMastery: {},
         learnedWords: {},
         wordJourneyProgress: {},
@@ -154,6 +157,18 @@ function calculateAverageScore(userId, gameType) {
         if (!scores.length) return 0;
         const avg = Math.round(scores.reduce((a, s) => a + s, 0) / scores.length);
         return Math.min(100, avg);
+    } catch (e) {
+        return 0;
+    }
+}
+
+function calculateBestScore(userId, gameType) {
+    const history = localStorage.getItem(`${userId}_${gameType}_history`);
+    if (!history) return 0;
+    try {
+        const scores = JSON.parse(history);
+        if (!scores.length) return 0;
+        return Math.min(100, Math.max(...scores));
     } catch (e) {
         return 0;
     }
@@ -275,7 +290,20 @@ function loadMemoryBestRecords(userId) {
         const raw = localStorage.getItem(`memoryBest_${userId}`);
         if (!raw) return {};
         const parsed = JSON.parse(raw);
-        return parsed && typeof parsed === 'object' ? parsed : {};
+        if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) return {};
+
+        return Object.fromEntries(
+            Object.entries(parsed)
+                .filter(([, record]) => record && typeof record === 'object' && !Array.isArray(record))
+                .map(([levelKey, record]) => {
+                    const numericStars = Number(record.stars);
+                    const stars = Number.isFinite(numericStars)
+                        ? Math.max(0, Math.min(MEMORY_MAX_STARS, Math.floor(numericStars)))
+                        : 0;
+
+                    return [levelKey, { ...record, stars }];
+                })
+        );
     } catch (e) {
         return {};
     }
@@ -567,16 +595,6 @@ function renderOverviewPanel(userId, model) {
     const avatarLetter = displayName.charAt(0).toUpperCase();
 
     return `
-        <div class="hero-card">
-            <div class="hero-avatar">${avatarLetter}</div>
-            <div class="hero-info">
-                <div class="hero-name">${displayName}</div>
-                ${streakDays > 0
-                    ? `<div class="hero-streak" style="color:${streakColor}"><i class="fas fa-fire"></i> ${streakDays} ימים ברצף</div>`
-                    : `<div class="hero-streak-zero">התחל רצף היום!</div>`}
-            </div>
-        </div>
-
         <div class="metric-tiles">
             <div class="metric-tile primary">
                 <i class="fas fa-star"></i>
@@ -653,7 +671,7 @@ function renderGamesPanel(userId, model) {
         if (played === 0) return;
 
         const avg = calculateAverageScore(userId, gameType);
-        const best = model.progress.bestScores?.[gameType] || 0;
+        const best = calculateBestScore(userId, gameType);
         rows += `
             <tr>
                 <td class="game-icon">${gameNames[gameType].icon}</td>
@@ -922,7 +940,10 @@ function renderMemoryPanel(memoryBestRecords) {
     const rows = levels.map(levelKey => {
         const record = memoryBestRecords[levelKey];
         if (!record) return '';
-        const stars = '★'.repeat(record.stars || 0) + '☆'.repeat(3 - (record.stars || 0));
+        const starsCount = Math.max(0, Math.min(MEMORY_MAX_STARS, Math.floor(Number(record.stars) || 0)));
+        const stars = starsCount > 0
+            ? '★'.repeat(starsCount) + '☆'.repeat(MEMORY_MAX_STARS - starsCount)
+            : '—';
         return `
             <tr>
                 <td>רמה ${levelKey}</td>
@@ -978,10 +999,15 @@ function renderCoinsPanel(progress) {
         const label = reasonLabels[entry.reason] || entry.reason;
         const sign = entry.amount >= 0 ? '+' : '';
         const color = entry.amount >= 0 ? '#10b981' : '#ef4444';
+        const gameMeta = entry.gameType ? gameNames[entry.gameType] : null;
+        const gameCell = gameMeta
+            ? `${gameMeta.icon} ${gameMeta.name}`
+            : '—';
         return `
             <tr>
                 <td>${entry.date || '—'}</td>
                 <td>${label}</td>
+                <td>${gameCell}</td>
                 <td style="color:${color};font-weight:700">${sign}${entry.amount}</td>
                 <td>${entry.balance}</td>
             </tr>
@@ -1011,7 +1037,7 @@ function renderCoinsPanel(progress) {
                 <h2><i class="fas fa-history"></i> היסטוריית מטבעות</h2>
                 <table>
                     <thead>
-                        <tr><th>תאריך</th><th>סיבה</th><th>סכום</th><th>יתרה</th></tr>
+                        <tr><th>תאריך</th><th>סיבה</th><th>משחק</th><th>סכום</th><th>יתרה</th></tr>
                     </thead>
                     <tbody>${historyRows}</tbody>
                 </table>

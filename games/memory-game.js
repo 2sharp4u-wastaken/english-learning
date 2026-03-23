@@ -27,6 +27,7 @@ export class MemoryGame {
         this.currentLevelIndex = 0;
         this.currentGridColumns = 4;
         this._boardGeneration = 0; // incremented each render; used to detect stale listeners
+        this._speechSequenceGeneration = 0;
 
         console.log('[MemoryGame] Initialized');
     }
@@ -38,6 +39,7 @@ export class MemoryGame {
     loadQuestion(question) {
         this.removeCompletionScreen();
         this.hideFeedback();
+        this.setGameChromeVisible(true);
 
         // ── Flip-on-load diagnostic ────────────────────────────────────────────
         {
@@ -109,6 +111,7 @@ export class MemoryGame {
         this.maxCombo = 0;
         this.runningScore = 0;
         this.cardFlipCount = {};
+        this._speechSequenceGeneration++;
 
         this.createCardPairs();
         this.renderGameBoard();
@@ -126,10 +129,10 @@ export class MemoryGame {
      * Create pairs of cards (word card + translation card)
      */
     createCardPairs() {
-        this.cards = [];
+        const cards = [];
 
         this.gameWords.forEach((wordObj, index) => {
-            this.cards.push({
+            cards.push({
                 id: `word-${index}`,
                 pairId: index,
                 type: 'word',
@@ -139,21 +142,103 @@ export class MemoryGame {
                 isMatched: false
             });
 
-            this.cards.push({
+            cards.push({
                 id: `translation-${index}`,
                 pairId: index,
                 type: 'translation',
-                content: wordObj.hebrew,
+                content: wordObj.hebrew || wordObj.translation,
                 wordObj: wordObj,
                 isFlipped: false,
                 isMatched: false
             });
         });
 
-        for (let i = this.cards.length - 1; i > 0; i--) {
+        this.cards = this.shuffleCardsWithPairSeparation(cards);
+    }
+
+    getBoardColumns(cardsCount = this.cards.length) {
+        const safeCardsCount = Math.max(0, cardsCount || 0);
+        const columnsByCards = Math.max(4, Math.ceil(safeCardsCount / 3));
+        return Math.max(this.currentGridColumns || 4, columnsByCards);
+    }
+
+    shuffleCards(cards) {
+        const shuffled = Array.isArray(cards) ? [...cards] : [];
+        for (let i = shuffled.length - 1; i > 0; i--) {
             const j = Math.floor(Math.random() * (i + 1));
-            [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+            [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
         }
+        return shuffled;
+    }
+
+    scoreCardLayout(cards, columns) {
+        const pairPositions = new Map();
+
+        cards.forEach((card, index) => {
+            const positions = pairPositions.get(card.pairId) || [];
+            positions.push(index);
+            pairPositions.set(card.pairId, positions);
+        });
+
+        let score = 0;
+
+        pairPositions.forEach(positions => {
+            if (positions.length !== 2) return;
+
+            const [firstIndex, secondIndex] = positions;
+            const firstRow = Math.floor(firstIndex / columns);
+            const firstCol = firstIndex % columns;
+            const secondRow = Math.floor(secondIndex / columns);
+            const secondCol = secondIndex % columns;
+            const rowDistance = Math.abs(firstRow - secondRow);
+            const colDistance = Math.abs(firstCol - secondCol);
+            const manhattanDistance = rowDistance + colDistance;
+            const chebyshevDistance = Math.max(rowDistance, colDistance);
+
+            score += manhattanDistance * 100;
+            score += chebyshevDistance * 40;
+
+            if (chebyshevDistance <= 1) {
+                score -= 5000;
+            } else if (manhattanDistance === 2) {
+                score -= 1200;
+            }
+
+            if (rowDistance === 0 && colDistance <= 2) {
+                score -= 900;
+            } else if (rowDistance === 0) {
+                score -= 180;
+            }
+
+            if (colDistance === 0 && rowDistance <= 2) {
+                score -= 450;
+            } else if (colDistance === 0) {
+                score -= 90;
+            }
+        });
+
+        return score;
+    }
+
+    shuffleCardsWithPairSeparation(cards) {
+        if (!Array.isArray(cards) || cards.length <= 2) return Array.isArray(cards) ? [...cards] : [];
+
+        const columns = this.getBoardColumns(cards.length);
+        const attempts = Math.max(60, cards.length * 12);
+        let bestLayout = this.shuffleCards(cards);
+        let bestScore = this.scoreCardLayout(bestLayout, columns);
+
+        for (let attempt = 1; attempt < attempts; attempt++) {
+            const candidate = this.shuffleCards(cards);
+            const candidateScore = this.scoreCardLayout(candidate, columns);
+
+            if (candidateScore > bestScore) {
+                bestLayout = candidate;
+                bestScore = candidateScore;
+            }
+        }
+
+        return bestLayout;
     }
 
     /**
@@ -198,8 +283,7 @@ export class MemoryGame {
         grid.innerHTML = '';
 
         const cardsCount = this.cards.length;
-        const columnsByCards = Math.max(4, Math.ceil(cardsCount / 3));
-        const columns = Math.max(this.currentGridColumns || 4, columnsByCards);
+        const columns = this.getBoardColumns(cardsCount);
         grid.style.gridTemplateRows = 'repeat(3, minmax(0, 1fr))';
         grid.style.gridTemplateColumns = `repeat(${columns}, minmax(0, 1fr))`;
 
@@ -512,6 +596,9 @@ export class MemoryGame {
         this.updateStats();
 
         this.playMatchSound();
+        this.playMatchedPairAudio(card?.wordObj).catch(error => {
+            console.warn('[MemoryGame] Match audio sequence failed:', error);
+        });
         this.showMatchFeedback(index1, pointsEarned, isFirstTry, this.currentCombo);
 
         if (window.gameManager?.recordWordAttempt) {
@@ -596,9 +683,19 @@ export class MemoryGame {
 
         const isLastLevel = this.currentLevelIndex >= this.levelConfigs.length - 1;
         const starLine = this.renderStars(metrics.stars);
-        const headingHtml = isLastLevel
-            ? `<i class="fas fa-trophy"></i> משחק הושלם!`
-            : `<i class="fas fa-arrow-up"></i> רמה ${levelConfig.level} הושלמה!`;
+        const headingTitle = isLastLevel
+            ? 'המשחק הושלם!'
+            : `רמה ${levelConfig.level} הושלמה!`;
+        const headingIcon = isLastLevel ? 'fas fa-trophy' : 'fas fa-arrow-up';
+        const timeSummary = window.gameManager?.formatGameTime
+            ? window.gameManager.formatGameTime(timeElapsed * 1000)
+            : `${timeElapsed} שנ׳`;
+        const runProgressPct = Math.round(((this.currentLevelIndex + 1) / this.levelConfigs.length) * 100);
+        const heroSubtitle = personalBestInfo?.isNewBest
+            ? 'שיא אישי חדש ברמה הזאת'
+            : isLastLevel
+                ? 'סיכום מלא של הריצה'
+                : 'מוכן לשלב הבא';
         const recommendation = isLastLevel ? window.gameManager?.getCompletionRecommendation?.('memory') : null;
         const levelWordProgress = (this.gameWords || []).map(wordObj => {
             const stats = window.gameManager?.progressManager?.getWordStats?.(wordObj.word, wordObj.category) || null;
@@ -638,35 +735,92 @@ export class MemoryGame {
 
         const completionDiv = this.buildSummaryCard(`
             <div class="completion-content">
-                <h2>${headingHtml}</h2>
-                <div class="completion-stars">${starLine}</div>
-                <div class="score-display">
-                    <div class="score-circle">
-                        <span class="score-number">${metrics.score}</span>
-                        <span class="score-label">ניקוד</span>
+                <div class="completion-shell">
+                    <section class="completion-hero-card memory-completion-hero">
+                        <div class="completion-kicker">${isLastLevel ? 'סיכום משחק הזיכרון' : 'סיכום רמה'}</div>
+                        <div class="completion-hero-head">
+                            <div class="completion-score-block">
+                                <span class="completion-score-eyebrow">ניקוד</span>
+                                <span class="completion-score-value">${metrics.score}</span>
+                                <span class="completion-score-caption">רמה ${levelConfig.level}</span>
+                            </div>
+                            <div class="completion-hero-copy">
+                                <div class="completion-icon-badge"><i class="${headingIcon}"></i></div>
+                                <h2>${headingTitle}</h2>
+                                <p>${heroSubtitle}</p>
+                            </div>
+                        </div>
+                        <div class="completion-stat-strip">
+                            <div class="completion-stat-chip">
+                                <span class="completion-stat-value">${this.moves}</span>
+                                <span class="completion-stat-label">מהלכים</span>
+                            </div>
+                            <div class="completion-stat-chip">
+                                <span class="completion-stat-value">${timeSummary}</span>
+                                <span class="completion-stat-label">זמן</span>
+                            </div>
+                            <div class="completion-stat-chip">
+                                <span class="completion-stat-value">${starLine}</span>
+                                <span class="completion-stat-label">דירוג</span>
+                            </div>
+                            ${metrics.maxCombo >= 2 ? `
+                            <div class="completion-stat-chip">
+                                <span class="completion-stat-value">x${metrics.maxCombo}</span>
+                                <span class="completion-stat-label">קומבו</span>
+                            </div>` : ''}
+                            <div class="completion-stat-chip completion-stat-chip-highlight">
+                                <span class="completion-stat-value" data-coins-earned-number>+0</span>
+                                <span class="completion-stat-label">מטבעות</span>
+                                <span class="completion-coins-sparkle" data-coins-earned-sparkle>✨</span>
+                            </div>
+                            <div class="completion-stat-chip completion-stat-chip-strong">
+                                <span class="completion-stat-value">${totalScore}</span>
+                                <span class="completion-stat-label">${isLastLevel ? 'סה״כ נק׳' : 'ניקוד צבור'}</span>
+                            </div>
+                        </div>
+                    </section>
+
+                    <div class="completion-actions memory-completion-actions">
+                        ${actionButtonsHtml}
                     </div>
-                    <div class="score-details">
-                        <p>${this.moves} מהלכים · ${timeElapsed} שניות</p>
-                        ${metrics.maxCombo >= 2 ? `<p>🔥 קומבו מקסימלי: ×${metrics.maxCombo}</p>` : ''}
-                        <p>תגמול: +${levelCoins} מטבעות</p>
-                        ${isLastLevel
-                            ? `<p class="memory-total-score">סה״כ: ${totalScore} נק׳</p>`
-                            : `<p>ניקוד צבור: ${totalScore} נק׳</p>`}
-                        ${personalBestInfo?.isNewBest ? `<p class="memory-personal-best">🏆 שיא אישי חדש!</p>` : ''}
+
+                    <div class="completion-panel-grid">
+                        <section class="completion-panel">
+                            <div class="completion-panel-kicker">התקדמות במשחק</div>
+                            <div class="completion-progress-head">
+                                <span>רמה ${this.currentLevelIndex + 1} מתוך ${this.levelConfigs.length}</span>
+                                <strong>${runProgressPct}%</strong>
+                            </div>
+                            <div class="completion-progress-track">
+                                <div class="completion-progress-fill" style="width:${runProgressPct}%"></div>
+                            </div>
+                        </section>
+                        <section class="completion-panel">
+                            <div class="completion-panel-kicker">ביצועי הרמה</div>
+                            <div class="completion-detail-list">
+                                <div class="completion-detail-row">
+                                    <span>דירוג</span>
+                                    <strong>${starLine}</strong>
+                                </div>
+                                <div class="completion-detail-row">
+                                    <span>דיוק</span>
+                                    <strong>${Math.round(metrics.accuracy * 100)}%</strong>
+                                </div>
+                                <div class="completion-detail-row">
+                                    <span>טעויות</span>
+                                    <strong>${metrics.mistakes}</strong>
+                                </div>
+                                ${personalBestInfo?.isNewBest ? `
+                                <div class="completion-detail-row completion-detail-row-success">
+                                    <span>שיא אישי</span>
+                                    <strong>חדש</strong>
+                                </div>` : ''}
+                            </div>
+                        </section>
                     </div>
-                </div>
-                <div class="completion-coins-card">
-                    <div class="completion-coins-title">
-                        <i class="fas fa-coins"></i> מטבעות מהרמה
-                    </div>
-                    <div class="completion-coins-value">
-                        <span class="completion-coins-number" data-coins-earned-number>+0</span>
-                        <span class="completion-coins-sparkle" data-coins-earned-sparkle>✨</span>
-                    </div>
-                </div>
                 ${levelWordProgress.length > 0 ? `
                 <div class="completion-words-section">
-                    <h3><i class="fas fa-brain"></i> מילים שתרגלת ברמה הזאת</h3>
+                    <h3><i class="fas fa-brain"></i> מילים שכדאי לזכור מהשלב</h3>
                     <div class="completion-word-list">
                         ${levelWordProgress.map(word => `
                             <div class="completion-word-card ${word.learned ? 'learned' : ''}">
@@ -692,8 +846,6 @@ export class MemoryGame {
                     </div>
                 </div>` : ''}
                 ${pbTableHtml}
-                <div class="completion-actions">
-                    ${actionButtonsHtml}
                 </div>
             </div>
         `);
@@ -710,20 +862,20 @@ export class MemoryGame {
         // so it participates in global stats, best scores, and history like other games.
         if (isLastLevel) {
             try {
-                const totalScore = window.gameManager?.scores?.memory ?? metrics.score;
+                const totalScore = window.scoreManager?.getScore('memory') ?? metrics.score;
                 if (window.app?.updateProgress) {
                     window.app.updateProgress('memory', totalScore);
                 }
                 if (window.gameManager?.saveGameScoreToHistory) {
                     window.gameManager.saveGameScoreToHistory('memory', totalScore);
                 }
-                // Reconcile totalPoints: points are already persisted incrementally via updateScore(),
-                // so only add the remaining delta (handles the edge case where scores differ).
+                // Memory uses a custom completion flow, so it persists totalPoints here
+                // only when the full 3-level run is complete.
                 if (window.app?.userProgress && window.gameManager) {
-                    const alreadyPersisted = window.gameManager.lastPersistedScores?.['memory'] || 0;
-                    const adjustment = totalScore - alreadyPersisted;
-                    if (adjustment !== 0) {
-                        window.app.userProgress.totalPoints = Math.max(0, (window.app.userProgress.totalPoints || 0) + adjustment);
+                    const alreadyCounted = window.gameManager.lastPersistedScores?.['memory'] || 0;
+                    const newlyCompletedPoints = Math.max(0, totalScore - alreadyCounted);
+                    if (newlyCompletedPoints > 0) {
+                        window.app.userProgress.totalPoints = (window.app.userProgress.totalPoints || 0) + newlyCompletedPoints;
                     }
                     if (window.gameManager.lastPersistedScores) {
                         window.gameManager.lastPersistedScores['memory'] = totalScore;
@@ -930,17 +1082,28 @@ export class MemoryGame {
     hideBoardForSummary() {
         const gameContainer = document.getElementById('memory-game-container');
         if (gameContainer) gameContainer.style.display = 'none';
+        this.setGameChromeVisible(false);
         this.setFinishButtonVisible(false);
         this.hideFeedback();
+    }
+
+    setGameChromeVisible(visible) {
+        const progressContainer = document.querySelector('#memory-game .progress-container');
+        if (progressContainer) progressContainer.style.display = visible ? '' : 'none';
     }
 
     buildSummaryCard(innerHtml) {
         this.removeCompletionScreen();
         const gameEl = document.getElementById('memory-game');
         const completionDiv = document.createElement('div');
-        completionDiv.className = 'game-complete';
+        completionDiv.className = 'game-complete memory-summary-screen';
         completionDiv.innerHTML = innerHtml;
-        if (gameEl) gameEl.appendChild(completionDiv);
+        if (gameEl) {
+            gameEl.classList.add('memory-summary-active');
+            gameEl.appendChild(completionDiv);
+            gameEl.scrollTop = 0;
+            document.querySelector('.game-area')?.scrollTo({ top: 0, behavior: 'instant' });
+        }
         return completionDiv;
     }
 
@@ -948,6 +1111,7 @@ export class MemoryGame {
         const gameEl = document.getElementById('memory-game');
         const completionDiv = gameEl?.querySelector('.game-complete');
         if (completionDiv) completionDiv.remove();
+        gameEl?.classList.remove('memory-summary-active');
     }
 
     hideFeedback() {
@@ -1151,7 +1315,9 @@ export class MemoryGame {
      * Speak a word using speech synthesis
      */
     async speakWord(word) {
-        if (typeof speechManager !== 'undefined') {
+        if (typeof speechManager !== 'undefined' && typeof speechManager.speak === 'function') {
+            await speechManager.speak(String(word || '').trim(), { gameContext: 'memory', allowOverlap: true });
+        } else if (typeof speechManager !== 'undefined') {
             await speechManager.speakWord(word, '', 'memory', true);
         }
     }
@@ -1211,6 +1377,37 @@ export class MemoryGame {
         if (typeof speechManager !== 'undefined' && typeof speechManager.speakHebrew === 'function') {
             await speechManager.speakHebrew(word, { allowOverlap: true });
         }
+    }
+
+    delay(ms) {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    async playMatchedPairAudio(wordObj) {
+        if (!wordObj) return;
+
+        const hebrewWord = this.normalizeText(wordObj.hebrew || wordObj.translation);
+        const englishWord = this.normalizeText(wordObj.word || wordObj.english);
+        if (!hebrewWord || !englishWord) return;
+
+        const speechGeneration = this._speechSequenceGeneration;
+
+        await this.delay(550);
+        if (speechGeneration !== this._speechSequenceGeneration) return;
+
+        await this.speakHebrewWord(hebrewWord);
+        if (speechGeneration !== this._speechSequenceGeneration) return;
+
+        await this.delay(120);
+        if (speechGeneration !== this._speechSequenceGeneration) return;
+
+        await this.speakWord('is');
+        if (speechGeneration !== this._speechSequenceGeneration) return;
+
+        await this.delay(70);
+        if (speechGeneration !== this._speechSequenceGeneration) return;
+
+        await this.speakWord(englishWord);
     }
 
     // ── Audio helpers ──────────────────────────────────────────────────────────
@@ -1367,6 +1564,7 @@ export class MemoryGame {
     cleanup() {
         const container = document.getElementById('memory-game-container');
         if (container) container.style.display = 'none';
+        this.setGameChromeVisible(true);
 
         this.cards = [];
         this.flippedCards = [];

@@ -25,6 +25,11 @@ export class CourseManager {
         if (!this.userProgress.topicProgress) {
             this.userProgress.topicProgress = {};
         }
+        Object.values(this.userProgress.topicProgress).forEach(progress => {
+            if (typeof progress.completed !== 'boolean') {
+                progress.completed = false;
+            }
+        });
         if (!this.userProgress.certificates) {
             this.userProgress.certificates = [];
         }
@@ -54,6 +59,8 @@ export class CourseManager {
         if (unlockedCourses.length === 0 && this.courses.size === 1) {
             this.unlockCourse(course.id);
         }
+
+        this.checkAndUnlockCourses();
     }
 
     /**
@@ -90,6 +97,54 @@ export class CourseManager {
      */
     isCourseUnlocked(courseId) {
         return this.userProgress.courses[courseId]?.unlocked || false;
+    }
+
+    /**
+     * Check whether a course's unlock requirement is satisfied.
+     * @param {Object} course
+     * @returns {boolean}
+     */
+    meetsCourseUnlockRequirement(course) {
+        if (!course?.unlockRequirement) return true;
+
+        const { course: requiredCourseId, completionPercentage = 100 } = course.unlockRequirement;
+        if (!requiredCourseId) return true;
+
+        return this.getCourseProgress(requiredCourseId) >= completionPercentage;
+    }
+
+    /**
+     * Get a readable unlock requirement string for the UI.
+     * @param {Object|string} courseOrId
+     * @returns {string}
+     */
+    getCourseUnlockRequirementText(courseOrId) {
+        const course = typeof courseOrId === 'string' ? this.getCourse(courseOrId) : courseOrId;
+        if (!course?.unlockRequirement) return '';
+
+        const { course: requiredCourseId, completionPercentage = 100 } = course.unlockRequirement;
+        const requiredCourse = this.getCourse(requiredCourseId);
+        const requiredName = requiredCourse?.nameHebrew || requiredCourse?.name || requiredCourseId;
+
+        return `נפתח אחרי ${completionPercentage}% ב-${requiredName}`;
+    }
+
+    /**
+     * Unlock any courses whose requirements are now satisfied.
+     * @returns {string[]} Newly unlocked course ids
+     */
+    checkAndUnlockCourses() {
+        const newlyUnlocked = [];
+
+        this.getAllCourses().forEach(course => {
+            if (this.isCourseUnlocked(course.id)) return;
+            if (!this.meetsCourseUnlockRequirement(course)) return;
+
+            this.unlockCourse(course.id);
+            newlyUnlocked.push(course.id);
+        });
+
+        return newlyUnlocked;
     }
 
     /**
@@ -214,7 +269,8 @@ export class CourseManager {
                 started: false,
                 mastery: 0,
                 completedActivities: [],
-                certificateEarned: false
+                certificateEarned: false,
+                completed: false
             };
         } else {
             this.userProgress.topicProgress[topicId].unlocked = true;
@@ -236,17 +292,47 @@ export class CourseManager {
     }
 
     /**
-     * Complete an activity within a topic
+     * Complete an activity within a topic.
+     * Only counted if the score meets the topic threshold.
      * @param {string} topicId
      * @param {string} activityType - e.g., 'vocabulary', 'listening'
      * @param {number} score - Score achieved (0-100)
+     * @returns {Object|null}
      */
     completeActivity(topicId, activityType, score) {
-        const progress = this.userProgress.topicProgress[topicId];
-        if (!progress) {
-            console.error(`[CourseManager] Topic ${topicId} not found in progress`);
-            return;
+        const data = this.getTopic(topicId);
+        if (!data) return null;
+        const { topic } = data;
+
+        if (!(topic.activities || []).includes(activityType)) {
+            return null;
         }
+
+        if (!this.userProgress.topicProgress[topicId]) {
+            this.unlockTopic(topicId);
+        }
+
+        const progress = this.userProgress.topicProgress[topicId];
+        progress.started = true;
+
+        const threshold = topic.milestone?.scoreThreshold ?? 70;
+        if (score < threshold) {
+            if (topic.words?.length) {
+                progress.mastery = this.progressManager.calculateTopicMastery(topic.words);
+            }
+            this.saveProgress();
+            return {
+                topicId,
+                topic,
+                thresholdMet: false,
+                threshold,
+                activityCompletedNow: false,
+                topicCompletedNow: false
+            };
+        }
+
+        const wasActivityCompleted = (progress.completedActivities || []).includes(activityType);
+        const wasTopicCompleted = this.isTopicCompleted(topicId);
 
         // Add to completed activities if not already there
         if (!progress.completedActivities) {
@@ -256,48 +342,44 @@ export class CourseManager {
             progress.completedActivities.push(activityType);
         }
 
-        // Update mastery (average of scores or use progress manager)
-        const data = this.getTopic(topicId);
-        if (data && data.topic.words) {
-            const mastery = this.progressManager.calculateTopicMastery(data.topic.words);
-            progress.mastery = mastery;
+        // Update mastery from word-level progress
+        if (topic.words?.length) {
+            progress.mastery = this.progressManager.calculateTopicMastery(topic.words);
         }
 
         // Check if topic is now completed
-        if (this.isTopicCompleted(topicId)) {
-            this.onTopicCompleted(topicId, score);
+        const isNowCompleted = this.isTopicCompleted(topicId);
+        progress.completed = isNowCompleted;
+
+        if (isNowCompleted && !wasTopicCompleted) {
+            this.onTopicCompleted(topicId);
         }
 
         this.saveProgress();
+
+        return {
+            topicId,
+            topic,
+            thresholdMet: true,
+            threshold,
+            activityCompletedNow: !wasActivityCompleted,
+            topicCompletedNow: isNowCompleted && !wasTopicCompleted
+        };
     }
 
     /**
      * Called when a topic is fully completed
      * @param {string} topicId
-     * @param {number} finalScore
      */
-    onTopicCompleted(topicId, finalScore) {
+    onTopicCompleted(topicId) {
         const data = this.getTopic(topicId);
         if (!data) return;
 
-        const { topic, unit, course } = data;
-
-        // Check if already has certificate
         const progress = this.userProgress.topicProgress[topicId];
-        if (progress.certificateEarned) return;
+        if (!progress) return;
 
-        // Award certificate
-        if (topic.certificateId) {
-            const certificate = {
-                id: topic.certificateId,
-                topicId: topicId,
-                topicName: topic.name,
-                earnedDate: new Date().toISOString().split('T')[0],
-                score: finalScore
-            };
-            this.userProgress.certificates.push(certificate);
-            progress.certificateEarned = true;
-        }
+        const { unit } = data;
+        progress.completed = true;
 
         // Unlock next topic in sequence
         const currentTopicIndex = unit.topics.findIndex(t => t.id === topicId);
@@ -306,6 +388,7 @@ export class CourseManager {
             this.unlockTopic(nextTopic.id);
         }
 
+        this.checkAndUnlockCourses();
         this.saveProgress();
     }
 
@@ -328,7 +411,7 @@ export class CourseManager {
      * Get next recommended topic
      * @returns {Object|null} {topic, unit, course}
      */
-    getNextRecommendedTopic() {
+    getNextRecommendedActivity() {
         for (const course of this.getUnlockedCourses()) {
             if (!course.units) continue;
 
@@ -337,12 +420,118 @@ export class CourseManager {
 
                 for (const topic of unit.topics) {
                     if (this.isTopicUnlocked(topic.id) && !this.isTopicCompleted(topic.id)) {
-                        return { topic, unit, course };
+                        const completedActivities = this.userProgress.topicProgress[topic.id]?.completedActivities || [];
+                        const activityType = (topic.activities || []).find(activity =>
+                            !completedActivities.includes(activity)
+                        ) || topic.activities?.[0];
+
+                        return { topic, unit, course, activityType };
                     }
                 }
             }
         }
         return null;
+    }
+
+    /**
+     * Backward-compatible alias for older callers.
+     * @returns {Object|null}
+     */
+    getNextRecommendedTopic() {
+        return this.getNextRecommendedActivity();
+    }
+
+    /**
+     * Try to infer which topic a free-play session belongs to based on the words used.
+     * @param {string} activityType
+     * @param {Array<{word: string, category?: string}>} sessionWords
+     * @returns {Object|null}
+     */
+    inferTopicForActivity(activityType, sessionWords = []) {
+        if (!activityType || !Array.isArray(sessionWords) || sessionWords.length === 0) {
+            return null;
+        }
+
+        const bank = window.vocabularyBank || [];
+        const sessionWordSet = new Set(sessionWords
+            .map(entry => String(entry?.word || '').trim().toLowerCase())
+            .filter(Boolean));
+
+        if (sessionWordSet.size === 0) return null;
+
+        let bestMatch = null;
+
+        for (const course of this.getUnlockedCourses()) {
+            for (const unit of (course.units || [])) {
+                for (const topic of (unit.topics || [])) {
+                    if (!this.isTopicUnlocked(topic.id)) continue;
+                    if (!(topic.activities || []).includes(activityType)) continue;
+
+                    const topicWords = (topic.words || [])
+                        .map(word => bank.find(entry => entry.word.toLowerCase() === String(word).toLowerCase())?.word || word)
+                        .map(word => String(word).toLowerCase());
+
+                    if (topicWords.length === 0) continue;
+
+                    const matchedCount = topicWords.filter(word => sessionWordSet.has(word)).length;
+                    const coverage = matchedCount / topicWords.length;
+
+                    if (matchedCount < 3 || coverage < 0.6) continue;
+
+                    if (!bestMatch || matchedCount > bestMatch.matchedCount || coverage > bestMatch.coverage) {
+                        bestMatch = {
+                            topicId: topic.id,
+                            topic,
+                            unit,
+                            course,
+                            matchedCount,
+                            coverage
+                        };
+                    }
+                }
+            }
+        }
+
+        return bestMatch;
+    }
+
+    /**
+     * Mark a course activity complete from either course-launch or free-play.
+     * @param {Object} params
+     * @param {string} params.activityType
+     * @param {number} params.score
+     * @param {string} [params.topicId]
+     * @param {Array<{word: string, category?: string}>} [params.sessionWords]
+     * @returns {Object|null}
+     */
+    completeGameActivity({ topicId = null, activityType, score = 0, sessionWords = [] } = {}) {
+        if (!activityType) return null;
+
+        let resolvedTopicId = topicId;
+        let topicData = resolvedTopicId ? this.getTopic(resolvedTopicId) : null;
+
+        if (!topicData || !(topicData.topic.activities || []).includes(activityType)) {
+            const inferred = this.inferTopicForActivity(activityType, sessionWords);
+            if (!inferred) return null;
+            resolvedTopicId = inferred.topicId;
+            topicData = inferred;
+        }
+
+        const result = this.completeActivity(resolvedTopicId, activityType, score);
+        if (!result) return null;
+
+        const progress = this.userProgress.topicProgress[resolvedTopicId] || {};
+        const newlyUnlockedCourses = this.checkAndUnlockCourses();
+
+        return {
+            ...result,
+            topicId: resolvedTopicId,
+            topic: topicData.topic,
+            unit: topicData.unit,
+            course: topicData.course,
+            certificateEarned: Boolean(progress.certificateEarned),
+            newlyUnlockedCourses
+        };
     }
 
     /**

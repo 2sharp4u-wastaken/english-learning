@@ -35,7 +35,6 @@ class GamificationManager {
     getFallbackPracticeWords() {
         const settings = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
         const selectedCategories = settings.selectedCategories || [];
-        const difficulty = settings.difficulty || 'beginner';
         const wordMastery = window.app?.userProgress?.wordMastery || {};
 
         const baseVocabulary = (typeof gameData !== 'undefined' && gameData?.vocabulary)
@@ -45,17 +44,6 @@ class GamificationManager {
         let filteredVocabulary = baseVocabulary;
         if (selectedCategories.length > 0) {
             filteredVocabulary = baseVocabulary.filter(item => selectedCategories.includes(item.category));
-        }
-
-        if (difficulty === 'beginner') {
-            filteredVocabulary = filteredVocabulary.filter(item => !item.word || item.word.length <= 6);
-        } else if (difficulty === 'intermediate') {
-            filteredVocabulary = filteredVocabulary.filter(item => !item.word || item.word.length <= 9);
-        }
-
-        // Keep behavior aligned with gameLogic fallback.
-        if (filteredVocabulary.length < 20) {
-            filteredVocabulary = baseVocabulary;
         }
 
         return filteredVocabulary

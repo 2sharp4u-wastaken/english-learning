@@ -84,9 +84,22 @@ export class WordJourneyGame {
             this.stageCorrect = 0;
             this.stageQuestions = this.buildStageQuestions(descriptor.stageId, descriptor.words);
         }
+        this.updateJourneyHeader(descriptor.words);
         this.updateStageBar(descriptor.stageId);
         this.renderStageFeedbackClear();
         this.loadCurrentStageItem();
+    }
+
+    updateJourneyHeader(words) {
+        const batchSizeEl = document.getElementById('word-journey-batch-size');
+        if (batchSizeEl) {
+            batchSizeEl.textContent = Array.isArray(words) ? words.length : 0;
+        }
+
+        const totalStagesEl = document.getElementById('word-journey-total-q');
+        if (totalStagesEl) {
+            totalStagesEl.textContent = this.gm?.shuffledQuestions?.length || Object.keys(STAGE_META).length;
+        }
     }
 
     buildStageQuestions(stageId, words) {
@@ -101,7 +114,6 @@ export class WordJourneyGame {
                 }));
             case 'spell-tiles':
                 return this.shuffleArray(words)
-                    .filter(w => w.word.length <= 8)
                     .map(w => ({
                         type: 'spell-tiles',
                         ...w,
@@ -132,9 +144,10 @@ export class WordJourneyGame {
     }
 
     completeStage() {
+        const stageTotal = this.getScoredStageTotal();
         const stageScore = this.stageId === 'discover'
             ? null
-            : { correct: this.stageCorrect, total: this.stageQuestions.length };
+            : { correct: this.stageCorrect, total: stageTotal };
 
         if (stageScore) {
             this.totalCorrect += stageScore.correct;
@@ -183,6 +196,13 @@ export class WordJourneyGame {
         this.gm.loadQuestion('word-journey');
     }
 
+    getScoredStageTotal() {
+        if (this.stageId === 'recall') {
+            return Array.isArray(this.words) ? this.words.length : 0;
+        }
+        return this.stageQuestions.length;
+    }
+
     // ── Progress bar helper ──────────────────────────────────────────────────
     _stageProgressHtml() {
         if (this.stageId === 'recall') return '';
@@ -191,11 +211,14 @@ export class WordJourneyGame {
         const done = this.stageIndex;
         const pct = Math.round((done / total) * 100);
         return `
-            <div class="wj-stage-progress-wrap">
-                <div class="wj-stage-progress-bar">
-                    <div class="wj-stage-progress-fill" style="width:${pct}%"></div>
+            <div class="wj-stage-progress-shell">
+                <button class="reset-game-btn wj-stage-reset-btn" id="word-journey-reset-btn" title="אפס משחק">אפס משחק</button>
+                <div class="wj-stage-progress-wrap">
+                    <div class="wj-stage-progress-label">פריט ${done + 1} מתוך ${total}</div>
+                    <div class="wj-stage-progress-bar">
+                        <div class="wj-stage-progress-fill" style="width:${pct}%"></div>
+                    </div>
                 </div>
-                <div class="wj-stage-progress-label">${done + 1} / ${total}</div>
             </div>
         `;
     }
@@ -209,8 +232,10 @@ export class WordJourneyGame {
             ${this._stageProgressHtml()}
             <div class="wj-discover-card">
                 <div class="wj-discover-emoji"></div>
-                <div class="wj-discover-word">${q.word}</div>
-                <div class="wj-discover-translation" data-hebrew-source="${q.hebrew}">${window.getHebrew(q.hebrew)}</div>
+                <div class="wj-word-stack">
+                    <div class="wj-discover-word">${q.word}</div>
+                    <div class="wj-discover-translation" data-hebrew-source="${q.hebrew}">${window.getHebrew(q.hebrew)}</div>
+                </div>
             </div>
         `;
         renderPicture(area.querySelector('.wj-discover-emoji'), { picture: q.image, imageUrl: q.imageUrl, word: q.word, category: q.category });
@@ -224,6 +249,9 @@ export class WordJourneyGame {
 
         // Enable Next only after audio finishes AND at least 1.5s have passed
         const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
+        document.getElementById('word-journey-reset-btn')?.addEventListener('click', () => {
+            this.gm.resetCurrentGame();
+        });
         let speechPromise;
         if (typeof speechManager !== 'undefined') {
             const hebrewOn = this.gm?.settings?.hebrewVocalization !== false;
@@ -258,9 +286,6 @@ export class WordJourneyGame {
             ${this._stageProgressHtml()}
             <div class="wj-stage-card">
                 <div class="wj-stage-layout-vertical">
-                    <div class="picture-container">
-                        <div class="word-picture wj-audio-icon">🔊</div>
-                    </div>
                     <div class="controls-row">
                         <button class="play-audio" id="wj-audio-replay" aria-label="השמע מילה">
                             <i class="fas fa-volume-up"></i>
@@ -269,7 +294,6 @@ export class WordJourneyGame {
                     </div>
                 </div>
             </div>
-            <p class="wj-stage-instruction">בחר את התמונה הנכונה</p>
             <div class="options-grid wj-picture-options" id="wj-lm-options"></div>
         `;
 
@@ -292,6 +316,9 @@ export class WordJourneyGame {
         });
 
         // Replay button
+        document.getElementById('word-journey-reset-btn')?.addEventListener('click', () => {
+            this.gm.resetCurrentGame();
+        });
         document.getElementById('wj-audio-replay').addEventListener('click', () => {
             if (this._lmPlaysLeft <= 0) return;
             this._lmPlaysLeft--;
@@ -369,6 +396,7 @@ export class WordJourneyGame {
     renderSpellTiles(q) {
         this.spellAnswer = [];
         this.spellTileUsed = {};
+        this.spellWrongCount = 0;
         this._spellPlaysLeft = 3;
 
         const area = document.getElementById('wj-stage-area');
@@ -389,8 +417,8 @@ export class WordJourneyGame {
                     <div class="picture-container">
                         <div class="word-picture" id="wj-spell-img"></div>
                     </div>
-                    <div class="words-row">
-                        <div class="target-word" id="wj-spell-word">${q.word}</div>
+                    <div class="wj-word-stack">
+                        <div class="target-word wj-stage-word" id="wj-spell-word">${q.word}</div>
                         <div class="hebrew-translation" data-hebrew-source="${q.hebrew}">${window.getHebrew(q.hebrew)}</div>
                     </div>
                     <div class="controls-row">
@@ -431,6 +459,9 @@ export class WordJourneyGame {
         }
 
         // Audio replay
+        document.getElementById('word-journey-reset-btn')?.addEventListener('click', () => {
+            this.gm.resetCurrentGame();
+        });
         document.getElementById('wj-spell-audio').addEventListener('click', () => {
             if (this._spellPlaysLeft <= 0) return;
             this._spellPlaysLeft--;
@@ -554,23 +585,50 @@ export class WordJourneyGame {
                 this.loadCurrentStageItem();
             }, 1200);
         } else {
+            this.spellWrongCount = (this.spellWrongCount || 0) + 1;
+
             if (slotsContainer) slotsContainer.classList.add('shake');
             slots.forEach(s => s.classList.add('wrong-anim'));
 
-            if (feedback) {
-                const fbData = getFeedback('word-journey', 'incorrect');
-                feedback.textContent = fbData.text;
-                feedback.className = 'feedback incorrect';
-            }
-
             this.gm.recordWordAttempt(q.word, q.category, false, 0, 'word-journey');
 
-            setTimeout(() => {
-                if (slotsContainer) slotsContainer.classList.remove('shake');
-                slots.forEach(s => s.classList.remove('wrong-anim'));
-                if (clearBtn) clearBtn.disabled = false;
-                this.clearFeedback();
-            }, 600);
+            if (this.spellWrongCount >= 2) {
+                // After 2 wrong attempts — show the correct answer and advance
+                if (feedback) {
+                    feedback.textContent = `${q.word} :התשובה הנכונה`;
+                    feedback.className = 'feedback incorrect';
+                }
+
+                setTimeout(() => {
+                    if (slotsContainer) slotsContainer.classList.remove('shake');
+                    slots.forEach(s => s.classList.remove('wrong-anim'));
+                    // Auto-fill correct answer
+                    const letters = q.word.split('');
+                    slots.forEach((s, i) => {
+                        s.textContent = letters[i] || '';
+                        s.classList.add('filled', 'correct-anim');
+                    });
+                }, 600);
+
+                setTimeout(() => {
+                    this.clearFeedback();
+                    this.stageIndex++;
+                    this.loadCurrentStageItem();
+                }, 2200);
+            } else {
+                if (feedback) {
+                    const fbData = getFeedback('word-journey', 'incorrect');
+                    feedback.textContent = fbData.text;
+                    feedback.className = 'feedback incorrect';
+                }
+
+                setTimeout(() => {
+                    if (slotsContainer) slotsContainer.classList.remove('shake');
+                    slots.forEach(s => s.classList.remove('wrong-anim'));
+                    if (clearBtn) clearBtn.disabled = false;
+                    this.clearFeedback();
+                }, 600);
+            }
         }
     }
 
@@ -588,8 +646,8 @@ export class WordJourneyGame {
                     <div class="picture-container">
                         <div class="word-picture" id="wj-say-img"></div>
                     </div>
-                    <div class="words-row">
-                        <div class="target-word">${q.word}</div>
+                    <div class="wj-word-stack">
+                        <div class="target-word wj-stage-word">${q.word}</div>
                         <div class="hebrew-translation" data-hebrew-source="${q.hebrew}">${window.getHebrew(q.hebrew)}</div>
                     </div>
                     <div class="controls-row">
@@ -629,6 +687,9 @@ export class WordJourneyGame {
         }
 
         // Listen button
+        document.getElementById('word-journey-reset-btn')?.addEventListener('click', () => {
+            this.gm.resetCurrentGame();
+        });
         document.getElementById('wj-say-listen').addEventListener('click', () => {
             if (this._sayPlaysLeft <= 0) return;
             this._sayPlaysLeft--;
@@ -797,6 +858,9 @@ export class WordJourneyGame {
             });
         });
         this.recallCards = this.shuffleArray(this.recallCards);
+        document.getElementById('word-journey-reset-btn')?.addEventListener('click', () => {
+            this.gm.resetCurrentGame();
+        });
 
         const totalPairs = words.length;
         const cols = totalPairs <= 4 ? 4 : (totalPairs <= 6 ? 4 : 4);
@@ -918,6 +982,7 @@ export class WordJourneyGame {
             }
 
             this.recallMatchedCount++;
+            this.stageCorrect++;
             const pairsEl = document.getElementById('wj-recall-pairs');
             if (pairsEl) pairsEl.textContent = this.recallMatchedCount;
 
@@ -1028,7 +1093,7 @@ export class WordJourneyGame {
                     <div class="wj-step-icon">${meta.icon}</div>
                     <div class="wj-step-label">${meta.label}</div>
                 </div>
-                ${i < stageDescriptors.length - 1 ? '<div class="wj-step-arrow">→</div>' : ''}
+                ${i < stageDescriptors.length - 1 ? '<div class="wj-step-arrow">←</div>' : ''}
             `;
         }).join('');
     }
@@ -1065,6 +1130,9 @@ export class WordJourneyGame {
     showCelebration(gm, gameArea, words, percentage, coinsEarned, learnedCount, recommendation = null) {
         const passed = percentage >= 60;
         const stars = percentage >= 80 ? '⭐⭐⭐' : percentage >= 60 ? '⭐⭐' : '⭐';
+        const showRecommendation = recommendation && recommendation.destination !== 'word-journey';
+        const isReplay = !!gm._wjReplayMode;
+        const hasLearnedWords = learnedCount >= 3;
 
         const wordCards = words.map(w => {
             const hebrewText = window.getHebrew?.(w.hebrew) || w.hebrew || w.translation || '';
@@ -1082,7 +1150,8 @@ export class WordJourneyGame {
         celebDiv.innerHTML = `
             <div class="completion-content">
                 <div class="wj-celeb-top-emoji">🎉</div>
-                <h2>מסע מילים הושלם!</h2>
+                <h2>${isReplay ? 'תרגול מילים הושלם!' : 'מסע מילים הושלם!'}</h2>
+                ${isReplay ? '<p class="wj-replay-badge">🔄 מצב תרגול — חצי מטבעות</p>' : ''}
                 <div class="completion-stars">${stars}</div>
 
                 <div class="wj-celeb-stats">
@@ -1112,9 +1181,13 @@ export class WordJourneyGame {
 
                 <div class="completion-actions">
                     <button class="restart-game-btn wj-more-words-btn">
-                        <i class="fas fa-arrow-left"></i> ללמוד עוד מילים
+                        <i class="fas fa-arrow-left"></i> התחל מסע מילים נוסף
                     </button>
-                    ${recommendation ? `
+                    ${hasLearnedWords ? `
+                    <button class="choose-game-btn wj-practice-btn">
+                        <i class="fas fa-redo"></i> תרגול מילים שנלמדו
+                    </button>` : ''}
+                    ${showRecommendation ? `
                     <button class="next-recommended-btn wj-next-recommended-btn">
                         <i class="fas fa-forward"></i> ${recommendation.label}
                     </button>` : ''}
@@ -1126,18 +1199,29 @@ export class WordJourneyGame {
         `;
 
         gameArea.appendChild(celebDiv);
+        document.querySelector('.game-area')?.scrollTo({ top: 0, behavior: 'instant' });
 
         celebDiv.querySelector('.wj-more-words-btn').addEventListener('click', () => {
+            gm._wjReplayMode = false;
+            celebDiv.remove();
+            for (const child of gameArea.children) child.style.display = '';
+            gm.startGame('word-journey');
+        });
+
+        celebDiv.querySelector('.wj-practice-btn')?.addEventListener('click', () => {
+            gm._wjReplayMode = true;
             celebDiv.remove();
             for (const child of gameArea.children) child.style.display = '';
             gm.startGame('word-journey');
         });
 
         celebDiv.querySelector('.wj-hub-btn').addEventListener('click', () => {
+            gm._wjReplayMode = false;
             gm.showWelcomeScreen();
         });
 
         celebDiv.querySelector('.wj-next-recommended-btn')?.addEventListener('click', () => {
+            gm._wjReplayMode = false;
             recommendation?.action?.();
         });
 

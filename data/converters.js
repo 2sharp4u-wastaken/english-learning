@@ -5,22 +5,26 @@ import { selectDistractors } from './phonetics.js';
 
 // Function to generate Hebrew options for vocabulary questions
 function generateHebrewOptions(correctHebrew, category, vocabularyBank) {
-    // Prefer same category, fallback to all, ensure uniqueness and no collisions
-    const pool = [
-        ...vocabularyBank.filter(w => w.category === category && w.hebrew !== correctHebrew),
-        ...vocabularyBank.filter(w => w.hebrew !== correctHebrew)
-    ];
+    // Shuffle same-category and other-category pools independently so same-category
+    // distractors are always preferred — cross-category words only fill gaps
+    const shuffle = arr => arr.sort(() => Math.random() - 0.5);
+    const sameCategory = shuffle(
+        vocabularyBank.filter(w => w.category === category && w.hebrew !== correctHebrew)
+    );
+    const otherCategory = shuffle(
+        vocabularyBank.filter(w => w.category !== category && w.hebrew !== correctHebrew)
+    );
+
     const seen = new Set();
     const distractors = [];
-    for (const item of pool.sort(() => Math.random() - 0.5)) {
+    for (const item of [...sameCategory, ...otherCategory]) {
         if (distractors.length === 3) break;
         if (!seen.has(item.hebrew)) {
             seen.add(item.hebrew);
             distractors.push(item.hebrew);
         }
     }
-    const set = new Set([correctHebrew, ...distractors]);
-    const options = Array.from(set).sort(() => Math.random() - 0.5);
+    const options = [correctHebrew, ...distractors].sort(() => Math.random() - 0.5);
     const correctIndex = options.indexOf(correctHebrew);
     return { options, correct: correctIndex };
 }

@@ -8,7 +8,7 @@
     <meta http-equiv="Expires" content="0">
     <title>הגדרות - English Learning Games</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css?t=1742041200">
+    <link rel="stylesheet" href="styles.css?t=1774216737">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -195,6 +195,16 @@
             color: #718096;
             margin-bottom: 12px;
         }
+        .setting-note {
+            margin-top: 12px;
+            padding: 10px 12px;
+            border-radius: 10px;
+            background: rgba(102,126,234,0.12);
+            color: #4a5568;
+            font-size: 0.88rem;
+            line-height: 1.5;
+        }
+        .setting-note strong { color: #4c51bf; }
 
         /* ========== Clickable section title ========== */
         .clickable-title {
@@ -366,6 +376,10 @@
         .user-action-btn.reset-stats:hover { background: rgba(16,185,129,0.2); }
         .user-action-btn.delete       { background: rgba(245,101,101,0.1); color: #e53e3e; }
         .user-action-btn.delete:hover { background: rgba(245,101,101,0.2); }
+        .user-action-btn.parent-on       { background: rgba(139,92,246,0.15); color: #7c3aed; }
+        .user-action-btn.parent-on:hover { background: rgba(139,92,246,0.25); }
+        .user-action-btn.parent-off       { background: rgba(156,163,175,0.1); color: #9ca3af; }
+        .user-action-btn.parent-off:hover { background: rgba(156,163,175,0.2); }
 
         /* ========== Word Image Manager ========== */
         .wim-toolbar {
@@ -645,11 +659,16 @@
 
                 <div class="setting-item">
                     <label class="setting-label">מספר שאלות למשחק</label>
-                    <p class="setting-description">כמה שאלות בכל משחק</p>
+                    <p class="setting-description">כמה שאלות במשחקי השאלות הרגילים</p>
                     <div class="slider-container">
                         <input type="range" min="5" max="20" step="1" value="10" class="slider" id="questions-count">
                         <span class="slider-value" id="questions-value">10</span>
                     </div>
+                    <p class="setting-note">
+                        <strong>לא משפיע על מסע מילים:</strong>
+                        מסע מילים תמיד בנוי מ־5 שלבים קבועים. מספר המילים במסע נקבע דרך הגדרת
+                        <strong>קצב למידה</strong>.
+                    </p>
                 </div>
 
                 <div class="setting-item">
@@ -670,24 +689,6 @@
                     </div>
                 </div>
 
-                <div class="setting-item">
-                    <label class="setting-label">רמת קושי</label>
-                    <p class="setting-description">בחר את רמת הקושי המתאימה לך</p>
-                    <div class="radio-group">
-                        <div class="radio-item" data-value="beginner">
-                            <input type="radio" name="difficulty" value="beginner" id="diff-beginner" checked>
-                            <label for="diff-beginner">מתחיל - מילים פשוטות</label>
-                        </div>
-                        <div class="radio-item" data-value="intermediate">
-                            <input type="radio" name="difficulty" value="intermediate" id="diff-intermediate">
-                            <label for="diff-intermediate">בינוני - מילים מגוונות</label>
-                        </div>
-                        <div class="radio-item" data-value="advanced">
-                            <input type="radio" name="difficulty" value="advanced" id="diff-advanced">
-                            <label for="diff-advanced">מתקדם - מילים מאתגרות</label>
-                        </div>
-                    </div>
-                </div>
 
                 <div class="setting-item">
                     <label class="setting-label">הגיית מילה בעברית</label>
@@ -700,7 +701,7 @@
 
                 <div class="setting-item">
                     <label class="setting-label">קצב למידה</label>
-                    <p class="setting-description">כמה מילים חדשות ללמוד בכל מסע מילים</p>
+                    <p class="setting-description">כמה מילים יהיו בכל מסע מילים. מספר השלבים נשאר תמיד 5.</p>
                     <div class="radio-group">
                         <div class="radio-item" data-value="slow">
                             <input type="radio" name="learningPace" value="slow" id="pace-slow">
@@ -724,6 +725,9 @@
                             </label>
                         </div>
                     </div>
+                    <p class="setting-note" id="learning-pace-summary">
+                        המסע תמיד כולל 5 שלבים. בקצב רגיל לומדים 5 מילים בכל מסע.
+                    </p>
                 </div>
             </div>
         </div>
@@ -846,6 +850,7 @@
                                     <th>תאריך יצירה</th>
                                     <th>התחברות אחרונה</th>
                                     <th>סטטוס סיסמה</th>
+                                    <th>הרשאת הורה</th>
                                     <th>איפוס סיסמה</th>
                                     <th>איפוס תרגול</th>
                                     <th>איפוס סטטיסטיקות</th>
@@ -963,14 +968,14 @@
     <script src="utils/fileSystemWriter.js?t=1775200000"></script>
     <script type="module" src="utils/wordImageManager.js?t=1780000002"></script>
     <script type="module" src="utils/phoneticCompute.js?t=1775800000"></script>
-    <script src="settings.js?t=1742508000"></script>
+    <script src="settings.js?t=1774216737"></script>
     <script type="module">
         import { initTopHeader } from './components/top-header.js?t=1776006000';
         initTopHeader({ activePage: 'settings' });
     </script>
     <script type="module" src="data/vocabularyBank.js?t=1780000001"></script>
     <script type="module" src="components/practice-indicator.js?t=1774896000"></script>
-    <script type="module" src="components/header-score.js?t=1741340001"></script>
+    <script type="module" src="components/header-score.js?t=1776220003"></script>
     <script type="module">
         import { initNikudDOM } from './utils/nikudDOM.js?t=1773784000';
         initNikudDOM();

@@ -26,6 +26,9 @@ const GAME_NAMES = {
     'word-journey':     { icon: 'fa-route',       name: 'מסע המילים' },
     'picture-match':    { icon: 'fa-image',       name: 'מילה לתמונה' },
     'practice':         { icon: 'fa-bullseye',    name: 'תרגול' },
+    'true-or-not':      { icon: 'fa-check-circle', name: 'נכון או לא?' },
+    'word-builder':     { icon: 'fa-hammer',       name: 'בונה משפטים' },
+    'story-time':       { icon: 'fa-book-reader',  name: 'זמן סיפור' },
 };
 
 // Inline styles applied to the header when it is visible and fixed.

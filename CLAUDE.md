@@ -19,6 +19,9 @@ Read every file you plan to change before touching it. Do not suggest changes to
 ### Keep the logger lean
 `utils/consoleLogger.js` must use an in-memory array only — never localStorage persistence per log call, as it causes severe UI slowdown. The committed version is the correct one.
 
+### Keep docs in sync
+When changing any setting, game mechanic, or learning flow — update the relevant file in `docs/` in the same session. The docs are the source of truth; if code and docs diverge, one of them is wrong.
+
 ### Cache-busting
 CSS/JS files use `?t=<timestamp>` query strings for cache busting. Update the timestamp when changing a file that needs it.
 

@@ -2,7 +2,7 @@
 
 // Import Manager Classes
 import { ScoreManager } from './managers/ScoreManager.js';
-import { ProgressManager } from './managers/ProgressManager.js?t=1776100001';
+import { ProgressManager } from './managers/ProgressManager.js?t=1776400001';
 import { GameRegistry, gameRegistry } from './managers/GameRegistry.js';
 import { CourseManager } from './managers/CourseManager.js';
 import { CertificateManager } from './managers/CertificateManager.js';
@@ -12,10 +12,13 @@ import { CoinManager } from './managers/CoinManager.js';
 import { allCourses } from './data/courses/index.js';
 
 // Import Game Classes
-import { MemoryGame } from './games/memory-game.js';
+import { MemoryGame } from './games/memory-game.js?t=1776220001';
 import { SentenceScrambleGame } from './games/sentence-scramble-game.js';
 import { FillBlanksGame } from './games/fill-blanks-game.js';
-import { WordJourneyGame } from './games/word-journey-game.js?t=1776200001';
+import { WordJourneyGame } from './games/word-journey-game.js?t=1776320001';
+import { TrueOrNotGame } from './games/true-or-not-game.js?t=1776400001';
+import { WordBuilderGame } from './games/word-builder-game.js?t=1776400001';
+import { StoryTimeGame } from './games/story-time-game.js?t=1776400001';
 
 // ── V2 storage isolation ──────────────────────────────────────────────────────
 // All v2 localStorage keys carry this prefix to avoid colliding with v1 keys.
@@ -105,6 +108,15 @@ class AppManager {
         this.wordJourneyGame = new WordJourneyGame();
         window.wordJourneyGame = this.wordJourneyGame;
 
+        this.trueOrNotGame = new TrueOrNotGame();
+        window.trueOrNotGame = this.trueOrNotGame;
+
+        this.wordBuilderGame = new WordBuilderGame();
+        window.wordBuilderGame = this.wordBuilderGame;
+
+        this.storyTimeGame = new StoryTimeGame();
+        window.storyTimeGame = this.storyTimeGame;
+
         console.log('[AppManager] Game instances created');
     }
 
@@ -180,6 +192,8 @@ class AppManager {
         const grid = document.getElementById('courses-grid');
         if (!grid || !this.courseManager) return;
 
+        this.courseManager.checkAndUnlockCourses();
+
         // Update coin balance
         const coinEl = document.getElementById('hub-coin-balance');
         if (coinEl) coinEl.textContent = this.userProgress?.coins || 0;
@@ -195,6 +209,7 @@ class AppManager {
             const progress = this.courseManager.getCourseProgress(course.id);
             const diffClass = course.difficulty || 'beginner';
             const diffLabel = { beginner: 'מתחיל', intermediate: 'בינוני', advanced: 'מתקדם' }[diffClass] || diffClass;
+            const lockText = unlocked ? '' : this.courseManager.getCourseUnlockRequirementText(course);
 
             return `
                 <div class="course-row" data-course-id="${course.id}">
@@ -218,6 +233,7 @@ class AppManager {
                             </div>
                             <span class="course-progress-pct">${progress}%</span>
                         </div>
+                        ${lockText ? `<div class="course-lock-requirement">${lockText}</div>` : ''}
                     </div>
                     <div class="course-detail-panel" id="course-detail-${course.id}"></div>
                 </div>
@@ -293,7 +309,8 @@ class AppManager {
                     const labels = {
                         vocabulary: 'אוצר מילים', listening: 'הקשבה', memory: 'זיכרון',
                         scramble: 'סידור', 'fill-blanks': 'השלמה', grammar: 'דקדוק',
-                        pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC'
+                        pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC',
+                        'true-or-not': 'נכון או לא?', 'word-builder': 'בונה משפטים', 'story-time': 'זמן סיפור'
                     };
                     return `<span class="activity-badge ${done ? 'done' : ''}">${labels[act] || act}</span>`;
                 }).join('');
@@ -374,7 +391,8 @@ class AppManager {
                     const labels = {
                         vocabulary: 'אוצר מילים', listening: 'הקשבה', memory: 'זיכרון',
                         scramble: 'סידור', 'fill-blanks': 'השלמה', grammar: 'דקדוק',
-                        pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC'
+                        pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC',
+                        'true-or-not': 'נכון או לא?', 'word-builder': 'בונה משפטים', 'story-time': 'זמן סיפור'
                     };
                     return `<span class="activity-badge ${done ? 'done' : ''}">${labels[act] || act}</span>`;
                 }).join('');
@@ -428,12 +446,14 @@ class AppManager {
         const activityIcons = {
             vocabulary: '📚', listening: '👂', memory: '🃏',
             scramble: '🔀', 'fill-blanks': '✍️', grammar: '✏️',
-            pronunciation: '🎤', reading: '📖', abc: '🔤'
+            pronunciation: '🎤', reading: '📖', abc: '🔤',
+            'true-or-not': '✅', 'word-builder': '🔨', 'story-time': '📖'
         };
         const activityLabels = {
             vocabulary: 'אוצר מילים', listening: 'הקשבה', memory: 'זיכרון',
             scramble: 'סידור משפטים', 'fill-blanks': 'השלמת משפט',
-            grammar: 'דקדוק', pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC'
+            grammar: 'דקדוק', pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC',
+            'true-or-not': 'נכון או לא?', 'word-builder': 'בונה משפטים', 'story-time': 'זמן סיפור'
         };
 
         const picker = document.createElement('div');
@@ -475,22 +495,12 @@ class AppManager {
         // Mark topic as started
         this.courseManager?.startTopic(topicId);
 
-        // Navigate to the appropriate game
-        // gameManager.startGame() handles showing the correct screen
         if (typeof gameManager !== 'undefined') {
-            // For games that need a category, use the topic's words
-            if (['vocabulary', 'listening', 'pronunciation', 'reading', 'grammar'].includes(activityType)) {
-                // Start game with topic words if available
-                if (topic.words && topic.words.length > 0) {
-                    gameManager.currentTopicId = topicId;
-                    gameManager.startGame(activityType, topic.words);
-                } else {
-                    gameManager.startGame(activityType);
-                }
-            } else {
-                gameManager.currentTopicId = topicId;
-                gameManager.startGame(activityType);
-            }
+            gameManager.launchTopicActivity({
+                topicId,
+                activityType,
+                topicWords: topic?.words || []
+            });
         }
     }
 
@@ -651,13 +661,17 @@ class AppManager {
 
     getRecommendation() {
         const learnedCount = this.progressManager?.getLearnedWordCount() || 0;
-        const gm = this.gameManager;
+        const gm = window.gameManager;
+
+        // Helper: switch game via performGameSwitch (handles UI cleanup + start)
+        const switchTo = (gameType) => gm?.performGameSwitch(gameType);
 
         // Priority 1: No words learned yet → start Word Journey
         if (learnedCount === 0) {
             return {
                 label: '🗺️ התחל מסע מילים — למד מילים חדשות!',
-                action: () => gm?.startGame('word-journey')
+                destination: 'word-journey',
+                action: () => switchTo('word-journey')
             };
         }
 
@@ -665,7 +679,8 @@ class AppManager {
         if (learnedCount < 5) {
             return {
                 label: `🗺️ המשך ללמוד מילים (${learnedCount}/5)`,
-                action: () => gm?.startGame('word-journey')
+                destination: 'word-journey',
+                action: () => switchTo('word-journey')
             };
         }
 
@@ -681,6 +696,9 @@ class AppManager {
                 'fill-blanks':   '✏️ נסה את משחק השלמת המשפטים!',
                 'scramble':      '🔀 נסה את משחק ערבוב המילים!',
                 'grammar':       '📐 נסה את משחק הדקדוק!',
+                'true-or-not':   '✅ נסה את נכון או לא?',
+                'word-builder':  '🔨 נסה את בונה משפטים!',
+                'story-time':    '📖 נסה את זמן סיפור!',
             };
 
             for (const [gameType, label] of Object.entries(gameLabels)) {
@@ -694,7 +712,8 @@ class AppManager {
                     if (!playedThisGame) {
                         return {
                             label,
-                            action: () => gm?.startGame(gameType)
+                            destination: gameType,
+                            action: () => switchTo(gameType)
                         };
                     }
                 }
@@ -703,15 +722,30 @@ class AppManager {
 
         // Priority 4: Course recommendation
         if (this.courseManager) {
-            const rec = this.courseManager.getNextRecommendedTopic();
+            const rec = this.courseManager.getNextRecommendedActivity();
             if (rec?.topic && rec?.course) {
                 const courseName = rec.course.nameHebrew || rec.course.name || '';
                 const topicName = rec.topic.nameHebrew || rec.topic.name || '';
+                const activityLabels = {
+                    vocabulary: 'אוצר מילים',
+                    listening: 'הקשבה',
+                    memory: 'זיכרון',
+                    scramble: 'סידור',
+                    'fill-blanks': 'השלמה',
+                    grammar: 'דקדוק',
+                    pronunciation: 'הגייה',
+                    reading: 'קריאה',
+                    abc: 'ABC',
+                    'true-or-not': 'נכון או לא?',
+                    'word-builder': 'בונה משפטים',
+                    'story-time': 'זמן סיפור'
+                };
+                const activityName = activityLabels[rec.activityType] || rec.activityType || '';
                 return {
-                    label: `📚 ${courseName} • ${topicName}`,
+                    label: `📚 ${courseName} • ${topicName}${activityName ? ` • ${activityName}` : ''}`,
+                    destination: 'topic-activity',
                     action: () => {
-                        const activities = rec.topic.activities || [];
-                        this.startTopicActivity(rec.topic.id, activities[0] || 'vocabulary', rec.topic);
+                        this.startTopicActivity(rec.topic.id, rec.activityType || rec.topic.activities?.[0] || 'vocabulary', rec.topic);
                     }
                 };
             }
@@ -720,7 +754,8 @@ class AppManager {
         // Priority 5: Default — learn more words
         return {
             label: '🗺️ למד עוד מילים במסע המילים!',
-            action: () => gm?.startGame('word-journey')
+            destination: 'word-journey',
+            action: () => switchTo('word-journey')
         };
     }
 
@@ -792,6 +827,9 @@ class AppManager {
             { type: 'fill-blanks',     icon: '✏️', name: 'השלמה' },
             { type: 'scramble',        icon: '🔀', name: 'ערבוב' },
             { type: 'grammar',         icon: '📐', name: 'דקדוק' },
+            { type: 'true-or-not',     icon: '✅', name: 'נכון או לא?' },
+            { type: 'word-builder',    icon: '🔨', name: 'בונה משפטים' },
+            { type: 'story-time',      icon: '📖', name: 'זמן סיפור' },
         ];
 
         const unlocks = this.progressManager?.gameUnlocks || {};
@@ -865,6 +903,27 @@ class AppManager {
         { id: 'milestone-word-legend',     count: 100, name: 'אגדת המילים',     icon: '👑', nameEn: 'Word Legend' },
     ];
 
+    static GAME_MILESTONES = [
+        {
+            id: 'milestone-abc-hero',
+            topicId: 'milestone-abc-hero',
+            topicName: '🔤 ABC Hero',
+            predicate: (gameType, score) => gameType === 'abc' && score === 100
+        },
+        {
+            id: 'milestone-sentence-builder',
+            topicId: 'milestone-sentence-builder',
+            topicName: '🧩 Sentence Builder',
+            predicate: (gameType, score) => ['scramble', 'fill-blanks'].includes(gameType) && score === 100
+        },
+        {
+            id: 'milestone-perfect-listener',
+            topicId: 'milestone-perfect-listener',
+            topicName: '🎧 Perfect Listener',
+            predicate: (gameType, score) => gameType === 'listening' && score === 100
+        }
+    ];
+
     checkMilestoneCertificates(learnedCount) {
         if (!this.userProgress) return;
 
@@ -900,6 +959,44 @@ class AppManager {
             if (this.certificateManager) {
                 this.certificateManager.userProgress = this.userProgress;
             }
+        }
+
+        return newlyEarned;
+    }
+
+    checkGameMilestoneCertificates(gameType, score) {
+        if (!this.userProgress) return [];
+        if (!this.userProgress.certificates) {
+            this.userProgress.certificates = [];
+        }
+
+        const earnedIds = new Set(this.userProgress.certificates.map(cert => cert.id));
+        const newlyEarned = [];
+
+        for (const cert of AppManager.GAME_MILESTONES) {
+            if (earnedIds.has(cert.id) || !cert.predicate(gameType, score)) {
+                continue;
+            }
+
+            const awarded = {
+                id: cert.id,
+                topicId: cert.topicId,
+                topicName: cert.topicName,
+                earnedDate: new Date().toISOString().split('T')[0],
+                score,
+                timestamp: Date.now(),
+                isMilestone: true
+            };
+
+            this.userProgress.certificates.push(awarded);
+            newlyEarned.push(awarded);
+        }
+
+        if (newlyEarned.length > 0) {
+            if (this.certificateManager) {
+                this.certificateManager.userProgress = this.userProgress;
+            }
+            this.renderCertificateGallery();
         }
 
         return newlyEarned;
@@ -1258,7 +1355,17 @@ class AppManager {
             oldProgress.bestScores = { ...this.getDefaultProgress().bestScores, ...(oldProgress.bestScores || {}) };
             if (!oldProgress.learnedWords) oldProgress.learnedWords = {};
             if (!oldProgress.wordJourneyProgress) oldProgress.wordJourneyProgress = {};
-            if (!oldProgress.gameUnlocks) oldProgress.gameUnlocks = this.getDefaultProgress().gameUnlocks;
+            if (!oldProgress.gameUnlocks) {
+                oldProgress.gameUnlocks = this.getDefaultProgress().gameUnlocks;
+            } else {
+                // Merge in any new game unlock entries added after v4 was cut
+                const defaults = this.getDefaultProgress().gameUnlocks;
+                for (const key of Object.keys(defaults)) {
+                    if (!(key in oldProgress.gameUnlocks)) {
+                        oldProgress.gameUnlocks[key] = defaults[key];
+                    }
+                }
+            }
             return oldProgress;
         }
 
@@ -1321,12 +1428,14 @@ class AppManager {
                 memory: 0,
                 'picture-match': 0,
                 scramble: 0,
-                'fill-blanks': 0
+                'fill-blanks': 0,
+                'true-or-not': 0,
+                'word-builder': 0,
+                'story-time': 0
             },
             streakDays: 0,
             lastPlayDate: null,
             totalCorrectAnswers: 0,
-            preferredDifficulty: 'beginner',
             wordMastery: {},  // Track mastery per word: { "Dog": { totalAttempts, correctAttempts, ... } }
             lastSessionWordKeys: {},  // { gameType: ['word_category', ...] } - words shown in last session per game type
 
@@ -1364,6 +1473,9 @@ class AppManager {
                 "scramble":         { unlocked: false, requirement: "30 מילים + 2 נושאים",     requiredCount: 30, requiredTopics: 2 },
                 "grammar":          { unlocked: false, requirement: "50 מילים + 3 נושאים",     requiredCount: 50, requiredTopics: 3 },
                 "vocabulary":       { unlocked: false, requirement: "10 מילים שנלמדו",         requiredCount: 10 },
+                "true-or-not":      { unlocked: false, requirement: "5 מילים שנלמדו",          requiredCount: 5 },
+                "word-builder":     { unlocked: false, requirement: "20 מילים + 1 נושא",       requiredCount: 20, requiredTopics: 1 },
+                "story-time":       { unlocked: false, requirement: "15 מילים שנלמדו",         requiredCount: 15 },
             },
 
             version: 4  // Data structure version for migrations
@@ -1442,9 +1554,19 @@ class AppManager {
      */
     getFilteredWordsForGame(gameType) {
         // Games that always get the full vocabulary
-        const UNGATED_GAMES = new Set(['word-journey', 'abc', 'memory', 'grammar-beginner', 'practice']);
+        const UNGATED_GAMES = new Set(['word-journey', 'abc', 'grammar-beginner', 'practice']);
         if (UNGATED_GAMES.has(gameType)) {
             return window.vocabularyBank || [];
+        }
+
+        // Memory game: hybrid — use learned words when ≥12 available, otherwise full bank
+        if (gameType === 'memory') {
+            const learnedWords = this.userProgress?.learnedWords || {};
+            const bank = window.vocabularyBank || [];
+            const learnedBank = bank.filter(w =>
+                Object.prototype.hasOwnProperty.call(learnedWords, `${w.word.toLowerCase()}_${w.category}`)
+            );
+            return learnedBank.length >= 12 ? learnedBank : bank;
         }
 
         const learnedWords = this.userProgress?.learnedWords || {};
@@ -1497,7 +1619,7 @@ class AppManager {
         window.gameManager?.applySettings(this.settings);
     }
 
-    updateProgress(gameType, score) {
+    updateProgress(gameType, score, context = {}) {
         // Safety check - ensure userProgress exists
         if (!this.userProgress) {
             console.warn('Cannot update progress: userProgress not initialized');
@@ -1511,67 +1633,75 @@ class AppManager {
             this.showAchievement(`New ${gameType} high score: ${score}!`);
         }
 
-        // Update streak
-        const today = new Date().toDateString();
-        if (this.userProgress.lastPlayDate !== today) {
-            const yesterday = new Date();
-            yesterday.setDate(yesterday.getDate() - 1);
+        // Streak is managed by CoinManager.checkDailyBonus() on login —
+        // no duplicate update here to avoid format conflicts.
 
-            if (this.userProgress.lastPlayDate === yesterday.toDateString()) {
-                this.userProgress.streakDays++;
-            } else {
-                this.userProgress.streakDays = 1;
+        this._trackCourseActivityFromGame(gameType, score, context);
+        const gameMilestones = this.checkGameMilestoneCertificates(gameType, score);
+
+        // Show celebration modal for newly earned game milestones
+        if (gameMilestones.length > 0) {
+            let delay = 1500;
+            for (const cert of gameMilestones) {
+                setTimeout(() => this.showCertificateModal(cert.topicName, cert.score), delay);
+                delay += 2500;
             }
-
-            this.userProgress.lastPlayDate = today;
-        }
-
-        // Award topic certificate if game was launched from a topic
-        const topicId = window.gameManager?.currentTopicId;
-        if (topicId && this.certificateManager && this.courseManager) {
-            this._checkAndAwardTopicCertificate(topicId, gameType, score);
-            window.gameManager.currentTopicId = null;
         }
 
         this.saveUserProgress();
         this.checkAchievements();
     }
 
-    _checkAndAwardTopicCertificate(topicId, gameType, score) {
-        const topicData = this.courseManager.getTopic(topicId);
-        if (!topicData) return;
-        const { topic, unit } = topicData;
+    _trackCourseActivityFromGame(gameType, score, context = {}) {
+        if (!this.courseManager) return null;
 
-        const threshold = topic.milestone?.scoreThreshold ?? 70;
-        if (score < threshold) return;
+        const result = this.courseManager.completeGameActivity({
+            topicId: context.topicId,
+            activityType: context.activityType || gameType,
+            score,
+            sessionWords: context.words || []
+        });
 
-        // Award certificate if not already earned
-        if (topic.certificateId && !this.certificateManager.hasCertificate(topic.certificateId)) {
-            this.certificateManager.awardCertificate({
-                id: topic.certificateId,
-                topicId,
-                topicName: topic.nameHebrew || topic.name,
-                score
-            });
+        if (!result?.thresholdMet) {
+            return result;
+        }
+
+        if (result.activityCompletedNow) {
+            this.coinManager?.awardActivityComplete();
+        }
+
+        if (result.topicCompletedNow && result.topic) {
+            const topicName = result.topic.nameHebrew || result.topic.name;
+
+            if (result.topic.certificateId && this.certificateManager && !this.certificateManager.hasCertificate(result.topic.certificateId)) {
+                this.certificateManager.awardCertificate({
+                    id: result.topic.certificateId,
+                    topicId: result.topicId,
+                    topicName,
+                    score
+                });
+            }
+
+            const topicProgress = this.userProgress.topicProgress?.[result.topicId];
+            if (topicProgress) {
+                topicProgress.certificateEarned = true;
+            }
 
             this.coinManager?.awardTopicComplete();
-
-            // Show cert modal after the game completion screen has settled
-            setTimeout(() => this.showCertificateModal(topic.nameHebrew || topic.name, score), 2000);
-
+            setTimeout(() => this.showCertificateModal(topicName, score), 2000);
             this.renderCertificateGallery();
         }
 
-        // Unlock the next topic in the unit
-        this._unlockNextTopic(topicId, unit);
-    }
-
-    _unlockNextTopic(topicId, unit) {
-        if (!unit?.topics) return;
-        const idx = unit.topics.findIndex(t => t.id === topicId);
-        if (idx !== -1 && idx < unit.topics.length - 1) {
-            this.courseManager.unlockTopic(unit.topics[idx + 1].id);
+        if ((result.newlyUnlockedCourses || []).length > 0) {
+            result.newlyUnlockedCourses.forEach(courseId => {
+                const course = this.courseManager.getCourse(courseId);
+                const courseName = course?.nameHebrew || course?.name || courseId;
+                this.showAchievement(`📚 קורס חדש נפתח: ${courseName}`);
+            });
+            this.renderCoursesScreen();
         }
+
+        return result;
     }
 
     loadAchievements() {

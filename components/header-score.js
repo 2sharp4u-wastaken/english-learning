@@ -1,5 +1,5 @@
-// Lightweight header score updater for non-home pages.
-// Shows the all-time accumulated totalPoints from userProgress.
+// Lightweight header score/coin updater for non-home pages.
+// Shows the all-time accumulated totalPoints and coin balance from userProgress.
 
 function getCurrentUserId() {
     if (typeof authService !== 'undefined' && authService.getCurrentUserId) {
@@ -9,23 +9,25 @@ function getCurrentUserId() {
     return localStorage.getItem('currentUser') || 'O';
 }
 
-function getAllTimeTotalPoints(userId) {
-    const raw = localStorage.getItem(`userProgress_${userId}`);
-    if (!raw) return 0;
-    try {
-        const progress = JSON.parse(raw);
-        return (typeof progress.totalPoints === 'number') ? progress.totalPoints : 0;
-    } catch (e) {
-        return 0;
-    }
+function getUserProgress(userId) {
+    const raw = localStorage.getItem(`v2_userProgress_${userId}`) || localStorage.getItem(`userProgress_${userId}`);
+    if (!raw) return null;
+    try { return JSON.parse(raw); } catch (e) { return null; }
 }
 
 function updateHeaderScore() {
-    const scoreEl = document.getElementById('current-score');
-    if (!scoreEl) return;
-
     const userId = getCurrentUserId();
-    scoreEl.textContent = getAllTimeTotalPoints(userId);
+    const progress = getUserProgress(userId);
+
+    const scoreEl = document.getElementById('current-score');
+    if (scoreEl) {
+        scoreEl.textContent = (progress && typeof progress.totalPoints === 'number') ? progress.totalPoints : 0;
+    }
+
+    const coinEl = document.getElementById('header-coin-count');
+    if (coinEl) {
+        coinEl.textContent = (progress && typeof progress.coins === 'number') ? progress.coins : 0;
+    }
 }
 
 function isHomePage() {
@@ -40,7 +42,7 @@ function initHeaderScore() {
 
     window.addEventListener('storage', (e) => {
         if (!e || !e.key) return;
-        if (e.key.startsWith('userProgress_') || e.key === 'currentUser') {
+        if (e.key.startsWith('v2_userProgress_') || e.key.startsWith('userProgress_') || e.key === 'currentUser') {
             updateHeaderScore();
         }
     });

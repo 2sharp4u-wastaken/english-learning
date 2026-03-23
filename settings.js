@@ -42,7 +42,6 @@ class SettingsManager {
             questionsPerGame: 10,
             clickRepeatCount: 3,
             audioPlaysAllowed: 8,
-            difficulty: 'beginner',
             hebrewVocalization: true,
             learningPace: 'normal', // 'slow' (3 words) | 'normal' (5 words) | 'fast' (8 words)
 
@@ -149,64 +148,57 @@ class SettingsManager {
         const errorDiv = document.getElementById('password-error');
         const unlockBtn = document.getElementById('unlock-protected-btn');
 
-        console.log('Password protection elements:', {
-            modal: !!modal,
-            passwordInput: !!passwordInput,
-            submitBtn: !!submitBtn,
-            cancelBtn: !!cancelBtn,
-            unlockBtn: !!unlockBtn
-        });
-
         // Only setup password protection if we're on the settings page
         if (!modal || !passwordInput || !submitBtn || !cancelBtn) {
             console.log('Not on settings page, skipping password protection setup');
             return;
         }
 
+        // Auto-unlock if current user has parent/manager role
+        if (this._isCurrentUserAdmin()) {
+            console.log('Current user is admin/parent — auto-unlocking settings');
+            this.isPasswordUnlocked = true;
+            if (unlockBtn) {
+                unlockBtn.innerHTML = '<i class="fas fa-unlock"></i> הגדרות פתוחות';
+                unlockBtn.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
+                unlockBtn.disabled = true;
+                unlockBtn.style.opacity = '0.7';
+                unlockBtn.style.cursor = 'not-allowed';
+            }
+            this._onTabsUnlock();
+            return; // Skip password gate setup entirely
+        }
+
         console.log('Setting up password protection...');
 
         // Handle unlock button click
         if (unlockBtn) {
-            console.log('Adding click listener to unlock button');
             unlockBtn.addEventListener('click', (e) => {
-                console.log('Unlock button clicked! isPasswordUnlocked:', this.isPasswordUnlocked);
                 e.preventDefault();
                 e.stopPropagation();
 
                 if (!this.isPasswordUnlocked) {
-                    // Show password modal
-                    console.log('Showing password modal');
                     modal.classList.add('show');
                     passwordInput.value = '';
                     errorDiv.classList.remove('show');
                     passwordInput.focus();
-                } else {
-                    // Already unlocked, do nothing
-                    console.log('Already unlocked');
-                    return;
                 }
             });
-        } else {
-            console.warn('Unlock button not found!');
         }
 
         // Intercept clicks on protected sections when locked
         document.querySelectorAll('.protected-section').forEach(section => {
             section.addEventListener('click', (e) => {
                 if (!this.isPasswordUnlocked) {
-                    // Prevent any interaction
                     e.preventDefault();
                     e.stopPropagation();
-
-                    // Show password modal
                     modal.classList.add('show');
                     passwordInput.value = '';
                     errorDiv.classList.remove('show');
                     passwordInput.focus();
                 }
-            }, true); // Use capture phase to intercept before child elements
+            }, true);
 
-            // Also prevent changes to form elements
             section.addEventListener('change', (e) => {
                 if (!this.isPasswordUnlocked) {
                     e.preventDefault();
@@ -228,7 +220,6 @@ class SettingsManager {
                 this.isPasswordUnlocked = true;
                 modal.classList.remove('show');
 
-                // Update unlock button
                 if (unlockBtn) {
                     unlockBtn.innerHTML = '<i class="fas fa-unlock"></i> הגדרות פתוחות';
                     unlockBtn.style.background = 'linear-gradient(135deg, #48bb78 0%, #38a169 100%)';
@@ -237,10 +228,7 @@ class SettingsManager {
                     unlockBtn.style.cursor = 'not-allowed';
                 }
 
-                // Unlock tab buttons (remove lock icons + protected class)
                 this._onTabsUnlock();
-
-                // No alert - just visual feedback from button change
             } else {
                 errorDiv.classList.add('show');
                 passwordInput.value = '';
@@ -258,13 +246,20 @@ class SettingsManager {
         });
 
         // Set initial visual state for protected sections
-        const protectedSections = document.querySelectorAll('.protected-section');
-        console.log(`Found ${protectedSections.length} protected sections`);
-        protectedSections.forEach((s, index) => {
-            console.log(`Locking protected section ${index + 1}`);
+        document.querySelectorAll('.protected-section').forEach(s => {
             s.classList.add('locked');
         });
-        console.log('All protected sections locked');
+    }
+
+    /**
+     * Check if the currently logged-in user has an admin/parent role.
+     * Users with role 'parent' or 'manager' bypass the password gate.
+     */
+    _isCurrentUserAdmin() {
+        const userId = this.getCurrentUserId();
+        if (!userId || typeof authService === 'undefined') return false;
+        const user = authService.getUser(userId);
+        return user && (user.role === 'parent' || user.role === 'manager');
     }
 
     getCurrentUserId() {
@@ -285,16 +280,6 @@ class SettingsManager {
                 this.settings = { ...this.defaultSettings };
             }
         }
-        // Override difficulty from current user's per-user progress
-        const userId = this.getCurrentUserId();
-        if (userId) {
-            try {
-                const progress = JSON.parse(localStorage.getItem(`userProgress_${userId}`) || '{}');
-                if (progress.preferredDifficulty) {
-                    this.settings.difficulty = progress.preferredDifficulty;
-                }
-            } catch (e) { /* ignore */ }
-        }
     }
 
     saveSettings() {
@@ -302,14 +287,6 @@ class SettingsManager {
             localStorage.setItem('englishLearningSettings', JSON.stringify(this.settings));
             // Bridge to v2 storage key so GameManager reads the latest settings
             localStorage.setItem('v2_englishLearningSettings', JSON.stringify(this.settings));
-            // Also save difficulty to current user's per-user progress
-            const userId = this.getCurrentUserId();
-            if (userId) {
-                const progressKey = `userProgress_${userId}`;
-                const progress = JSON.parse(localStorage.getItem(progressKey) || '{}');
-                progress.preferredDifficulty = this.settings.difficulty;
-                localStorage.setItem(progressKey, JSON.stringify(progress));
-            }
             return true;
         } catch (error) {
             console.error('Error saving settings:', error);
@@ -406,41 +383,39 @@ class SettingsManager {
     }
 
     /**
-     * Shows admin password modal and returns a promise
+     * Shows admin password modal and returns a promise.
+     * Auto-approves if current user has parent/manager role.
      * @param {string} title - Modal title (e.g., "אפס הגדרות")
-     * @returns {Promise<boolean>} - Resolves to true if password correct, false if cancelled
+     * @returns {Promise<boolean>} - Resolves to true if authorized, false if cancelled
      */
     showAdminPasswordPrompt(title = 'אישור פעולה') {
+        // Auto-approve for admin/parent users
+        if (this._isCurrentUserAdmin() || this.isPasswordUnlocked) {
+            return Promise.resolve(true);
+        }
+
         return new Promise((resolve) => {
             const modal = document.getElementById('password-modal');
             const passwordInput = document.getElementById('password-input');
             const submitBtn = document.getElementById('password-submit');
             const cancelBtn = document.getElementById('password-cancel');
             const errorDiv = document.getElementById('password-error');
-            const modalTitle = modal.querySelector('h3');
+            const modalTitle = modal?.querySelector('h3');
 
             if (!modal || !passwordInput || !submitBtn || !cancelBtn) {
-                // Fallback to browser prompt if modal not available
                 const password = prompt('הכנס סיסמת מנהל:');
-                if (!password) {
-                    resolve(false);
-                    return;
-                }
+                if (!password) { resolve(false); return; }
                 const isValid = typeof authService !== 'undefined' && authService.verifyAdminPassword(password);
                 resolve(isValid);
                 return;
             }
 
-            // Update modal title
-            modalTitle.innerHTML = `<i class="fas fa-lock"></i> ${title}`;
-
-            // Show modal and clear previous state
+            if (modalTitle) modalTitle.innerHTML = `<i class="fas fa-lock"></i> ${title}`;
             modal.classList.add('show');
             passwordInput.value = '';
             errorDiv.classList.remove('show');
             passwordInput.focus();
 
-            // Create new handler functions to avoid duplicates
             const handleSubmit = () => {
                 const isValid = typeof authService !== 'undefined' && authService.verifyAdminPassword(passwordInput.value);
                 if (isValid) {
@@ -461,23 +436,16 @@ class SettingsManager {
             };
 
             const handleKeypress = (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    handleSubmit();
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    handleCancel();
-                }
+                if (e.key === 'Enter') { e.preventDefault(); handleSubmit(); }
+                else if (e.key === 'Escape') { e.preventDefault(); handleCancel(); }
             };
 
-            // Cleanup function to remove listeners
             const cleanup = () => {
                 submitBtn.removeEventListener('click', handleSubmit);
                 cancelBtn.removeEventListener('click', handleCancel);
                 passwordInput.removeEventListener('keypress', handleKeypress);
             };
 
-            // Add event listeners
             submitBtn.addEventListener('click', handleSubmit);
             cancelBtn.addEventListener('click', handleCancel);
             passwordInput.addEventListener('keypress', handleKeypress);
@@ -495,8 +463,9 @@ class SettingsManager {
             userIds = Object.keys(allUsers); // Use keys (usernames) instead of .id
         }
 
-        // Delete user progress
+        // Delete user progress (both v2 and legacy keys)
         userIds.forEach(userId => {
+            localStorage.removeItem(`v2_userProgress_${userId}`);
             localStorage.removeItem(`userProgress_${userId}`);
         });
 
@@ -514,6 +483,7 @@ class SettingsManager {
         for (let i = 0; i < localStorage.length; i++) {
             const key = localStorage.key(i);
             if (key && (
+                key.startsWith('v2_userProgress_') ||
                 key.startsWith('userProgress_') ||
                 key.startsWith('scoreHistory_') ||
                 key.includes('_history') || // Catches username_gametype_history
@@ -607,19 +577,6 @@ class SettingsManager {
             document.getElementById('plays-value').textContent = this.settings.audioPlaysAllowed;
         });
 
-        // Difficulty radio buttons
-        document.querySelectorAll('input[name="difficulty"]').forEach(radio => {
-            radio.addEventListener('change', (e) => {
-                this.settings.difficulty = e.target.value;
-
-                // Update visual state
-                document.querySelectorAll('.radio-item').forEach(item => {
-                    item.classList.remove('selected');
-                });
-                e.target.closest('.radio-item').classList.add('selected');
-            });
-        });
-
         // Theme selection
         document.querySelectorAll('.theme-option').forEach(option => {
             option.addEventListener('click', (e) => {
@@ -677,6 +634,7 @@ class SettingsManager {
                     r.closest('.radio-item').classList.remove('selected');
                 });
                 e.target.closest('.radio-item').classList.add('selected');
+                this.updateLearningPaceSummary();
             });
         });
 
@@ -786,10 +744,6 @@ class SettingsManager {
         document.getElementById('audio-plays').value = this.settings.audioPlaysAllowed;
         document.getElementById('plays-value').textContent = this.settings.audioPlaysAllowed;
 
-        // Update difficulty
-        document.getElementById(`diff-${this.settings.difficulty}`).checked = true;
-        document.querySelector(`input[value="${this.settings.difficulty}"]`).closest('.radio-item').classList.add('selected');
-
         // Theme settings removed from UI
 
         // Update advanced settings
@@ -813,6 +767,7 @@ class SettingsManager {
             paceEl.checked = true;
             paceEl.closest('.radio-item').classList.add('selected');
         }
+        this.updateLearningPaceSummary();
 
         // Update exit behavior settings
         const exitBehavior = ['autosave', 'confirmation'].includes(this.settings.exitBehavior)
@@ -832,6 +787,15 @@ class SettingsManager {
         if (apiKeyInput && this.settings.claudeApiKey) {
             apiKeyInput.value = this.settings.claudeApiKey;
         }
+    }
+
+    updateLearningPaceSummary() {
+        const summary = document.getElementById('learning-pace-summary');
+        if (!summary) return;
+
+        const pace = this.settings.learningPace || 'normal';
+        const wordCount = { slow: 3, normal: 5, fast: 8 }[pace] || 5;
+        summary.textContent = `המסע תמיד כולל 5 שלבים. בקצב זה לומדים ${wordCount} מילים בכל מסע.`;
     }
 
     setupCustomWordsSection() {
@@ -1271,6 +1235,8 @@ function populateUserTable() {
 
         const isManager = user.role === 'manager' || user.role === 'parent';
 
+        const isParent = user.role === 'parent' || user.role === 'manager';
+
         const row = document.createElement('tr');
         row.innerHTML = `
             <td>${user.displayName}</td>
@@ -1280,6 +1246,12 @@ function populateUserTable() {
                 <span class="user-status-badge ${hasPassword ? 'has-password' : 'no-password'}">
                     ${hasPassword ? '🔒 מוגן בסיסמה' : '🔓 ללא סיסמה'}
                 </span>
+            </td>
+            <td>
+                <button class="user-action-btn ${isParent ? 'parent-on' : 'parent-off'}" onclick="toggleParentRole('${user.id}')" title="${isParent ? 'הסר הרשאת הורה' : 'הענק הרשאת הורה'}">
+                    <i class="fas ${isParent ? 'fa-user-shield' : 'fa-user'}"></i>
+                    ${isParent ? 'הורה' : 'ילד'}
+                </button>
             </td>
             <td>
                 <button class="user-action-btn reset" onclick="resetUserPassword('${user.id}')" title="אפס סיסמה">
@@ -1304,6 +1276,26 @@ function populateUserTable() {
         `;
         tbody.appendChild(row);
     });
+}
+
+function toggleParentRole(userId) {
+    if (typeof authService === 'undefined') return;
+    const users = authService.getUsers();
+    if (!users || !users[userId]) return;
+
+    const user = users[userId];
+    const isCurrentlyParent = user.role === 'parent' || user.role === 'manager';
+
+    if (isCurrentlyParent) {
+        // Remove parent role
+        delete user.role;
+    } else {
+        // Grant parent role
+        user.role = 'parent';
+    }
+
+    authService.saveUsers(users);
+    populateUserTable();
 }
 
 // Kept for backwards compatibility but not used
@@ -1461,7 +1453,7 @@ function resetUserPractice(userId) {
         return;
     }
 
-    const key = `userProgress_${userId}`;
+    const key = `v2_userProgress_${userId}`;
     const progress = JSON.parse(localStorage.getItem(key) || '{}');
     progress.wordMastery = {};
     localStorage.setItem(key, JSON.stringify(progress));
@@ -1474,7 +1466,7 @@ function resetUserStats(userId) {
         return;
     }
 
-    const gameTypes = ['vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'memory', 'scramble', 'fill-blanks', 'practice'];
+    const gameTypes = ['vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'memory', 'scramble', 'fill-blanks', 'practice', 'true-or-not', 'picture-match', 'word-journey', 'word-builder', 'story-time'];
 
     // Clear per-game score history
     gameTypes.forEach(game => {
@@ -1484,18 +1476,29 @@ function resetUserStats(userId) {
     // Clear memory personal bests
     localStorage.removeItem(`memoryBest_${userId}`);
 
-    // Reset aggregate fields in userProgress but keep wordMastery + settings
-    const key = `userProgress_${userId}`;
+    // Reset ALL stats fields in userProgress (keep only version + settings)
+    const key = `v2_userProgress_${userId}`;
     const progress = JSON.parse(localStorage.getItem(key) || '{}');
     progress.bestScores = {};
     progress.totalGamesPlayed = 0;
     progress.gameHistory = {};
     progress.streakDays = 0;
     progress.lastPlayDate = null;
+    progress.lastLoginDate = new Date().toISOString().split('T')[0]; // prevent daily bonus re-fire on next load
     progress.totalCorrectAnswers = 0;
+    progress.totalPoints = 0;
+    progress.totalLearningTimeMs = 0;
+    progress.coins = 0;
+    progress.coinHistory = [];
+    progress.certificates = [];
+    progress.learnedWords = {};
+    progress.wordMastery = {};
+    progress.gameUnlocks = {};
+    progress.activityDates = [];
+    progress.wordJourneyProgress = {};
     localStorage.setItem(key, JSON.stringify(progress));
 
-    alert('הסטטיסטיקות אופסו בהצלחה!');
+    alert('כל הסטטיסטיקות אופסו בהצלחה! טען מחדש את הדף לעדכון.');
 }
 
 function addUser() {

@@ -17,10 +17,11 @@ import * as PronunciationGame from './games/pronunciation-game.js?t=1771785500';
 import * as ReadingGame from './games/reading-game.js?t=1776006000';
 import * as PracticeGame from './games/practice-game.js';
 import * as ABCGame from './games/abc-game.js';
-import * as PictureMatchGame from './games/picture-match-game.js?t=1776200001';
+import * as PictureMatchGame from './games/picture-match-game.js?t=1776320001';
 import { generateABCQuestions, areAllLettersMastered, getUnmasteredLetterCount } from './data/abcData.js';
 import { generateGrammarBeginnerQuestions } from './data/grammarBeginnerData.js';
 import { getRandomSentences } from './data/sentences.js';
+import { getStoriesForSession } from './data/stories.js?t=1776400001';
 
 // Game Logic for English Learning Games
 
@@ -71,12 +72,15 @@ class GameManager {
         }
 
         this.gameData = {};
-        this.lastPersistedScores = {}; // tracks what's already been saved to totalPoints per game
+        this.lastPersistedScores = {}; // tracks score already counted into totalPoints per game
         this.shuffledQuestions = [];
         this.isGameActive = false;
         this.builtWord = '';
         this.currentTargetWord = '';
         this.currentQuestionAttempts = 0; // Track attempts for current question
+        this.currentTopicId = null;
+        this.currentTopicActivity = null;
+        this.currentTopicWords = [];
 
         // Exit flow management
         this.pendingNavigation = null; // Stores pending navigation target during exit confirmation
@@ -189,8 +193,8 @@ class GameManager {
         const activeGame = this.isGameActive ? this.currentGame : null;
         const savedPersisted = activeGame ? (this.lastPersistedScores[activeGame] ?? 0) : 0;
 
-        // Seed lastPersistedScores from ScoreManager so delta tracking starts at 0
-        // (scores already in ScoreManager were persisted in a prior endGame() call).
+        // Seed from ScoreManager so completed-session scores already visible in the
+        // header are treated as already counted toward totalPoints.
         this.lastPersistedScores = this.scoreManager.getAllScores();
 
         // Restore persisted tracking for the active game (it hasn't ended yet).
@@ -408,6 +412,39 @@ class GameManager {
             }
         });
 
+        registry.register('true-or-not', {
+            displayName: 'True or Not?',
+            displayNameHebrew: 'נכון או לא?',
+            icon: '✅',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['vocabulary']
+            }
+        });
+
+        registry.register('word-builder', {
+            displayName: 'Word Builder',
+            displayNameHebrew: 'בונה משפטים',
+            icon: '🔨',
+            config: {
+                questionsPerGame: 8,
+                pointsPerCorrect: 15,
+                categories: ['vocabulary', 'sentences']
+            }
+        });
+
+        registry.register('story-time', {
+            displayName: 'Story Time',
+            displayNameHebrew: 'זמן סיפור',
+            icon: '📖',
+            config: {
+                questionsPerGame: 8,
+                pointsPerCorrect: 15,
+                categories: ['vocabulary', 'reading']
+            }
+        });
+
         debugLog('[GameManager] All games registered with GameRegistry');
     }
 
@@ -428,7 +465,6 @@ class GameManager {
             questionsPerGame: GAME_CONFIG.MAX_QUESTIONS,
             clickRepeatCount: GAME_CONFIG.WRONG_OPTIONS_COUNT,
             audioPlaysAllowed: GAME_CONFIG.MAX_AUDIO_PLAYS,
-            difficulty: 'beginner',
             theme: 'classic',
             showPictures: false,
             showConfetti: true
@@ -437,8 +473,8 @@ class GameManager {
 
     getGameTier(gameType) {
         const learnGames = new Set(['word-journey', 'abc']);
-        const practiceGames = new Set(['listening', 'picture-match', 'memory', 'grammar-beginner', 'practice']);
-        const challengeGames = new Set(['reading', 'pronunciation', 'fill-blanks', 'scramble', 'grammar', 'vocabulary']);
+        const practiceGames = new Set(['listening', 'picture-match', 'memory', 'grammar-beginner', 'practice', 'true-or-not']);
+        const challengeGames = new Set(['reading', 'pronunciation', 'fill-blanks', 'scramble', 'grammar', 'vocabulary', 'word-builder', 'story-time']);
 
         if (learnGames.has(gameType)) return 'learn';
         if (practiceGames.has(gameType)) return 'practice';
@@ -536,11 +572,14 @@ class GameManager {
             gameType: this.currentGame,
             currentQuestionIndex: this.currentQuestionIndex,
             score: this.scoreManager.getScore(this.currentGame),
-            totalQuestions: this.totalQuestions,
+            totalQuestions: this.getEffectiveTotalQuestions(this.currentGame),
             timestamp: Date.now(),
             shuffledQuestions: this.shuffledQuestions,
             gameElapsedMs: totalElapsed,
-            selectedCategories: [...(this.selectedCategories || [])]
+            selectedCategories: [...(this.selectedCategories || [])],
+            currentTopicId: this.currentTopicId,
+            currentTopicActivity: this.currentTopicActivity,
+            currentTopicWords: [...(this.currentTopicWords || [])]
         };
 
         // Word Journey: persist internal stage position so resume lands on the exact word
@@ -586,6 +625,27 @@ class GameManager {
             console.error('Error loading game state:', error);
             return null;
         }
+    }
+
+    setCourseActivityContext({ topicId = null, activityType = null, topicWords = [] } = {}) {
+        this.currentTopicId = topicId || null;
+        this.currentTopicActivity = activityType || null;
+        this.currentTopicWords = Array.isArray(topicWords) ? [...topicWords] : [];
+    }
+
+    clearCourseActivityContext() {
+        this.currentTopicId = null;
+        this.currentTopicActivity = null;
+        this.currentTopicWords = [];
+    }
+
+    launchTopicActivity({ topicId, activityType, topicWords = [] } = {}) {
+        if (!activityType) return;
+
+        this.deleteGameState(activityType);
+        this.isResuming = false;
+        this.setCourseActivityContext({ topicId, activityType, topicWords });
+        this.performGameSwitch(activityType);
     }
 
     deleteGameState(gameType) {
@@ -767,14 +827,20 @@ class GameManager {
         this.currentGame = gameState.gameType;
         this.currentQuestionIndex = gameState.currentQuestionIndex;
         this.scoreManager.setScore(gameState.gameType, gameState.score);
-        // Mark as already-persisted so the resumed score isn't double-added to totalPoints
-        this.lastPersistedScores[gameState.gameType] = gameState.score;
+        // A resumed save is still an in-progress run, so none of its score has been
+        // counted toward totalPoints yet. Completion will persist the full final score.
+        this.lastPersistedScores[gameState.gameType] = 0;
         this.shuffledQuestions = gameState.shuffledQuestions;
         this.totalQuestions = gameState.totalQuestions;
         this.gameElapsedMs = gameState.gameElapsedMs || 0;
         this.gameSessionStartAt = Date.now();
         this.gameCoinHistoryStartIndex = window.app?.userProgress?.coinHistory?.length || 0;
         this.isGameActive = true;
+        this.setCourseActivityContext({
+            topicId: gameState.currentTopicId,
+            activityType: gameState.currentTopicActivity,
+            topicWords: gameState.currentTopicWords || []
+        });
 
         // Word Journey: pre-load internal stage state before performGameSwitch calls loadStage
         if (gameState.gameType === 'word-journey' && window.wordJourneyGame) {
@@ -1173,6 +1239,7 @@ class GameManager {
     }
 
     showWelcomeScreen() {
+        this._wjReplayMode = false;
         // Hide all game screens
         document.querySelectorAll('.game-content').forEach(content => {
             content.classList.remove('active');
@@ -1195,10 +1262,16 @@ class GameManager {
         // Reset game state
         this.isGameActive = false;
         this.currentGame = null;
+        this.clearCourseActivityContext();
 
         // Refresh home card lock states (V2 tiered layout)
         if (typeof window.updateHomeCardStates === 'function') {
             window.updateHomeCardStates();
+        }
+
+        // Refresh streak display from latest userProgress
+        if (window.gamificationManager?.streak) {
+            window.gamificationManager.streak.updateStreakDisplay();
         }
 
         // Switch header back to hub mode
@@ -1419,7 +1492,7 @@ class GameManager {
     }
 
     _setupResetListeners(signal) {
-        const gameTypes = ['vocab', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'scramble', 'fill-blanks', 'memory', 'word-journey', 'picture-match'];
+        const gameTypes = ['vocab', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'scramble', 'fill-blanks', 'memory', 'word-journey', 'picture-match', 'true-or-not', 'word-builder', 'story-time'];
         gameTypes.forEach(gameType => {
             const resetBtn = document.getElementById(`${gameType}-reset-btn`);
             if (resetBtn) {
@@ -1439,11 +1512,6 @@ class GameManager {
             return;
         }
 
-        // Get difficulty setting - prefer per-user value from userProgress
-        const difficulty = window.app?.userProgress?.preferredDifficulty
-            || (this.settings && this.settings.difficulty ? this.settings.difficulty : 'beginner');
-        debugLog(`Loading game data with difficulty: ${difficulty}`);
-
         // Filter vocabulary by selected categories
         const categoryFilteredVocabulary = this.selectedCategories && this.selectedCategories.length > 0
             ? gameData.vocabulary.filter(item => this.selectedCategories.includes(item.category))
@@ -1452,36 +1520,10 @@ class GameManager {
         debugLog(`[Category Filter] Selected categories:`, this.selectedCategories);
         debugLog(`[Category Filter] Filtered vocabulary to ${categoryFilteredVocabulary.length} words from categories: ${this.selectedCategories?.join(', ') || 'all'}`);
 
-        // Apply difficulty filter on top of category filter (based on word length)
-        let filteredVocabulary = categoryFilteredVocabulary;
-        if (difficulty === 'beginner') {
-            filteredVocabulary = categoryFilteredVocabulary.filter(item => !item.word || item.word.length <= 6);
-        } else if (difficulty === 'intermediate') {
-            filteredVocabulary = categoryFilteredVocabulary.filter(item => !item.word || item.word.length <= 9);
-        }
-        // Advanced: include all words
+        const filteredVocabulary = categoryFilteredVocabulary;
 
-        // If difficulty filter left too few words, fall back to category-only (no difficulty filter).
-        // Never fall back to ALL vocabulary — always respect the user's selected categories.
-        if (filteredVocabulary.length < GAME_CONFIG.MIN_FILTERED_VOCABULARY) {
-            debugLog(`[Category Filter] After difficulty filter only ${filteredVocabulary.length} words remain — dropping difficulty filter but keeping categories`);
-            filteredVocabulary = categoryFilteredVocabulary;
-        }
-
-        // Filter grammar by difficulty (grammar questions have difficulty property)
-        let filteredGrammar = [...gameData.grammar];
-        if (difficulty === 'beginner') {
-            filteredGrammar = filteredGrammar.filter(item =>
-                !item.difficulty || item.difficulty === 'beginner'
-            );
-        } else if (difficulty === 'intermediate') {
-            filteredGrammar = filteredGrammar.filter(item =>
-                !item.difficulty ||
-                item.difficulty === 'beginner' ||
-                item.difficulty === 'intermediate'
-            );
-        }
-        // Advanced: include all
+        // All grammar questions included (no difficulty filter)
+        const filteredGrammar = [...gameData.grammar];
 
         // Filter all game data by selected categories
         const filteredPronunciation = this.selectedCategories && this.selectedCategories.length > 0
@@ -1496,27 +1538,6 @@ class GameManager {
             ? gameData.reading.filter(item => this.selectedCategories.includes(item.category))
             : gameData.reading;
 
-        // Apply difficulty filter to pronunciation, listening, reading (based on word length).
-        // If difficulty filter leaves too few words, fall back to category-only result.
-        const applyDifficultyFilter = (pool, maxLen) => {
-            const filtered = pool.filter(item => !item.word || item.word.length <= maxLen);
-            return filtered.length >= GAME_CONFIG.MIN_FILTERED_VOCABULARY ? filtered : pool;
-        };
-
-        let difficultyFilteredPronunciation = filteredPronunciation;
-        let difficultyFilteredListening = filteredListening;
-        let difficultyFilteredReading = filteredReading;
-
-        if (difficulty === 'beginner') {
-            difficultyFilteredPronunciation = applyDifficultyFilter(filteredPronunciation, 6);
-            difficultyFilteredListening = applyDifficultyFilter(filteredListening, 6);
-            difficultyFilteredReading = applyDifficultyFilter(filteredReading, 6);
-        } else if (difficulty === 'intermediate') {
-            difficultyFilteredPronunciation = applyDifficultyFilter(filteredPronunciation, 9);
-            difficultyFilteredListening = applyDifficultyFilter(filteredListening, 9);
-            difficultyFilteredReading = applyDifficultyFilter(filteredReading, 9);
-        }
-
         const filteredPictureMatch = this.selectedCategories && this.selectedCategories.length > 0
             ? (gameData['picture-match'] || []).filter(item => this.selectedCategories.includes(item.category))
             : (gameData['picture-match'] || []);
@@ -1524,15 +1545,14 @@ class GameManager {
         this.gameData = {
             vocabulary: [...filteredVocabulary],
             grammar: filteredGrammar,
-            pronunciation: difficultyFilteredPronunciation,
-            listening: difficultyFilteredListening,
-            reading: difficultyFilteredReading,
+            pronunciation: filteredPronunciation,
+            listening: filteredListening,
+            reading: filteredReading,
             abc: gameData.abc || [],
             'picture-match': filteredPictureMatch
         };
 
-        debugLog('Game data loaded with filtered categories and difficulty:', {
-            difficulty: difficulty,
+        debugLog('Game data loaded with category filters:', {
             vocabulary: this.gameData.vocabulary.length,
             grammar: this.gameData.grammar.length,
             pronunciation: this.gameData.pronunciation.length,
@@ -1645,6 +1665,10 @@ class GameManager {
         // (resumeGame sets isGameActive=true + currentGame before calling performGameSwitch)
         if (!this.isResuming && this.isGameActive && gameType === this.currentGame) {
             return;
+        }
+
+        if (this.currentTopicActivity && this.currentTopicActivity !== gameType) {
+            this.clearCourseActivityContext();
         }
 
         // Auto-save and show toast if switching from an active game
@@ -1768,9 +1792,68 @@ class GameManager {
         return strugglingWords;
     }
 
-    startGame(gameType) {
+    getActiveTopicWords() {
+        const bank = window.vocabularyBank || [];
+        const directWords = Array.isArray(this.currentTopicWords) ? this.currentTopicWords : [];
+
+        if (directWords.length > 0) {
+            return directWords
+                .map(entry => {
+                    if (entry?.word && entry?.category) return entry;
+                    const normalized = String(entry || '').toLowerCase();
+                    return bank.find(word => word.word.toLowerCase() === normalized) || null;
+                })
+                .filter(Boolean);
+        }
+
+        if (!this.currentTopicId || !window.courseManager) {
+            return [];
+        }
+
+        const topicData = window.courseManager.getTopic(this.currentTopicId);
+        if (!topicData?.topic?.words) {
+            return [];
+        }
+
+        return topicData.topic.words
+            .map(word => bank.find(entry => entry.word.toLowerCase() === String(word).toLowerCase()) || null)
+            .filter(Boolean);
+    }
+
+    getScopedQuestionPool(gameType) {
+        const basePool = [...(this.gameData[gameType] || [])];
+        if (!this.currentTopicId || this.currentTopicActivity !== gameType) {
+            return basePool;
+        }
+
+        const topicKeys = new Set(this.getActiveTopicWords().map(
+            word => `${word.word.toLowerCase()}_${word.category}`
+        ));
+
+        if (topicKeys.size === 0) {
+            return basePool;
+        }
+
+        return basePool.filter(word => topicKeys.has(`${word.word?.toLowerCase()}_${word.category}`));
+    }
+
+    startGame(gameType, options = null) {
         try {
             debugLog(`Starting ${gameType} game...`);
+
+            if (!this.isResuming && options && typeof options === 'object') {
+                const normalizedOptions = Array.isArray(options)
+                    ? { topicWords: options }
+                    : options;
+
+                if (normalizedOptions.topicId || normalizedOptions.activityType || normalizedOptions.topicWords) {
+                    this.setCourseActivityContext({
+                        topicId: normalizedOptions.topicId,
+                        activityType: normalizedOptions.activityType || gameType,
+                        topicWords: normalizedOptions.topicWords || []
+                    });
+                }
+            }
 
             // Set game context for speech manager
             speechManager.setGameContext(gameType);
@@ -1859,9 +1942,14 @@ class GameManager {
                     this.shuffledQuestions[this.currentQuestionIndex]?.level;
                 if (!validResume) {
                     if (this.isResuming) console.warn('[Memory] Invalid saved state, starting fresh');
-                    const allWords = (window.vocabularyBank || []).filter(w =>
-                        !this.selectedCategories?.length || this.selectedCategories.includes(w.category)
-                    );
+                    const scopedWords = this.currentTopicActivity === 'memory'
+                        ? this.getActiveTopicWords()
+                        : [];
+                    const allWords = scopedWords.length > 0
+                        ? scopedWords
+                        : (window.vocabularyBank || []).filter(w =>
+                            !this.selectedCategories?.length || this.selectedCategories.includes(w.category)
+                        );
                     this.shuffledQuestions = [
                         { level: 1, pairs: 6,  columns: 4, words: allWords },
                         { level: 2, pairs: 9,  columns: 6, words: allWords },
@@ -1873,9 +1961,14 @@ class GameManager {
                     debugLog('[Memory] 3-level game prepared');
                 } else {
                     // Re-attach live vocabulary words (not saved in localStorage)
-                    const allWords = (window.vocabularyBank || []).filter(w =>
-                        !this.selectedCategories?.length || this.selectedCategories.includes(w.category)
-                    );
+                    const scopedWords = this.currentTopicActivity === 'memory'
+                        ? this.getActiveTopicWords()
+                        : [];
+                    const allWords = scopedWords.length > 0
+                        ? scopedWords
+                        : (window.vocabularyBank || []).filter(w =>
+                            !this.selectedCategories?.length || this.selectedCategories.includes(w.category)
+                        );
                     this.shuffledQuestions = this.shuffledQuestions.map(q => ({ ...q, words: allWords }));
                     debugLog(`[Memory] Resuming at level ${this.currentQuestionIndex + 1}`);
                 }
@@ -1895,9 +1988,13 @@ class GameManager {
                             return;
                         }
                     }
-                    const rawDiff = window.app?.userProgress?.preferredDifficulty || this.settings?.difficulty || 'beginner';
-                    const diff = rawDiff === 'advanced' ? 'intermediate' : rawDiff;
-                    const scrambleThemes = (this.selectedCategories || []).filter(c => SENTENCE_THEMES.has(c));
+                    const diff = 'beginner';
+                    const scopedThemes = this.currentTopicActivity === 'scramble'
+                        ? [...new Set(this.getActiveTopicWords().map(word => word.category).filter(category => SENTENCE_THEMES.has(category)))]
+                        : [];
+                    const scrambleThemes = scopedThemes.length > 0
+                        ? scopedThemes
+                        : (this.selectedCategories || []).filter(c => SENTENCE_THEMES.has(c));
                     this.shuffledQuestions = getRandomSentences(10, diff, scrambleThemes.length > 0 ? scrambleThemes : null);
                     this.totalQuestions = this.shuffledQuestions.length;
                     this.currentQuestionIndex = 0;
@@ -1922,9 +2019,13 @@ class GameManager {
                             return;
                         }
                     }
-                    const rawDiff = window.app?.userProgress?.preferredDifficulty || this.settings?.difficulty || 'beginner';
-                    const diff = rawDiff === 'advanced' ? 'intermediate' : rawDiff;
-                    const fillThemes = (this.selectedCategories || []).filter(c => SENTENCE_THEMES.has(c));
+                    const diff = 'beginner';
+                    const scopedThemes = this.currentTopicActivity === 'fill-blanks'
+                        ? [...new Set(this.getActiveTopicWords().map(word => word.category).filter(category => SENTENCE_THEMES.has(category)))]
+                        : [];
+                    const fillThemes = scopedThemes.length > 0
+                        ? scopedThemes
+                        : (this.selectedCategories || []).filter(c => SENTENCE_THEMES.has(c));
                     this.shuffledQuestions = getRandomSentences(10, diff, fillThemes.length > 0 ? fillThemes : null);
                     this.totalQuestions = this.shuffledQuestions.length;
                     this.currentQuestionIndex = 0;
@@ -2010,30 +2111,118 @@ class GameManager {
                 } else {
                     // Always sync totalQuestions to shuffledQuestions length to prevent cycle-back bug
                     this.totalQuestions = this.shuffledQuestions.length;
+
+                    // Restore wj.words from the saved stage descriptors so graduation works on completion
+                    const resumeWords = this.shuffledQuestions.find(s => s?.type === 'wj-stage' && Array.isArray(s.words))?.words;
+                    if (resumeWords && window.wordJourneyGame) {
+                        window.wordJourneyGame.words = resumeWords;
+                    }
+
                     debugLog(`[WordJourney] Resuming at stage ${this.currentQuestionIndex + 1}`);
                 }
                 // Build stage bar dots (always, for both fresh start and resume)
                 if (window.wordJourneyGame) {
                     window.wordJourneyGame.buildStageBar(this.shuffledQuestions);
                 }
-            } else {
-                // V2 Game Gating: filter to learned words for vocab-based gated games
-                const VOCAB_GATED_GAMES = new Set(['vocabulary', 'listening', 'picture-match', 'pronunciation', 'reading']);
-                if (VOCAB_GATED_GAMES.has(gameType) && !this.isResuming && !this.settings?.gameUnlockOverride) {
+            } else if (gameType === 'true-or-not') {
+                if (!this.isResuming) {
+                    // V2 Game Gating: require ≥5 learned words
+                    if (!this.settings?.gameUnlockOverride) {
+                        const learnedCount = Object.keys(window.app?.userProgress?.learnedWords || {}).length;
+                        if (learnedCount < 5) {
+                            this.showLearnFirstPrompt(gameType);
+                            this.isGameActive = false;
+                            return;
+                        }
+                    }
+                    // Build questions from learned words
                     const learnedKeys = this._getLearnedWordSet();
-                    const gatedPool = (this.gameData[gameType] || []).filter(
+                    const allWords = (window.vocabularyBank || []);
+                    const learnedPool = allWords.filter(
                         w => learnedKeys.has(`${w.word?.toLowerCase()}_${w.category}`)
                     );
-                    if (gatedPool.length < 4) {
+                    const pool = learnedPool.length >= 4 ? learnedPool : allWords;
+                    const questions = window.trueOrNotGame.buildQuestions(pool);
+                    if (questions.length === 0) {
                         this.showLearnFirstPrompt(gameType);
                         this.isGameActive = false;
                         return;
                     }
-                    this.gameData[gameType] = gatedPool;
+                    this.shuffledQuestions = questions;
+                    this.totalQuestions = questions.length;
+                    debugLog(`[TrueOrNot] ${this.totalQuestions} questions built`);
+                }
+            } else if (gameType === 'word-builder') {
+                if (!this.isResuming) {
+                    // V2 Game Gating: require ≥20 learned words + 1 topic
+                    if (!this.settings?.gameUnlockOverride) {
+                        const learnedCount = Object.keys(window.app?.userProgress?.learnedWords || {}).length;
+                        if (learnedCount < 20) {
+                            this.showLearnFirstPrompt(gameType);
+                            this.isGameActive = false;
+                            return;
+                        }
+                    }
+                    const diff = 'beginner';
+                    const scopedThemes = this.currentTopicActivity === 'word-builder'
+                        ? [...new Set(this.getActiveTopicWords().map(word => word.category).filter(category => SENTENCE_THEMES.has(category)))]
+                        : [];
+                    const wbThemes = scopedThemes.length > 0
+                        ? scopedThemes
+                        : (this.selectedCategories || []).filter(c => SENTENCE_THEMES.has(c));
+                    this.shuffledQuestions = getRandomSentences(8, diff, wbThemes.length > 0 ? wbThemes : null);
+                    this.totalQuestions = this.shuffledQuestions.length;
+                    debugLog(`[WordBuilder] ${this.totalQuestions} sentences loaded (${diff})`);
+                }
+            } else if (gameType === 'story-time') {
+                if (!this.isResuming) {
+                    // V2 Game Gating: require ≥15 learned words
+                    if (!this.settings?.gameUnlockOverride) {
+                        const learnedCount = Object.keys(window.app?.userProgress?.learnedWords || {}).length;
+                        if (learnedCount < 15) {
+                            this.showLearnFirstPrompt(gameType);
+                            this.isGameActive = false;
+                            return;
+                        }
+                    }
+                    // Build stories from learned words
+                    const learnedWordsMap = window.app?.userProgress?.learnedWords || {};
+                    const allWords = window.vocabularyBank || [];
+                    const learnedWordsList = Object.keys(learnedWordsMap).map(key => {
+                        const [word, category] = key.split('_');
+                        return allWords.find(w => w.word?.toLowerCase() === word && w.category === category) || { word, category };
+                    }).filter(Boolean);
+                    const stories = getStoriesForSession(learnedWordsList, allWords, 3);
+                    if (stories.length === 0) {
+                        this.showLearnFirstPrompt(gameType);
+                        this.isGameActive = false;
+                        return;
+                    }
+                    // Each story becomes a "question" — totalQuestions = sum of all quiz questions
+                    this.shuffledQuestions = stories;
+                    this.totalQuestions = stories.reduce((sum, s) => sum + s.questions.length, 0);
+                    this.currentQuestionIndex = 0;
+                    window.storyTimeGame.storyIndex = 0;
+                    debugLog(`[StoryTime] ${stories.length} stories, ${this.totalQuestions} total quiz questions`);
+                }
+            } else {
+                // V2 Game Gating: filter to learned words for vocab-based gated games
+                const VOCAB_GATED_GAMES = new Set(['vocabulary', 'listening', 'picture-match', 'pronunciation', 'reading']);
+                let questionPool = this.getScopedQuestionPool(gameType);
+                if (VOCAB_GATED_GAMES.has(gameType) && !this.isResuming && !this.settings?.gameUnlockOverride) {
+                    const learnedKeys = this._getLearnedWordSet();
+                    questionPool = questionPool.filter(
+                        w => learnedKeys.has(`${w.word?.toLowerCase()}_${w.category}`)
+                    );
+                    if (questionPool.length < 4) {
+                        this.showLearnFirstPrompt(gameType);
+                        this.isGameActive = false;
+                        return;
+                    }
                 }
 
                 // Check if game data exists
-                if (!this.gameData[gameType] || this.gameData[gameType].length === 0) {
+                if (questionPool.length === 0) {
                     console.error(`No data found for game type: ${gameType}`);
                     return;
                 }
@@ -2041,7 +2230,7 @@ class GameManager {
                 // Only generate new questions if NOT resuming
                 if (!this.isResuming) {
                     // Smart question selection based on mastery levels
-                    this.shuffledQuestions = this.smartQuestionSelection([...this.gameData[gameType]]);
+                    this.shuffledQuestions = this.smartQuestionSelection(questionPool);
                     debugLog(`Selected ${this.shuffledQuestions.length} questions for ${gameType} using smart selection:`, this.shuffledQuestions.slice(0, 5));
                 } else {
                     debugLog(`Resuming with ${this.shuffledQuestions.length} questions at index ${this.currentQuestionIndex}`);
@@ -2298,7 +2487,8 @@ class GameManager {
         try {
             debugLog(`Loading question ${this.currentQuestionIndex + 1} for ${gameType}`);
 
-            if (this.currentQuestionIndex >= this.totalQuestions) {
+            const effectiveTotalQuestions = this.getEffectiveTotalQuestions(gameType);
+            if (this.currentQuestionIndex >= effectiveTotalQuestions) {
                 this.endGame(gameType);
                 return;
             }
@@ -2310,8 +2500,13 @@ class GameManager {
                 this.practiceCycle = Math.floor(this.currentQuestionIndex / this.practiceWordsCount) + 1;
                 debugLog(`Practice: Word ${this.practiceWordIndex + 1}/${this.practiceWordsCount}`);
             } else {
-                // For other games: cycle back to start if needed
-                if (this.currentQuestionIndex >= this.shuffledQuestions.length) {
+                if (gameType === 'word-journey' && this.currentQuestionIndex >= this.shuffledQuestions.length) {
+                    this.endGame(gameType);
+                    return;
+                }
+                // Story-time: stories array is shorter than totalQuestions (which counts quiz questions)
+                // Skip cycle-back — endGame is triggered by the effectiveTotalQuestions check above
+                if (gameType !== 'story-time' && this.currentQuestionIndex >= this.shuffledQuestions.length) {
                     this.currentQuestionIndex = 0;
                     debugLog('Cycling back to start of questions');
                 }
@@ -2322,7 +2517,7 @@ class GameManager {
             const question = this.shuffledQuestions[questionIndex];
             debugLog('Current question:', question);
 
-            if (!question) {
+            if (!question && gameType !== 'story-time') {
                 console.error('No question found at index:', this.currentQuestionIndex);
                 return;
             }
@@ -2370,6 +2565,24 @@ class GameManager {
                 case 'picture-match':
                     this.loadPictureMatchQuestion(question);
                     break;
+                case 'true-or-not':
+                    window.trueOrNotGame.loadQuestion(question);
+                    break;
+                case 'word-builder':
+                    window.wordBuilderGame.loadQuestion(question);
+                    break;
+                case 'story-time': {
+                    // Story-time uses storyIndex to pick stories (not currentQuestionIndex which tracks quiz questions)
+                    const stGame = window.storyTimeGame;
+                    const storyObj = this.shuffledQuestions[stGame.storyIndex];
+                    if (!storyObj) {
+                        this.endGame(gameType);
+                        return;
+                    }
+                    stGame.loadQuestion(storyObj);
+                    stGame.storyIndex++;
+                    break;
+                }
                 default:
                     console.error('Unknown game type:', gameType);
                     return;
@@ -2460,6 +2673,13 @@ class GameManager {
             return window.wordJourneyGame.totalScoredQuestions || fallbackTotal;
         }
         return Math.min(this.currentQuestionIndex, fallbackTotal);
+    }
+
+    getEffectiveTotalQuestions(gameType) {
+        if (gameType === 'word-journey' && Array.isArray(this.shuffledQuestions) && this.shuffledQuestions.length > 0) {
+            return this.shuffledQuestions.length;
+        }
+        return this.totalQuestions;
     }
 
     getCompletionProgressPercent(answeredCount, actualCount) {
@@ -2563,6 +2783,15 @@ class GameManager {
                 return;
             }
 
+            if (Array.isArray(question.words) && gameType !== 'memory') {
+                question.words.forEach(wordObj => {
+                    if (wordObj?.word && wordObj?.category) {
+                        addWord(wordObj.word, wordObj.category);
+                    }
+                });
+                return;
+            }
+
             if (question.blank?.options?.[0]) {
                 const vocabEntry = this._findVocabularyEntryByWord(question.blank.options[0], question.theme);
                 if (vocabEntry) addWord(vocabEntry.word, vocabEntry.category);
@@ -2575,7 +2804,23 @@ class GameManager {
             }
         });
 
+        if (gameType === 'memory' && window.memoryGame?.gameWords?.length) {
+            window.memoryGame.gameWords.forEach(wordObj => {
+                if (wordObj?.word && wordObj?.category) {
+                    addWord(wordObj.word, wordObj.category);
+                }
+            });
+        }
+
         return Array.from(sessionMap.values()).slice(0, 8);
+    }
+
+    getProgressUpdateContext(gameType) {
+        return {
+            topicId: this.currentTopicId,
+            activityType: this.currentTopicActivity || gameType,
+            words: this.getSessionWordProgress(gameType).map(({ word, category }) => ({ word, category }))
+        };
     }
 
     getCompletionRecommendation(gameType) {
@@ -2691,6 +2936,7 @@ class GameManager {
                 `;
 
                 gameArea.appendChild(completionDiv);
+                document.querySelector('.game-area')?.scrollTo({ top: 0, behavior: 'instant' });
 
                 // Update gamification card (words may have improved)
                 if (window.gamificationManager) {
@@ -2761,7 +3007,12 @@ class GameManager {
 
                     const learnedCount = pm.getLearnedWordCount();
                     const topicsDone = pm.getCompletedTopicCount();
-                    const newlyUnlocked = pm.checkAndUnlockGames(learnedCount, topicsDone, 0);
+                    // Calculate ABC mastery % from per-letter wordMastery entries
+                    const wm = window.app.userProgress?.wordMastery || {};
+                    const abcLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                    const masteredLetters = [...abcLetters].filter(l => (wm[`${l}_abc`]?.masteryLevel || 0) >= 0.8).length;
+                    const abcMastery = Math.round((masteredLetters / 26) * 100);
+                    const newlyUnlocked = pm.checkAndUnlockGames(learnedCount, topicsDone, abcMastery);
 
                     // Persist learnedWords + gameUnlocks back to userProgress
                     const data = pm.getProgressData();
@@ -2774,11 +3025,26 @@ class GameManager {
                         console.log('[V2] Newly unlocked games:', newlyUnlocked);
                     }
 
-                    // Check milestone certificates
+                    // Check milestone certificates and show celebration
                     if (window.app?.checkMilestoneCertificates) {
-                        window.app.checkMilestoneCertificates(learnedCount);
+                        const milestones = window.app.checkMilestoneCertificates(learnedCount);
+                        if (milestones?.length > 0) {
+                            let delay = 1500;
+                            for (const cert of milestones) {
+                                setTimeout(() => window.app.showCertificateModal(cert.topicName, cert.score), delay);
+                                delay += 2500;
+                            }
+                        }
                     }
                 }
+            } else if (gameType === 'story-time' && window.storyTimeGame) {
+                // Story-time: use correct/total quiz answers for accurate percentage
+                const st = window.storyTimeGame;
+                const totalQ = st.quizTotal || this.totalQuestions || 1;
+                const totalC = st.quizCorrect || 0;
+                percentage = Math.min(100, Math.round((totalC / totalQ) * 100));
+                maxPossibleScore = totalQ * 10;
+                finalScore = totalC * 10;
             } else {
                 // Cap the score to prevent display bugs (e.g., 130%)
                 maxPossibleScore = this.totalQuestions * 10;
@@ -2789,24 +3055,55 @@ class GameManager {
             // Save game score to history for statistics
             this.saveGameScoreToHistory(gameType, percentage);
 
-            // Reconcile totalPoints: points are already persisted incrementally via updateScore(),
-            // so only add/subtract the delta to account for the score cap applied here.
+            // Persist totalPoints only on completion. If a future flow partially counts
+            // a game's score before completion, only the remaining positive delta is added.
             if (window.app?.userProgress) {
-                const alreadyPersisted = this.lastPersistedScores[gameType] || 0;
-                const adjustment = finalScore - alreadyPersisted;
-                if (adjustment !== 0) {
-                    window.app.userProgress.totalPoints = Math.max(0, (window.app.userProgress.totalPoints || 0) + adjustment);
+                const alreadyCounted = this.lastPersistedScores[gameType] || 0;
+                const newlyCompletedPoints = Math.max(0, finalScore - alreadyCounted);
+                if (newlyCompletedPoints > 0) {
+                    window.app.userProgress.totalPoints = (window.app.userProgress.totalPoints || 0) + newlyCompletedPoints;
                 }
                 this.lastPersistedScores[gameType] = finalScore;
                 window.app.saveUserProgress();
             }
             this.updateTotalScoreDisplay();
 
-            // Award coins for game completion
+            // Award coins for game completion (half coins in WJ replay mode)
             if (this.coinManager) {
-                this.coinManager.awardActivityComplete();
-                if (percentage === 100) {
-                    this.coinManager.awardPerfectGame();
+                if (gameType === 'word-journey' && this._wjReplayMode) {
+                    this.coinManager.awardCoins(
+                        Math.floor(this.coinManager.rewards.completeActivity / 2),
+                        'activity complete (practice)'
+                    );
+                    if (percentage === 100) {
+                        this.coinManager.awardCoins(
+                            Math.floor(this.coinManager.rewards.perfectGame / 2),
+                            'perfect game (practice)'
+                        );
+                    }
+                } else {
+                    this.coinManager.awardActivityComplete();
+                    if (percentage === 100) {
+                        this.coinManager.awardPerfectGame();
+                    }
+                }
+            }
+
+            // After ABC game, re-check game unlocks (Reading gate requires ABC mastery)
+            if (gameType === 'abc' && window.app?.progressManager) {
+                const pm = window.app.progressManager;
+                const learnedCount = pm.getLearnedWordCount();
+                const topicsDone = pm.getCompletedTopicCount();
+                const wm = window.app.userProgress?.wordMastery || {};
+                const abcLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+                const masteredLetters = [...abcLetters].filter(l => (wm[`${l}_abc`]?.masteryLevel || 0) >= 0.8).length;
+                const abcMastery = Math.round((masteredLetters / 26) * 100);
+                const newlyUnlocked = pm.checkAndUnlockGames(learnedCount, topicsDone, abcMastery);
+                if (newlyUnlocked.length > 0) {
+                    const data = pm.getProgressData();
+                    window.app.userProgress.gameUnlocks = data.gameUnlocks;
+                    window.app.saveUserProgress();
+                    console.log('[V2] ABC completion unlocked games:', newlyUnlocked);
                 }
             }
 
@@ -2854,16 +3151,19 @@ class GameManager {
                 wj.showCelebration(this, gameArea, wj.words || [], percentage, sessionCoinsEarned, learnedCount, recommendation);
                 this.isGameActive = false;
                 try {
-                    if (typeof appManager !== 'undefined' && appManager?.updateProgress) {
-                        appManager.updateProgress('word-journey', percentage);
+                    if (window.app?.updateProgress) {
+                        window.app.updateProgress('word-journey', percentage, this.getProgressUpdateContext('word-journey'));
                     }
                 } catch (e) {}
                 debugLog('word-journey ended with celebration screen');
                 return;
             }
 
-            // Hide all existing game elements instead of destroying them
-            const existingElements = gameArea.children;
+            // Hide all existing game elements instead of destroying them.
+            // Use the top-level game container so siblings of .game-board
+            // (e.g. .progress-container) are also hidden.
+            const gameContainer = gameArea.closest(`#${gameType}-game`) || gameArea;
+            const existingElements = gameContainer.children;
             for (let i = 0; i < existingElements.length; i++) {
                 existingElements[i].style.display = 'none';
             }
@@ -2909,52 +3209,93 @@ class GameManager {
             ` : '';
             completionDiv.innerHTML = `
                 <div class="completion-content">
-                    <div class="completion-icon">${performance.emoji}</div>
-                    <h2>${performance.label}</h2>
-                    <div class="completion-stars">${endGameStars}</div>
-                    <div class="completion-progress-card">
-                        <div class="completion-progress-head">
-                            <span>התקדמות המשחק</span>
-                            <strong>${answeredCount}/${actualQuestionCount}</strong>
+                    <div class="completion-shell">
+                        <section class="completion-hero-card">
+                            <div class="completion-kicker">סיכום משחק</div>
+                            <div class="completion-hero-head">
+                                <div class="completion-score-block">
+                                    <span class="completion-score-eyebrow">דיוק</span>
+                                    <span class="completion-score-value">${percentage}%</span>
+                                    <span class="completion-score-caption">${performance.label}</span>
+                                </div>
+                                <div class="completion-hero-copy">
+                                    <div class="completion-icon-badge">${performance.emoji}</div>
+                                    <h2>${performance.label}</h2>
+                                    <p>${answeredCount} מתוך ${actualQuestionCount} הושלמו${timeText ? ` · ${timeText}` : ''}</p>
+                                </div>
+                            </div>
+                            <div class="completion-stat-strip">
+                                <div class="completion-stat-chip">
+                                    <span class="completion-stat-value">${finalScore}</span>
+                                    <span class="completion-stat-label">נקודות</span>
+                                </div>
+                                <div class="completion-stat-chip">
+                                    <span class="completion-stat-value">${answeredCount}/${actualQuestionCount}</span>
+                                    <span class="completion-stat-label">שאלות</span>
+                                </div>
+                                <div class="completion-stat-chip">
+                                    <span class="completion-stat-value">${endGameStars}</span>
+                                    <span class="completion-stat-label">דירוג</span>
+                                </div>
+                                <div class="completion-stat-chip completion-stat-chip-highlight">
+                                    <span class="completion-stat-value" data-coins-earned-number>+0</span>
+                                    <span class="completion-stat-label">מטבעות</span>
+                                    <span class="completion-coins-sparkle" data-coins-earned-sparkle>✨</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <div class="completion-panel-grid">
+                            <section class="completion-panel">
+                                <div class="completion-panel-kicker">התקדמות</div>
+                                <div class="completion-progress-head">
+                                    <span>השלמת המשחק</span>
+                                    <strong>${answeredCount}/${actualQuestionCount}</strong>
+                                </div>
+                                <div class="completion-progress-track">
+                                    <div class="completion-progress-fill" style="width:${completionProgressPct}%"></div>
+                                </div>
+                            </section>
+                            <section class="completion-panel">
+                                <div class="completion-panel-kicker">נתוני ביצוע</div>
+                                <div class="completion-detail-list">
+                                    <div class="completion-detail-row">
+                                        <span>ניקוד סופי</span>
+                                        <strong>${finalScore}/${maxPossibleScore}</strong>
+                                    </div>
+                                    <div class="completion-detail-row">
+                                        <span>רמת ביצוע</span>
+                                        <strong>${performance.label}</strong>
+                                    </div>
+                                    ${timeText ? `
+                                    <div class="completion-detail-row">
+                                        <span>זמן כולל</span>
+                                        <strong>${timeText}</strong>
+                                    </div>` : ''}
+                                </div>
+                            </section>
                         </div>
-                        <div class="completion-progress-track">
-                            <div class="completion-progress-fill" style="width:${completionProgressPct}%"></div>
+
+                        ${wordProgressHtml}
+
+                        <div class="completion-actions">
+                            <button class="restart-game-btn" data-game="${gameType}">
+                                <i class="fas fa-redo"></i> שחק שוב
+                            </button>
+                            ${recommendationButtonHtml}
+                            <button class="choose-game-btn">
+                                <i class="fas fa-home"></i> בחר משחק אחר
+                            </button>
                         </div>
-                    </div>
-                    <div class="score-display">
-                        <div class="score-circle">
-                            <span class="score-number">${percentage}%</span>
-                            <span class="score-label">דיוק</span>
-                        </div>
-                        <div class="score-details">
-                            <p><strong>ניקוד סופי:</strong> ${finalScore}/${maxPossibleScore}</p>
-                            <p><strong>רמת ביצוע:</strong> ${performance.labelEn}</p>
-                            ${timeText ? `<p class="game-time"><strong>זמן כולל:</strong> ${timeText}</p>` : ''}
-                        </div>
-                    </div>
-                    <div class="completion-coins-card">
-                        <div class="completion-coins-title">
-                            <i class="fas fa-coins"></i> מטבעות שהרווחת
-                        </div>
-                        <div class="completion-coins-value">
-                            <span class="completion-coins-number" data-coins-earned-number>+0</span>
-                            <span class="completion-coins-sparkle" data-coins-earned-sparkle>✨</span>
-                        </div>
-                    </div>
-                    ${wordProgressHtml}
-                    <div class="completion-actions">
-                        <button class="restart-game-btn" data-game="${gameType}">
-                            <i class="fas fa-redo"></i> שחק שוב
-                        </button>
-                        ${recommendationButtonHtml}
-                        <button class="choose-game-btn">
-                            <i class="fas fa-home"></i> בחר משחק אחר
-                        </button>
                     </div>
                 </div>
             `;
 
-            gameArea.appendChild(completionDiv);
+            // Allow completion screen to overflow the game-content clip
+            gameContainer.style.overflow = 'visible';
+            gameContainer.style.maxHeight = 'none';
+            gameContainer.appendChild(completionDiv);
+            document.querySelector('.game-area')?.scrollTo({ top: 0, behavior: 'instant' });
 
             // Add event listeners to buttons (can't use onclick in innerHTML)
             const restartBtn = completionDiv.querySelector('.restart-game-btn');
@@ -2986,8 +3327,8 @@ class GameManager {
             // Update overall app achievements/progress if available (skip in practice mode)
             try {
                 const isPracticeMode = typeof SettingsManager !== 'undefined' && SettingsManager.isPracticeMode();
-                if (!isPracticeMode && typeof appManager !== 'undefined' && appManager?.updateProgress) {
-                    appManager.updateProgress(gameType, percentage);
+                if (!isPracticeMode && window.app?.updateProgress) {
+                    window.app.updateProgress(gameType, percentage, this.getProgressUpdateContext(gameType));
                 }
             } catch (e) {
                 console.warn('Failed to update app progress:', e);
@@ -3008,14 +3349,18 @@ class GameManager {
                 return;
             }
             
-            // Remove completion message
-            const completionDiv = gameArea.querySelector('.game-complete');
+            // Remove completion message — search in parent container
+            // in case it was appended outside .game-board (e.g. above .progress-container)
+            const gameContainer = gameArea.closest(`#${gameType}-game`) || gameArea;
+            const completionDiv = gameContainer.querySelector('.game-complete');
             if (completionDiv) {
                 completionDiv.remove();
             }
-            
-            // Show all original game elements
-            const existingElements = gameArea.children;
+
+            // Restore overflow clip and show all original game elements
+            gameContainer.style.overflow = '';
+            gameContainer.style.maxHeight = '';
+            const existingElements = gameContainer.children;
             for (let i = 0; i < existingElements.length; i++) {
                 existingElements[i].style.display = '';
             }
@@ -3031,28 +3376,50 @@ class GameManager {
 
     getWordJourneyWords() {
         const rawBank = window.vocabularyBank || [];
+        const paceMap = { slow: 3, normal: 5, fast: 8 };
+        const wordCount = paceMap[(this.settings || {}).learningPace] || 5;
+        let candidatePool = [];
 
         if (this.currentTopicId && window.courseManager) {
             const topicData = window.courseManager.getTopic(this.currentTopicId);
             if (topicData?.topic?.words) {
-                const resolved = topicData.topic.words
+                const topicWords = topicData.topic.words
                     .map(w => rawBank.find(v => v.word === w))
                     .filter(Boolean);
-                if (resolved.length >= 3) return resolved.slice(0, 8);
+                if (topicWords.length >= 3) {
+                    candidatePool = topicWords;
+                }
             }
         }
 
-        // Filter vocabularyBank directly by selected categories — no word-length filter,
-        // since word-journey's difficulty comes from mastery-based selection, not word length.
-        const categoryFiltered = rawBank.filter(w =>
-            !this.selectedCategories?.length || this.selectedCategories.includes(w.category)
-        );
-        if (categoryFiltered.length === 0) return [];
+        if (candidatePool.length === 0) {
+            // Filter vocabularyBank directly by selected categories — no word-length filter,
+            // since word-journey's difficulty comes from mastery-based selection, not word length.
+            candidatePool = rawBank.filter(w =>
+                !this.selectedCategories?.length || this.selectedCategories.includes(w.category)
+            );
+        }
+        if (candidatePool.length === 0) return [];
 
         const today = new Date().toISOString().slice(0, 10);
         const pm = this.progressManager;
 
-        const scored = categoryFiltered.map(w => {
+        // Replay mode: only select from learned/graduated words
+        if (this._wjReplayMode) {
+            const learnedOnly = candidatePool.filter(w => pm?.isWordLearned?.(w.word, w.category));
+            if (learnedOnly.length >= 3) {
+                // Shuffle and return learned words
+                for (let i = learnedOnly.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [learnedOnly[i], learnedOnly[j]] = [learnedOnly[j], learnedOnly[i]];
+                }
+                return learnedOnly.slice(0, wordCount);
+            }
+            // Not enough learned words — fall through to normal selection
+            this._wjReplayMode = false;
+        }
+
+        const scored = candidatePool.map(w => {
             let mastery = pm ? (pm.getWordStats(w.word, w.category)?.masteryLevel || 0) : 0;
 
             // Deprioritize words learned today so fresh words are preferred on the next journey.
@@ -3071,8 +3438,6 @@ class GameManager {
         scored.forEach(s => { s._rnd = Math.random(); });
         scored.sort((a, b) => a.mastery !== b.mastery ? a.mastery - b.mastery : a._rnd - b._rnd);
 
-        const paceMap = { slow: 3, normal: 5, fast: 8 };
-        const wordCount = paceMap[(this.settings || {}).learningPace] || 5;
         return scored.slice(0, wordCount).map(s => s.word);
     }
 
@@ -3193,18 +3558,6 @@ class GameManager {
             headerScoreElement.style.display = '';
             headerScoreElement.textContent = currentGameScore;
 
-            // Persist earned points immediately so stats/settings pages stay in sync
-            if (window.app?.userProgress) {
-                const prev = this.lastPersistedScores[gameType] || 0;
-                const curr = this.scoreManager.getScore(gameType) || 0;
-                const delta = curr - prev;
-                if (delta > 0) {
-                    window.app.userProgress.totalPoints = (window.app.userProgress.totalPoints || 0) + delta;
-                    this.lastPersistedScores[gameType] = curr;
-                    window.app.saveUserProgress();
-                }
-            }
-
             debugLog(`🏆 [SCORE] Updated ${gameType} score: ${currentGameScore}, Total: ${totalScore}`);
         } catch (error) {
             console.error(`🏆 [SCORE] Error updating score:`, error);
@@ -3234,8 +3587,12 @@ class GameManager {
 
         // Use 1-based index for display so the last question reaches 100%
         // Guard against totalQuestions === 0 to avoid 100% when practice list is empty
-        const progress = this.totalQuestions > 0
-            ? (Math.min(this.currentQuestionIndex + 1, this.totalQuestions) / this.totalQuestions) * 100
+        const effectiveTotalQuestions = this.getEffectiveTotalQuestions(gameType);
+        const totalQuestionsForUi = gameType === 'word-journey'
+            ? effectiveTotalQuestions
+            : this.totalQuestions;
+        const progress = totalQuestionsForUi > 0
+            ? (Math.min(this.currentQuestionIndex + 1, totalQuestionsForUi) / totalQuestionsForUi) * 100
             : 0;
         const container = document.getElementById(`${gameType}-game`);
         if (!container) return;
@@ -3262,17 +3619,12 @@ class GameManager {
             // Update question counter for non-practice games
             const currentQ = document.getElementById(`${elementPrefix}-current-q`);
             const totalQ = document.getElementById(`${elementPrefix}-total-q`);
-            if (currentQ) currentQ.textContent = this.currentQuestionIndex + 1;
-            if (totalQ) {
-                // Word-journey has exactly 5 stages; use shuffledQuestions.length to avoid stale totalQuestions
-                totalQ.textContent = gameType === 'word-journey'
-                    ? (this.shuffledQuestions?.length || this.totalQuestions)
-                    : this.totalQuestions;
-            }
+            if (currentQ) currentQ.textContent = Math.min(this.currentQuestionIndex + 1, totalQuestionsForUi);
+            if (totalQ) totalQ.textContent = totalQuestionsForUi;
         }
 
         // Hide next button on last question
-        if (this.currentQuestionIndex === this.totalQuestions - 1) {
+        if (this.currentQuestionIndex === totalQuestionsForUi - 1) {
             const nextBtn = document.getElementById(`${elementPrefix}-next`);
             if (nextBtn) nextBtn.style.display = 'none';
         } else {

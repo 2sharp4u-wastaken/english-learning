@@ -6,9 +6,9 @@
 Transform the app from a collection of independent games into a guided learning system where Word Journey is the entry point for all new words, and other games are unlocked progressively as the child builds vocabulary.
 
 ## Current Status
-- **Phase:** Phase 9 complete, Phase 10 next
-- **Last session:** 2026-03-18 — Phase 8 Stats Overhaul and Phase 9 Completion Screen Overhaul implemented
-- **Next up:** Phase 10 — Course & Certificate Rewiring
+- **Phase:** All phases + open questions complete
+- **Last session:** 2026-03-21 — Open questions resolved (Memory hybrid filter, WJ replay mode, lock overlay transparency)
+- **Next up:** Polish, testing, and final adjustments
 
 ---
 
@@ -160,17 +160,17 @@ Transform the app from a collection of independent games into a guided learning 
 - [x] Variable progress bar based on actual question count
 - [x] Adjust audio play limits per tier (Learn: unlimited, Practice: 8, Challenge: 5)
 
-### Phase 10 — Course & Certificate Rewiring `🔴 Opus`
-- [ ] Wire `completeActivity()` from ALL games (not just course-launched)
-- [ ] Add `getNextRecommendedActivity()` to CourseManager
-- [ ] Add milestone certificates: First Word, Word Explorer (10), Word Master (25), Word Champion (50), ABC Hero, Sentence Builder, Perfect Listener
-- [ ] Ensure topic completion works across free-play and course-launched games
-- [ ] Course-level unlock requirements enforced in UI
+### Phase 10 — Course & Certificate Rewiring `🔴 Opus` ✅
+- [x] Wire `completeActivity()` from ALL games (not just course-launched) via session-context + free-play topic inference
+- [x] Add `getNextRecommendedActivity()` to CourseManager and use it in recommendations
+- [x] Add milestone certificates: First Word, Word Explorer (10), Word Master (25), Word Champion (50), ABC Hero, Sentence Builder, Perfect Listener
+- [x] Ensure topic completion works across free-play and course-launched games
+- [x] Course-level unlock requirements enforced in UI
 
-### Phase 11 — New Games (optional, post-core) `🟡 Opus recommended`
-- [ ] "True or Not?" (נכון או לא?) — picture + word match yes/no
-- [ ] "Word Builder" (בונה משפטים) — drag words from bank to complete sentences
-- [ ] "Story Time" (זמן סיפור) — highlighted text read-along with learned words
+### Phase 11 — New Games (optional, post-core) `🟡 Opus recommended` ✅
+- [x] "True or Not?" (נכון או לא?) — picture + word match yes/no (Practice tier, gate: 5 words)
+- [x] "Word Builder" (בונה משפטים) — tap correct word to complete sentence (Challenge tier, gate: 20 words + 1 topic)
+- [x] "Story Time" (זמן סיפור) — highlighted text read-along with comprehension quiz (Challenge tier, gate: 15 words)
 
 ---
 
@@ -212,10 +212,10 @@ checkAndUnlockGames() {
 
 ---
 
-## Open Questions
-- Should Memory game filter to learned words or stay as full-vocabulary daily fun? (Current decision: no filter)
-- Should Word Journey allow replaying already-graduated words for extra practice? (Leaning: yes, but prioritize unlearned)
-- Exact visual design for locked cards and tier sections — decide during Phase 4
+## Open Questions (Resolved)
+- ~~Memory game filter~~ → **Hybrid**: uses learned words when ≥12 available, otherwise full vocabulary bank
+- ~~Word Journey replay~~ → **Yes with reduced rewards**: "Practice Learned Words" button on celebration screen, half coins in replay mode, replay badge shown
+- ~~Lock card design~~ → **Semi-transparent overlay**: reduced opacity (0.3), minimal blur, reduced grayscale so game name/icon stay visible
 
 ---
 
@@ -232,3 +232,6 @@ checkAndUnlockGames() {
 | 2026-03-18 | 8 | Phase 7 complete: Profile Expansion — replaced Topics Done with Words Learned stat, 6-level learning progress bar, priority-based recommendation card (WJ→new games→course→default), word collection sticker book (emoji+word+translation grid), unlocked games display (open vs locked), weekly activity calendar (7-day dots with activityDates tracking), milestone certificates (1/10/25/50/100 words, auto-awarded on graduation). |
 | 2026-03-18 | 9 | Phase 8 complete: Stats Overhaul — added Words Learned overview metric, per-word Word Journey status, category completion view, learning velocity, time spent learning, and Hall of Fame leaderboard based on learned words; shared progress now persists total learning time and per-word journey progress for stats. |
 | 2026-03-18 | 10 | Phase 9 complete: Completion Screen Overhaul — expanded completion screens with per-word mastery cards, animated coins earned, variable progress bar, next recommended action, Memory completion parity, and tier-based audio play limits (Learn unlimited, Practice 8, Challenge/Test 5); PLAN.md status synced. |
+| 2026-03-19 | 11 | Phase 10 complete: Course & Certificate Rewiring — course activities now count from course-launch and matching free-play sessions, topic activity launches are properly scoped to topic words/themes, `getNextRecommendedActivity()` drives recommendations, course-level unlock requirements are shown/enforced in UI, and milestone certificates now include ABC Hero, Sentence Builder, and Perfect Listener. |
+| 2026-03-21 | 12 | Phase 11 complete: New Games — added 3 new games: "True or Not?" (נכון או לא?, Practice tier, picture+word match yes/no), "Word Builder" (בונה משפטים, Challenge tier, tap-to-fill sentence blanks), "Story Time" (זמן סיפור, Challenge tier, read-along with comprehension quiz). All integrated with game gating, ScoreManager, ProgressManager, stats, header, course system, and completion screens. Story templates in data/stories.js with slot-filling from learned words. |
+| 2026-03-21 | 13 | Open questions resolved: Memory game uses hybrid word selection (learned words when ≥12, otherwise full bank), Word Journey replay mode with half coins + "Practice Learned Words" button + replay badge, lock overlay made semi-transparent (opacity 0.3, minimal blur, reduced grayscale). |

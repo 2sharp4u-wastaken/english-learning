@@ -8,8 +8,8 @@
     <meta http-equiv="Expires" content="0">
     <title>English Learning Games - לומדים אנגלית בכיף</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
-    <link rel="stylesheet" href="styles.css?t=1773794398">
-    <link rel="stylesheet" href="game-completion-styles.css?t=1776200001">
+    <link rel="stylesheet" href="styles.css?t=1774216737">
+    <link rel="stylesheet" href="game-completion-styles.css?t=1774216737">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -100,6 +100,17 @@
                                     <span class="lock-text"></span>
                                 </div>
                             </div>
+                            <div class="game-card" data-game="true-or-not" data-gate="5 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">✅</div>
+                                    <h3>נכון או לא?</h3>
+                                    <p>האם התמונה מתאימה למילה?</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
                             <div class="game-card" data-game="memory">
                                 <div class="game-card-main">
                                     <div class="game-card-icon">🃏</div>
@@ -151,6 +162,28 @@
                                     <div class="game-card-icon">✍️</div>
                                     <h3>השלם את המשפט</h3>
                                     <p>בחר את המילה הנכונה להשלמת המשפט</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="story-time" data-gate="15 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">📖</div>
+                                    <h3>זמן סיפור</h3>
+                                    <p>קרא סיפורים קצרים וענה על שאלות</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="word-builder" data-gate="20 מילים + 1 נושא">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🔨</div>
+                                    <h3>בונה משפטים</h3>
+                                    <p>בחר את המילה הנכונה לבניית משפט</p>
                                 </div>
                                 <div class="card-lock-overlay">
                                     <span class="lock-icon">🔒</span>
@@ -642,13 +675,15 @@
             <!-- Word Journey Game -->
             <div id="word-journey-game" class="game-content">
                 <div class="progress-container">
-                    <button class="reset-game-btn" id="word-journey-reset-btn" title="אפס משחק">אפס משחק</button>
-                    <span class="question-counter">
-                        שלב <span id="word-journey-current-q">1</span>
-                        מתוך <span id="word-journey-total-q">2</span>
-                    </span>
-                    <div id="wj-stage-bar" class="wj-stage-bar">
-                        <!-- Dots injected by JS: one per stage -->
+                    <div class="word-journey-progress-meta">
+                        <div class="word-journey-meta-line">
+                            <span class="word-journey-meta-stat"><span id="word-journey-batch-size">5</span> מילים</span>
+                            <span class="word-journey-meta-sep">•</span>
+                            <span class="word-journey-meta-stat">שלב <span id="word-journey-current-q">1</span> מתוך <span id="word-journey-total-q">5</span></span>
+                        </div>
+                        <div id="wj-stage-bar" class="wj-stage-bar">
+                            <!-- Dots injected by JS: one per stage -->
+                        </div>
                     </div>
                 </div>
 
@@ -674,28 +709,125 @@
                     </div>
                 </div>
                 <div class="game-board">
-                    <div class="picture-match-card">
-                        <div class="picture-match-layout-vertical">
-                            <div class="picture-container">
-                                <div class="word-picture" id="picture-match-picture">🔊</div>
-                            </div>
-                            <div class="picture-match-word" id="picture-match-word"></div>
-                            <div class="hebrew-translation" id="picture-match-hebrew"></div>
-                            <div class="controls-row">
-                                <button class="play-audio" id="picture-match-audio" aria-label="השמע מילה">
-                                    <i class="fas fa-volume-up"></i>
-                                </button>
-                                <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
-                            </div>
+                    <div class="picture-match-header">
+                        <div class="picture-match-word target-word" id="picture-match-word"></div>
+                        <div class="controls-row">
+                            <button class="play-audio" id="picture-match-audio" aria-label="השמע מילה">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
                         </div>
+                    </div>
+                    <div class="options-grid picture-match-options-grid" id="picture-match-options">
+                        <!-- Options populated by JS -->
                     </div>
                     <button class="next-btn" id="picture-match-next" style="display: none;">
                         <span>המילה הבאה</span>
                     </button>
-                    <div class="options-grid picture-match-options-grid" id="picture-match-options">
-                        <!-- Options populated by JS -->
-                    </div>
                     <div class="feedback" id="picture-match-feedback" aria-live="polite"></div>
+                    <!-- Hidden elements kept for JS compatibility -->
+                    <div id="picture-match-picture" style="display:none;"></div>
+                    <div id="picture-match-hebrew" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- True or Not Game -->
+            <div id="true-or-not-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="true-or-not-current-q">1</span> מתוך <span id="true-or-not-total-q">10</span></span>
+                    <span class="mastery-indicator" id="true-or-not-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="true-or-not-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="true-or-not-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div id="true-or-not-container">
+                        <div class="ton-image-area" id="true-or-not-image">
+                            <!-- Image rendered by JS -->
+                        </div>
+                        <div class="ton-word-display">
+                            <span class="ton-word" id="true-or-not-word">...</span>
+                            <span class="ton-hebrew" id="true-or-not-hebrew"></span>
+                        </div>
+                        <div class="ton-buttons">
+                            <button class="ton-answer-btn ton-yes" id="true-or-not-yes" onclick="window.trueOrNotGame.checkAnswer(true)">
+                                <span class="ton-btn-icon">✓</span>
+                                <span class="ton-btn-label">נכון!</span>
+                            </button>
+                            <button class="ton-answer-btn ton-no" id="true-or-not-no" onclick="window.trueOrNotGame.checkAnswer(false)">
+                                <span class="ton-btn-icon">✗</span>
+                                <span class="ton-btn-label">לא נכון!</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="feedback" id="true-or-not-feedback" aria-live="polite" style="display: none;"></div>
+                    <button class="next-btn" id="true-or-not-next" onclick="gameManager.loadQuestion('true-or-not')" style="display: none;">
+                        <span>הבא ➡️</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Word Builder Game -->
+            <div id="word-builder-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="word-builder-current-q">1</span> מתוך <span id="word-builder-total-q">8</span></span>
+                    <span class="scramble-theme-badge progress-category-badge" id="word-builder-theme"></span>
+                    <button class="reset-game-btn" id="word-builder-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="word-builder-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div id="word-builder-container">
+                        <div class="wb-hint" id="word-builder-hint"></div>
+                        <div class="wb-sentence-card">
+                            <div id="word-builder-sentence" class="wb-sentence">
+                                <!-- Sentence with blank slot populated by JS -->
+                            </div>
+                        </div>
+                        <div id="word-builder-options" class="wb-options">
+                            <!-- Options populated by JS -->
+                        </div>
+                    </div>
+                    <div class="feedback" id="word-builder-feedback" aria-live="polite" style="display: none;"></div>
+                    <button class="next-btn" id="word-builder-next" onclick="gameManager.loadQuestion('word-builder')" style="display: none;">
+                        <span>המשפט הבא ➡️</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Story Time Game -->
+            <div id="story-time-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">סיפור <span id="story-time-current-q">1</span> מתוך <span id="story-time-total-q">3</span></span>
+                    <button class="reset-game-btn" id="story-time-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="story-time-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div id="story-time-container">
+                        <h2 class="st-title" id="story-time-title"></h2>
+                        <div class="st-hint" id="story-time-hint"></div>
+                        <div class="st-text" id="story-time-text">
+                            <!-- Story sentences populated by JS -->
+                        </div>
+                        <button class="st-ready-btn" id="story-time-ready" style="display: none;">
+                            <span>!מוכן לשאלות ❓</span>
+                        </button>
+                        <div id="story-time-quiz" style="display: none;">
+                            <div class="st-q-counter" id="story-time-q-counter"></div>
+                            <div class="st-question" id="story-time-question"></div>
+                            <div class="st-options" id="story-time-options">
+                                <!-- Options populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feedback" id="story-time-feedback" aria-live="polite" style="display: none;"></div>
+                    <button class="next-btn" id="story-time-next" style="display: none;">
+                        <span>הבא ➡️</span>
+                    </button>
                 </div>
             </div>
 
@@ -996,21 +1128,21 @@
     <script type="module" src="utils/consoleLogger.js?t=1768159313"></script>
 
     <script src="auth.js?t=1762332862"></script>
-    <script src="settings.js?t=1742508000"></script>
+    <script src="settings.js?t=1774216737"></script>
     <script type="module" src="data/_loader.js?t=1773784000"></script>
     <script src="speechSynthesis.js?t=1742300000"></script>
     <script src="feedback.js"></script>
     <script src="audio-effects.js"></script>
     <script src="gamification.js"></script>
     <script type="module">
-        import { initTopHeader, showGameInHeader, setHeaderMode } from './components/top-header.js?t=1742301000';
+        import { initTopHeader, showGameInHeader, setHeaderMode } from './components/top-header.js?t=1776400001';
         initTopHeader({ activePage: 'home' });
         // Expose to gameLogic.js (separate module scope)
         window.showGameInHeader = showGameInHeader;
         window.setHeaderMode = setHeaderMode;
     </script>
-    <script type="module" src="gameLogic.js?t=1776200001"></script>
-    <script type="module" src="app.js?t=1776200001"></script>
+    <script type="module" src="gameLogic.js?t=1776400001"></script>
+    <script type="module" src="app.js?t=1776400001"></script>
 
     <script>
         // Welcome Screen Handler

@@ -102,6 +102,11 @@ export async function loadVocabularyQuestion(question) {
         // Reset next button
         document.getElementById('vocab-next').style.display = 'none';
 
+        // Auto-play the word when the question loads
+        if (typeof speechManager !== 'undefined') {
+            speechManager.speakWord(question.word, '', 'vocabulary').catch(() => {});
+        }
+
         // Enable arrow-key navigation
         this.enableOptionKeyboardNavigation('vocab-options');
 

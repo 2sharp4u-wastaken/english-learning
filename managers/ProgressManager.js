@@ -295,7 +295,8 @@ export class ProgressManager {
                 started: false,
                 mastery: 0,
                 completedActivities: [],
-                certificateEarned: false
+                certificateEarned: false,
+                completed: false
             };
         }
 
@@ -338,6 +339,38 @@ export class ProgressManager {
      */
     unlockTopic(topicId) {
         this.updateTopicProgress(topicId, { unlocked: true });
+    }
+
+    /**
+     * Calculate topic mastery from the average mastery of its words.
+     * Learned words count as fully mastered for course progression purposes.
+     * @param {Array<string>} topicWords
+     * @returns {number}
+     */
+    calculateTopicMastery(topicWords = []) {
+        if (!Array.isArray(topicWords) || topicWords.length === 0) {
+            return 0;
+        }
+
+        const bank = window.vocabularyBank || [];
+        let totalMastery = 0;
+        let countedWords = 0;
+
+        topicWords.forEach(rawWord => {
+            const normalizedWord = String(rawWord || '').trim().toLowerCase();
+            if (!normalizedWord) return;
+
+            const bankEntry = bank.find(entry => entry.word.toLowerCase() === normalizedWord);
+            const category = bankEntry?.category;
+            const stats = category ? this.getWordStats(rawWord, category) : null;
+            const learned = category ? this.isWordLearned(rawWord, category) : false;
+
+            totalMastery += learned ? 1 : (stats?.masteryLevel || 0);
+            countedWords++;
+        });
+
+        if (countedWords === 0) return 0;
+        return Math.round((totalMastery / countedWords) * 100) / 100;
     }
 
     // ==========================================
@@ -582,7 +615,7 @@ export class ProgressManager {
      */
     getCompletedTopicCount() {
         return Object.values(this.topicProgress).filter(
-            t => t.completedActivities && t.completedActivities.length > 0
+            t => t?.completed === true || t?.certificateEarned === true
         ).length;
     }
 
@@ -629,6 +662,9 @@ export class ProgressManager {
         tryUnlock('scramble',      learnedCount >= 30 && topicsDone >= 2);
         tryUnlock('grammar',       learnedCount >= 50 && topicsDone >= 3);
         tryUnlock('vocabulary',    learnedCount >= 10);
+        tryUnlock('true-or-not',   learnedCount >= 5);
+        tryUnlock('word-builder',  learnedCount >= 20 && topicsDone >= 1);
+        tryUnlock('story-time',    learnedCount >= 15);
 
         return newlyUnlocked;
     }

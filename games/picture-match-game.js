@@ -31,7 +31,10 @@ export async function loadPictureMatchQuestion(question) {
         btn.className = 'option-btn picture-match-option-btn listening-option-hidden';
         btn.disabled = true;
         btn.setAttribute('aria-label', opt.word);
-        btn.innerHTML = `<div class="picture-match-option-img">${opt.picture}</div>`;
+        const imgContainer = document.createElement('div');
+        imgContainer.className = 'picture-match-option-img';
+        renderPicture(imgContainer, { picture: opt.picture, imageUrl: opt.imageUrl, word: opt.word, category: question.category });
+        btn.appendChild(imgContainer);
         btn.addEventListener('click', () => this.checkPictureMatchAnswer(i, question));
         optionsContainer.appendChild(btn);
     });

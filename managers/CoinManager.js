@@ -48,6 +48,9 @@ export class CoinManager {
         // Check daily login bonus
         this.checkDailyBonus();
 
+        // Always sync the display with the current balance
+        this.updateCoinDisplay();
+
         this.initialized = true;
     }
 
@@ -66,9 +69,11 @@ export class CoinManager {
         this.userProgress.totalCoinsEarned += amount;
 
         // Record in history
+        const gameType = window.gameManager?.currentGame || null;
         this.userProgress.coinHistory.push({
             amount,
             reason,
+            gameType,
             timestamp: Date.now(),
             date: new Date().toISOString().split('T')[0],
             balance: this.userProgress.coins
