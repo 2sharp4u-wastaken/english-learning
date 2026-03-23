@@ -196,9 +196,14 @@ async function renderSoundsRight(question, gameBoard) {
             </div>
             <div class="sentence-options" id="grammar-beginner-options">
                 ${question.options.map((opt) => `
-                    <button class="sentence-play-btn" data-sentence="${opt.sentence}">
-                        <i class="fas fa-volume-up"></i>
-                    </button>
+                    <div class="verb-option-group">
+                        <button class="verb-play-btn" data-sentence="${opt.sentence}" data-action="play">
+                            <i class="fas fa-volume-up"></i>
+                        </button>
+                        <button class="verb-select-btn" data-sentence="${opt.sentence}" data-action="select">
+                            <i class="fas fa-check"></i>
+                        </button>
+                    </div>
                 `).join('')}
             </div>
             <div class="gb-translation" id="gb-translation" style="display:none"></div>
@@ -206,11 +211,14 @@ async function renderSoundsRight(question, gameBoard) {
         <div class="feedback" id="grammar-beginner-feedback"></div>
     `;
 
-    // Each speaker button plays the sentence and submits it as the answer
+    // Play buttons speak the sentence; select buttons submit the answer
     document.querySelectorAll('#grammar-beginner-options button').forEach(btn => {
         btn.addEventListener('click', () => {
-            speechManager.speakSentence(btn.dataset.sentence);
-            checkGrammarBeginnerAnswer.call(this, question, btn.dataset.sentence);
+            if (btn.dataset.action === 'play') {
+                speechManager.speakSentence(btn.dataset.sentence);
+            } else {
+                checkGrammarBeginnerAnswer.call(this, question, btn.dataset.sentence);
+            }
         });
     });
 }
