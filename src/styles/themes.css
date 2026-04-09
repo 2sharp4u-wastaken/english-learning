@@ -1,0 +1,15 @@
+#react-root,
+#react-root [data-theme='dark'] {
+  color-scheme: dark;
+  --color-canvas: #07101d;
+  --color-surface-1: rgba(12, 23, 40, 0.88);
+  --color-surface-2: rgba(20, 35, 58, 0.92);
+  --color-text-primary: var(--white-soft);
+  --color-text-muted: var(--slate-300);
+  --color-learn: var(--mint-400);
+  --color-practice: var(--blue-400);
+  --color-challenge: var(--amber-400);
+  --color-test: var(--coral-400);
+  --gradient-app: radial-gradient(circle at top, rgba(104, 168, 255, 0.2), transparent 34%),
+    linear-gradient(160deg, rgba(7, 16, 29, 0.98), rgba(20, 35, 58, 0.96));
+}

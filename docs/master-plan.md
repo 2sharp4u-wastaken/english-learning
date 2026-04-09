@@ -23,7 +23,12 @@ Goals:
 - preserve current game and progress logic during migration
 - reduce CSS entropy
 - make future changes faster and safer
-- migrate all 16 games — no partial overhaul
+
+Scope commitment:
+
+- **Committed baseline:** Phase 0 + Phase 1 + Phase 2 + Wave 1 games (Vocabulary, Listening, Picture Match, True or Not)
+- **Desired end state:** full migration of all 16 games
+- Waves 2–4 are planned and sequenced but treated as backlog until Wave 1 validates the pattern
 
 ## Chosen Stack
 
@@ -106,15 +111,66 @@ How it works:
 
 Developer workflow:
 
-1. Start Python server: `python3 server.py` (port 3000)
-2. Start Vite: `npm run dev` (port 3002)
-3. Open `https://localhost:3002`
+Two processes are required. They run in separate terminals:
+
+1. **Terminal 1:** `python3 server.py` — starts API server on port 3000
+2. **Terminal 2:** `npm run dev` — starts Vite on port 3002, proxies `/api/*` to port 3000
+
+Open `https://localhost:3002` to use the app.
+
+The Python server is only needed when using API endpoints (image download, nikud enrichment, file writes). For pure frontend work it can be skipped — `/api/*` calls will just fail silently.
+
+Scripts in `package.json`:
+
+```json
+{
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview",
+    "test": "npx playwright test",
+    "test:ui": "npx playwright test --ui"
+  }
+}
+```
 
 Production build:
 
 - `npm run build` outputs to `dist/`
-- `dist/` is served by the Python server directly (add static file serving for `dist/`)
-- Or use any static file server
+- `dist/` can be served by any static file server
+- For API endpoints in production, the Python server must also run
+
+## Hybrid index.html Coexistence
+
+During the migration, `index.html` serves both the legacy app and the React app. The boundary is explicit:
+
+```html
+<body>
+  <!-- Legacy markup: app-layout, welcome-screen, game-area, etc. -->
+  <div class="app-layout">
+    ...legacy DOM...
+  </div>
+
+  <!-- React app: mounts here, completely separate DOM tree -->
+  <div id="react-root"></div>
+
+  <!-- Legacy scripts -->
+  <script src="auth.js"></script>
+  <script type="module" src="app.js"></script>
+
+  <!-- Vite/React entrypoint -->
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+```
+
+Takeover model — React progressively hides legacy regions:
+
+- **Phase 0:** React renders inside `#react-root` alongside the legacy app. Both are visible. React shows a minimal shell; legacy handles all real functionality.
+- **Phase 1:** React takes over the home screen, nav, profile, settings, stats. When React is ready to own a surface, the corresponding legacy DOM section is hidden via `display: none` (toggled by React on mount). Legacy markup stays in `index.html` but is not visible.
+- **Phase 2–3:** Games launch inside `#react-root`. Legacy game rendering is either bridged (legacy game mounts inside a React container div) or replaced.
+- **Phase 4:** All legacy markup and scripts are removed from `index.html`. React owns the full page.
+
+Key rule: React and legacy never render the same surface simultaneously. When React takes over a section, it hides the legacy equivalent. This prevents visual doubling and CSS conflicts.
 
 ## CSS Containment Strategy
 
@@ -122,18 +178,19 @@ During hybrid mode, both legacy `styles.css` and Tailwind CSS are active. This r
 
 Approach:
 
-1. **Tailwind prefix**: configure Tailwind with `prefix: ''` (no prefix needed — see below)
+1. **Tailwind prefix**: start without a prefix — re-evaluate if collisions appear (see below)
 2. **Scoped mounting**: the React app mounts inside `<div id="react-root">`. Legacy HTML lives outside this div
 3. **Tailwind's Preflight (reset) is scoped**: configure `corePlugins: { preflight: false }` in `tailwind.config.ts` to disable Tailwind's global CSS reset, which would conflict with legacy styles
 4. **Custom Preflight**: add a scoped reset inside `src/styles/globals.css` that only applies within `#react-root`
 5. **Legacy CSS is not imported by Vite**: the legacy `styles.css` is loaded via `<link>` tag in `index.html` and only affects legacy markup. As legacy sections are deleted, their CSS is removed too
 6. **Font loading**: move from CDN `<link>` tags to `@font-face` declarations in `src/styles/globals.css` for Heebo and Fredoka. Legacy pages keep their own font links until retired
 
-No Tailwind prefix is needed because:
+Starting without a Tailwind prefix because:
 
-- Tailwind utility classes (`flex`, `p-4`, `text-sm`) don't collide with the legacy CSS (which uses semantic class names like `.game-card`, `.tier-section`)
+- Tailwind utility classes (`flex`, `p-4`, `text-sm`) are unlikely to collide with the legacy CSS (which uses semantic class names like `.game-card`, `.tier-section`)
 - The scoped Preflight prevents reset conflicts
-- If a specific collision is discovered during development, it can be resolved per-case
+
+If collisions appear during development, options are: fix per-case, or add a Tailwind `prefix` (e.g., `tw-`) globally. Adding a prefix later is a mechanical find-replace, so starting without one is low-risk.
 
 ## Bridge Layer Design
 
@@ -196,6 +253,22 @@ function getAuthService(): AuthService {
 }
 ```
 
+### Auth End-State
+
+During the migration, `auth.ts` in the bridge reads from the global `authService` (which is `auth.js`). When `auth.js` is retired in Phase 4, auth must be reimplemented in React:
+
+- `src/bridge/auth.ts` becomes the **auth owner**, not just an adapter
+- It reads/writes `localStorage` directly for user accounts (`v2_authUsers`), sessions (`v2_currentUser`), and activity tracking
+- The `useAuthSession` hook provides the React UI with login/logout/session state
+- The session timeout logic (currently in `AuthService`) is reimplemented in the bridge module
+- Password hashing and admin password check are reimplemented in the bridge module
+
+This means `src/bridge/auth.ts` has two lifecycle stages:
+1. **During migration (Phase 0–3):** adapter that reads from `window.authService`
+2. **After migration (Phase 4):** standalone auth module that owns session state directly
+
+The bridge contract (`getCurrentUser`, `onAuthChange`) stays the same — only the implementation changes. React hooks and components are unaffected by this transition.
+
 ### Event synchronization
 
 Legacy code mutates localStorage and DOM directly. React needs to stay in sync:
@@ -215,7 +288,6 @@ Principles:
 - migrate shell first, then shared gameplay chrome, then games one by one
 - each slice must be independently testable and visually shippable
 - legacy UI stays operational until replacement is complete
-- all 16 games are migrated — complete overhaul
 
 Migration model:
 
@@ -223,8 +295,8 @@ Migration model:
 2. create the bridge layer for auth, progress, coins, unlocks, and game launch actions
 3. replace home/profile/settings/stats first
 4. embed legacy game screens under the new shell
-5. replace game UIs incrementally (all 16)
-6. retire legacy CSS and old pages
+5. replace game UIs incrementally — Wave 1 is committed, Waves 2–4 are backlog
+6. retire legacy CSS and old pages progressively as React replaces them
 
 ## Target File Structure
 
@@ -232,7 +304,7 @@ This structure is a target vision. It will be built incrementally per-phase — 
 
 ```text
 /
-  index.html              ← Vite entrypoint (replaces legacy index.html)
+  index.html              ← hybrid: legacy markup + #react-root + Vite entrypoint (see Hybrid Coexistence section)
   settings.html           ← legacy, kept until Phase 1.6
   stats.html              ← legacy, kept until Phase 1.5
   words.html              ← legacy, kept until Phase 4
@@ -418,7 +490,22 @@ Add per-slice acceptance tests alongside each slice, not as a batch at the end.
 
 Objective: prepare the repo for a hybrid React migration without breaking the current app.
 
+Current status:
+
+- Slice 0.1 completed and committed
+- Slice 0.2 completed and ready to commit
+- Slice 0.3 not started
+- Slice 0.4 not started
+
 ### Slice 0.1: Tooling Bootstrap
+
+Status: completed
+
+Implemented notes:
+
+- Vite, React, and TypeScript bootstrap added
+- `index.html` now mounts React into `#react-root` while preserving the legacy DOM
+- `vite.config.ts` uses port 3002, proxies `/api/*` to port 3000, and builds with `target: 'esnext'` so existing legacy modules with top-level `await` still bundle
 
 Files added:
 
@@ -443,6 +530,15 @@ Acceptance criteria:
 - Legacy game flow still works if accessed directly
 
 ### Slice 0.2: Styling Foundation
+
+Status: completed
+
+Implemented notes:
+
+- Tailwind, PostCSS, and utility dependencies added
+- scoped React-only styling foundation added under `src/styles/`
+- `src/main.tsx` now imports the global style entry and renders a token-driven RTL demo panel inside `#react-root`
+- font loading currently uses local `@font-face` declarations with fallback to installed system fonts; no font asset files have been added to the repo yet
 
 Files added:
 
@@ -669,11 +765,13 @@ Acceptance criteria:
 
 ## Phase 3: Game-by-Game Migration
 
-Objective: replace all 16 legacy game UIs with React implementations using shared gameplay primitives.
+Objective: migrate game UIs to React using shared gameplay primitives.
+
+**Wave 1 is the committed scope.** It validates the shared primitives and the game migration pattern. Waves 2–4 are the desired end state and are sequenced here for planning, but they move from backlog to committed only after Wave 1 ships and the pattern is proven.
 
 Order rationale: start with the simplest and most representative games to validate the pattern, then progress to more complex/custom games.
 
-### Wave 1: Core pattern games (similar interaction model)
+### Wave 1: Core pattern games — COMMITTED
 
 These games share a question→answer→feedback loop. Migrating them first validates the shared primitives.
 
@@ -682,7 +780,7 @@ These games share a question→answer→feedback loop. Migrating them first vali
 **Slice 3.3: Picture Match** — image-heavy answer layout. ~118 lines.
 **Slice 3.4: True or Not** — binary answer variant. ~217 lines.
 
-### Wave 2: Text-building games
+### Wave 2: Text-building games — BACKLOG
 
 These involve constructing text rather than choosing answers.
 
@@ -691,12 +789,12 @@ These involve constructing text rather than choosing answers.
 **Slice 3.7: Fill Blanks** — sentence completion. ~205 lines.
 **Slice 3.8: Sentence Scramble** — drag/tap reordering. ~428 lines.
 
-### Wave 3: Grammar and structured learning
+### Wave 3: Grammar and structured learning — BACKLOG
 
 **Slice 3.9: Grammar Beginner** — guided grammar. ~384 lines.
 **Slice 3.10: Grammar** — advanced grammar. ~207 lines.
 
-### Wave 4: Special/complex games
+### Wave 4: Special/complex games — BACKLOG
 
 These have unique interaction models and require the most custom work.
 
@@ -755,7 +853,7 @@ Objective: remove dead legacy code and shrink maintenance burden.
 - remove `games/*.js` files (logic has been reimplemented in React)
 - remove `gameLogic.js` if fully replaced
 - remove `app.js` orchestration (replaced by React app)
-- remove `auth.js` global script (replaced by bridge + React auth)
+- remove `auth.js` global script — `src/bridge/auth.ts` transitions from adapter to standalone auth owner (see Auth End-State section)
 
 ### Slice 4.5: CSS Rationalization
 
@@ -829,26 +927,24 @@ A phase is done when:
    Mitigation: hash routing avoids all collisions with legacy file paths. Clear route map documented above.
 
 6. **Two dev servers add friction.**
-   Mitigation: Vite proxy makes it transparent. Single `npm run dev` command. Python server only needed for API endpoints (which are rarely used during frontend work).
+   Mitigation: Vite proxy makes `/api/*` calls transparent. Two terminals are required (`python3 server.py` + `npm run dev`), but the Python server can be skipped for pure frontend work — API calls just fail silently.
 
 7. **Game migration scope is large (16 games).**
-   Mitigation: wave ordering by complexity. Shared primitives reduce per-game effort. Simpler games (118–266 lines) are migrated first to build momentum and validate patterns before tackling complex ones (778–1,589 lines).
+   Mitigation: only Wave 1 (4 games) is committed. Waves 2–4 are backlog until Wave 1 validates the pattern. Wave ordering is by complexity — simpler games first. The bridge ensures unmigrated legacy games remain fully functional indefinitely.
 
-## New Repo Setup
+## Repo Strategy
 
-This migration executes in a **new local repo** created by copying the full existing codebase.
+This migration executes in the **existing repo** on a dedicated branch (e.g., `react-migration`), branched from the current working state.
 
-Why copy everything:
+Why stay in the same repo:
 
-- bridge layer imports actual managers, data, and game modules
-- images, audio, data files needed from day 1
-- legacy app must remain fully functional during hybrid mode
-- starting from scratch would require re-importing everything piece by piece
+- preserves git history, blame, and diff continuity — valuable during a long migration
+- no risk of losing context about why code exists as-is
+- branch-based workflow allows easy comparison with the pre-migration state
+- avoids the overhead of maintaining a separate copy
 
-Setup steps:
+Setup:
 
-1. Copy the full `english-learning-ui-overhaul` directory to a new location (e.g., `english-learning-v3`)
-2. Initialize as a new git repo (fresh history)
-3. Remove files that are specific to the UI-overhaul branch's in-progress work (stale docs, WIP CSS)
-4. Commit the clean baseline
-5. Begin Phase 0 from there
+1. Branch from current state: `git checkout -b react-migration`
+2. Begin Phase 0 on that branch
+3. Merge to main when Phase 1 is complete and the new shell is validated

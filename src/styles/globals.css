@@ -1,0 +1,68 @@
+@import './tokens.css';
+@import './themes.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: 'Heebo';
+  src: local('Heebo'), local('Heebo Regular');
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: 'Fredoka';
+  src: local('Fredoka'), local('Fredoka Regular');
+  font-style: normal;
+  font-weight: 300 700;
+  font-display: swap;
+}
+
+#react-root,
+#react-root *,
+#react-root *::before,
+#react-root *::after {
+  box-sizing: border-box;
+}
+
+#react-root {
+  direction: rtl;
+  isolation: isolate;
+  color: var(--color-text-primary);
+  font-family: var(--font-ui);
+}
+
+#react-root * {
+  min-width: 0;
+}
+
+#react-root h1,
+#react-root h2,
+#react-root h3,
+#react-root h4,
+#react-root p {
+  margin: 0;
+}
+
+#react-root button,
+#react-root input,
+#react-root textarea,
+#react-root select {
+  font: inherit;
+}
+
+#react-root a {
+  color: inherit;
+  text-decoration: none;
+}
+
+#react-root img,
+#react-root svg,
+#react-root video,
+#react-root canvas {
+  display: block;
+  max-width: 100%;
+}

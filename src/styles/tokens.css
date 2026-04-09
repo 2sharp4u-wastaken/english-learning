@@ -1,0 +1,29 @@
+#react-root {
+  --font-ui: 'Heebo', 'Arial Hebrew', 'Segoe UI', sans-serif;
+  --font-display: 'Fredoka', 'Heebo', 'Segoe UI', sans-serif;
+
+  --ink-950: #07101d;
+  --ink-900: #0c1728;
+  --ink-800: #14233a;
+  --ink-700: #1d314c;
+  --slate-200: #d8e2f1;
+  --slate-300: #b4c2d8;
+  --white-soft: rgba(255, 255, 255, 0.92);
+
+  --mint-400: #63e6c6;
+  --blue-400: #68a8ff;
+  --amber-400: #f4b457;
+  --coral-400: #ff7a66;
+
+  --space-1: 0.5rem;
+  --space-2: 1rem;
+  --space-3: 1.5rem;
+  --space-4: 2rem;
+  --space-5: 3rem;
+
+  --radius-xl: 1.25rem;
+  --radius-2xl: 1.75rem;
+
+  --shadow-panel: 0 20px 45px rgba(1, 8, 20, 0.28);
+  --shadow-glow: 0 0 0 1px rgba(255, 255, 255, 0.06), 0 18px 50px rgba(77, 123, 255, 0.18);
+}
