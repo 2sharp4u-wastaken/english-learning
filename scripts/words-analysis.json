@@ -1,0 +1,1320 @@
+{
+  "found": [
+    {
+      "word": "Redstone",
+      "category": "minecraft",
+      "translation": "רדסטון",
+      "currentEmoji": "🔴",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Pro",
+      "category": "roblox",
+      "translation": "פרו",
+      "currentEmoji": "🥇",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Noob",
+      "category": "roblox",
+      "translation": "נוב",
+      "currentEmoji": "🙈",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Cannon",
+      "category": "gaming",
+      "translation": "תותח",
+      "currentEmoji": "🎯",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Pair",
+      "category": "numbers",
+      "translation": "זוג",
+      "currentEmoji": "2️⃣",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Desk",
+      "category": "school",
+      "translation": "שולחן כתיבה",
+      "currentEmoji": "🪑",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Maroon",
+      "category": "colors",
+      "translation": "חום אדום",
+      "currentEmoji": "🟤",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Fly",
+      "category": "actions",
+      "translation": "לעוף",
+      "currentEmoji": "🕊️",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Clan",
+      "category": "gaming",
+      "translation": "שֶׁבֶט",
+      "currentEmoji": "👥",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Pink",
+      "category": "colors",
+      "translation": "ורוד",
+      "currentEmoji": "🌸",
+      "hasImageUrl": true
+    },
+    {
+      "word": "Musketeer",
+      "category": "gaming",
+      "translation": "מוסקטיר",
+      "currentEmoji": "",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Tesla",
+      "category": "gaming",
+      "translation": "טסלה",
+      "currentEmoji": "⚡",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Spinach",
+      "category": "food",
+      "translation": "תרד",
+      "currentEmoji": "🌿",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Gravel",
+      "category": "minecraft",
+      "translation": "חָצָץ",
+      "currentEmoji": "🪨",
+      "hasImageUrl": false
+    },
+    {
+      "word": "School",
+      "category": "school",
+      "translation": "בית ספר",
+      "currentEmoji": "🏫",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Indigo",
+      "category": "colors",
+      "translation": "כָּחוֹל סגול",
+      "currentEmoji": "🟦",
+      "hasImageUrl": true
+    },
+    {
+      "word": "Magenta",
+      "category": "colors",
+      "translation": "אדום סגלגל",
+      "currentEmoji": "🟣",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Clean",
+      "category": "actions",
+      "translation": "לנקות",
+      "currentEmoji": "🧹",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Level",
+      "category": "gaming",
+      "translation": "רמה",
+      "currentEmoji": "📊",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Eraser",
+      "category": "school",
+      "translation": "מחק",
+      "currentEmoji": "🧽",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Knight",
+      "category": "gaming",
+      "translation": "אביר",
+      "currentEmoji": "🛡️",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Cyan",
+      "category": "colors",
+      "translation": "צִיאָן",
+      "currentEmoji": "🟦",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Power",
+      "category": "gaming",
+      "translation": "כוח",
+      "currentEmoji": "💪",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Cannon",
+      "category": "gaming",
+      "translation": "תותח",
+      "currentEmoji": "🎯",
+      "hasImageUrl": false
+    },
+    {
+      "word": "End",
+      "category": "minecraft",
+      "translation": "סוף",
+      "currentEmoji": "🌌",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Skeleton",
+      "category": "minecraft",
+      "translation": "שלד",
+      "currentEmoji": "💀",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Plum",
+      "category": "food",
+      "translation": "שזיף",
+      "currentEmoji": "🍇",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Take",
+      "category": "actions",
+      "translation": "לקחת",
+      "currentEmoji": "🙌",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Lightning",
+      "category": "nature",
+      "translation": "ברק",
+      "currentEmoji": "⚡",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Teleport",
+      "category": "roblox",
+      "translation": "להשתגר",
+      "currentEmoji": "🚀",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Enderman",
+      "category": "minecraft",
+      "translation": "אנדרמן",
+      "currentEmoji": "👾",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Iron",
+      "category": "minecraft",
+      "translation": "ברזל",
+      "currentEmoji": "🔩",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Golem",
+      "category": "gaming",
+      "translation": "גולם",
+      "currentEmoji": "🗿",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Sing",
+      "category": "actions",
+      "translation": "לשיר",
+      "currentEmoji": "🎤",
+      "hasImageUrl": false
+    },
+    {
+      "word": "River",
+      "category": "nature",
+      "translation": "נהר",
+      "currentEmoji": "🌊",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Wash",
+      "category": "actions",
+      "translation": "לשטוף",
+      "currentEmoji": "🧼",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Race",
+      "category": "roblox",
+      "translation": "מרוץ",
+      "currentEmoji": "🏁",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Clean",
+      "category": "actions",
+      "translation": "לנקות",
+      "currentEmoji": "🧹",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Draw",
+      "category": "actions",
+      "translation": "לצייר",
+      "currentEmoji": "✏️",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Glue",
+      "category": "school",
+      "translation": "דבק",
+      "currentEmoji": "🧴",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Sand",
+      "category": "nature",
+      "translation": "חול",
+      "currentEmoji": "🏖️",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Ghast",
+      "category": "minecraft",
+      "translation": "גאסט",
+      "currentEmoji": "👻",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Shovel",
+      "category": "minecraft",
+      "translation": "אֵת",
+      "currentEmoji": "🔨",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Scarlet",
+      "category": "colors",
+      "translation": "שָׁנִי",
+      "currentEmoji": "🔴",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Trade",
+      "category": "roblox",
+      "translation": "סַחַר",
+      "currentEmoji": "🔄",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Whisper",
+      "category": "actions",
+      "translation": "ללחוש",
+      "currentEmoji": "🤫",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Wind",
+      "category": "nature",
+      "translation": "רוח",
+      "currentEmoji": "🌬️",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Catch",
+      "category": "actions",
+      "translation": "לתפוס",
+      "currentEmoji": "👐",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Shout",
+      "category": "actions",
+      "translation": "לצעוק",
+      "currentEmoji": "🗣️",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Teal",
+      "category": "colors",
+      "translation": "צהבהב",
+      "currentEmoji": "💙",
+      "hasImageUrl": true
+    },
+    {
+      "word": "Party",
+      "category": "roblox",
+      "translation": "מסיבה",
+      "currentEmoji": "🎊",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Player",
+      "category": "roblox",
+      "translation": "שחקן",
+      "currentEmoji": "🎮",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Beige",
+      "category": "colors",
+      "translation": "בֵיז'",
+      "currentEmoji": "🟨",
+      "hasImageUrl": true
+    },
+    {
+      "word": "Update",
+      "category": "roblox",
+      "translation": "עדכון",
+      "currentEmoji": "🔄",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Dozen",
+      "category": "numbers",
+      "translation": "עשרה",
+      "currentEmoji": "1️⃣2️⃣",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Tycoon",
+      "category": "roblox",
+      "translation": "אֵיל הוֹן",
+      "currentEmoji": "🏢",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Inferno Tower",
+      "category": "gaming",
+      "translation": "מגדל תוֹפֶת",
+      "currentEmoji": "🔥",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Enchant",
+      "category": "minecraft",
+      "translation": "לְהַקְסִים",
+      "currentEmoji": "✨",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Listen",
+      "category": "actions",
+      "translation": "להקשיב",
+      "currentEmoji": "👂",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Emerald",
+      "category": "minecraft",
+      "translation": "בַּרֶקֶת",
+      "currentEmoji": "💚",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Cool",
+      "category": "roblox",
+      "translation": "מגניב",
+      "currentEmoji": "😎",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Creeper",
+      "category": "minecraft",
+      "translation": "קריפר",
+      "currentEmoji": "💥",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Roleplay",
+      "category": "roblox",
+      "translation": "משחק תפקידים",
+      "currentEmoji": "🎭",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Coral",
+      "category": "colors",
+      "translation": "אלמוג",
+      "currentEmoji": "🟠",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Sit",
+      "category": "actions",
+      "translation": "לשבת",
+      "currentEmoji": "🪑",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Speed",
+      "category": "roblox",
+      "translation": "מהירות",
+      "currentEmoji": "⚡",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Close",
+      "category": "actions",
+      "translation": "לסגור",
+      "currentEmoji": "🚪",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Amber",
+      "category": "colors",
+      "translation": "עַנבָּר",
+      "currentEmoji": "🟡",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Barbarian Hut",
+      "category": "gaming",
+      "translation": "בקתת ברברים",
+      "currentEmoji": "🏚️",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Badge",
+      "category": "roblox",
+      "translation": "תָג",
+      "currentEmoji": "🏅",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Model",
+      "category": "roblox",
+      "translation": "דֶגֶם",
+      "currentEmoji": "🧱",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Play",
+      "category": "actions",
+      "translation": "לשחק",
+      "currentEmoji": "⚽",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Navy Blue",
+      "category": "colors",
+      "translation": "כָּחוֹל כֵּהֶה",
+      "currentEmoji": "🔵",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Win",
+      "category": "gaming",
+      "translation": "לנצח",
+      "currentEmoji": "🏆",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Cook",
+      "category": "actions",
+      "translation": "לבשל",
+      "currentEmoji": "🍳",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Group",
+      "category": "roblox",
+      "translation": "קבוצה",
+      "currentEmoji": "👥",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Olive",
+      "category": "colors",
+      "translation": "זית",
+      "currentEmoji": "🟢",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Torch",
+      "category": "minecraft",
+      "translation": "פנס",
+      "currentEmoji": "🔦",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Jam",
+      "category": "food",
+      "translation": "ריבה",
+      "currentEmoji": "🫐",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Silver",
+      "category": "colors",
+      "translation": "כסף",
+      "currentEmoji": "🥈",
+      "hasImageUrl": true
+    },
+    {
+      "word": "Magic",
+      "category": "gaming",
+      "translation": "קסם",
+      "currentEmoji": "✨",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Simulator",
+      "category": "roblox",
+      "translation": "מַדמֶה",
+      "currentEmoji": "🎮",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Nether",
+      "category": "minecraft",
+      "translation": "נת׳ר",
+      "currentEmoji": "🔥",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Goblin Cage",
+      "category": "gaming",
+      "translation": "כלוב גובלינים",
+      "currentEmoji": "🪣",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Gold",
+      "category": "colors",
+      "translation": "זהב",
+      "currentEmoji": "🥇",
+      "hasImageUrl": true
+    },
+    {
+      "word": "Craft",
+      "category": "minecraft",
+      "translation": "ליצור",
+      "currentEmoji": "🔨",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Khaki",
+      "category": "colors",
+      "translation": "חאקי",
+      "currentEmoji": "🟡",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Grade",
+      "category": "school",
+      "translation": "צִיוּן",
+      "currentEmoji": "📊",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Chest",
+      "category": "minecraft",
+      "translation": "תיבה",
+      "currentEmoji": "📦",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Gem",
+      "category": "gaming",
+      "translation": "אֶבֶן חֵן",
+      "currentEmoji": "💎",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Kick",
+      "category": "actions",
+      "translation": "לבעוט",
+      "currentEmoji": "⚽",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Defend",
+      "category": "gaming",
+      "translation": "להגן",
+      "currentEmoji": "🛡️",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Event",
+      "category": "roblox",
+      "translation": "אירוע",
+      "currentEmoji": "🎉",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Game",
+      "category": "roblox",
+      "translation": "משחק",
+      "currentEmoji": "🎮",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Donation",
+      "category": "gaming",
+      "translation": "תרומה",
+      "currentEmoji": "🎁",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Field",
+      "category": "nature",
+      "translation": "שדה",
+      "currentEmoji": "🌾",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Laugh",
+      "category": "actions",
+      "translation": "לצחוק",
+      "currentEmoji": "😂",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Lose",
+      "category": "gaming",
+      "translation": "להפסיד",
+      "currentEmoji": "😢",
+      "hasImageUrl": false
+    },
+    {
+      "word": "Explore",
+      "category": "roblox",
+      "translation": "לחקור",
+      "currentEmoji": "🔍",
+      "hasImageUrl": false
+    }
+  ],
+  "notFound": [
+    "pekka"
+  ],
+  "byCategory": {
+    "minecraft": [
+      {
+        "word": "Redstone",
+        "translation": "רדסטון",
+        "category": "minecraft",
+        "image": "🔴"
+      },
+      {
+        "word": "Gravel",
+        "translation": "חָצָץ",
+        "category": "minecraft",
+        "image": "🪨"
+      },
+      {
+        "word": "End",
+        "translation": "סוף",
+        "category": "minecraft",
+        "image": "🌌"
+      },
+      {
+        "word": "Skeleton",
+        "translation": "שלד",
+        "category": "minecraft",
+        "image": "💀"
+      },
+      {
+        "word": "Enderman",
+        "translation": "אנדרמן",
+        "category": "minecraft",
+        "image": "👾"
+      },
+      {
+        "word": "Iron",
+        "translation": "ברזל",
+        "category": "minecraft",
+        "image": "🔩"
+      },
+      {
+        "word": "Ghast",
+        "translation": "גאסט",
+        "category": "minecraft",
+        "image": "👻"
+      },
+      {
+        "word": "Shovel",
+        "translation": "אֵת",
+        "category": "minecraft",
+        "image": "🔨"
+      },
+      {
+        "word": "Enchant",
+        "translation": "לְהַקְסִים",
+        "category": "minecraft",
+        "image": "✨"
+      },
+      {
+        "word": "Emerald",
+        "translation": "בַּרֶקֶת",
+        "category": "minecraft",
+        "image": "💚"
+      },
+      {
+        "word": "Creeper",
+        "translation": "קריפר",
+        "category": "minecraft",
+        "image": "💥"
+      },
+      {
+        "word": "Torch",
+        "translation": "פנס",
+        "category": "minecraft",
+        "image": "🔦"
+      },
+      {
+        "word": "Nether",
+        "translation": "נת׳ר",
+        "category": "minecraft",
+        "image": "🔥"
+      },
+      {
+        "word": "Craft",
+        "translation": "ליצור",
+        "category": "minecraft",
+        "image": "🔨"
+      },
+      {
+        "word": "Chest",
+        "translation": "תיבה",
+        "category": "minecraft",
+        "image": "📦"
+      }
+    ],
+    "roblox": [
+      {
+        "word": "Pro",
+        "translation": "פרו",
+        "category": "roblox",
+        "image": "🥇"
+      },
+      {
+        "word": "Noob",
+        "translation": "נוב",
+        "category": "roblox",
+        "image": "🙈"
+      },
+      {
+        "word": "Teleport",
+        "translation": "להשתגר",
+        "category": "roblox",
+        "image": "🚀"
+      },
+      {
+        "word": "Race",
+        "translation": "מרוץ",
+        "category": "roblox",
+        "image": "🏁"
+      },
+      {
+        "word": "Trade",
+        "translation": "סַחַר",
+        "category": "roblox",
+        "image": "🔄"
+      },
+      {
+        "word": "Party",
+        "translation": "מסיבה",
+        "category": "roblox",
+        "image": "🎊"
+      },
+      {
+        "word": "Player",
+        "translation": "שחקן",
+        "category": "roblox",
+        "image": "🎮"
+      },
+      {
+        "word": "Update",
+        "translation": "עדכון",
+        "category": "roblox",
+        "image": "🔄"
+      },
+      {
+        "word": "Tycoon",
+        "translation": "אֵיל הוֹן",
+        "category": "roblox",
+        "image": "🏢"
+      },
+      {
+        "word": "Cool",
+        "translation": "מגניב",
+        "category": "roblox",
+        "image": "😎"
+      },
+      {
+        "word": "Roleplay",
+        "translation": "משחק תפקידים",
+        "category": "roblox",
+        "image": "🎭"
+      },
+      {
+        "word": "Speed",
+        "translation": "מהירות",
+        "category": "roblox",
+        "image": "⚡"
+      },
+      {
+        "word": "Badge",
+        "translation": "תָג",
+        "category": "roblox",
+        "image": "🏅"
+      },
+      {
+        "word": "Model",
+        "translation": "דֶגֶם",
+        "category": "roblox",
+        "image": "🧱"
+      },
+      {
+        "word": "Group",
+        "translation": "קבוצה",
+        "category": "roblox",
+        "image": "👥"
+      },
+      {
+        "word": "Simulator",
+        "translation": "מַדמֶה",
+        "category": "roblox",
+        "image": "🎮"
+      },
+      {
+        "word": "Event",
+        "translation": "אירוע",
+        "category": "roblox",
+        "image": "🎉"
+      },
+      {
+        "word": "Game",
+        "translation": "משחק",
+        "category": "roblox",
+        "image": "🎮"
+      },
+      {
+        "word": "Explore",
+        "translation": "לחקור",
+        "category": "roblox",
+        "image": "🔍"
+      }
+    ],
+    "gaming": [
+      {
+        "word": "Cannon",
+        "translation": "תותח",
+        "category": "gaming",
+        "image": "🎯"
+      },
+      {
+        "word": "Clan",
+        "translation": "שֶׁבֶט",
+        "category": "gaming",
+        "image": "👥"
+      },
+      {
+        "word": "Musketeer",
+        "translation": "מוסקטיר",
+        "category": "gaming",
+        "image": ""
+      },
+      {
+        "word": "Tesla",
+        "translation": "טסלה",
+        "category": "gaming",
+        "image": "⚡"
+      },
+      {
+        "word": "Level",
+        "translation": "רמה",
+        "category": "gaming",
+        "image": "📊"
+      },
+      {
+        "word": "Knight",
+        "translation": "אביר",
+        "category": "gaming",
+        "image": "🛡️"
+      },
+      {
+        "word": "Power",
+        "translation": "כוח",
+        "category": "gaming",
+        "image": "💪"
+      },
+      {
+        "word": "Cannon",
+        "translation": "תותח",
+        "category": "gaming",
+        "image": "🎯"
+      },
+      {
+        "word": "Golem",
+        "translation": "גולם",
+        "category": "gaming",
+        "image": "🗿"
+      },
+      {
+        "word": "Inferno Tower",
+        "translation": "מגדל תוֹפֶת",
+        "category": "gaming",
+        "image": "🔥"
+      },
+      {
+        "word": "Barbarian Hut",
+        "translation": "בקתת ברברים",
+        "category": "gaming",
+        "image": "🏚️"
+      },
+      {
+        "word": "Win",
+        "translation": "לנצח",
+        "category": "gaming",
+        "image": "🏆"
+      },
+      {
+        "word": "Magic",
+        "translation": "קסם",
+        "category": "gaming",
+        "image": "✨"
+      },
+      {
+        "word": "Goblin Cage",
+        "translation": "כלוב גובלינים",
+        "category": "gaming",
+        "image": "🪣"
+      },
+      {
+        "word": "Gem",
+        "translation": "אֶבֶן חֵן",
+        "category": "gaming",
+        "image": "💎"
+      },
+      {
+        "word": "Defend",
+        "translation": "להגן",
+        "category": "gaming",
+        "image": "🛡️"
+      },
+      {
+        "word": "Donation",
+        "translation": "תרומה",
+        "category": "gaming",
+        "image": "🎁"
+      },
+      {
+        "word": "Lose",
+        "translation": "להפסיד",
+        "category": "gaming",
+        "image": "😢"
+      }
+    ],
+    "numbers": [
+      {
+        "word": "Pair",
+        "translation": "זוג",
+        "category": "numbers",
+        "image": "2️⃣"
+      },
+      {
+        "word": "Dozen",
+        "translation": "עשרה",
+        "category": "numbers",
+        "image": "1️⃣2️⃣"
+      }
+    ],
+    "school": [
+      {
+        "word": "Desk",
+        "translation": "שולחן כתיבה",
+        "category": "school",
+        "image": "🪑"
+      },
+      {
+        "word": "School",
+        "translation": "בית ספר",
+        "category": "school",
+        "image": "🏫"
+      },
+      {
+        "word": "Eraser",
+        "translation": "מחק",
+        "category": "school",
+        "image": "🧽"
+      },
+      {
+        "word": "Glue",
+        "translation": "דבק",
+        "category": "school",
+        "image": "🧴"
+      },
+      {
+        "word": "Grade",
+        "translation": "צִיוּן",
+        "category": "school",
+        "image": "📊"
+      }
+    ],
+    "colors": [
+      {
+        "word": "Maroon",
+        "translation": "חום אדום",
+        "category": "colors",
+        "image": "🟤"
+      },
+      {
+        "word": "Pink",
+        "translation": "ורוד",
+        "category": "colors",
+        "image": "🌸",
+        "imageUrl": "img/icons/colors/pink-circle.svg"
+      },
+      {
+        "word": "Indigo",
+        "translation": "כָּחוֹל סגול",
+        "category": "colors",
+        "image": "🟦",
+        "imageUrl": "img/icons/colors/indigo-circle.svg"
+      },
+      {
+        "word": "Magenta",
+        "translation": "אדום סגלגל",
+        "category": "colors",
+        "image": "🟣"
+      },
+      {
+        "word": "Cyan",
+        "translation": "צִיאָן",
+        "category": "colors",
+        "image": "🟦"
+      },
+      {
+        "word": "Scarlet",
+        "translation": "שָׁנִי",
+        "category": "colors",
+        "image": "🔴"
+      },
+      {
+        "word": "Teal",
+        "translation": "צהבהב",
+        "category": "colors",
+        "image": "💙",
+        "imageUrl": "img/icons/colors/teal-circle.svg"
+      },
+      {
+        "word": "Beige",
+        "translation": "בֵיז'",
+        "category": "colors",
+        "image": "🟨",
+        "imageUrl": "img/icons/colors/beige-circle.svg"
+      },
+      {
+        "word": "Coral",
+        "translation": "אלמוג",
+        "category": "colors",
+        "image": "🟠"
+      },
+      {
+        "word": "Amber",
+        "translation": "עַנבָּר",
+        "category": "colors",
+        "image": "🟡"
+      },
+      {
+        "word": "Navy Blue",
+        "translation": "כָּחוֹל כֵּהֶה",
+        "category": "colors",
+        "image": "🔵"
+      },
+      {
+        "word": "Olive",
+        "translation": "זית",
+        "category": "colors",
+        "image": "🟢"
+      },
+      {
+        "word": "Silver",
+        "translation": "כסף",
+        "category": "colors",
+        "image": "🥈",
+        "imageUrl": "img/icons/colors/silver-circle.svg"
+      },
+      {
+        "word": "Gold",
+        "translation": "זהב",
+        "category": "colors",
+        "image": "🥇",
+        "imageUrl": "img/icons/colors/gold-circle.svg"
+      },
+      {
+        "word": "Khaki",
+        "translation": "חאקי",
+        "category": "colors",
+        "image": "🟡"
+      }
+    ],
+    "actions": [
+      {
+        "word": "Fly",
+        "translation": "לעוף",
+        "category": "actions",
+        "image": "🕊️"
+      },
+      {
+        "word": "Clean",
+        "translation": "לנקות",
+        "category": "actions",
+        "image": "🧹"
+      },
+      {
+        "word": "Take",
+        "translation": "לקחת",
+        "category": "actions",
+        "image": "🙌"
+      },
+      {
+        "word": "Sing",
+        "translation": "לשיר",
+        "category": "actions",
+        "image": "🎤"
+      },
+      {
+        "word": "Wash",
+        "translation": "לשטוף",
+        "category": "actions",
+        "image": "🧼"
+      },
+      {
+        "word": "Clean",
+        "translation": "לנקות",
+        "category": "actions",
+        "image": "🧹"
+      },
+      {
+        "word": "Draw",
+        "translation": "לצייר",
+        "category": "actions",
+        "image": "✏️"
+      },
+      {
+        "word": "Whisper",
+        "translation": "ללחוש",
+        "category": "actions",
+        "image": "🤫"
+      },
+      {
+        "word": "Catch",
+        "translation": "לתפוס",
+        "category": "actions",
+        "image": "👐"
+      },
+      {
+        "word": "Shout",
+        "translation": "לצעוק",
+        "category": "actions",
+        "image": "🗣️"
+      },
+      {
+        "word": "Listen",
+        "translation": "להקשיב",
+        "category": "actions",
+        "image": "👂"
+      },
+      {
+        "word": "Sit",
+        "translation": "לשבת",
+        "category": "actions",
+        "image": "🪑"
+      },
+      {
+        "word": "Close",
+        "translation": "לסגור",
+        "category": "actions",
+        "image": "🚪"
+      },
+      {
+        "word": "Play",
+        "translation": "לשחק",
+        "category": "actions",
+        "image": "⚽"
+      },
+      {
+        "word": "Cook",
+        "translation": "לבשל",
+        "category": "actions",
+        "image": "🍳"
+      },
+      {
+        "word": "Kick",
+        "translation": "לבעוט",
+        "category": "actions",
+        "image": "⚽"
+      },
+      {
+        "word": "Laugh",
+        "translation": "לצחוק",
+        "category": "actions",
+        "image": "😂"
+      }
+    ],
+    "food": [
+      {
+        "word": "Spinach",
+        "translation": "תרד",
+        "category": "food",
+        "image": "🌿"
+      },
+      {
+        "word": "Plum",
+        "translation": "שזיף",
+        "category": "food",
+        "image": "🍇"
+      },
+      {
+        "word": "Jam",
+        "translation": "ריבה",
+        "category": "food",
+        "image": "🫐"
+      }
+    ],
+    "nature": [
+      {
+        "word": "Lightning",
+        "translation": "ברק",
+        "category": "nature",
+        "image": "⚡"
+      },
+      {
+        "word": "River",
+        "translation": "נהר",
+        "category": "nature",
+        "image": "🌊"
+      },
+      {
+        "word": "Sand",
+        "translation": "חול",
+        "category": "nature",
+        "image": "🏖️"
+      },
+      {
+        "word": "Wind",
+        "translation": "רוח",
+        "category": "nature",
+        "image": "🌬️"
+      },
+      {
+        "word": "Field",
+        "translation": "שדה",
+        "category": "nature",
+        "image": "🌾"
+      }
+    ]
+  }
+}

@@ -1,0 +1,47 @@
+# macOS
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+
+# Editor
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+
+# Claude AI assistant
+.claude/
+
+# Temporary files
+*.tmp
+*.temp
+*~
+.swp
+
+# Logs
+*.log
+npm-debug.log*
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Node modules
+node_modules/
+
+# Build outputs
+dist/
+build/
+
+# Testing
+coverage/
+.nyc_output/
+/test-results/
+/playwright-report/
+
+# SSL certs (generate locally, don't commit)
+server.crt
+server.key

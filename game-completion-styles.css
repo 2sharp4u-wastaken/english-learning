@@ -1,0 +1,796 @@
+/* Game Completion Screen Styles */
+.game-complete {
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    min-height: 400px;
+    padding: 28px 20px 36px;
+    background:
+        radial-gradient(circle at top, rgba(126, 232, 250, 0.18), transparent 34%),
+        linear-gradient(155deg, #6575de 0%, #6b63c8 48%, #7456a7 100%);
+    border-radius: 28px;
+    box-shadow: 0 18px 45px rgba(22, 18, 53, 0.32);
+    animation: scaleIn 0.5s ease;
+    overflow: visible;
+}
+
+.memory-summary-screen {
+    justify-content: flex-start;
+    align-items: stretch;
+    min-height: auto;
+    overflow: visible;
+}
+
+.memory-summary-screen .completion-content {
+    text-align: center;
+}
+
+.memory-summary-screen .completion-shell {
+    align-items: center;
+}
+
+.memory-summary-screen .completion-hero-card,
+.memory-summary-screen .completion-panel-grid,
+.memory-summary-screen .completion-words-section,
+.memory-summary-screen .memory-pb-section,
+.memory-summary-screen .memory-completion-actions {
+    width: 100%;
+    max-width: 860px;
+}
+
+.memory-summary-screen .completion-hero-card,
+.memory-summary-screen .completion-panel,
+.memory-summary-screen .completion-words-section,
+.memory-summary-screen .memory-pb-section {
+    text-align: center;
+}
+
+.memory-summary-screen .completion-kicker,
+.memory-summary-screen .completion-panel-kicker,
+.memory-summary-screen .completion-words-section h3 {
+    justify-content: center;
+}
+
+.memory-summary-screen .completion-hero-copy {
+    align-items: center;
+}
+
+.memory-summary-screen .completion-hero-copy p {
+    max-width: 32ch;
+}
+
+.memory-summary-screen .completion-stat-chip {
+    align-items: center;
+    text-align: center;
+}
+
+.memory-summary-screen .completion-detail-row {
+    flex-direction: column;
+    justify-content: center;
+    text-align: center;
+    gap: 4px;
+}
+
+.memory-summary-screen .completion-word-top,
+.memory-summary-screen .completion-word-title,
+.memory-summary-screen .completion-word-meta {
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+}
+
+@keyframes scaleIn {
+    from {
+        opacity: 0;
+        transform: scale(0.9);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.completion-content {
+    color: white;
+    width: 100%;
+    max-width: 960px;
+}
+
+.completion-shell {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.completion-kicker,
+.completion-panel-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 999px;
+    padding: 6px 12px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    font-size: 0.82rem;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.88);
+}
+
+.completion-hero-card,
+.completion-panel,
+.completion-words-section,
+.memory-pb-section {
+    background: rgba(255, 255, 255, 0.11);
+    border: 1px solid rgba(255, 255, 255, 0.16);
+    box-shadow: 0 14px 34px rgba(19, 17, 49, 0.18);
+}
+
+.completion-hero-card {
+    border-radius: 28px;
+    padding: 24px clamp(18px, 3vw, 30px);
+    text-align: right;
+}
+
+.completion-hero-head {
+    display: grid;
+    grid-template-columns: minmax(170px, 220px) minmax(0, 1fr);
+    gap: 20px;
+    align-items: center;
+    margin-top: 16px;
+}
+
+.completion-score-block {
+    border-radius: 26px;
+    background: rgba(255, 255, 255, 0.96);
+    color: #5c53bf;
+    min-height: 190px;
+    padding: 22px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 16px 28px rgba(17, 20, 44, 0.18);
+    text-align: center;
+}
+
+.completion-score-eyebrow {
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: rgba(92, 83, 191, 0.72);
+}
+
+.completion-score-value {
+    margin-top: 8px;
+    font-size: clamp(3rem, 7vw, 4.5rem);
+    line-height: 0.95;
+    font-weight: 900;
+    letter-spacing: -0.04em;
+}
+
+.completion-score-caption {
+    margin-top: 10px;
+    font-size: 1rem;
+    font-weight: 700;
+    color: rgba(92, 83, 191, 0.82);
+}
+
+.completion-hero-copy {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 10px;
+    min-width: 0;
+}
+
+.completion-icon-badge {
+    width: 54px;
+    height: 54px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.7rem;
+    color: #fff6c7;
+}
+
+.completion-hero-copy h2 {
+    margin: 0;
+    font-size: clamp(2rem, 4vw, 2.8rem);
+    line-height: 1.05;
+    text-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.completion-hero-copy p {
+    margin: 0;
+    max-width: 38ch;
+    color: rgba(255, 255, 255, 0.84);
+    font-size: 1rem;
+    line-height: 1.6;
+}
+
+.completion-stat-strip {
+    margin-top: 22px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.completion-stat-chip {
+    position: relative;
+    flex: 1 1 128px;
+    min-width: 128px;
+    padding: 14px 16px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    gap: 6px;
+    text-align: right;
+}
+
+.completion-stat-chip-highlight {
+    background: linear-gradient(135deg, rgba(255, 215, 111, 0.18), rgba(252, 98, 98, 0.18));
+    border-color: rgba(255, 216, 111, 0.28);
+}
+
+.completion-stat-chip-strong {
+    background: linear-gradient(135deg, rgba(126, 232, 250, 0.18), rgba(128, 255, 114, 0.16));
+    border-color: rgba(126, 232, 250, 0.24);
+}
+
+.completion-stat-value {
+    font-size: 1.55rem;
+    line-height: 1.05;
+    font-weight: 900;
+    color: #ffffff;
+}
+
+.completion-stat-label {
+    font-size: 0.82rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.completion-panel-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 16px;
+}
+
+.completion-panel {
+    border-radius: 24px;
+    padding: 18px 20px;
+    text-align: right;
+}
+
+.completion-progress-head {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: center;
+    margin: 14px 0 10px;
+    font-weight: 700;
+}
+
+.completion-progress-track {
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.16);
+    overflow: hidden;
+}
+
+.completion-progress-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7ee8fa 0%, #80ff72 100%);
+    box-shadow: 0 0 18px rgba(126, 232, 250, 0.45);
+}
+
+.completion-detail-list {
+    margin-top: 14px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.completion-detail-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding-top: 12px;
+}
+
+.completion-detail-row:first-child {
+    padding-top: 0;
+}
+
+.completion-detail-row + .completion-detail-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.completion-detail-row span {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+.completion-detail-row strong {
+    font-size: 1rem;
+    color: #ffffff;
+}
+
+.completion-detail-row-success strong {
+    color: #c7ffb2;
+}
+
+.completion-coins-sparkle {
+    position: absolute;
+    top: 12px;
+    left: 14px;
+    font-size: 1rem;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+}
+
+.completion-coins-sparkle.show {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.completion-words-section {
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    border-radius: 24px;
+    padding: 18px 20px;
+    text-align: right;
+}
+
+.completion-words-section h3 {
+    margin: 0 0 14px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 1.15rem;
+}
+
+.completion-word-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 12px;
+}
+
+.completion-word-card {
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 16px;
+    padding: 14px;
+}
+
+.completion-word-card.learned {
+    background: rgba(16, 185, 129, 0.14);
+    border-color: rgba(110, 231, 183, 0.32);
+}
+
+.completion-word-top {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+}
+
+.completion-word-title {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.completion-word-en {
+    font-size: 1.05rem;
+    font-weight: 800;
+    direction: ltr;
+}
+
+.completion-word-he {
+    font-size: 0.92rem;
+    color: rgba(255, 255, 255, 0.85);
+}
+
+.completion-word-badge {
+    white-space: nowrap;
+    border-radius: 999px;
+    padding: 5px 9px;
+    font-size: 0.74rem;
+    font-weight: 800;
+}
+
+.completion-word-badge.learned {
+    background: rgba(16, 185, 129, 0.18);
+    color: #b7ffd9;
+}
+
+.completion-word-badge.practicing {
+    background: rgba(126, 232, 250, 0.18);
+    color: #c9f5ff;
+}
+
+.completion-word-bar {
+    margin-top: 12px;
+    height: 10px;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.12);
+    overflow: hidden;
+}
+
+.completion-word-bar-fill {
+    height: 100%;
+    border-radius: 999px;
+    background: linear-gradient(90deg, #7ee8fa 0%, #80ff72 100%);
+}
+
+.completion-word-meta {
+    margin-top: 10px;
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    flex-wrap: wrap;
+    font-size: 0.82rem;
+    color: rgba(255, 255, 255, 0.82);
+}
+
+.completion-actions {
+    display: flex;
+    gap: 14px;
+    margin-top: 4px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.restart-game-btn,
+.choose-game-btn,
+.next-recommended-btn {
+    padding: 15px 40px;
+    font-size: 1.05rem;
+    font-weight: 700;
+    border: none;
+    border-radius: 50px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+.restart-game-btn {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+}
+
+.restart-game-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(79, 172, 254, 0.4);
+}
+
+.next-recommended-btn {
+    background: linear-gradient(135deg, #ffd86f 0%, #fc6262 100%);
+    color: white;
+}
+
+.next-recommended-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(252, 98, 98, 0.35);
+}
+
+.choose-game-btn {
+    background: white;
+    color: #667eea;
+}
+
+.choose-game-btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 20px rgba(255, 255, 255, 0.4);
+}
+
+@media (max-width: 768px) {
+    .game-complete {
+        padding: 18px 14px 28px;
+    }
+
+    .completion-hero-card,
+    .completion-panel,
+    .completion-words-section {
+        padding: 16px;
+    }
+
+    .completion-hero-head,
+    .completion-panel-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .completion-score-block {
+        min-height: 0;
+        padding: 18px 14px;
+    }
+
+    .completion-stat-chip {
+        min-width: calc(50% - 6px);
+    }
+
+    .restart-game-btn,
+    .choose-game-btn,
+    .next-recommended-btn {
+        padding: 12px 30px;
+        font-size: 1rem;
+    }
+
+    .completion-word-list {
+        grid-template-columns: 1fr;
+    }
+
+    .completion-word-top {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ── Word Journey celebration screen ─────────────────────────── */
+
+.wj-celebration {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
+    min-height: auto;
+    padding: 28px 20px 36px;
+}
+
+#practice-game .completion-content,
+.wj-celebration .completion-content {
+    text-align: center;
+}
+
+#practice-game .completion-content > h2 {
+    margin: 0 0 18px;
+    font-size: 2rem;
+}
+
+.wj-celeb-top-emoji {
+    font-size: 3rem;
+    margin-bottom: 4px;
+    animation: wjBounce 0.8s ease;
+}
+
+@keyframes wjBounce {
+    0%, 100% { transform: scale(1); }
+    40% { transform: scale(1.35); }
+    60% { transform: scale(0.95); }
+}
+
+.wj-celebration h2 {
+    font-size: 1.9rem;
+    margin-bottom: 8px;
+}
+
+.wj-celebration .completion-stars {
+    font-size: 1.8rem;
+    margin-bottom: 20px;
+}
+
+.wj-celeb-stats {
+    display: flex;
+    justify-content: center;
+    gap: 14px;
+    flex-wrap: wrap;
+    margin-bottom: 16px;
+}
+
+.wj-celeb-stat {
+    background: rgba(255, 255, 255, 0.12);
+    border-radius: 14px;
+    padding: 12px 18px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 80px;
+}
+
+.wj-celeb-stat-gold {
+    background: rgba(255, 215, 0, 0.2);
+    border: 1px solid rgba(255, 215, 0, 0.4);
+}
+
+.wj-celeb-stat-num {
+    font-size: 1.6rem;
+    font-weight: 800;
+    color: #fff;
+    line-height: 1;
+}
+
+.wj-celeb-stat-label {
+    font-size: 0.75rem;
+    color: rgba(255, 255, 255, 0.7);
+    margin-top: 4px;
+    white-space: nowrap;
+}
+
+.wj-celeb-stat-gold .wj-celeb-stat-num {
+    color: #FFD700;
+}
+
+.wj-celeb-encourage {
+    color: rgba(255, 200, 100, 0.9);
+    font-size: 1rem;
+    margin-bottom: 14px;
+}
+
+.wj-replay-badge {
+    display: inline-block;
+    background: rgba(255, 200, 100, 0.15);
+    color: rgba(255, 200, 100, 0.9);
+    font-size: 0.85rem;
+    padding: 4px 12px;
+    border-radius: 12px;
+    margin-bottom: 8px;
+}
+
+.wj-celeb-words {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 14px 0 24px;
+    max-width: 420px;
+    margin-inline: auto;
+    max-height: 220px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.2) transparent;
+}
+
+.wj-celeb-word-card {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.09);
+    border-radius: 10px;
+    padding: 8px 14px;
+    font-size: 1rem;
+    direction: rtl;
+}
+
+.wj-celeb-word-en {
+    font-weight: 700;
+    color: #7ee8fa;
+    font-family: monospace;
+    font-size: 1.05rem;
+    direction: ltr;
+}
+
+.wj-celeb-word-sep {
+    color: rgba(255,255,255,0.3);
+    flex-shrink: 0;
+}
+
+.wj-celeb-word-he {
+    color: rgba(255, 255, 255, 0.85);
+    flex: 1;
+}
+
+.wj-celeb-word-badge {
+    font-size: 1rem;
+    flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+    .wj-celeb-stats {
+        gap: 8px;
+    }
+    .wj-celeb-stat {
+        padding: 10px 12px;
+        min-width: 68px;
+    }
+    .wj-celeb-stat-num {
+        font-size: 1.3rem;
+    }
+    .wj-celebration h2 {
+        font-size: 1.5rem;
+    }
+}
+
+/* ── Memory game personal-best table inside completion screen ── */
+
+.memory-pb-section {
+    margin: 24px auto 0;
+    width: 100%;
+    max-width: 100%;
+    border-radius: 24px;
+    padding: 18px 20px;
+}
+
+.memory-pb-section h3 {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+.memory-pb-section h3 i {
+    color: #FFD700;
+    margin-left: 6px;
+}
+
+.memory-pb-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 12px;
+    overflow: hidden;
+    font-size: 0.95rem;
+}
+
+.memory-pb-table thead {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.memory-pb-table thead th {
+    padding: 10px 8px;
+    font-weight: 700;
+    color: white;
+    text-align: center;
+}
+
+.memory-pb-table tbody td {
+    padding: 9px 8px;
+    text-align: center;
+    color: rgba(255, 255, 255, 0.85);
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.memory-pb-table tr.memory-pb-current td {
+    background: rgba(255, 255, 255, 0.18);
+    color: white;
+    font-weight: 700;
+}
+
+.memory-pb-table .pb-score {
+    font-weight: 800;
+    color: #FFD700;
+}
+
+.memory-pb-table .pb-not-played {
+    opacity: 0.45;
+    font-size: 0.88em;
+    font-style: italic;
+}
+
+.memory-total-score {
+    font-weight: 800;
+    font-size: 1.15em;
+    color: #FFD700;
+}
+
+.memory-personal-best {
+    color: #FFD700;
+    font-weight: 800;
+    font-size: 1.05em;
+    margin-top: 4px;
+}
+
+@media (max-width: 768px) {
+    .memory-pb-section {
+        max-width: 100%;
+    }
+
+    .memory-pb-table {
+        font-size: 0.85rem;
+    }
+
+    .memory-pb-table thead th,
+    .memory-pb-table tbody td {
+        padding: 8px 5px;
+    }
+}

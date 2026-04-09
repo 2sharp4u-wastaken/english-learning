@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
+    <title>English Learning Games - לומדים אנגלית בכיף</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <link rel="stylesheet" href="styles.css?t=1742400900">
+    <link rel="stylesheet" href="game-completion-styles.css?t=1774216737">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+</head>
+<body class="home-compact">
+    <div class="app-layout">
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top Navigation Header is injected by components/top-header.js -->
+
+            <main class="game-area">
+            <!-- Welcome Screen -->
+            <div id="welcome-screen" class="game-content">
+                <div class="welcome-container">
+                    <h1 class="welcome-title">ברוך הבא לעולם האנגלית!</h1>
+                    <div class="home-hero-row">
+                        <div class="home-streak-widget" id="home-streak-widget">
+                            <div class="home-streak-flame">🔥</div>
+                            <div class="home-streak-count" id="streak-count">0</div>
+                            <div class="home-streak-label">ימים ברצף</div>
+                        </div>
+                        <div class="home-words-learned" id="home-words-learned">
+                            <div class="home-words-count" id="words-learned-count">0</div>
+                            <div class="home-words-label">מילים נלמדו</div>
+                        </div>
+                    </div>
+
+                    <!-- Continue Learning Hero Card -->
+                    <div class="continue-hero" id="continue-hero">
+                        <div class="continue-hero-icon" id="continue-hero-icon">🗺️</div>
+                        <div class="continue-hero-text">
+                            <h2 id="continue-hero-title">התחל ללמוד!</h2>
+                            <p id="continue-hero-subtitle">למד מילים חדשות במסע המילים</p>
+                        </div>
+                        <button class="continue-hero-btn" id="continue-hero-btn">בוא נתחיל</button>
+                    </div>
+
+                    <!-- Tier: Learn -->
+                    <div class="tier-section" data-tier="learn">
+                        <div class="tier-header">
+                            <span class="tier-label">למידה</span>
+                            <span class="tier-badge tier-badge-learn">תמיד פתוח</span>
+                        </div>
+                        <div class="game-cards-grid">
+                            <div class="game-card" data-game="word-journey">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🗺️</div>
+                                    <h3>מסע המילים</h3>
+                                    <p>למד מילים חדשות שלב אחר שלב</p>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="abc">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🔤</div>
+                                    <h3>ABC אותיות</h3>
+                                    <p>למד אותיות גדולות וקטנות</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tier: Practice -->
+                    <div class="tier-section" data-tier="practice">
+                        <div class="tier-header">
+                            <span class="tier-label">תרגול</span>
+                            <span class="tier-badge tier-badge-practice">תרגול מילים</span>
+                        </div>
+                        <div class="game-cards-grid">
+                            <div class="game-card" data-game="listening" data-gate="5 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">👂</div>
+                                    <h3>משחק הקשבה</h3>
+                                    <p>שפר את ההקשבה שלך</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="picture-match" data-gate="5 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🖼️</div>
+                                    <h3>מילה לתמונה</h3>
+                                    <p>שמע מילה ובחר את התמונה הנכונה</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="true-or-not" data-gate="5 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">✅</div>
+                                    <h3>נכון או לא?</h3>
+                                    <p>האם התמונה מתאימה למילה?</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="memory">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🃏</div>
+                                    <h3>משחק זיכרון</h3>
+                                    <p>מצא זוגות של מילים ותמונות</p>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="grammar-beginner">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🔊</div>
+                                    <h3>דקדוק למתחילים</h3>
+                                    <p>למד דקדוק בהאזנה</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tier: Challenge -->
+                    <div class="tier-section" data-tier="challenge">
+                        <div class="tier-header">
+                            <span class="tier-label">אתגר</span>
+                            <span class="tier-badge tier-badge-challenge">למתקדמים</span>
+                        </div>
+                        <div class="game-cards-grid">
+                            <div class="game-card" data-game="reading" data-gate="10 מילים + ABC 60%">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">📖</div>
+                                    <h3>משחק קריאה</h3>
+                                    <p>למד לקרוא מילים באנגלית</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="pronunciation" data-gate="10 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🎤</div>
+                                    <h3>משחק הגייה</h3>
+                                    <p>תרגל את ההגייה שלך</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="fill-blanks" data-gate="30 מילים + 2 נושאים">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">✍️</div>
+                                    <h3>השלם את המשפט</h3>
+                                    <p>בחר את המילה הנכונה להשלמת המשפט</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="story-time" data-gate="15 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">📖</div>
+                                    <h3>זמן סיפור</h3>
+                                    <p>קרא סיפורים קצרים וענה על שאלות</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="word-builder" data-gate="20 מילים + 1 נושא">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🔨</div>
+                                    <h3>בונה משפטים</h3>
+                                    <p>בחר את המילה הנכונה לבניית משפט</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="scramble" data-gate="30 מילים + 2 נושאים">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">🔀</div>
+                                    <h3>סידור משפטים</h3>
+                                    <p>סדר את המילים לכדי משפט נכון</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                            <div class="game-card" data-game="grammar" data-gate="50 מילים + 3 נושאים">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">✏️</div>
+                                    <h3>תרגול דקדוק</h3>
+                                    <p>שפר את הדקדוק שלך</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Tier: Test -->
+                    <div class="tier-section" data-tier="test">
+                        <div class="tier-header">
+                            <span class="tier-label">מבחן</span>
+                            <span class="tier-badge tier-badge-test">בדיקת ידע</span>
+                        </div>
+                        <div class="game-cards-grid">
+                            <div class="game-card" data-game="vocabulary" data-gate="10 מילים נלמדות">
+                                <div class="game-card-main">
+                                    <div class="game-card-icon">📝</div>
+                                    <h3>מבחן מילים</h3>
+                                    <p>בדוק אם אתה זוכר את המילים שלמדת</p>
+                                </div>
+                                <div class="card-lock-overlay">
+                                    <span class="lock-icon">🔒</span>
+                                    <span class="lock-text"></span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Vocabulary Game -->
+            <div id="vocabulary-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="vocab-current-q">1</span> מתוך <span id="vocab-total-q">10</span></span>
+                    <span class="mastery-indicator" id="vocab-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="vocab-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="vocab-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="word-card">
+                        <div class="vocabulary-layout-vertical">
+                            <!-- Picture emoji at top, centered (hidden by default to encourage listening) -->
+                            <div class="picture-container" style="display: none;">
+                                <div class="word-picture" id="vocab-picture">🔤</div>
+                            </div>
+                            <!-- English word -->
+                            <div class="english-word" id="vocab-word">Loading...</div>
+                            <!-- Hebrew instruction below word -->
+                            <div class="hebrew-translation" id="vocab-hebrew"></div>
+                            <!-- Play button and plays remaining on same line -->
+                            <div class="controls-row">
+                                <button class="play-audio" id="vocab-audio" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <span id="vocab-audio-hint" class="audio-hint-callout" hidden></span>
+                                <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="vocab-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="options-grid" id="vocab-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                    <div class="feedback" id="vocab-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Grammar Game -->
+            <div id="grammar-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="grammar-current-q">1</span> מתוך <span id="grammar-total-q">10</span></span>
+                    <span class="scramble-theme-badge progress-category-badge" id="grammar-category"></span>
+                    <span class="mastery-indicator" id="grammar-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="grammar-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="grammar-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="sentence-card">
+                        <div class="grammar-layout-vertical">
+                            <!-- Grammar sentence centered -->
+                            <div class="sentence" id="grammar-sentence">Loading...</div>
+                            <div class="hebrew-translation" id="grammar-hebrew"></div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="grammar-next" style="display: none;">
+                        <span>השאלה הבאה</span>
+                    </button>
+                    <div class="options-grid" id="grammar-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                    <div class="feedback" id="grammar-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Grammar Beginner Game (Audio-Visual) -->
+            <div id="grammar-beginner-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="grammar-beginner-current-q">1</span> מתוך <span id="grammar-beginner-total-q">10</span></span>
+                    <span class="scramble-theme-badge progress-category-badge" id="grammar-beginner-category"></span>
+                    <span class="mastery-indicator" id="grammar-beginner-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="grammar-beginner-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="grammar-beginner-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <!-- Content will be populated by JavaScript based on question type -->
+                </div>
+                <button class="next-btn" id="grammar-beginner-next" style="display: none;">
+                    <span>השאלה הבאה</span>
+                </button>
+            </div>
+
+            <!-- Pronunciation Game -->
+            <div id="pronunciation-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="pronunciation-current-q">1</span> מתוך <span id="pronunciation-total-q">10</span></span>
+                    <span class="mastery-indicator" id="pronunciation-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="pronunciation-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="pronunciation-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="pronunciation-card">
+                        <div class="pronunciation-layout-vertical">
+                            <!-- Emoji at top, centered -->
+                            <div class="picture-container">
+                                <div class="word-picture" id="pronunciation-picture">🔤</div>
+                            </div>
+                            <!-- English and Hebrew words on same line -->
+                            <div class="words-row">
+                                <div class="target-word" id="pronunciation-word">Loading...</div>
+                                <div class="hebrew-translation" id="pronunciation-hebrew"></div>
+                            </div>
+                            <!-- Record button and plays remaining on same line -->
+                            <div class="controls-row">
+                                <button class="record-btn-icon" id="record-btn" aria-label="הקלט את ההגייה שלך">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button class="play-audio" id="pronunciation-listen" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                            </div>
+                            <!-- Comparison area showing target vs user pronunciation -->
+                            <div class="comparison-area" id="pronunciation-comparison-area" style="display: none;">
+                                <div class="comparison-row">
+                                    <div class="comparison-column">
+                                        <span class="comparison-label">Target:</span>
+                                        <span class="comparison-word target" id="pronunciation-comparison-target">word</span>
+                                    </div>
+                                    <div class="comparison-column">
+                                        <span class="comparison-label">You said:</span>
+                                        <span class="comparison-word user" id="pronunciation-comparison-user">word</span>
+                                    </div>
+                                </div>
+                                <div class="accuracy-score">
+                                    <span class="score-percentage" id="pronunciation-accuracy-score">0%</span>
+                                    <span class="score-label">Accuracy</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="pronunciation-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="feedback" id="pronunciation-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Listening Game -->
+            <div id="listening-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="listening-current-q">1</span> מתוך <span id="listening-total-q">10</span></span>
+                    <span class="mastery-indicator" id="listening-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="listening-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="listening-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="listening-card">
+                        <div class="listening-layout-vertical">
+                            <!-- Emoji at top, centered -->
+                            <div class="picture-container">
+                                <div class="word-picture" id="listening-picture">🔤</div>
+                            </div>
+                            <!-- Hebrew translation centered -->
+                            <div class="hebrew-translation" id="listening-hebrew"></div>
+                            <!-- Play button and plays remaining on same line -->
+                            <div class="controls-row">
+                                <button class="play-audio" id="listening-audio" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="listening-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="options-grid" id="listening-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                    <div class="feedback" id="listening-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Children's Reading Game -->
+            <div id="reading-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="reading-current-q">1</span> מתוך <span id="reading-total-q">10</span></span>
+                    <div class="progress-center-controls">
+                        <span class="mastery-indicator" id="reading-mastery-indicator"></span>
+                    </div>
+                    <button class="reset-game-btn" id="reading-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="reading-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="reading-card">
+                        <div class="reading-layout-vertical">
+                            <!-- Emoji at top, centered -->
+                            <div class="picture-container">
+                                <div class="word-picture" id="reading-picture">🔤</div>
+                            </div>
+                            <!-- English and Hebrew words on same line -->
+                            <div class="words-row">
+                                <div class="target-word" id="reading-word">CAT</div>
+                                <div class="hebrew-translation" id="reading-hebrew"></div>
+                            </div>
+                            <!-- Play button and plays remaining on same line -->
+                            <div class="controls-row">
+                                <button class="play-audio" id="reading-audio" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                                <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                            </div>
+                            <!-- Built word area -->
+                            <div class="built-word" id="built-word">
+                                <!-- User's built word will appear here -->
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="reading-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="letter-bank" id="letter-bank">
+                        <!-- Available letters will be populated by JavaScript -->
+                    </div>
+                    <div class="action-buttons">
+                        <button class="game-btn clear-btn" id="clear-word">
+                            <span>נקה</span>
+                        </button>
+                        <button class="game-btn check-btn" id="check-word">
+                            <span>בדוק</span>
+                        </button>
+                    </div>
+                    <div class="feedback" id="reading-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Practice Mode -->
+            <div id="practice-game" class="game-content">
+                <div class="progress-container practice-progress">
+                    <span class="question-counter" id="practice-word-counter">שאלה 1 מתוך 5</span>
+                    <span class="progress-secondary" id="practice-cycle-counter">סיבוב 1 מתוך 2</span>
+                    <span class="mastery-indicator" id="practice-mastery-indicator"></span>
+                    <button class="exit-practice-btn" id="practice-exit-btn" title="חזור לדף הבית">
+                        <i class="fas fa-home"></i> יציאה
+                    </button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="practice-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="practice-card">
+                        <div class="practice-layout-vertical">
+                            <!-- Picture at top -->
+                            <div class="picture-container">
+                                <div class="word-picture" id="practice-picture">🔤</div>
+                            </div>
+                            <!-- English and Hebrew words -->
+                            <div class="words-row">
+                                <div class="target-word" id="practice-word">Loading...</div>
+                                <div class="hebrew-translation" id="practice-hebrew"></div>
+                            </div>
+
+                            <!-- Control buttons -->
+                            <div class="controls-row">
+                                <button class="record-btn-icon" id="practice-record-btn" aria-label="הקלט את ההגייה שלך">
+                                    <i class="fas fa-microphone"></i>
+                                </button>
+                                <button class="play-audio" id="practice-listen-native" aria-label="השמע מילה">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="practice-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="feedback" id="practice-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- ABC Letters Game -->
+            <div id="abc-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="abc-current-q">1</span> מתוך <span id="abc-total-q">10</span></span>
+                    <span class="mastery-indicator" id="abc-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="abc-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="abc-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="abc-card">
+                        <div class="abc-layout-vertical">
+                            <!-- Picture container for word-picture questions -->
+                            <div class="abc-picture-container" id="abc-picture-container" style="display: none;">
+                                <div class="word-picture" id="abc-picture">🍎</div>
+                                <div class="abc-word-display" id="abc-word-display">Apple</div>
+                            </div>
+                            <!-- Large letter display -->
+                            <div class="abc-letter-display" id="abc-letter-display">A</div>
+                            <!-- Instruction text -->
+                            <div class="abc-instruction" id="abc-instruction">מצא את האות הקטנה</div>
+                            <!-- Audio button (for letter-sound questions) -->
+                            <div class="controls-row">
+                                <button class="play-audio" id="abc-audio" aria-label="השמע אות" style="display: none;">
+                                    <i class="fas fa-volume-up"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <button class="next-btn" id="abc-next" style="display: none;">
+                        <span>השאלה הבאה</span>
+                    </button>
+                    <div class="options-grid" id="abc-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                    <div class="feedback" id="abc-feedback" aria-live="polite"></div>
+                </div>
+            </div>
+
+            <!-- Fill in the Blanks Game -->
+            <div id="fill-blanks-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="fill-blanks-current-q">1</span> מתוך <span id="fill-blanks-total-q">10</span></span>
+                    <span class="scramble-theme-badge progress-category-badge" id="fill-blanks-theme"></span>
+                    <button class="reset-game-btn" id="fill-blanks-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="fill-blanks-progress-fill"></div>
+                    </div>
+                </div>
+
+                <div id="fill-blanks-container" style="display: none;">
+                    <!-- Hint -->
+                    <div class="scramble-meta">
+                        <div class="scramble-hint" id="fill-blanks-hint"></div>
+                    </div>
+
+                    <!-- Sentence with blank -->
+                    <div class="fill-blanks-sentence-card">
+                        <div id="fill-blanks-sentence" class="fill-blanks-sentence">
+                            <!-- Sentence with blank slot will be populated by JS -->
+                        </div>
+                    </div>
+
+                    <!-- Multiple choice options -->
+                    <div id="fill-blanks-options" class="fill-blanks-options">
+                        <!-- Options will be populated by JavaScript -->
+                    </div>
+                </div>
+
+                <div class="feedback" id="fill-blanks-feedback" aria-live="polite" style="display: none;"></div>
+                <button class="next-btn" id="fill-blanks-next" onclick="gameManager.loadQuestion('fill-blanks')" style="display: none;">
+                    <span>השאלה הבאה ➡️</span>
+                </button>
+            </div>
+
+            <!-- Sentence Scramble Game -->
+            <div id="scramble-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="scramble-current-q">1</span> מתוך <span id="scramble-total-q">10</span></span>
+                    <span class="scramble-theme-badge progress-category-badge" id="scramble-theme"></span>
+                    <button class="reset-game-btn" id="scramble-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="scramble-progress-fill"></div>
+                    </div>
+                </div>
+
+                <div id="scramble-game-container" style="display: none;">
+                    <!-- Hebrew hint -->
+                    <div class="scramble-meta">
+                        <div class="scramble-hint" id="scramble-hint"></div>
+                    </div>
+
+                    <!-- Answer zone - where selected words go -->
+                    <div class="scramble-zone-label">בנה את המשפט:</div>
+                    <div class="scramble-build-row">
+                        <button id="scramble-play-btn" class="scramble-play-btn" onclick="scrambleGame.playCurrentWords()" disabled title="נגן את המשפט">▶</button>
+                        <div id="scramble-answer-zone" class="scramble-answer-zone">
+                            <div class="answer-placeholder">הקלק על מילה כדי להוסיף אותה</div>
+                        </div>
+                    </div>
+
+                    <!-- Word bank - scrambled words -->
+                    <div class="scramble-zone-label">בחר מילים:</div>
+                    <div id="scramble-word-bank" class="scramble-word-bank">
+                        <!-- Words will be populated by JavaScript -->
+                    </div>
+
+                    <!-- Action buttons -->
+                    <div class="scramble-actions">
+                        <button class="next-btn" id="scramble-check" onclick="scrambleGame.checkAnswer()">
+                            <span>בדוק תשובה</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="feedback" id="scramble-feedback" aria-live="polite" style="display: none;"></div>
+                <button class="next-btn" id="scramble-next" onclick="gameManager.loadQuestion('scramble')" style="display: none;">
+                    <span>המשפט הבא ➡️</span>
+                </button>
+            </div>
+
+            <!-- Memory/Matching Game -->
+            <div id="memory-game" class="game-content">
+                <div class="progress-container">
+                    <button class="reset-game-btn" id="memory-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="memory-bar-wrapper">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="memory-progress-fill"></div>
+                        </div>
+                        <span class="memory-stats">
+                            <span class="memory-stat-item">רמה <span id="memory-level">1/3</span></span>
+                            <span class="memory-stat-separator">|</span>
+                            <span class="memory-stat-item">מהלכים <span id="memory-moves">0</span></span>
+                            <span class="memory-stat-separator">|</span>
+                            <span class="memory-stat-item">זוגות <span id="memory-pairs">0 מתוך 0</span></span>
+                        </span>
+                    </div>
+                </div>
+                <button class="next-btn" id="memory-finish-btn" style="display: none;">
+                    <span>סיום משחק</span>
+                </button>
+                <div id="memory-game-container" style="display: none;">
+                    <div id="memory-grid" class="memory-grid">
+                        <!-- Cards will be populated by JavaScript -->
+                    </div>
+                </div>
+                <div class="feedback" id="memory-feedback" aria-live="polite" style="display: none;"></div>
+            </div>
+
+            <!-- Word Journey Game -->
+            <div id="word-journey-game" class="game-content">
+                <div class="progress-container">
+                    <div class="word-journey-progress-meta">
+                        <div class="word-journey-meta-line">
+                            <span class="word-journey-meta-stat"><span id="word-journey-batch-size">5</span> מילים</span>
+                            <span class="word-journey-meta-sep">•</span>
+                            <span class="word-journey-meta-stat">שלב <span id="word-journey-current-q">1</span> מתוך <span id="word-journey-total-q">5</span></span>
+                        </div>
+                        <div id="wj-stage-bar" class="wj-stage-bar">
+                            <!-- Dots injected by JS: one per stage -->
+                        </div>
+                    </div>
+                </div>
+
+                <div class="game-board">
+                    <!-- Stage content area — replaced on each stage transition -->
+                    <div id="wj-stage-area"></div>
+
+                    <!-- Shared feedback element -->
+                    <div id="wj-feedback" class="feedback"></div>
+
+                    <!-- Next button (shown on incorrect answers or end of discover card) -->
+                    <button id="wj-next" class="next-btn" style="display:none">הבא</button>
+                </div>
+            </div>
+            <!-- Picture Match Game -->
+            <div id="picture-match-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="picture-match-current-q">1</span> מתוך <span id="picture-match-total-q">10</span></span>
+                    <span class="mastery-indicator" id="picture-match-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="picture-match-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="picture-match-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div class="picture-match-header">
+                        <div class="picture-match-word target-word" id="picture-match-word"></div>
+                        <div class="controls-row">
+                            <button class="play-audio" id="picture-match-audio" aria-label="השמע מילה">
+                                <i class="fas fa-volume-up"></i>
+                            </button>
+                            <span class="plays-remaining">השמעות נותרו: <span class="plays-left">8</span></span>
+                        </div>
+                    </div>
+                    <div class="options-grid picture-match-options-grid" id="picture-match-options">
+                        <!-- Options populated by JS -->
+                    </div>
+                    <button class="next-btn" id="picture-match-next" style="display: none;">
+                        <span>המילה הבאה</span>
+                    </button>
+                    <div class="feedback" id="picture-match-feedback" aria-live="polite"></div>
+                    <!-- Hidden elements kept for JS compatibility -->
+                    <div id="picture-match-picture" style="display:none;"></div>
+                    <div id="picture-match-hebrew" style="display:none;"></div>
+                </div>
+            </div>
+
+            <!-- True or Not Game -->
+            <div id="true-or-not-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="true-or-not-current-q">1</span> מתוך <span id="true-or-not-total-q">10</span></span>
+                    <span class="mastery-indicator" id="true-or-not-mastery-indicator"></span>
+                    <button class="reset-game-btn" id="true-or-not-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="true-or-not-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div id="true-or-not-container">
+                        <div class="ton-image-area" id="true-or-not-image">
+                            <!-- Image rendered by JS -->
+                        </div>
+                        <div class="ton-word-display">
+                            <span class="ton-word" id="true-or-not-word">...</span>
+                            <span class="ton-hebrew" id="true-or-not-hebrew"></span>
+                        </div>
+                        <div class="ton-buttons">
+                            <button class="ton-answer-btn ton-yes" id="true-or-not-yes" onclick="window.trueOrNotGame.checkAnswer(true)">
+                                <span class="ton-btn-icon">✓</span>
+                                <span class="ton-btn-label">נכון!</span>
+                            </button>
+                            <button class="ton-answer-btn ton-no" id="true-or-not-no" onclick="window.trueOrNotGame.checkAnswer(false)">
+                                <span class="ton-btn-icon">✗</span>
+                                <span class="ton-btn-label">לא נכון!</span>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="feedback" id="true-or-not-feedback" aria-live="polite" style="display: none;"></div>
+                    <button class="next-btn" id="true-or-not-next" onclick="gameManager.loadQuestion('true-or-not')" style="display: none;">
+                        <span>הבא ➡️</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Word Builder Game -->
+            <div id="word-builder-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">שאלה <span id="word-builder-current-q">1</span> מתוך <span id="word-builder-total-q">8</span></span>
+                    <span class="scramble-theme-badge progress-category-badge" id="word-builder-theme"></span>
+                    <button class="reset-game-btn" id="word-builder-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="word-builder-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div id="word-builder-container">
+                        <div class="wb-hint" id="word-builder-hint"></div>
+                        <div class="wb-sentence-card">
+                            <div id="word-builder-sentence" class="wb-sentence">
+                                <!-- Sentence with blank slot populated by JS -->
+                            </div>
+                        </div>
+                        <div id="word-builder-options" class="wb-options">
+                            <!-- Options populated by JS -->
+                        </div>
+                    </div>
+                    <div class="feedback" id="word-builder-feedback" aria-live="polite" style="display: none;"></div>
+                    <button class="next-btn" id="word-builder-next" onclick="gameManager.loadQuestion('word-builder')" style="display: none;">
+                        <span>המשפט הבא ➡️</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Story Time Game -->
+            <div id="story-time-game" class="game-content">
+                <div class="progress-container">
+                    <span class="question-counter">סיפור <span id="story-time-current-q">1</span> מתוך <span id="story-time-total-q">3</span></span>
+                    <button class="reset-game-btn" id="story-time-reset-btn" title="אפס משחק">אפס משחק</button>
+                    <div class="progress-bar">
+                        <div class="progress-fill" id="story-time-progress-fill"></div>
+                    </div>
+                </div>
+                <div class="game-board">
+                    <div id="story-time-container">
+                        <h2 class="st-title" id="story-time-title"></h2>
+                        <div class="st-hint" id="story-time-hint"></div>
+                        <div class="st-text" id="story-time-text">
+                            <!-- Story sentences populated by JS -->
+                        </div>
+                        <button class="st-ready-btn" id="story-time-ready" style="display: none;">
+                            <span>!מוכן לשאלות ❓</span>
+                        </button>
+                        <div id="story-time-quiz" style="display: none;">
+                            <div class="st-q-counter" id="story-time-q-counter"></div>
+                            <div class="st-question" id="story-time-question"></div>
+                            <div class="st-options" id="story-time-options">
+                                <!-- Options populated by JS -->
+                            </div>
+                        </div>
+                    </div>
+                    <div class="feedback" id="story-time-feedback" aria-live="polite" style="display: none;"></div>
+                    <button class="next-btn" id="story-time-next" style="display: none;">
+                        <span>הבא ➡️</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- User Hub Screen (Profile + Courses) -->
+            <div id="user-hub-screen" class="game-content">
+                <div class="user-hub-header">
+                    <button class="back-screen-btn" id="user-hub-back-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <div class="user-hub-tabs">
+                        <button class="hub-tab active" data-tab="profile" id="tab-profile">הפרופיל שלי</button>
+                        <button class="hub-tab" data-tab="courses" id="tab-courses">הקורסים שלי</button>
+                    </div>
+                    <div class="coin-display">
+                        <span class="coin-icon">🪙</span>
+                        <span class="coin-amount" id="hub-coin-balance">0</span>
+                    </div>
+                </div>
+
+                <!-- Profile Tab Panel -->
+                <div class="hub-tab-panel active" id="hub-panel-profile">
+                    <div class="profile-hero">
+                        <div class="profile-avatar-large" id="profile-avatar-large">O</div>
+                        <div class="profile-hero-info">
+                            <h2 class="profile-student-name" id="profile-student-name">לומד</h2>
+                            <div class="profile-coins-big">
+                                <span class="coin-icon">🪙</span>
+                                <span id="profile-coin-count">0</span>
+                                <span class="profile-coins-label">מטבעות</span>
+                            </div>
+                            <div class="profile-next-action" id="profile-next-action" style="display: none;">
+                                <div class="profile-next-label">הצעד הבא המומלץ</div>
+                                <button class="profile-next-btn" id="profile-next-btn" type="button"></button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="profile-stats-grid">
+                        <div class="profile-stat-card">
+                            <div class="profile-stat-icon">🔥</div>
+                            <div class="profile-stat-value" id="profile-streak">0</div>
+                            <div class="profile-stat-label">ימי רצף</div>
+                        </div>
+                        <div class="profile-stat-card">
+                            <div class="profile-stat-icon">📚</div>
+                            <div class="profile-stat-value" id="profile-words-learned">0</div>
+                            <div class="profile-stat-label">מילים נלמדו</div>
+                        </div>
+                        <div class="profile-stat-card">
+                            <div class="profile-stat-icon">🌟</div>
+                            <div class="profile-stat-value" id="profile-words-mastered">0</div>
+                            <div class="profile-stat-label">מילים ברמת שליטה גבוהה</div>
+                        </div>
+                        <div class="profile-stat-card">
+                            <div class="profile-stat-icon">🏆</div>
+                            <div class="profile-stat-value" id="profile-certs-count">0</div>
+                            <div class="profile-stat-label">תעודות</div>
+                        </div>
+                    </div>
+                    <!-- Learning Progress Bar -->
+                    <div class="profile-section">
+                        <div class="learning-progress-bar" id="learning-progress-bar">
+                            <div class="learning-progress-header">
+                                <span class="learning-progress-level" id="learning-progress-level">מתחיל</span>
+                                <span class="learning-progress-count" id="learning-progress-count">0 / 5 מילים</span>
+                            </div>
+                            <div class="learning-progress-track">
+                                <div class="learning-progress-fill" id="learning-progress-fill" style="width: 0%"></div>
+                            </div>
+                            <div class="learning-progress-next" id="learning-progress-next">עוד 5 מילים לשלב הבא!</div>
+                        </div>
+                    </div>
+
+                    <div class="profile-section">
+                        <h3 class="profile-section-title">התעודות שלי</h3>
+                        <div class="profile-certificates-grid" id="profile-certificates-grid">
+                            <div class="no-certs-msg">עוד אין תעודות. סיים נושא כדי לקבל תעודה! 🎓</div>
+                        </div>
+                    </div>
+
+                    <!-- Word Collection (Sticker Book) -->
+                    <div class="profile-section">
+                        <h3 class="profile-section-title">אוסף המילים שלי</h3>
+                        <div class="word-collection-grid" id="word-collection-grid">
+                            <div class="no-words-msg">עוד לא למדת מילים. התחל מסע מילים כדי לאסוף! 🗺️</div>
+                        </div>
+                    </div>
+
+                    <!-- Unlocked Games -->
+                    <div class="profile-section">
+                        <h3 class="profile-section-title">המשחקים שלי</h3>
+                        <div class="unlocked-games-grid" id="unlocked-games-grid"></div>
+                    </div>
+
+                    <!-- Weekly Activity Calendar -->
+                    <div class="profile-section">
+                        <h3 class="profile-section-title">הפעילות שלי השבוע</h3>
+                        <div class="activity-calendar" id="activity-calendar"></div>
+                    </div>
+
+                    <!-- Chime Selector -->
+                    <div class="profile-section">
+                        <h3 class="profile-section-title">🎵 צליל כניסה</h3>
+                        <p style="font-size:0.9rem;color:#718096;margin-bottom:12px;">בחר את הצליל שישמע כאשר תיכנס למשחק</p>
+                        <div class="chime-selector" id="chime-selector">
+                            <button class="chime-option" data-chime="arpeggio">
+                                <span class="chime-icon">🎶</span>
+                                <span class="chime-name">ארפג׳יו</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                            <button class="chime-option" data-chime="fanfare">
+                                <span class="chime-icon">🎺</span>
+                                <span class="chime-name">פנפרה</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                            <button class="chime-option" data-chime="magical">
+                                <span class="chime-icon">✨</span>
+                                <span class="chime-name">קסם</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                            <button class="chime-option" data-chime="soft-bell">
+                                <span class="chime-icon">🔔</span>
+                                <span class="chime-name">פעמון</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                            <button class="chime-option" data-chime="adventure">
+                                <span class="chime-icon">⚔️</span>
+                                <span class="chime-name">הרפתקה</span>
+                                <span class="chime-preview-btn" title="נגן">▶</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Courses Tab Panel -->
+                <div class="hub-tab-panel" id="hub-panel-courses">
+                    <div class="courses-grid" id="courses-grid">
+                        <!-- Course cards populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topics Selection Screen -->
+            <div id="topics-screen" class="game-content">
+                <div class="topics-screen-header">
+                    <button class="back-screen-btn" id="topics-back-btn">
+                        <i class="fas fa-arrow-right"></i>
+                    </button>
+                    <div class="topics-header-info">
+                        <div class="topics-course-icon" id="topics-course-icon">📚</div>
+                        <h1 class="screen-title" id="topics-course-title">קורס</h1>
+                    </div>
+                    <div class="coin-display">
+                        <span class="coin-icon">🪙</span>
+                        <span class="coin-amount" id="topics-coin-balance">0</span>
+                    </div>
+                </div>
+                <div class="topics-course-progress">
+                    <div class="topics-progress-bar">
+                        <div class="topics-progress-fill" id="topics-progress-fill"></div>
+                    </div>
+                    <span class="topics-progress-label" id="topics-progress-label">0% הושלם</span>
+                </div>
+                <div class="topics-list" id="topics-list">
+                    <!-- Topic cards populated by JavaScript -->
+                </div>
+            </div>
+
+
+            </main>
+        </div>
+    </div>
+
+    <!-- Certificate Modal -->
+    <div id="certificate-modal" class="cert-modal-overlay" style="display: none;">
+        <div class="cert-modal-card">
+            <div class="cert-confetti-area" id="cert-confetti-area"></div>
+            <div class="cert-header">
+                <div class="cert-medal">🏅</div>
+                <h2 class="cert-title">כל הכבוד!</h2>
+                <p class="cert-subtitle">השלמת את הנושא בהצלחה!</p>
+            </div>
+            <div class="cert-body">
+                <div class="cert-star-row">⭐⭐⭐</div>
+                <div class="cert-topic-name" id="cert-topic-name">שם הנושא</div>
+                <div class="cert-score-display">
+                    ניקוד: <span id="cert-score">100</span>
+                </div>
+                <div class="cert-date" id="cert-date"></div>
+            </div>
+            <div class="cert-actions">
+                <button class="cert-btn cert-continue-btn" id="cert-continue-btn">המשך ללמוד</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="auth-modal">
+        <div class="auth-modal-content">
+            <div class="auth-header">
+                <i class="fas fa-graduation-cap auth-icon"></i>
+                <h2>English Learning Games</h2>
+                <p class="auth-subtitle">משחקים ללימוד אנגלית</p>
+            </div>
+
+            <!-- User Selection Screen -->
+            <div id="user-selection-screen" class="auth-screen">
+                <h3>Select User / בחר משתמש</h3>
+                <div class="user-selection-grid" id="user-selection-grid">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+            </div>
+
+            <!-- Password Entry Screen -->
+            <div id="password-entry-screen" class="auth-screen" style="display: none;">
+                <button class="back-btn" id="back-to-selection">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <div class="user-login-info">
+                    <div class="login-avatar" id="login-avatar">O</div>
+                    <h3 id="login-user-name">User</h3>
+                </div>
+                <form id="login-form" class="login-form">
+                    <div class="form-group">
+                        <label for="password-input">Password / סיסמה</label>
+                        <div class="password-input-wrapper">
+                            <input
+                                type="password"
+                                id="password-input"
+                                class="password-input"
+                                placeholder="Enter password / הכנס סיסמה"
+                                autocomplete="current-password"
+                                required
+                            />
+                            <button type="button" class="toggle-password" id="toggle-password">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                        </div>
+                        <p class="password-hint" id="password-hint" style="display: none;">
+                            First time? Create a password to protect your account.
+                            <br>
+                            פעם ראשונה? צור סיסמה כדי להגן על החשבון שלך.
+                        </p>
+                    </div>
+                    <div class="auth-error" id="auth-error" style="display: none;"></div>
+                    <button type="submit" class="auth-btn" id="login-submit">
+                        <i class="fas fa-sign-in-alt"></i>
+                        <span>Login / התחבר</span>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Exit Game Confirmation Modal -->
+    <div class="exit-modal" id="exit-modal">
+        <div class="exit-dialog">
+            <h3><i class="fas fa-exclamation-triangle"></i> משחק בתהליך</h3>
+            <div class="exit-info">
+                <p class="exit-score">ניקוד נוכחי: <span id="exit-current-score">0</span> נקודות</p>
+                <p class="exit-progress">שאלה: <span id="exit-current-question">0</span>/<span id="exit-total-questions">10</span></p>
+            </div>
+            <p class="exit-warning" id="exit-warning-message">הניקוד יישמר בסטטיסטיקות</p>
+            <div class="exit-buttons">
+                <button class="btn btn-primary" id="exit-and-save-btn">
+                    <i class="fas fa-save"></i>
+                    יציאה ושמירה
+                </button>
+                <button class="btn btn-secondary" id="exit-continue-btn">
+                    <i class="fas fa-play"></i>
+                    המשך משחק
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Exit Confirmation Bar -->
+    <div class="exit-bar" id="exit-bar">
+        <div class="exit-bar-content">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>לצאת ממשחק? ההתקדמות תאבד</span>
+            <div class="exit-bar-buttons">
+                <button class="exit-bar-btn exit-bar-confirm" id="exit-bar-confirm">יציאה</button>
+                <button class="exit-bar-btn exit-bar-cancel" id="exit-bar-cancel">ביטול</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div class="toast" id="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toast-message">Message</span>
+    </div>
+
+    <!-- Error Tracker - Load first to catch all errors -->
+    <script src="error-tracker.js"></script>
+
+    <!-- Console Logger - Captures all console output for debugging -->
+    <script type="module" src="utils/consoleLogger.js?t=1768159313"></script>
+
+    <script src="auth.js?t=1762332862"></script>
+    <script src="settings.js?t=1774216737"></script>
+    <script type="module" src="data/_loader.js?t=1773784000"></script>
+    <script src="speechSynthesis.js?t=1742300000"></script>
+    <script src="feedback.js"></script>
+    <script src="audio-effects.js"></script>
+    <script src="gamification.js"></script>
+    <script type="module">
+        import { initTopHeader, showGameInHeader, setHeaderMode } from './components/top-header.js?t=1776400001';
+        initTopHeader({ activePage: 'home' });
+        // Expose to gameLogic.js (separate module scope)
+        window.showGameInHeader = showGameInHeader;
+        window.setHeaderMode = setHeaderMode;
+    </script>
+    <script type="module" src="gameLogic.js?t=1776400001"></script>
+    <script type="module" src="app.js?t=1776400001"></script>
+
+    <script>
+        // Welcome Screen Handler
+        document.addEventListener('DOMContentLoaded', () => {
+            const welcomeScreen = document.getElementById('welcome-screen');
+            const gameCards = document.querySelectorAll('.game-card');
+
+            // ── Update card lock states + hero card from userProgress ──
+            function updateHomeCardStates() {
+                const progress = window.app?.userProgress;
+                const gameUnlocks = progress?.gameUnlocks || {};
+                const learnedCount = Object.keys(progress?.learnedWords || {}).length;
+                const overrideActive = window.app?.settings?.gameUnlockOverride === true;
+
+                // Update words learned counter
+                const wordsCountEl = document.getElementById('words-learned-count');
+                if (wordsCountEl) wordsCountEl.textContent = learnedCount;
+
+                // Apply locked/unlocked class to gated cards
+                document.querySelectorAll('.game-card[data-gate]').forEach(card => {
+                    const gameType = card.dataset.game;
+                    const gateText = card.dataset.gate;
+                    const unlockEntry = gameUnlocks[gameType];
+                    const isUnlocked = overrideActive || unlockEntry?.unlocked === true;
+
+                    if (isUnlocked) {
+                        card.classList.remove('locked');
+                    } else {
+                        card.classList.add('locked');
+                        const lockText = card.querySelector('.lock-text');
+                        if (lockText) lockText.textContent = gateText;
+                    }
+                });
+
+                // Update hero card recommendation
+                updateHeroCard(learnedCount, gameUnlocks);
+            }
+
+            function updateHeroCard(learnedCount, gameUnlocks) {
+                const icon = document.getElementById('continue-hero-icon');
+                const title = document.getElementById('continue-hero-title');
+                const subtitle = document.getElementById('continue-hero-subtitle');
+                const btn = document.getElementById('continue-hero-btn');
+                const hero = document.getElementById('continue-hero');
+                if (!hero) return;
+
+                // Default: recommend Word Journey
+                let targetGame = 'word-journey';
+                let heroIcon = '🗺️';
+                let heroTitle = 'התחל ללמוד!';
+                let heroSubtitle = 'למד מילים חדשות במסע המילים';
+                let heroBtn = 'בוא נתחיל';
+
+                if (learnedCount === 0) {
+                    // Check for a saved word-journey game with meaningful progress
+                    // (entering the game for a moment and going back should NOT trigger resume)
+                    const userId = localStorage.getItem('currentUser') || 'default';
+                    const savedWJ = localStorage.getItem(`savedGame_${userId}_word-journey`);
+                    let hasMeaningfulProgress = false;
+                    if (savedWJ) {
+                        try {
+                            const state = JSON.parse(savedWJ);
+                            hasMeaningfulProgress = (state.currentQuestionIndex > 0) ||
+                                                    (state.wjStageIndex > 0) ||
+                                                    (state.score > 0);
+                        } catch (_) { hasMeaningfulProgress = true; }
+                    }
+                    if (hasMeaningfulProgress) {
+                        heroTitle = 'המשך את המסע!';
+                        heroSubtitle = 'יש לך משחק שמור - המשך מהמקום שעצרת';
+                        heroBtn = 'המשך מסע';
+                    } else {
+                        // Brand new user (or only viewed the first question)
+                        heroTitle = 'בוא נתחיל!';
+                        heroSubtitle = 'למד את המילים הראשונות שלך במסע המילים';
+                        heroBtn = 'התחל מסע';
+                    }
+                } else if (learnedCount < 5) {
+                    heroTitle = 'כל הכבוד!';
+                    heroSubtitle = `למדת ${learnedCount} מילים! עוד ${5 - learnedCount} מילים לפתיחת משחקים חדשים`;
+                    heroBtn = 'המשך ללמוד';
+                } else if (learnedCount < 10) {
+                    // Check for newly unlocked games
+                    const justUnlocked = ['listening', 'picture-match'].find(g => gameUnlocks[g]?.unlocked);
+                    if (justUnlocked) {
+                        const names = { 'listening': 'הקשבה 👂', 'picture-match': 'מילה לתמונה 🖼️' };
+                        heroIcon = '🎉';
+                        heroTitle = 'משחק חדש נפתח!';
+                        heroSubtitle = `נסה את משחק ${names[justUnlocked] || justUnlocked}`;
+                        heroBtn = 'שחק עכשיו';
+                        targetGame = justUnlocked;
+                    } else {
+                        heroTitle = 'ממשיכים!';
+                        heroSubtitle = `${learnedCount} מילים! עוד ${10 - learnedCount} לפתיחת משחקי אתגר`;
+                        heroBtn = 'למד עוד';
+                    }
+                } else {
+                    heroTitle = 'מצוין!';
+                    heroSubtitle = `למדת כבר ${learnedCount} מילים! המשך להתקדם`;
+                    heroBtn = 'למד עוד מילים';
+                }
+
+                if (icon) icon.textContent = heroIcon;
+                if (title) title.textContent = heroTitle;
+                if (subtitle) subtitle.textContent = heroSubtitle;
+                if (btn) btn.textContent = heroBtn;
+
+                // Store target game for click handler
+                hero.dataset.targetGame = targetGame;
+            }
+
+            // Function to show welcome screen
+            function showWelcomeScreen() {
+                // Hide all game sections
+                document.querySelectorAll('.game-content').forEach(section => {
+                    section.classList.remove('active');
+                    section.style.display = 'none';
+                });
+
+                // Show welcome screen
+                welcomeScreen.classList.add('active');
+                welcomeScreen.style.display = 'block';
+
+                // Refresh resume cards to show updated progress
+                if (typeof gameManager !== 'undefined' && gameManager.populateResumeGames) {
+                    gameManager.populateResumeGames();
+                }
+
+                // Refresh lock states and hero card
+                updateHomeCardStates();
+            }
+
+            // Hero card click handler
+            const heroCard = document.getElementById('continue-hero');
+            if (heroCard) {
+                heroCard.addEventListener('click', () => {
+                    const targetGame = heroCard.dataset.targetGame || 'word-journey';
+                    const switchToGame = () => {
+                        if (window.gameManager) {
+                            welcomeScreen.classList.remove('active');
+                            welcomeScreen.style.display = 'none';
+                            window.gameManager.switchGame(targetGame);
+                        } else {
+                            setTimeout(switchToGame, 100);
+                        }
+                    };
+                    switchToGame();
+                });
+            }
+
+            // Handle game card clicks
+            gameCards.forEach(card => {
+                const gameType = card.dataset.game;
+
+                // Click on main card body - auto-resume if saved game exists
+                const mainCard = card.querySelector('.game-card-main');
+                if (mainCard) {
+                    mainCard.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        if (!gameType) {
+                            console.warn('Game card clicked without data-game attribute:', card);
+                            return;
+                        }
+
+                        // Block click on locked cards
+                        if (card.classList.contains('locked')) {
+                            if (window.gameManager) {
+                                window.gameManager.showToast(
+                                    card.dataset.gate ? `נדרש: ${card.dataset.gate}` : 'המשחק נעול',
+                                    'fa-lock',
+                                    '#f59e0b'
+                                );
+                            }
+                            return;
+                        }
+
+                        const switchToGame = () => {
+                            if (window.gameManager) {
+                                welcomeScreen.classList.remove('active');
+                                welcomeScreen.style.display = 'none';
+                                window.gameManager.switchGame(gameType);
+                            } else {
+                                console.log('Waiting for gameManager...');
+                                setTimeout(switchToGame, 100);
+                            }
+                        };
+
+                        switchToGame();
+                    });
+                }
+
+                // Click on "Start New" button - always start fresh
+                const startNewBtn = card.querySelector('.card-new-btn');
+                if (startNewBtn) {
+                    startNewBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        const startFresh = () => {
+                            if (window.gameManager) {
+                                // Delete saved game first
+                                window.gameManager.deleteGameState(gameType);
+
+                                welcomeScreen.classList.remove('active');
+                                welcomeScreen.style.display = 'none';
+                                window.gameManager.switchGame(gameType);
+                            } else {
+                                setTimeout(startFresh, 100);
+                            }
+                        };
+
+                        startFresh();
+                    });
+                }
+
+                // Click on "Continue" button - resume saved game
+                const continueBtn = card.querySelector('.card-continue-btn');
+                if (continueBtn) {
+                    continueBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+
+                        const resumeSaved = () => {
+                            if (window.gameManager) {
+                                welcomeScreen.classList.remove('active');
+                                welcomeScreen.style.display = 'none';
+                                window.gameManager.resumeGame(gameType);
+                            } else {
+                                setTimeout(resumeSaved, 100);
+                            }
+                        };
+
+                        resumeSaved();
+                    });
+                }
+            });
+
+            // Expose to global scope so gameLogic.js showWelcomeScreen can refresh
+            window.updateHomeCardStates = updateHomeCardStates;
+
+            // Initial card state update (runs after app.js loads)
+            const waitForApp = () => {
+                if (window.app?.userProgress) {
+                    updateHomeCardStates();
+                } else {
+                    setTimeout(waitForApp, 200);
+                }
+            };
+            waitForApp();
+
+            // Handle hash URLs (e.g., index.html#vocabulary)
+            function handleHashNavigation() {
+                const hash = window.location.hash.substring(1); // Remove the '#'
+                if (!hash) return;
+
+                // For user-hub we need window.app; for game hashes we only need gameManager
+                const needsApp = (hash === 'user-hub');
+                if ((needsApp && typeof window.app === 'undefined') || typeof gameManager === 'undefined') {
+                    setTimeout(handleHashNavigation, 100);
+                    return;
+                }
+
+                // Hide welcome screen for navigation targets
+                welcomeScreen.classList.remove('active');
+                welcomeScreen.style.display = 'none';
+
+                if (hash === 'user-hub') {
+                    window.app.renderUserHub();
+                    window.app.showScreen('user-hub-screen');
+                    return;
+                }
+
+                // Switch to the game specified in hash
+                gameManager.switchGame(hash);
+            }
+
+            // Show welcome screen after login - ALWAYS clear hash on login
+            window.addEventListener('user-logged-in', (e) => {
+                // Play welcome chime using the user's saved preference
+                if (window.audioEffects) {
+                    const userId = (e.detail && e.detail.userId) || localStorage.getItem('currentUser');
+                    let chimeType = 'arpeggio';
+                    if (userId) {
+                        try {
+                            const progress = JSON.parse(localStorage.getItem(`userProgress_${userId}`) || '{}');
+                            chimeType = progress.welcomeChime || 'arpeggio';
+                        } catch (err) { /* ignore */ }
+                    }
+                    setTimeout(() => window.audioEffects.playWelcomeChime(chimeType), 400);
+                }
+                // Clear hash to ensure welcome screen shows after fresh login
+                if (window.location.hash) {
+                    history.replaceState(null, null, window.location.pathname);
+                }
+                setTimeout(showWelcomeScreen, 100);
+            });
+
+            // Show welcome screen (or navigate to hashed game) if already logged in
+            if (typeof authService !== 'undefined' && authService.isAuthenticated()) {
+                setTimeout(() => {
+                    // Honor any hash (e.g., game buttons from settings/stats pages)
+                    if (window.location.hash) {
+                        handleHashNavigation();
+                    } else {
+                        showWelcomeScreen();
+                    }
+                }, 200);
+            }
+
+            // Handle hash changes (when user clicks browser back/forward)
+            window.addEventListener('hashchange', handleHashNavigation);
+        });
+    </script>
+
+    <script>
+        // ===== Chime Selector Logic =====
+        function initChimeSelector() {
+            const container = document.getElementById('chime-selector');
+            if (!container) return;
+
+            const userId = localStorage.getItem('currentUser');
+            let saved = 'arpeggio';
+            if (userId) {
+                try {
+                    const progress = JSON.parse(localStorage.getItem(`userProgress_${userId}`) || '{}');
+                    saved = progress.welcomeChime || 'arpeggio';
+                } catch (e) { /* ignore */ }
+            }
+
+            // Highlight saved selection
+            container.querySelectorAll('.chime-option').forEach(btn => {
+                if (btn.dataset.chime === saved) btn.classList.add('selected');
+                btn.addEventListener('click', () => {
+                    const type = btn.dataset.chime;
+
+                    // Preview chime
+                    if (window.audioEffects) window.audioEffects.playWelcomeChime(type);
+
+                    // Save preference
+                    const uid = localStorage.getItem('currentUser');
+                    if (uid) {
+                        try {
+                            const key = `userProgress_${uid}`;
+                            const progress = JSON.parse(localStorage.getItem(key) || '{}');
+                            progress.welcomeChime = type;
+                            localStorage.setItem(key, JSON.stringify(progress));
+                        } catch (e) { /* ignore */ }
+                    }
+
+                    // Update selection UI
+                    container.querySelectorAll('.chime-option').forEach(b => b.classList.remove('selected'));
+                    btn.classList.add('selected');
+                });
+            });
+        }
+
+        // Run when profile tab opens (app.js calls renderUserHub; we listen for it)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Also init on tab click inside user-hub
+            document.addEventListener('click', (e) => {
+                const tab = e.target.closest('[data-tab="profile"]');
+                if (tab) setTimeout(initChimeSelector, 50);
+            });
+        });
+
+        // Expose so app.js / renderUserHub can call it
+        window.initChimeSelector = initChimeSelector;
+    </script>
+
+    <script src="hub-animations.js?t=1742400800"></script>
+
+</body>
+</html>

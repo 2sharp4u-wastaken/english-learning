@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+    <!-- Silver color circle -->
+    <circle cx="256" cy="256" r="220" fill="#C0C0C0" />
+    <circle cx="256" cy="256" r="220" fill="none" stroke="#000000" stroke-width="8" opacity="0.1"/>
+</svg>

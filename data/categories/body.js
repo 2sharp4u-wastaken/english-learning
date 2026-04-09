@@ -1,0 +1,37 @@
+// Body Parts vocabulary (30 words)
+// For Hebrew-speaking children aged 6-9
+
+export const bodyWords = [
+    { word: "Head", translation: "ראש", category: "body", image: "👤", imageUrl: "img/icons/body/head.png" },
+    { word: "Eye", translation: "עין", category: "body", image: "👁" },
+    { word: "Nose", translation: "אף", category: "body", image: "👃" },
+    { word: "Mouth", translation: "פה", category: "body", image: "👄" },
+    { word: "Ear", translation: "אוזן", category: "body", image: "👂" },
+    { word: "Hand", translation: "יד", category: "body", image: "✋" },
+    { word: "Foot", translation: "כף רגל", category: "body", image: "🦶" },
+    { word: "Arm", translation: "זרוע", category: "body", image: "💪" },
+    { word: "Leg", translation: "רגל", category: "body", image: "🦵" },
+    { word: "Hair", translation: "שיער", category: "body", image: "💇", imageUrl: "img/icons/body/hair.png" },
+    { word: "Teeth", translation: "שיניים", category: "body", image: "🦷" },
+    { word: "Finger", translation: "אצבע", category: "body", image: "👆" },
+    { word: "Toe", translation: "בוהן", category: "body", image: "🦶" },
+    { word: "Back", translation: "גב", category: "body", image: "🫸", imageUrl: "img/icons/body/back.png" },
+    { word: "Stomach", translation: "בטן", category: "body", image: "🤰", imageUrl: "img/icons/body/Stomach.png" },
+    { word: "Neck", translation: "צוואר", category: "body", image: "👔", imageUrl: "img/icons/body/neck.png" },
+    { word: "Shoulder", translation: "כתף", category: "body", image: "💪", imageUrl: "img/icons/body/Shoulder.png" },
+    { word: "Elbow", translation: "מרפק", category: "body", image: "💪", imageUrl: "img/icons/body/Elbow.png" },
+    { word: "Wrist", translation: "פרק כף היד", category: "body", image: "🖐️", imageUrl: "img/icons/body/wrist.png" },
+    { word: "Knee", translation: "ברך", category: "body", image: "🦵", imageUrl: "img/icons/body/Knee.png" },
+    { word: "Ankle", translation: "קרסול", category: "body", image: "🦶" },
+    { word: "Heart", translation: "לב", category: "body", image: "❤️" },
+    { word: "Lung", translation: "ריאה", category: "body", image: "🫁" },
+    { word: "Brain", translation: "מוח", category: "body", image: "🧠" },
+    { word: "Skin", translation: "עור", category: "body", image: "🧴", imageUrl: "img/icons/body/skin.png" },
+    { word: "Blood", translation: "דם", category: "body", image: "🩸" },
+    { word: "Bone", translation: "עצם", category: "body", image: "🦴" },
+    { word: "Muscle", translation: "שריר", category: "body", image: "💪" },
+    { word: "Nail", translation: "ציפורן", category: "body", image: "💅" },
+    { word: "Beard", translation: "זקן", category: "body", image: "🧔" },
+    { word: "Human", translation: "אדם", category: "body", image: "👤" },
+    { word: "Haircut", translation: "תספורת", category: "body", image: "✂️" }
+];
