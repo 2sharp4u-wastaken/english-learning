@@ -493,9 +493,9 @@ Objective: prepare the repo for a hybrid React migration without breaking the cu
 Current status:
 
 - Slice 0.1 completed and committed
-- Slice 0.2 completed and ready to commit
-- Slice 0.3 not started
-- Slice 0.4 not started
+- Slice 0.2 completed and committed
+- Slice 0.3 completed and ready to commit
+- Slice 0.4 completed and ready to commit
 
 ### Slice 0.1: Tooling Bootstrap
 
@@ -564,6 +564,21 @@ Acceptance criteria:
 
 ### Slice 0.3: App Shell Skeleton
 
+Status: completed
+
+Implemented notes:
+
+- Hash-based routing via `createHashRouter` with all planned routes
+- Desktop top nav (hidden on mobile) with active-state highlighting
+- Mobile bottom nav (fixed, hidden on desktop) with active-state highlighting
+- `PageContainer` provides max-width constraint, padding, and bottom-nav clearance on mobile
+- `AppShell` wraps all routes with theme, gradient background, and layout structure
+- `Providers` wrapper ready for future context providers (auth, settings, etc.)
+- Placeholder pages for all routes show the slice they'll be implemented in
+- `GameHostPage` reads `:gameId` param from URL
+- `@/*` path alias added to both `vite.config.ts` and `tsconfig.json`
+- `react-router-dom`, `lucide-react`, and `framer-motion` installed
+
 Files added:
 
 - `src/app/App.tsx`
@@ -587,6 +602,21 @@ Acceptance criteria:
 - legacy app still functional at root (both coexist during development)
 
 ### Slice 0.4: Bridge Layer
+
+Status: completed
+
+Implemented notes:
+
+- Full typed bridge layer with 5 modules: `storage.ts`, `auth.ts`, `progress.ts`, `settings.ts`, `games.ts`
+- `types.ts` defines all shared TypeScript interfaces matching legacy localStorage schemas (UserProgress v4, User, Session, AppSettings, GameDefinition, GameUnlockEntry, etc.)
+- Bridge modules read from legacy globals (`window.authService`, `window.appManager`, `window.gameRegistry`, `window.gameManager`) with localStorage fallbacks
+- `storage.ts` handles v2_ prefix transparently
+- `auth.ts` provides `getCurrentUser`, `isAuthenticated`, `onAuthChange` (poll-based)
+- `progress.ts` provides `getUserSummary`, `getWordMastery`, `getCertificates`
+- `settings.ts` provides `getSettings`, `saveSettings` (syncs both localStorage and legacy appManager)
+- `games.ts` provides `getGameCatalog`, `getGameUnlockState`, `getContinueTarget`, `launchGame`, `exitGame`
+- 4 React hooks: `useAuthSession`, `useUserProgress`, `useGameUnlocks`, `useSettings` — all use 500ms polling for cross-system reactivity
+- Hooks use shallow comparison to avoid unnecessary re-renders
 
 Files added:
 
@@ -620,20 +650,65 @@ Objective: replace the high-visibility product surfaces before touching game int
 
 ### Slice 1.1: Home Screen
 
-(Unchanged from v1 — see detailed spec in original plan.)
+Status: completed
 
-### Slice 1.2: Header/Nav System
+Implemented notes:
 
-Files:
+- `HomePage` now renders a real React home surface instead of a placeholder
+- home hero reads authenticated user, continue target, summary stats, and unlock state from the bridge/hooks layer
+- tiered game catalog is rendered in React with open/locked states and legacy unlock requirements
+- unlocked cards route to `/#/game/:gameId`, where `GameHostPage` launches the existing legacy game flow
+- `AppShell` now promotes the React shell to a fixed viewport overlay on hub routes so the new pages are actually visible even though `#react-root` still lives after legacy markup in `index.html`
+- game routes drop the React shell chrome and hand control back to the legacy game surface for now
 
-- `TopNav.tsx` (real implementation)
-- `MobileBottomNav.tsx`
-- profile menu and settings entry
+Files changed:
+
+- `src/features/home/HomePage.tsx`
+- `src/features/games/GameHostPage.tsx`
+- `src/app/layout/AppShell.tsx`
 
 Deliverables:
 
-- fully replace role of `components/top-header.js`
-- responsive nav behavior
+- React-owned home hero and progress summary
+- React game-tier grid with unlock awareness
+- working continue CTA and game launch handoff into legacy games
+
+Acceptance criteria:
+
+- home route shows real user summary data from the bridge
+- locked vs unlocked games are visible in the new home grid
+- selecting an unlocked game routes to `/#/game/:gameId` and starts the existing legacy game
+
+### Slice 1.2: Header/Nav System
+
+Status: completed
+
+Implemented notes:
+
+- `TopNav` now shows real data: logo (Hebrew), nav links with active state, score pill, coins pill, and user menu dropdown
+- User menu dropdown provides quick access to profile, settings, and logout
+- `MobileTopBar` added for mobile: compact top bar with user avatar/name, score, and coins; includes the same dropdown menu
+- `MobileBottomNav` unchanged — handles mobile navigation tabs
+- `logout()` added to auth bridge and exposed via `useAuthSession` hook
+- Hub vs game mode transitions unchanged from 0.3 (AppShell hides shell chrome on game routes)
+- Case toggle and nikud toggle are game-specific and will move to game chrome in Phase 2
+- Dropdown menus use `start-0` (logical property) for correct RTL positioning
+
+Files changed:
+
+- `src/app/layout/TopNav.tsx` — real implementation with data, user menu
+- `src/app/layout/AppShell.tsx` — added MobileTopBar
+- `src/bridge/auth.ts` — added `logout()` export
+- `src/hooks/useAuthSession.ts` — exposed `logout` callback
+
+Files added:
+
+- `src/app/layout/MobileTopBar.tsx` — mobile-only top bar with user info, score, coins, menu
+
+Deliverables:
+
+- fully replace role of `components/top-header.js` for hub mode
+- responsive nav behavior (desktop top nav + mobile top bar + mobile bottom nav)
 - game mode vs hub mode state transitions
 
 Acceptance criteria:
@@ -644,9 +719,25 @@ Acceptance criteria:
 
 ### Slice 1.3: Profile / User Hub
 
-Files:
+Status: completed
 
-- `src/features/profile/*`
+Implemented notes:
+
+- `ProfilePage` renders a full profile hub with 4 tabs: Overview, Certificates, Word Collection, Achievements
+- Profile hero shows avatar (initial), display name, learning level with progress bar, and 5 mini-stat pills (streak, words learned, words mastered, coins, certificates)
+- Level system matches legacy: מתחיל → חוקר → לומד מיומן → מומחה → אלוף → אגדה, based on words learned count
+- Overview tab: weekly activity calendar (7-day row with active/today indicators), quick stats (games played, total score), unlocked games badge grid
+- Certificates tab: gallery of earned certificates with topic name, date, and score; empty state when none earned
+- Word Collection tab: sticker-book grid of graduated words with emoji, English word, Hebrew translation; sorted by graduation date (newest first); uses `vocabularyBank` global for word metadata
+- Achievements tab: 5 achievement definitions matching legacy (first game, perfect score, week streak, vocabulary master, grammar guru) with unlocked/locked visual states
+- Bridge extended: `getWordsMasteredCount`, `getLearnedWords`, `getBestScores`, `getActivityDates`, `getVocabularyBank` added to `src/bridge/progress.ts`
+- All data sourced through bridge layer — no direct `window.*` or `localStorage` access in React components
+- Tab navigation is horizontally scrollable on mobile, responsive grid layouts throughout
+
+Files changed:
+
+- `src/bridge/progress.ts` — added 5 new bridge exports for profile data
+- `src/features/profile/ProfilePage.tsx` — full implementation replacing placeholder
 
 Deliverables:
 
@@ -659,9 +750,28 @@ Acceptance criteria:
 
 ### Slice 1.4: Courses
 
-Files:
+Status: completed
 
-- `src/features/courses/*`
+Implemented notes:
+
+- `CoursesPage` renders a full courses hub with header stats, per-course cards, and expandable unit/topic detail
+- Course cards show icon, Hebrew name, description, difficulty badge, and progress bar
+- Expandable detail panel (click to toggle) reveals units with their topics
+- Topic cards show icon, Hebrew name, activity badges (done/not-done), mastery progress bar, estimated time, and lock/complete state
+- Bridge layer added: `src/bridge/courses.ts` reads from `window.appManager.courseManager` with localStorage fallback
+- `useCourses` hook polls at 500ms for cross-system reactivity, builds a snapshot of all course/topic state
+- `CourseProgressEntry` and `TopicProgressEntry` types added to `src/bridge/types.ts` (replacing `Record<string, unknown>` on `UserProgress.courses` and `UserProgress.topicProgress`)
+- Overall progress shown at page top: X of Y topics completed with progress bar
+
+Files added:
+
+- `src/bridge/courses.ts` — bridge module for CourseManager access
+- `src/hooks/useCourses.ts` — React hook for course data with polling
+
+Files changed:
+
+- `src/features/courses/CoursesPage.tsx` — full implementation replacing placeholder
+- `src/bridge/types.ts` — added `CourseProgressEntry`, `TopicProgressEntry` types
 
 Deliverables:
 
@@ -674,9 +784,36 @@ Acceptance criteria:
 
 ### Slice 1.5: Stats
 
-Files:
+Status: completed
 
-- `src/features/stats/*`
+Implemented notes:
+
+- `StatsPage` renders a full stats hub with user selector tabs and per-user content tabs
+- User selector tabs dynamically list all registered users plus a "Hall of Fame" tab
+- Per-user content has 6 tabs: Overview, Games, Words, Categories, Memory, Coins
+- Overview tab: 5 metric tiles (total score, games played, words learned, learning time, streak), 4 insight cards (learning velocity, categories in progress, word journey count, overall average)
+- Games tab: score banner, games stats table with per-game play count, average score, and best score
+- Words tab: mastery overview tiles, word journey status table with per-word stage pills and status badges, word mastery breakdown (struggling/mastered) with progress bars
+- Categories tab: summary tiles, category progress grid with per-category progress bars
+- Memory tab: memory game best records table with stars display
+- Coins tab: coin balance/earned/today tiles, coin history table with reason labels
+- Hall of Fame: hero banner, combined summary tiles, 6 leaderboard sections across all users
+- Bridge layer extended: `src/bridge/stats.ts` provides `buildUserStatsModel` with full data model (game history, word mastery stats, journey rows, category completion, memory records, learning velocity)
+- `getAllUsers()` added to `src/bridge/auth.ts` for multi-user stats access
+- `useStats` hook polls at 1s interval for selected user's stats model
+- All data sourced through bridge layer — no direct `window.*` or `localStorage` access in React components
+- Memory tab auto-disables when no memory records exist
+- Responsive grid layouts throughout, RTL-correct
+
+Files added:
+
+- `src/bridge/stats.ts` — stats-specific bridge module with full data model builder
+- `src/hooks/useStats.ts` — React hook for stats data with polling
+
+Files changed:
+
+- `src/features/stats/StatsPage.tsx` — full implementation replacing placeholder
+- `src/bridge/auth.ts` — added `getAllUsers()` export
 
 Deliverables:
 

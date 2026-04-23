@@ -183,7 +183,7 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
 
     def log_message(self, format, *args):
         # Suppress noisy GET logs; keep API write logs visible
-        if self.path.startswith('/api/write'):
+        if getattr(self, 'path', '').startswith('/api/write'):
             print(f'[write] {self.path} – {args}')
 
 

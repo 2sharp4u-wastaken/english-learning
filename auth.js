@@ -812,3 +812,8 @@ class AuthUIController {
 // Create global instances
 const authService = new AuthService();
 const authUIController = new AuthUIController(authService);
+
+// Expose to window so ES modules (React bridge) can read the service.
+// Classic-script top-level `const` does not attach to window automatically.
+window.authService = authService;
+window.authUIController = authUIController;

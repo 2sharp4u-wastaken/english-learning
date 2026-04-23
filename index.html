@@ -1397,6 +1397,10 @@
                 const hash = window.location.hash.substring(1); // Remove the '#'
                 if (!hash) return;
 
+                // React Router owns hashes starting with '/' (e.g. #/home, #/game/vocabulary).
+                // Legacy hash navigation only handles bare tokens like #user-hub or #vocabulary.
+                if (hash.startsWith('/')) return;
+
                 // For user-hub we need window.app; for game hashes we only need gameManager
                 const needsApp = (hash === 'user-hub');
                 if ((needsApp && typeof window.app === 'undefined') || typeof gameManager === 'undefined') {
