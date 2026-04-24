@@ -26,9 +26,10 @@ Goals:
 
 Scope commitment:
 
-- **Committed baseline:** Phase 0 + Phase 1 + Phase 2 + Wave 1 games (Vocabulary, Listening, Picture Match, True or Not)
-- **Desired end state:** full migration of all 16 games
+- **Committed baseline:** Phase 0 + Phase 1 (including 1.7 hybrid consolidation and 1.8 Word Journey audio hotfix) + Phase 2 + Wave 1 games (Vocabulary, Listening, Picture Match, True or Not)
+- **Desired end state:** full migration of all 16 games + Phase 5 content expansion (idioms & slang)
 - Waves 2–4 are planned and sequenced but treated as backlog until Wave 1 validates the pattern
+- Phase 5 is backlog — promoted to committed only after Phase 3 Wave 1 ships
 
 ## Chosen Stack
 
@@ -844,6 +845,64 @@ Acceptance criteria:
 - mobile behavior significantly improved
 - legacy `settings.html` can be unlinked
 
+### Slice 1.7: Hybrid Shell Consolidation
+
+Status: planned
+
+Objective: eliminate the mix between React and legacy surfaces during the hybrid period. Users currently encounter legacy screens after exiting games, and the React top bar overlaps page content.
+
+Scope:
+
+- **Exit paths:** audit every "return home" / "back" / "exit" path in legacy code (`app.js`, `gameLogic.js`, `index.html`, `components/top-header.js`). All must navigate to `/#/home` via React Router, never directly toggle `#welcome-screen` or call `showWelcomeScreen()`.
+- **Legacy DOM suppression:** when the React shell is active on a hub route, the legacy `#top-header`, `#welcome-screen`, and `#user-hub-screen` must be `display: none`. Today only `#welcome-screen` is hidden reliably.
+- **Layout bug:** on React pages the top content is being cut off by the top bar. Root cause likely one of: `TopNav`/`MobileTopBar` positioned absolutely without reserving layout space, `PageContainer` missing top padding, or z-index collision between React overlay (`z-index: 20`) and legacy `#top-header`.
+- **Single source of truth:** game exit (legacy "x" button, `exit-bar`) must navigate React Router to `/#/home`, not manipulate legacy DOM.
+
+Files likely touched:
+
+- `src/app/layout/AppShell.tsx` — z-index / overlay rules
+- `src/app/layout/PageContainer.tsx` — top padding
+- `src/app/layout/TopNav.tsx`, `MobileTopBar.tsx` — positioning
+- `app.js` — replace `showWelcomeScreen()` calls with `location.hash = '#/home'`
+- `gameLogic.js` — game exit routes to React home
+- `index.html` — legacy exit-bar and back buttons
+- `components/top-header.js` — hide when React shell is active
+
+Acceptance criteria:
+
+- exiting any legacy game returns to `/#/home` (React), never the legacy welcome screen
+- React page content is fully visible — no occlusion by the top bar
+- no visual "double-rendering" between legacy `#top-header` and React `TopNav` on hub routes
+- clicking "home" from any surface (legacy or React) ends at React home
+- Playwright regression test covers game-exit flow
+
+### Slice 1.8: Word Journey Step-1 Audio Parity
+
+Status: planned
+
+Objective: kids sometimes miss hearing the target word on step 1 of Word Journey. Bring step 1 into parity with other games (listening, picture-match) by exposing a visible play button with a play-count budget.
+
+Scope:
+
+- Add a speaker button on step 1 of Word Journey identical in affordance to the listening game's play button.
+- Wire to `speechManager.speakWord(question.word, ...)` and `consumeAudioPlay('word-journey')`.
+- Respect the existing `settings.audioPlaysAllowed` budget (default 8); disable the button when exhausted.
+- Display remaining play count next to the button.
+- Targeted legacy patch — Word Journey is fully migrated in Slice 3.13 (Wave 4, backlog), so this is a hotfix until then.
+
+Files likely touched:
+
+- `games/word-journey-game.js` (legacy, ~1237 lines)
+- `styles.css` — minor styling if the shared `.play-button` class doesn't carry over
+
+Acceptance criteria:
+
+- step 1 of Word Journey shows a play button with identical behavior to picture-match
+- play count decrements per press and is shared with the journey's global budget
+- works for every vocabulary category
+- no regression in the existing journey flow (steps 2–N)
+- carried forward in the Slice 3.13 React migration
+
 ## Phase 2: Shared Gameplay UI
 
 Objective: standardize the visual chrome around gameplay before migrating each game.
@@ -1013,6 +1072,152 @@ Acceptance criteria for Phase 4:
 - all pages are React routes
 - Playwright tests pass against React-only app
 - `npm run build` produces a clean, deployable bundle
+
+## Phase 5: Content Expansion — Idioms & Slang
+
+Objective: introduce multi-word expressions (idioms and slang) as a first-class content type alongside the existing single-word vocabulary.
+
+Motivation:
+
+- idioms ("give up", "put up", "look after") and slang ("got beef", "no cap", "that's fire") are essential for natural English comprehension and connect to how kids actually hear English in media
+- the current `{ word, translation, category, image }` schema is single-word and emoji-based — it does not fit multi-word phrases with non-literal meaning
+- several existing games (picture-match, memory, scramble) do not adapt to phrases without degrading; new or adapted games are needed
+- slang requires parental control — not every family wants "edgy" registers enabled for their child
+
+Scope commitment:
+
+- Phase 5 is BACKLOG — entered only after Phase 3 Wave 1 ships and Settings (Slice 1.6) is stable
+- Phase 5 may run in parallel with Phase 3 Waves 2–4 once those are promoted to committed
+
+### Slice 5.1: Expression Data Model
+
+Status: planned
+
+Define the new content shape and load path. No game consumes this data yet — data plumbing only.
+
+Schema:
+
+```ts
+type ExpressionType = 'idiom' | 'slang' | 'phrasal-verb'
+type Register = 'kid-friendly' | 'casual' | 'edgy'
+
+interface Expression {
+  phrase: string                 // "give up", "got beef with"
+  type: ExpressionType
+  register: Register
+  meaningHe: string              // figurative meaning in Hebrew (לוותר)
+  literalHe?: string             // literal word-by-word Hebrew, if instructive
+  exampleEn: string              // "Don't give up on your dreams."
+  exampleHe: string              // translated example for context
+  difficulty: 'beginner' | 'intermediate' | 'advanced'
+  audioUrl?: string              // optional cached TTS
+}
+```
+
+Files added:
+
+- `data/expressions/idioms.js`
+- `data/expressions/slang.js`
+- `data/expressions/phrasalVerbs.js`
+- `data/expressions/_index.js`
+- `src/bridge/expressions.ts` — parallel catalog, distinct from `vocabularyBank`
+- `src/hooks/useExpressions.ts`
+
+Deliverables:
+
+- schema locked in TypeScript and JS
+- initial seed of ~50 idioms, ~40 phrasal verbs, ~30 slang expressions
+- Hebrew meanings reviewed by a native speaker (not machine-translated)
+
+Acceptance criteria:
+
+- `bridge.getExpressionBank()` returns a typed list filtered by enabled registers
+- regular vocabulary games (picture-match, memory, scramble) do NOT pick up expressions
+- phrases render correctly in RTL alongside Hebrew translations
+
+### Slice 5.2: Parental Control for Registers
+
+Status: planned — depends on Slice 1.6 (Settings Shell)
+
+Settings toggles to enable/disable each register. Defaults: `kid-friendly` on, `casual` off, `edgy` off. Changes gated behind the parent password (same mechanism as existing protected settings).
+
+Files:
+
+- `src/features/settings/*` (assumes Slice 1.6 complete)
+- `src/bridge/settings.ts` — add `expressionRegisters: Record<Register, boolean>`
+- `src/bridge/expressions.ts` — filter at the bridge boundary
+
+Acceptance criteria:
+
+- toggles persist per-user, with sensible defaults
+- bridge filters the expression bank by enabled registers before any game sees it
+- UI labels each register clearly, with example phrases so parents know what they are enabling
+- disabling a register while a game is in progress does not crash the session
+
+### Slice 5.3: Expression Games — Tier 1 (Adapt Existing)
+
+Status: planned — depends on Slice 5.1
+
+Adapt games that work naturally with phrases:
+
+- **Listening** — hear phrase, pick Hebrew meaning from 4 options
+- **Fill Blanks** — "Don't _____ on your dreams" → pick the idiom that fits
+- **True or Not** — "'give up' means לוותר?" → yes/no
+- **Reading** — read phrase + example sentence, pick meaning
+
+Each game receives a `contentSource: 'vocabulary' | 'expressions'` flag. Default source depends on unlock tier — expressions unlock only after 50 learned vocabulary words.
+
+Files:
+
+- extend existing game implementations (legacy or migrated, depending on Phase 3 state)
+- `src/features/games/shared/` — primitives updated to accept `Expression` questions
+- `src/bridge/progress.ts` — new `expressionMastery` key, tracked separately from `wordMastery`
+
+Acceptance criteria:
+
+- at least 3 existing games play cleanly with expression content
+- scoring and mastery tracked separately (`expressionMastery` keyed by phrase)
+- RTL layout correct for multi-word English phrases with Hebrew meaning
+- Playwright coverage for each adapted game
+
+### Slice 5.4: Expression-Native Games — Tier 2 (New)
+
+Status: planned — backlog until Slice 5.3 validates the pattern
+
+New games designed around phrases rather than single words:
+
+- **Meaning Match** — phrase shown, 4 Hebrew meanings to pick from (inverse of fill-blanks)
+- **Build the Phrase** — scattered English words, reorder to form the target idiom
+- **Context Swap** — English sentence shown; replace a plain verb/noun with the matching idiom or phrasal verb
+
+Each game uses the shared gameplay primitives from Phase 2.
+
+### Slice 5.5: Expression Progress & Certificates
+
+Status: planned — depends on 5.3
+
+Surface expression mastery in Profile and Stats; add a new certificate for hitting milestones.
+
+Files:
+
+- `src/bridge/progress.ts` — `getExpressionMastery()`, `getMasteredExpressions()`, milestone certs
+- `src/features/profile/ProfilePage.tsx` — new "Expressions" section or tab
+- `src/features/stats/StatsPage.tsx` — expression mastery row
+- `managers/CertificateManager.js` (or its React successor) — new cert `milestone_expressions_30`: "אלוף ביטויים"
+
+Acceptance criteria:
+
+- Profile shows mastered expressions separately from vocabulary
+- Stats shows per-register mastery counts
+- New certificate awarded at 30 mastered expressions
+- No regression in existing vocabulary progress display
+
+### Risks specific to Phase 5
+
+- **Content quality** — idiom translation requires native-speaker review; machine translation produces awkward or wrong Hebrew. Budget for a bilingual review pass before ship.
+- **Slang drift** — "got beef" will eventually sound dated. Reuse the existing parent-custom-words flow as the update mechanism, rather than embedding content in the codebase long-term.
+- **Unlock tuning** — too strict and kids never reach expressions; too loose and it overwhelms basic vocab learners. Target ~50 learned words as a starting gate; instrument and adjust.
+- **Audio** — multi-word TTS sometimes mangles phrase intonation. Consider pre-recording audio for high-value idioms rather than relying on TTS at runtime.
 
 ## Per-Slice Implementation Template
 
