@@ -31,7 +31,7 @@ export const robloxWords = [
     { word: "Script", translation: "תַסרִיט", category: "roblox", image: "💻" },
     { word: "Model", translation: "דֶגֶם", category: "roblox", image: "🧱" },
     { word: "Teleport", translation: "להשתגר", category: "roblox", image: "🚀" },
-    { word: "Fly", translation: "לָטוּס", category: "roblox", image: "🕊️" },
+    { word: "Fly", translation: "לָטוּס", category: "roblox", image: "🕊️", imageUrl: "img/icons/roblox/fly.png" },
     { word: "Noob", translation: "נוב", category: "roblox", image: "🙈" },
     { word: "Pro", translation: "פרו", category: "roblox", image: "🥇" },
     { word: "VIP", translation: "אח״מ", category: "roblox", image: "⭐" },

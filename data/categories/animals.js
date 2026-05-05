@@ -76,7 +76,7 @@ export const animalsWords = [
     { word: "Llama", translation: "לאמה", category: "animals", image: "🦙" },
     { word: "Sloth", translation: "עצלן", category: "animals", image: "🦥" },
     { word: "Otter", translation: "לוטרה", category: "animals", image: "🦦" },
-    { word: "Beaver", translation: "ביבר", category: "animals", image: "🦫" },
+    { word: "Beaver", translation: "בונה", category: "animals", image: "🦫" },
     { word: "Skunk", translation: "בואש", category: "animals", image: "🦨" },
     { word: "Caterpillar", translation: "זחל", category: "animals", image: "🐛" },
     { word: "Mosquito", translation: "יתוש", category: "animals", image: "🦟" },
