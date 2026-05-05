@@ -1,14 +1,25 @@
 import type { AppSettings } from './types'
 import { getKey, setKey, v2Key } from './storage'
 
-const SETTINGS_KEY = v2Key('englishLearningSettings')
+const UNPREFIXED_KEY = 'englishLearningSettings'
+const V2_KEY = v2Key('englishLearningSettings')
 
-const DEFAULT_SETTINGS: AppSettings = {
-  soundEnabled: true,
-  speechRate: 0.9,
-  autoPlayAudio: true,
-  showPhonetics: true,
-  language: 'en',
+export const DEFAULT_SETTINGS: AppSettings = {
+  selectedCategories: [
+    'animals', 'colors', 'numbers', 'food', 'minecraft',
+    'gaming', 'roblox', 'actions', 'nature', 'school',
+  ],
+  questionsPerGame: 10,
+  clickRepeatCount: 3,
+  audioPlaysAllowed: 8,
+  hebrewVocalization: true,
+  learningPace: 'normal',
+  showNikud: true,
+  lowercaseMode: false,
+  showConfetti: true,
+  exitBehavior: 'autosave',
+  gameUnlockOverride: false,
+  claudeApiKey: '',
 }
 
 // ─── Legacy global access ────────────────────────────────────────────────────
@@ -25,23 +36,46 @@ function getAppManager(): LegacyAppManager | null {
 // ─── Public bridge API ───────────────────────────────────────────────────────
 
 /**
- * Get the current app settings.
- * Reads from legacy appManager first, falls back to localStorage.
+ * Get the current app settings. Reads from the legacy appManager first,
+ * falls back to the v2 key, then the unprefixed legacy key, then defaults.
  */
 export function getSettings(): AppSettings {
   const mgr = getAppManager()
   if (mgr?.settings) return { ...DEFAULT_SETTINGS, ...mgr.settings }
-  return getKey<AppSettings>(SETTINGS_KEY) ?? { ...DEFAULT_SETTINGS }
+
+  const fromV2 = getKey<Partial<AppSettings>>(V2_KEY)
+  if (fromV2) return { ...DEFAULT_SETTINGS, ...fromV2 }
+
+  const fromLegacy = getKey<Partial<AppSettings>>(UNPREFIXED_KEY)
+  if (fromLegacy) return { ...DEFAULT_SETTINGS, ...fromLegacy }
+
+  return { ...DEFAULT_SETTINGS }
 }
 
 /**
- * Save a partial settings update.
- * Writes to localStorage and notifies the legacy appManager if available.
+ * Save a partial settings update. Dual-writes to both the unprefixed legacy
+ * key and the v2 key; notifies the legacy appManager so in-session game
+ * code picks up changes immediately.
  */
 export function saveSettings(updates: Partial<AppSettings>): void {
   const current = getSettings()
   const merged = { ...current, ...updates }
-  setKey(SETTINGS_KEY, merged)
+  writeMerged(merged)
+}
+
+/**
+ * Reset all settings to defaults. Writes the defaults to storage
+ * and the legacy appManager.
+ */
+export function resetSettings(): AppSettings {
+  const fresh = { ...DEFAULT_SETTINGS }
+  writeMerged(fresh)
+  return fresh
+}
+
+function writeMerged(merged: AppSettings): void {
+  setKey(UNPREFIXED_KEY, merged)
+  setKey(V2_KEY, merged)
 
   const mgr = getAppManager()
   if (mgr) {

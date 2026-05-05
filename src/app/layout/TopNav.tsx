@@ -44,7 +44,7 @@ export function TopNav() {
   }
 
   return (
-    <header className="hidden border-b border-white/8 bg-surface/80 backdrop-blur-md sm:block">
+    <header data-testid="react-topnav" className="sticky top-0 z-30 hidden border-b border-white/8 bg-surface/95 backdrop-blur-md sm:block">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
         {/* Logo */}
         <Link to="/home" className="font-display text-lg font-semibold text-text">
@@ -102,14 +102,14 @@ export function TopNav() {
               </button>
 
               {menuOpen && (
-                <div className="absolute start-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-white/10 bg-surface shadow-panel">
+                <div className="absolute start-0 top-full z-50 mt-1 w-44 rounded-xl border border-white/10 bg-surface p-1 shadow-panel">
                   <button
                     type="button"
                     onClick={() => {
                       setMenuOpen(false)
                       navigate('/profile')
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-text transition-colors hover:bg-white/5"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-text transition-colors hover:bg-white/5"
                   >
                     <User size={16} />
                     <span>פרופיל</span>
@@ -120,16 +120,16 @@ export function TopNav() {
                       setMenuOpen(false)
                       navigate('/settings')
                     }}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-text transition-colors hover:bg-white/5"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-text transition-colors hover:bg-white/5"
                   >
                     <Settings size={16} />
                     <span>הגדרות</span>
                   </button>
-                  <div className="border-t border-white/8" />
+                  <div className="my-1 border-t border-white/8" />
                   <button
                     type="button"
                     onClick={handleLogout}
-                    className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-coral-400 transition-colors hover:bg-white/5"
+                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-coral-400 transition-colors hover:bg-white/5"
                   >
                     <LogOut size={16} />
                     <span>התנתק</span>

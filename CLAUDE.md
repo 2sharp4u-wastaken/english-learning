@@ -11,7 +11,7 @@ Behavioral rules for Claude Code in this project. These override defaults.
 ## Dev Setup
 - **Start Python API server:** `python3 server.py` (port 3000, handles `/api/*` endpoints)
 - **Start Vite dev server:** `npm run dev` (port 3002, proxies `/api/*` to Python)
-- **Open app:** `https://localhost:3002`
+- **Open app:** `http://localhost:3002` (HTTPS only works if `server.crt`/`server.key` exist at the project root; without them both servers fall back to HTTP)
 - Both servers must be running during development
 
 ## Rules

@@ -5,6 +5,34 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Legacy DOM suppression while React shell owns a hub route.
+ * Class is toggled by AppShell. Uses !important because legacy
+ * top-header.js re-applies inline styles via style.cssText after auth
+ * events, which would otherwise clobber a JS-set display:none. */
+body.react-shell-active #top-header,
+body.react-shell-active #welcome-screen,
+body.react-shell-active #user-hub-screen,
+body.react-shell-active .app-layout {
+  display: none !important;
+}
+
+/* Legacy styles.css declares `.hidden { display: none !important }` globally.
+ * That `!important` beats Tailwind's responsive `.sm:block` / `.sm:flex` rules
+ * (no !important on Tailwind side), so any React element using the canonical
+ * Tailwind pattern `hidden sm:block` stays hidden at every viewport.
+ *
+ * Neutralize it inside the React shell: re-declare the responsive variants
+ * we use (and `.hidden` itself) with !important so they win against the
+ * legacy global. Keep this list minimal — extend only as new variants are used. */
+#react-root .hidden { display: none !important; }
+@media (min-width: 640px) {
+  #react-root .sm\:block { display: block !important; }
+  #react-root .sm\:flex { display: flex !important; }
+  #react-root .sm\:inline { display: inline !important; }
+  #react-root .sm\:grid { display: grid !important; }
+  #react-root .sm\:hidden { display: none !important; }
+}
+
 @font-face {
   font-family: 'Heebo';
   src: local('Heebo'), local('Heebo Regular');
@@ -54,7 +82,30 @@
   font: inherit;
 }
 
-#react-root a {
+/* Tailwind preflight is disabled (legacy styles.css owns the global reset),
+ * so the bits of preflight we actually rely on are missing. Replicate them
+ * inside #react-root with :where() so they contribute zero specificity and
+ * any Tailwind utility (0,1,0) cleanly overrides.
+ *
+ * Critical: border-style:solid + border-width:0. Without this, `.border-X/Y`
+ * (which only sets border-color) renders nothing because there's no style or
+ * width — so all our `border border-white/8` cards looked flat. */
+:where(#react-root *),
+:where(#react-root *::before),
+:where(#react-root *::after) {
+  border-width: 0;
+  border-style: solid;
+  border-color: currentColor;
+}
+
+:where(#react-root button) {
+  background-color: transparent;
+  background-image: none;
+  cursor: pointer;
+  color: inherit;
+}
+
+:where(#react-root a) {
   color: inherit;
   text-decoration: none;
 }

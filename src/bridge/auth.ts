@@ -1,7 +1,9 @@
-import type { User, Session } from './types'
+import type { User, UserRole, Session } from './types'
 import { getKey } from './storage'
 
 // ─── Legacy global access ────────────────────────────────────────────────────
+
+interface AdminResult { success: boolean; message?: string; error?: string }
 
 interface LegacyAuthService {
   getCurrentUser(): User | null
@@ -12,10 +14,21 @@ interface LegacyAuthService {
   getUser(id: string): User | null
   login(userId: string, password: string): { success: boolean; error?: string; user?: User; session?: Session }
   logout(): void
+  verifyAdminPassword(password: string): boolean
+  addUser(id: string, name: string, displayName: string, initial: string, adminPassword: string): AdminResult
+  resetUserPassword(userId: string, adminPassword: string): AdminResult
+  deleteUser(userId: string, adminPassword: string): AdminResult
+  saveUsers(users: Record<string, User>): void
 }
 
 function getAuthService(): LegacyAuthService | null {
   return (window as any).authService ?? null
+}
+
+function requireAuthService(): LegacyAuthService {
+  const svc = getAuthService()
+  if (!svc) throw new Error('AuthService not initialized')
+  return svc
 }
 
 // ─── Public bridge API ───────────────────────────────────────────────────────
@@ -106,4 +119,70 @@ export function logout(): void {
   // Fallback: clear session manually
   localStorage.removeItem('currentUser')
   localStorage.removeItem('v2_currentSession')
+}
+
+// ─── Admin CRUD ─────────────────────────────────────────────────────────────
+
+/**
+ * Verify the admin password against the legacy AuthService.
+ */
+export function verifyAdminPassword(password: string): boolean {
+  const svc = getAuthService()
+  return svc?.verifyAdminPassword(password) ?? false
+}
+
+/**
+ * Whether the currently-logged-in user is a parent or manager — used to
+ * auto-unlock protected settings without a password prompt.
+ */
+export function isCurrentUserAdmin(): boolean {
+  const user = getCurrentUser()
+  return user?.role === 'parent' || user?.role === 'manager'
+}
+
+/**
+ * Create a new user account. Requires the admin password.
+ */
+export function addUser(
+  id: string,
+  name: string,
+  displayName: string,
+  initial: string,
+  adminPassword: string,
+): AdminResult {
+  return requireAuthService().addUser(id, name, displayName, initial, adminPassword)
+}
+
+/**
+ * Reset a user's password (they will set a new one on next login).
+ * Requires the admin password.
+ */
+export function resetUserPassword(userId: string, adminPassword: string): AdminResult {
+  return requireAuthService().resetUserPassword(userId, adminPassword)
+}
+
+/**
+ * Delete a user and their localStorage data. Requires the admin password.
+ */
+export function deleteUser(userId: string, adminPassword: string): AdminResult {
+  return requireAuthService().deleteUser(userId, adminPassword)
+}
+
+/**
+ * Toggle / assign a role for a user. Not gated by admin password on its
+ * own — callers must verify admin before invoking.
+ */
+export function setUserRole(userId: string, role: UserRole | null): AdminResult {
+  const svc = requireAuthService()
+  const users = svc.getUsers()
+  if (!users || !users[userId]) {
+    return { success: false, error: 'User not found' }
+  }
+  if (role) {
+    users[userId].role = role
+  } else {
+    delete users[userId].role
+  }
+  svc.saveUsers(users)
+  return { success: true }
 }

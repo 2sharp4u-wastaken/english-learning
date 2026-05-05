@@ -18,6 +18,10 @@ export const router = createHashRouter([
       { path: 'stats', element: <StatsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'game/:gameId', element: <GameHostPage /> },
+      // Catch-all: redirect any unknown hash path (e.g. /settings.html
+      // bookmarked from the legacy app) to home so the React shell still
+      // renders and the legacy DOM stays suppressed.
+      { path: '*', element: <Navigate to="/home" replace /> },
     ],
   },
 ])

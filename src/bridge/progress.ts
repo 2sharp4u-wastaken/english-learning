@@ -117,3 +117,56 @@ export function getActivityDates(): string[] {
 export function getVocabularyBank(): Array<{ word: string; translation: string; category: string; image: string }> {
   return (window as any).vocabularyBank ?? []
 }
+
+// ─── Admin-only: per-user resets ────────────────────────────────────────────
+
+const RESET_GAME_TYPES = [
+  'vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening',
+  'reading', 'abc', 'memory', 'scramble', 'fill-blanks', 'practice',
+  'true-or-not', 'picture-match', 'word-journey', 'word-builder', 'story-time',
+]
+
+/**
+ * Reset only the "practice" data (wordMastery) for a user. Keeps scores,
+ * certificates, coins intact. Used by the Users tab reset-practice action.
+ */
+export function resetUserPractice(userId: string): void {
+  const key = v2Key(`userProgress_${userId}`)
+  const progress = (getKey<UserProgress>(key) ?? {}) as Partial<UserProgress>
+  progress.wordMastery = {}
+  localStorage.setItem(key, JSON.stringify(progress))
+}
+
+/**
+ * Reset ALL stats for a user (scores, history, coins, certificates, mastery,
+ * learned words, activity). Preserves version and settings. Used by the
+ * Users tab reset-stats action.
+ */
+export function resetUserStats(userId: string): void {
+  for (const game of RESET_GAME_TYPES) {
+    localStorage.removeItem(`${userId}_${game}_history`)
+  }
+  localStorage.removeItem(`memoryBest_${userId}`)
+
+  const key = v2Key(`userProgress_${userId}`)
+  const progress = (getKey<UserProgress>(key) ?? {}) as Partial<UserProgress> & Record<string, unknown>
+  progress.bestScores = {}
+  progress.totalGamesPlayed = 0
+  ;(progress as Record<string, unknown>).gameHistory = {}
+  progress.streakDays = 0
+  progress.lastPlayDate = null
+  // Prevent the daily coin bonus from re-firing on next load.
+  progress.lastLoginDate = new Date().toISOString().split('T')[0]
+  progress.totalCorrectAnswers = 0
+  progress.totalPoints = 0
+  progress.totalLearningTimeMs = 0
+  progress.coins = 0
+  progress.coinHistory = []
+  progress.certificates = []
+  progress.learnedWords = {}
+  progress.wordMastery = {}
+  progress.gameUnlocks = {}
+  progress.activityDates = []
+  progress.wordJourneyProgress = {}
+  localStorage.setItem(key, JSON.stringify(progress))
+}

@@ -228,6 +228,67 @@ test.describe('Slice 1.5: Stats', () => {
   });
 });
 
+// ─── Slice 1.6: Settings ────────────────────────────────────────────────────
+
+test.describe('Slice 1.6: Settings', () => {
+  test('settings renders tab rail with all 5 tabs', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/settings');
+
+    for (const id of ['categories', 'game', 'advanced', 'users', 'advanced-tools']) {
+      const tabs = await page.locator(`[data-tab-id="${id}"]`).count();
+      expect(tabs, `Missing settings tab: ${id}`).toBeGreaterThan(0);
+    }
+
+    // Categories is the default active tab — its content should render
+    expect(await hasText(page, 'קטגוריות אוצר מילים')).toBe(true);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('protected tab opens password modal and unlocks on correct password', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/settings');
+    await page.setViewportSize({ width: 1280, height: 800 });
+
+    // Click the "game" tab (protected)
+    await page.locator('[data-tab-id="game"]').first().click();
+
+    // Password modal should appear
+    await expect(page.locator('#parent-password')).toBeVisible();
+
+    // Submit the correct admin password (hardcoded in auth.js)
+    await page.locator('#parent-password').fill('mac7395eRa1n1!');
+    await page.locator('#parent-password').press('Enter');
+
+    // Modal should close and Game tab content should render
+    await expect(page.locator('#parent-password')).not.toBeVisible();
+    expect(await hasText(page, 'מכניקת משחק')).toBe(true);
+  });
+
+  test('changing a setting persists to both legacy localStorage keys', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/settings');
+
+    // Toggle a non-selected category so selection changes deterministically
+    await page.evaluate(() => {
+      const btns = Array.from(document.querySelectorAll('#react-root button'));
+      const target = btns.find((b) => (b.textContent || '').includes('מזג אוויר'));
+      target?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    await page.waitForTimeout(300);
+
+    const [v2, legacy] = await page.evaluate(() => [
+      JSON.parse(localStorage.getItem('v2_englishLearningSettings') || 'null'),
+      JSON.parse(localStorage.getItem('englishLearningSettings') || 'null'),
+    ]);
+    expect(v2?.selectedCategories).toContain('weather');
+    expect(legacy?.selectedCategories).toContain('weather');
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {

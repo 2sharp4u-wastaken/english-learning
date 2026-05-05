@@ -3,6 +3,8 @@
 
 // ─── Auth ────────────────────────────────────────────────────────────────────
 
+export type UserRole = 'parent' | 'manager'
+
 export interface User {
   id: string
   name: string          // Hebrew display name
@@ -11,6 +13,7 @@ export interface User {
   password: string | null
   created: string       // ISO date
   lastLogin: string | null
+  role?: UserRole | null
 }
 
 export interface Session {
@@ -126,13 +129,38 @@ export interface UserSummary {
 
 // ─── Settings ────────────────────────────────────────────────────────────────
 
+export type LearningPace = 'slow' | 'normal' | 'fast'
+export type ExitBehavior = 'autosave' | 'confirmation'
+
 export interface AppSettings {
-  soundEnabled: boolean
-  speechRate: number
-  autoPlayAudio: boolean
-  showPhonetics: boolean
-  language: string
-  [key: string]: unknown   // legacy may add extra fields
+  // Vocabulary category selection
+  selectedCategories: string[]
+
+  // Game mechanics
+  questionsPerGame: number       // 5..20
+  clickRepeatCount: number       // 1..5
+  audioPlaysAllowed: number      // 3..15
+  hebrewVocalization: boolean
+  learningPace: LearningPace
+
+  // Display / feel
+  showNikud: boolean
+  lowercaseMode: boolean
+  showConfetti: boolean
+  exitBehavior: ExitBehavior
+  gameUnlockOverride: boolean
+
+  // Custom words (parent)
+  claudeApiKey: string
+
+  // Legacy-extensible
+  [key: string]: unknown
+}
+
+export interface VocabularyCategory {
+  id: string
+  name: string            // Hebrew display name
+  wordCount: number
 }
 
 // ─── Games ───────────────────────────────────────────────────────────────────

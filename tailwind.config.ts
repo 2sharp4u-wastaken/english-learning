@@ -25,6 +25,7 @@ export default {
         practice: 'var(--color-practice)',
         challenge: 'var(--color-challenge)',
         test: 'var(--color-test)',
+        'accent-blue': 'var(--blue-400)',
       },
       fontFamily: {
         sans: ['var(--font-ui)', 'sans-serif'],

@@ -13,12 +13,18 @@ export function AppShell() {
     const reactRoot = document.getElementById('react-root')
     if (!reactRoot) return
 
+    // Legacy DOM suppression: toggle a class on body. CSS in globals.css
+    // hides #top-header / #welcome-screen / #user-hub-screen / .app-layout
+    // with !important. Class-based hiding survives the legacy
+    // top-header.js cssText overwrites; inline display:none did not.
+
     if (isGameRoute) {
       reactRoot.style.position = ''
       reactRoot.style.inset = ''
       reactRoot.style.zIndex = ''
       reactRoot.style.overflowY = ''
       reactRoot.style.background = ''
+      document.body.classList.remove('react-shell-active')
       return
     }
 
@@ -27,6 +33,7 @@ export function AppShell() {
     reactRoot.style.zIndex = '20'
     reactRoot.style.overflowY = 'auto'
     reactRoot.style.background = 'var(--color-canvas)'
+    document.body.classList.add('react-shell-active')
 
     return () => {
       reactRoot.style.position = ''
@@ -34,6 +41,7 @@ export function AppShell() {
       reactRoot.style.zIndex = ''
       reactRoot.style.overflowY = ''
       reactRoot.style.background = ''
+      document.body.classList.remove('react-shell-active')
     }
   }, [isGameRoute])
 

@@ -14,9 +14,12 @@ export default defineConfig({
   server: {
     port: 3002,
     proxy: {
+      // server.py runs HTTP unless server.crt/server.key exist at the project
+      // root (they don't by default). Keep this aligned with server.py reality.
+      // Use 127.0.0.1 explicitly: Node prefers IPv6 (::1) for "localhost", but
+      // Python's http.server binds IPv4-only by default → ECONNRESET on proxy.
       '/api': {
-        target: 'https://localhost:3000',
-        secure: false, // self-signed cert
+        target: 'http://127.0.0.1:3000',
       },
     },
   },

@@ -30,7 +30,7 @@ export function MobileTopBar() {
   if (!isAuthenticated) return null
 
   return (
-    <header className="border-b border-white/8 bg-surface/80 backdrop-blur-md sm:hidden">
+    <header className="sticky top-0 z-30 border-b border-white/8 bg-surface/95 backdrop-blur-md sm:hidden">
       <div className="flex h-12 items-center justify-between px-3">
         {/* User avatar + name */}
         <div className="relative" ref={menuRef}>
@@ -46,14 +46,14 @@ export function MobileTopBar() {
           </button>
 
           {menuOpen && (
-            <div className="absolute start-0 top-full z-50 mt-1 w-44 overflow-hidden rounded-xl border border-white/10 bg-surface shadow-panel">
+            <div className="absolute start-0 top-full z-50 mt-1 w-44 rounded-xl border border-white/10 bg-surface p-1 shadow-panel">
               <button
                 type="button"
                 onClick={() => {
                   setMenuOpen(false)
                   navigate('/profile')
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-text transition-colors hover:bg-white/5"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-text transition-colors hover:bg-white/5"
               >
                 <User size={16} />
                 <span>פרופיל</span>
@@ -64,19 +64,19 @@ export function MobileTopBar() {
                   setMenuOpen(false)
                   navigate('/settings')
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-text transition-colors hover:bg-white/5"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-text transition-colors hover:bg-white/5"
               >
                 <Settings size={16} />
                 <span>הגדרות</span>
               </button>
-              <div className="border-t border-white/8" />
+              <div className="my-1 border-t border-white/8" />
               <button
                 type="button"
                 onClick={() => {
                   setMenuOpen(false)
                   logout()
                 }}
-                className="flex w-full items-center gap-2 px-3 py-2.5 text-sm text-coral-400 transition-colors hover:bg-white/5"
+                className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-coral-400 transition-colors hover:bg-white/5"
               >
                 <LogOut size={16} />
                 <span>התנתק</span>

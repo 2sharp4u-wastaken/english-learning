@@ -83,7 +83,7 @@ export function StatsPage() {
             className={cn(
               'rounded-full px-6 py-3 text-sm font-bold transition-all',
               selectedUserId === user.id && !showHallOfFame
-                ? 'bg-gradient-to-br from-accent-blue to-purple-500 text-white shadow-lg shadow-accent-blue/30 scale-105'
+                ? 'bg-practice/15 text-text ring-1 ring-practice/40 shadow-md scale-105'
                 : 'bg-white/10 text-text/70 hover:bg-white/15 hover:scale-[1.03]',
             )}
           >
@@ -144,7 +144,7 @@ function UserStatsContent({
               className={cn(
                 'flex flex-1 min-w-[80px] items-center justify-center gap-1.5 rounded-xl px-3 py-2.5 text-xs font-bold transition-all',
                 activeTab === tab.id
-                  ? 'bg-gradient-to-br from-accent-blue to-purple-500 text-white shadow-md'
+                  ? 'bg-practice/15 text-text ring-1 ring-practice/30'
                   : disabled
                     ? 'text-muted/30 cursor-not-allowed'
                     : 'text-muted hover:bg-white/8 hover:text-text',
@@ -230,8 +230,8 @@ function GamesPanel({ model }: { model: UserStatsModel }) {
   return (
     <div className="space-y-4">
       {/* Score banner */}
-      <div className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-accent-blue to-purple-500 px-5 py-4 text-white shadow-lg">
-        <Star className="h-5 w-5 flex-shrink-0" />
+      <div className="flex items-center gap-3 rounded-2xl border border-practice/40 bg-practice/10 px-5 py-4 text-text shadow-panel">
+        <Star className="h-5 w-5 flex-shrink-0 text-practice" />
         <span className="font-bold">
           ניקוד כולל נצבר: <strong>{(model.progress.totalPoints ?? 0).toLocaleString()} נקודות</strong>
         </span>
@@ -608,14 +608,14 @@ function MetricTile({
       className={cn(
         'rounded-2xl p-4 text-center transition-transform hover:-translate-y-1',
         variant === 'primary'
-          ? 'bg-gradient-to-br from-accent-blue to-purple-500 text-white shadow-lg shadow-accent-blue/20'
+          ? 'border border-practice/40 bg-practice/10 shadow-panel'
           : 'border border-white/8 bg-surface/90',
         extraClass,
       )}
     >
       <div className={cn(
         'mx-auto mb-2',
-        variant === 'primary' ? 'text-white/80' :
+        variant === 'primary' ? 'text-practice' :
         variant === 'green' ? 'text-emerald-400' :
         variant === 'orange' ? 'text-orange-400' :
         'text-accent-blue',
@@ -624,17 +624,13 @@ function MetricTile({
       </div>
       <div className={cn(
         'text-2xl font-extrabold leading-tight',
-        variant === 'primary' ? 'text-white' :
         variant === 'green' ? 'text-emerald-400' :
         variant === 'orange' ? 'text-orange-400' :
         'text-text',
       )}>
         {value}
       </div>
-      <div className={cn(
-        'mt-1 text-xs font-semibold',
-        variant === 'primary' ? 'text-white/70' : 'text-muted',
-      )}>
+      <div className="mt-1 text-xs font-semibold text-muted">
         {label}
       </div>
     </div>

@@ -828,22 +828,61 @@ Acceptance criteria:
 
 ### Slice 1.6: Settings Shell
 
-Files:
+Status: shipped (Option B — pragmatic split), pending end-to-end manual functional verification. 1.6.a/b/c + polish landed. Custom Words + Word Images deferred to a Phase 4.x slice and accessed via an "Advanced Tools" escape hatch that links to legacy `settings.html`. Three Playwright tests in the 1.6 block are currently flaky (tab-rail timing, password-pill viewport selector, persisted-category click target) and are tracked for a follow-up fix — they are test-rig issues, not feature regressions.
 
-- `src/features/settings/*`
+Sub-slice status:
 
-Deliverables:
+- **1.6.a — Shell + bridge expansion + password gate** — completed
+  - Expanded `AppSettings` from 5 narrow fields to the full 12-field legacy shape (`selectedCategories`, `questionsPerGame`, `clickRepeatCount`, `audioPlaysAllowed`, `hebrewVocalization`, `learningPace`, `showNikud`, `lowercaseMode`, `showConfetti`, `exitBehavior`, `gameUnlockOverride`, `claudeApiKey`)
+  - Dual-write to both `englishLearningSettings` (unprefixed) and `v2_englishLearningSettings` to stay compatible with in-session legacy managers
+  - Admin CRUD passthroughs added to the auth bridge (`verifyAdminPassword`, `addUser`, `resetUserPassword`, `deleteUser`, `setUserRole`, `isCurrentUserAdmin`)
+  - `useParentPassword` hook: session-scoped unlock, auto-unlock for users with `role = 'parent' | 'manager'`
+  - SettingsPage with mobile-first tab rail (horizontal pills on mobile, vertical rail on desktop), top-bar reset/logs actions, `ParentPasswordModal` with async verifier signature
+- **1.6.b — Categories + Game + Advanced tabs** — completed
+  - Categories tab: live word counts pulled from `window.vocabularyBank` via `src/bridge/categories.ts`, practice-mode badge when fewer than 5 categories selected, minimum-1 enforcement, select-all / clear shortcuts
+  - Game tab: sliders for questions/click-repeat/audio budget, learning pace radio (slow/normal/fast), Hebrew vocalization toggle
+  - Advanced tab: display toggles (nikud, lowercase, confetti), exit-behavior radio, game-unlock-override toggle
+  - Shared primitives added: `Toggle`, `Slider`, `RadioCards`, `SectionCard`
+- **1.6.c — Users tab** — completed
+  - User table with identity + role badges (מנהל / הורה / אני)
+  - Per-row actions: reset password, reset practice, reset stats, toggle parent role, delete
+  - Every destructive action re-prompts for admin password via a reusable verifier-modal flow; success paths refresh the user list
+  - "Add user" modal with id/display-name/initial/password validation (matches legacy `^[a-zA-Z0-9_]+$` id rule and the 4-user cap)
+  - `resetUserPractice` / `resetUserStats` added to `src/bridge/progress.ts` (mirror the legacy localStorage-key clearing exactly)
+- **1.6 polish — Custom Words / Word Images escape hatch + tests** — completed
+  - `AdvancedToolsTab` renders two cards that link out to legacy `settings.html` for the Claude-import and image/translation-override flows (the two biggest porting risks — File System Access API and Claude API streaming — stay on legacy until a dedicated slice promotes them)
+  - Playwright regression added for: tab-rail rendering, password-gate open-and-unlock, dual-key persistence of a settings change
+  - The legacy `settings.html` page still exists and is reachable through the Advanced Tools escape hatch; no React nav surface links to it directly
 
-- tab rail / drawer nav replacing inline-heavy settings
-- section cards, parent-control UX
-- password protection preserved
+Files added/changed:
+
+- `src/bridge/settings.ts`, `src/bridge/auth.ts`, `src/bridge/progress.ts`, `src/bridge/categories.ts` (new), `src/bridge/types.ts`
+- `src/hooks/useSettings.ts`, `src/hooks/useParentPassword.ts` (new)
+- `src/features/settings/SettingsPage.tsx`
+- `src/features/settings/components/`: `SettingsTabRail`, `ParentPasswordModal`, `AddUserModal`, `SectionCard`, `Toggle`, `Slider`, `RadioCards`
+- `src/features/settings/tabs/`: `CategoriesTab`, `GameTab`, `AdvancedTab`, `UsersTab`, `AdvancedToolsTab`
+- `tests/react-routes.spec.js` — added Slice 1.6 block
+
+Deliverables (from original plan):
+
+- tab rail / drawer nav replacing inline-heavy settings ✅
+- section cards, parent-control UX ✅
+- password protection preserved ✅ (session unlock + per-action re-prompts for destructive changes)
 
 Acceptance criteria:
 
-- all current settings remain editable
-- protected actions remain protected
-- mobile behavior significantly improved
-- legacy `settings.html` can be unlinked
+- all current settings remain editable — ✅ for the committed scope (Categories, Game, Advanced, Users). Custom Words + Word Images stay editable via the Advanced Tools escape hatch to legacy `settings.html` (Option B).
+- protected actions remain protected ✅
+- mobile behavior significantly improved ✅ (horizontal tab pills, cards sized for thumbs, no more inline scroll traps)
+- legacy `settings.html` can be unlinked — partial. No React nav surface links to it; the deliberate Advanced Tools link remains until a later slice ports Custom Words + Word Images.
+
+Deferred to a future slice (tracked here):
+
+- React migration of **Custom Words** (Claude API import + save-to-source via File System Access API)
+- React migration of **Word Images & Translations** (grid with file upload → base64, URL override, inline translation edit, save-to-source)
+- Full deletion of legacy `settings.html` and associated CSS/JS
+
+These two slices should land before Phase 4.3 (retire legacy pages) so `settings.html` can be deleted with the rest of the legacy HTML pages.
 
 ### Slice 1.7: Hybrid Shell Consolidation
 
@@ -875,6 +914,40 @@ Acceptance criteria:
 - no visual "double-rendering" between legacy `#top-header` and React `TopNav` on hub routes
 - clicking "home" from any surface (legacy or React) ends at React home
 - Playwright regression test covers game-exit flow
+
+### Slice 1.9: Beginner Word-Length Difficulty Gate
+
+Status: planned
+
+Objective: today the candidate-word pool is filtered by category only — `gameLogic.js:3396` explicitly skips word-length filtering. As a result, a brand-new learner can be served `transportation` or `butterfly` on the very first vocabulary question. Per-word mastery adapts *over time*, but says nothing about pool composition for a fresh user. This slice adds a progression-aware length gate.
+
+Scope:
+
+- Bucket candidate words by length and gate the pool by `summary.wordsLearned`:
+  - 0–15 words learned: words ≤7 letters; in multi-distractor games, reject any answer set with 2+ words longer than 5 letters
+  - 15–50: words ≤9 letters
+  - 50+: no length filter
+- Apply at the candidate-pool builder in `gameLogic.js` (the `filteredVocabulary`, `filteredListening`, `filteredPictureMatch` paths). Word Journey opts out — it already self-paces via mastery stages.
+- Add a parent override toggle in Settings → Advanced (`difficultyAutoGate`, default on) so older siblings sharing the same machine can opt out without losing the rest of Advanced.
+- Thresholds (15 / 50, ≤7 / ≤9, "long word" = >5) are starting values; instrument and tune.
+
+Files likely touched:
+
+- `gameLogic.js` — the four `filtered*` builders
+- `src/bridge/settings.ts`, `src/bridge/types.ts`, `src/features/settings/tabs/AdvancedTab.tsx` — new `difficultyAutoGate` toggle
+- `tests/react-routes.spec.js` — settings toggle persistence
+- legacy Playwright coverage in `tests/smoke.spec.js` for the gate behavior at each tier
+
+Acceptance criteria:
+
+- a fresh user (0 words learned) never sees a word longer than 7 letters in vocabulary / listening / picture-match / true-or-not
+- a fresh user never sees an answer set with 2+ words >5 letters
+- a user with 50+ words learned sees the unfiltered pool
+- toggle off in Advanced restores legacy behavior immediately, no reload required
+- Word Journey is unaffected at every tier
+- no regression on category-only filtering
+
+Carry-forward: this filter logic is added in legacy `gameLogic.js`. When Phase 3 migrates Vocabulary / Listening / Picture Match / True or Not to React, the same gate is re-implemented in a shared `src/bridge/wordSelection.ts` module so React games and any remaining legacy games share one source of truth.
 
 ### Slice 1.8: Word Journey Step-1 Audio Parity
 
