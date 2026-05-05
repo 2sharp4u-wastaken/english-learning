@@ -236,25 +236,32 @@ test.describe('Slice 1.6: Settings', () => {
     await seedUser(page);
     await gotoHash(page, '/settings');
 
+    // Wait for the tab rail to mount
+    await expect(page.locator('[data-tab-id="categories"]').first()).toBeAttached({ timeout: 5000 });
+
     for (const id of ['categories', 'game', 'advanced', 'users', 'advanced-tools']) {
       const tabs = await page.locator(`[data-tab-id="${id}"]`).count();
       expect(tabs, `Missing settings tab: ${id}`).toBeGreaterThan(0);
     }
 
-    // Categories is the default active tab — its content should render
-    expect(await hasText(page, 'קטגוריות אוצר מילים')).toBe(true);
+    // Categories is the default active tab — its content should render.
+    // Use nikud-stripping helper because legacy injects vowel marks into headings.
+    // Categories is the default active tab — its content should render.
+    // Substring chosen to survive legacy nikud-script spelling normalization
+    // (the script replaces some matres lectionis with vowel marks).
+    await expect.poll(() => hasText(page, 'קטגוריות אוצר'), { timeout: 5000 }).toBe(true);
 
     const critical = filterCritical(errors);
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
   });
 
   test('protected tab opens password modal and unlocks on correct password', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
     await seedUser(page);
     await gotoHash(page, '/settings');
-    await page.setViewportSize({ width: 1280, height: 800 });
 
-    // Click the "game" tab (protected)
-    await page.locator('[data-tab-id="game"]').first().click();
+    // Click the visible "game" tab (mobile pill is hidden at desktop viewport)
+    await page.locator('[data-tab-id="game"]:visible').first().click();
 
     // Password modal should appear
     await expect(page.locator('#parent-password')).toBeVisible();
@@ -265,20 +272,32 @@ test.describe('Slice 1.6: Settings', () => {
 
     // Modal should close and Game tab content should render
     await expect(page.locator('#parent-password')).not.toBeVisible();
-    expect(await hasText(page, 'מכניקת משחק')).toBe(true);
+    await expect.poll(() => hasText(page, 'מכניקת'), { timeout: 5000 }).toBe(true);
   });
 
   test('changing a setting persists to both legacy localStorage keys', async ({ page }) => {
     await seedUser(page);
     await gotoHash(page, '/settings');
 
-    // Toggle a non-selected category so selection changes deterministically
+    // Wait for the weather category button (nikud-stripped match) and click it.
+    // 'weather' is NOT in DEFAULT_SETTINGS — first click adds it.
+    await expect.poll(() => page.evaluate(() => {
+      const strip = (s) => (s || '').replace(/[֑-ׇ]/g, '');
+      return Array.from(document.querySelectorAll('#react-root button'))
+        .some((b) => strip(b.textContent || '').includes('מזג'));
+    }), { timeout: 5000 }).toBe(true);
+
     await page.evaluate(() => {
-      const btns = Array.from(document.querySelectorAll('#react-root button'));
-      const target = btns.find((b) => (b.textContent || '').includes('מזג אוויר'));
-      target?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+      const strip = (s) => (s || '').replace(/[֑-ׇ]/g, '');
+      const btn = Array.from(document.querySelectorAll('#react-root button'))
+        .find((b) => strip(b.textContent || '').includes('מזג'));
+      btn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
     });
-    await page.waitForTimeout(300);
+
+    await expect.poll(() => page.evaluate(() => {
+      const v = JSON.parse(localStorage.getItem('v2_englishLearningSettings') || 'null');
+      return v?.selectedCategories?.includes('weather') ?? false;
+    }), { timeout: 3000 }).toBe(true);
 
     const [v2, legacy] = await page.evaluate(() => [
       JSON.parse(localStorage.getItem('v2_englishLearningSettings') || 'null'),
