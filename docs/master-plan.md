@@ -828,7 +828,7 @@ Acceptance criteria:
 
 ### Slice 1.6: Settings Shell
 
-Status: shipped (Option B — pragmatic split), pending end-to-end manual functional verification. 1.6.a/b/c + polish landed. Custom Words + Word Images deferred to a Phase 4.x slice and accessed via an "Advanced Tools" escape hatch that links to legacy `settings.html`. Three Playwright tests in the 1.6 block are currently flaky (tab-rail timing, password-pill viewport selector, persisted-category click target) and are tracked for a follow-up fix — they are test-rig issues, not feature regressions.
+Status: shipped (Option B — pragmatic split). 1.6.a/b/c + polish landed and covered by Playwright. Custom Words + Word Images deferred to a Phase 4.x slice and accessed via an "Advanced Tools" escape hatch that links to legacy `settings.html`. Functional coverage: tab rail mounts, protected gate opens and unlocks, dual-key persistence on category toggle, full reset flow (gate → confirm → defaults restored), Advanced Tools links to legacy `settings.html` (15/15 tests green).
 
 Sub-slice status:
 

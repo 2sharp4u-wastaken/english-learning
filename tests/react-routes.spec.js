@@ -245,8 +245,6 @@ test.describe('Slice 1.6: Settings', () => {
     }
 
     // Categories is the default active tab — its content should render.
-    // Use nikud-stripping helper because legacy injects vowel marks into headings.
-    // Categories is the default active tab — its content should render.
     // Substring chosen to survive legacy nikud-script spelling normalization
     // (the script replaces some matres lectionis with vowel marks).
     await expect.poll(() => hasText(page, 'קטגוריות אוצר'), { timeout: 5000 }).toBe(true);
@@ -305,6 +303,78 @@ test.describe('Slice 1.6: Settings', () => {
     ]);
     expect(v2?.selectedCategories).toContain('weather');
     expect(legacy?.selectedCategories).toContain('weather');
+  });
+
+  test('reset settings flow: gate → confirm → defaults restored', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedUser(page);
+    await gotoHash(page, '/settings');
+
+    // Pre-mutate the persisted settings so we have something to reset
+    await page.evaluate(() => {
+      const mutated = { selectedCategories: ['animals'], questionsPerGame: 99 };
+      localStorage.setItem('v2_englishLearningSettings', JSON.stringify(mutated));
+      localStorage.setItem('englishLearningSettings', JSON.stringify(mutated));
+    });
+
+    // Click the reset button (lucide rotate-ccw icon inside header). Hebrew text
+    // contains injected nikud so we can't reliably filter by visible text.
+    const resetBtn = page.locator('#react-root header button:has(svg.lucide-rotate-ccw)');
+    await expect(resetBtn).toBeVisible({ timeout: 3000 });
+    await resetBtn.click();
+
+    // Password modal opens (user is not auto-admin)
+    await expect(page.locator('#parent-password')).toBeVisible({ timeout: 3000 });
+    await page.locator('#parent-password').fill('mac7395eRa1n1!');
+    await page.locator('#parent-password').press('Enter');
+    await expect(page.locator('#parent-password')).not.toBeVisible();
+
+    // Confirm dialog appears — click destructive "איפוס" via JS (nikud-stripped exact match)
+    // Substring without yod (legacy collapses איפוס → אפוס after stripping nikud)
+    await expect.poll(() => hasText(page, 'כל ההגדרות'), { timeout: 3000 }).toBe(true);
+    await page.evaluate(() => {
+      const strip = (s) => (s || '').replace(/[֑-ׇ]/g, '');
+      // The confirm button is inside the modal at z-50 (no header tag), exact text "איפוס"
+      const btn = Array.from(document.querySelectorAll('button')).find((b) => {
+        const inHeader = b.closest('header');
+        const t = strip(b.textContent || '').trim();
+        // Legacy nikud collapses איפוס → אפוס (yod dropped after stripping)
+        return !inHeader && (t === 'איפוס' || t === 'אפוס');
+      });
+      btn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+
+    // Defaults should be back in both keys
+    await expect.poll(() => page.evaluate(() => {
+      const v = JSON.parse(localStorage.getItem('v2_englishLearningSettings') || 'null');
+      return v?.questionsPerGame === 10 && v?.selectedCategories?.length === 10;
+    }), { timeout: 3000 }).toBe(true);
+
+    const legacy = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('englishLearningSettings') || 'null'),
+    );
+    expect(legacy?.questionsPerGame).toBe(10);
+    expect(legacy?.selectedCategories?.length).toBe(10);
+  });
+
+  test('advanced-tools tab links to legacy settings.html for both flows', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedUser(page);
+    await gotoHash(page, '/settings');
+
+    // Unlock with admin password by clicking advanced-tools (protected)
+    await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
+    await expect(page.locator('#parent-password')).toBeVisible();
+    await page.locator('#parent-password').fill('mac7395eRa1n1!');
+    await page.locator('#parent-password').press('Enter');
+    await expect(page.locator('#parent-password')).not.toBeVisible();
+
+    // Both escape-hatch links should be rendered and point at settings.html
+    const hrefs = await page.locator('#react-root a[href="settings.html"]').evaluateAll(
+      (els) => els.map((e) => e.getAttribute('href')),
+    );
+    expect(hrefs.length).toBeGreaterThanOrEqual(2);
+    for (const h of hrefs) expect(h).toBe('settings.html');
   });
 });
 
