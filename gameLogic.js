@@ -1246,15 +1246,11 @@ class GameManager {
             content.style.display = 'none';
         });
 
-        // Show welcome screen
-        const welcome = document.getElementById('welcome-screen');
-        if (welcome) {
-            welcome.classList.add('active');
-            welcome.style.display = 'flex';
+        // Route to React home — the React shell owns the home screen now and
+        // hides the legacy #welcome-screen via the .react-shell-active body class.
+        if (window.location.hash !== '#/home') {
+            window.location.hash = '#/home';
         }
-
-        // Update URL hash
-        history.replaceState(null, null, '#');
 
         // Clear any in-flight confetti burst
         if (typeof window.confetti?.reset === 'function') window.confetti.reset();

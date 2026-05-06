@@ -886,34 +886,28 @@ These two slices should land before Phase 4.3 (retire legacy pages) so `settings
 
 ### Slice 1.7: Hybrid Shell Consolidation
 
-Status: planned
+Status: shipped
 
-Objective: eliminate the mix between React and legacy surfaces during the hybrid period. Users currently encounter legacy screens after exiting games, and the React top bar overlaps page content.
+Objective: eliminate the mix between React and legacy surfaces during the hybrid period.
 
-Scope:
+What landed:
 
-- **Exit paths:** audit every "return home" / "back" / "exit" path in legacy code (`app.js`, `gameLogic.js`, `index.html`, `components/top-header.js`). All must navigate to `/#/home` via React Router, never directly toggle `#welcome-screen` or call `showWelcomeScreen()`.
-- **Legacy DOM suppression:** when the React shell is active on a hub route, the legacy `#top-header`, `#welcome-screen`, and `#user-hub-screen` must be `display: none`. Today only `#welcome-screen` is hidden reliably.
-- **Layout bug:** on React pages the top content is being cut off by the top bar. Root cause likely one of: `TopNav`/`MobileTopBar` positioned absolutely without reserving layout space, `PageContainer` missing top padding, or z-index collision between React overlay (`z-index: 20`) and legacy `#top-header`.
-- **Single source of truth:** game exit (legacy "x" button, `exit-bar`) must navigate React Router to `/#/home`, not manipulate legacy DOM.
+- **Legacy DOM suppression already worked** — the body-class `react-shell-active` rule in `globals.css` hides `#top-header`, `#welcome-screen`, and `#user-hub-screen` on hub routes. The plan's claim that "only `#welcome-screen` is hidden reliably" was stale by the time this slice opened.
+- **Layout cut-off bug not reproducible** — desktop & mobile screenshots confirm the React top bar is sticky-flow at `z:30`, height 57px, with `<main>` starting immediately at `y:57` and 24px top padding. No occlusion.
+- **Exit-path single source of truth** — `gameManager.showWelcomeScreen()` (`gameLogic.js`) and the index.html `showWelcomeScreen()` both now route to `#/home` via the hash, dropping their direct `#welcome-screen` `classList`/`style` toggles. Every existing exit caller (inline `onclick`s, exit-bar listeners, internal `this.showWelcomeScreen()` cleanups) inherits the redirect — no per-callsite changes needed.
+- **Game routes still render legacy chrome** — intentional; AppShell removes `react-shell-active` on `/game/*` so games keep their existing top bar / exit bar. Only the *exit* lands in React.
+- **Regression test** — `tests/react-routes.spec.js` "gameManager.showWelcomeScreen routes through React Router to /#/home" exercises the full game→exit→React-home flow.
 
-Files likely touched:
+Files touched:
 
-- `src/app/layout/AppShell.tsx` — z-index / overlay rules
-- `src/app/layout/PageContainer.tsx` — top padding
-- `src/app/layout/TopNav.tsx`, `MobileTopBar.tsx` — positioning
-- `app.js` — replace `showWelcomeScreen()` calls with `location.hash = '#/home'`
-- `gameLogic.js` — game exit routes to React home
-- `index.html` — legacy exit-bar and back buttons
-- `components/top-header.js` — hide when React shell is active
+- `gameLogic.js` — `showWelcomeScreen()` now sets `location.hash = '#/home'` instead of toggling `#welcome-screen`
+- `index.html` — same change in the index-level `showWelcomeScreen()` helper
+- `tests/react-routes.spec.js` — game-exit regression added
 
-Acceptance criteria:
+Deferred to a later slice (not blocking 1.7):
 
-- exiting any legacy game returns to `/#/home` (React), never the legacy welcome screen
-- React page content is fully visible — no occlusion by the top bar
-- no visual "double-rendering" between legacy `#top-header` and React `TopNav` on hub routes
-- clicking "home" from any surface (legacy or React) ends at React home
-- Playwright regression test covers game-exit flow
+- Auditing every legacy back/home button in `gameLogic.js` to bypass `gameManager.showWelcomeScreen()` and call React Router directly. Current state: they all go through the function so they all redirect, but the indirection is ugly.
+- Replacing `app.js` and `components/top-header.js` legacy header logic on hub routes (already visually hidden, but still wired up in the DOM).
 
 ### Slice 1.9: Beginner Word-Length Difficulty Gate
 

@@ -415,6 +415,25 @@ test.describe('Integration (known issues)', () => {
     expect(hashErrors, 'legacy switchGame() must not run for React Router paths').toHaveLength(0);
   });
 
+  test('gameManager.showWelcomeScreen routes through React Router to /#/home', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/game/practice');
+    await page.waitForTimeout(800);
+
+    // Sanity: we are on a game route
+    expect(await page.evaluate(() => window.location.hash)).toContain('/game/practice');
+
+    // Trigger the legacy exit path and verify React Router is now at /home
+    await page.evaluate(() => window.gameManager?.showWelcomeScreen());
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 3000 })
+      .toBe('#/home');
+
+    // React shell should mark body active after route transition flushes
+    await expect.poll(() => page.evaluate(() =>
+      document.body.classList.contains('react-shell-active'),
+    ), { timeout: 3000 }).toBe(true);
+  });
+
   test('React auth bridge resolves the authenticated user', async ({ page }) => {
     await seedUser(page);
     await gotoHash(page, '/home');

@@ -1255,23 +1255,22 @@
             }
 
             // Function to show welcome screen
+            // React shell owns the home screen — route there and let React Router mount it.
+            // Still hide legacy game sections and refresh resume cards / lock states for
+            // any listeners that read those state stores (gamification, course manager).
             function showWelcomeScreen() {
-                // Hide all game sections
                 document.querySelectorAll('.game-content').forEach(section => {
                     section.classList.remove('active');
                     section.style.display = 'none';
                 });
 
-                // Show welcome screen
-                welcomeScreen.classList.add('active');
-                welcomeScreen.style.display = 'block';
+                if (window.location.hash !== '#/home') {
+                    window.location.hash = '#/home';
+                }
 
-                // Refresh resume cards to show updated progress
                 if (typeof gameManager !== 'undefined' && gameManager.populateResumeGames) {
                     gameManager.populateResumeGames();
                 }
-
-                // Refresh lock states and hero card
                 updateHomeCardStates();
             }
 
