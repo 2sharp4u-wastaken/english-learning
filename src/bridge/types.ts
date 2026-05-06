@@ -149,6 +149,7 @@ export interface AppSettings {
   showConfetti: boolean
   exitBehavior: ExitBehavior
   gameUnlockOverride: boolean
+  difficultyAutoGate: boolean    // Slice 1.9 — gate word-length by progress
 
   // Custom words (parent)
   claudeApiKey: string

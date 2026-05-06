@@ -911,7 +911,22 @@ Deferred to a later slice (not blocking 1.7):
 
 ### Slice 1.9: Beginner Word-Length Difficulty Gate
 
-Status: planned
+Status: shipped
+
+What landed:
+
+- New `gameManager.applyDifficultyGate(items, gameType)` helper in `gameLogic.js`. Tiers keyed off `Object.keys(progressManager.learnedWords).length`:
+  - 0–14 learned → words ≤ 7 letters; for `picture-match` and `listening`, items whose option-set has 2+ words > 5 letters are also rejected
+  - 15–49 → words ≤ 9 letters
+  - 50+ → no filter
+- Applied at the candidate-pool builder in `loadGameData` for vocabulary, listening, and picture-match. `loadGameData` runs at every game start so toggling the setting takes effect on the next play with no reload.
+- New `difficultyAutoGate` AppSetting (default `true`), wired through `src/bridge/types.ts`, `src/bridge/settings.ts`, and a new toggle in `Settings → Advanced → "מתקדם להורה"`.
+- Defensive fallback: if the gate would empty the pool, the unfiltered list is returned (avoids "no questions available" deadlocks on niche category combos).
+- Word Journey reads from raw `vocabularyBank`, not `gameData.vocabulary` — so it self-paces via mastery and the gate is a no-op there, as planned.
+
+Tests: `tests/difficulty-gate.spec.js` covers all four tiers (0/20/60 learned + gate-off), the picture-match distractor rule, and the word-journey-untouched invariant. Full suite green (32/32).
+
+Carry-forward (unchanged from original plan): when Phase 3 migrates Vocabulary / Listening / Picture Match / True or Not to React, this gate moves to a shared `src/bridge/wordSelection.ts` so React games and any remaining legacy games share one source of truth.
 
 Objective: today the candidate-word pool is filtered by category only — `gameLogic.js:3396` explicitly skips word-length filtering. As a result, a brand-new learner can be served `transportation` or `butterfly` on the very first vocabulary question. Per-word mastery adapts *over time*, but says nothing about pool composition for a fresh user. This slice adds a progression-aware length gate.
 

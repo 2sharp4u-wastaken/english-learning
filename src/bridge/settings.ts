@@ -19,6 +19,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   showConfetti: true,
   exitBehavior: 'autosave',
   gameUnlockOverride: false,
+  difficultyAutoGate: true,
   claudeApiKey: '',
 }
 

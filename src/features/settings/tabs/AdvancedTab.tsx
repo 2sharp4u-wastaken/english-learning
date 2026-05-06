@@ -50,12 +50,20 @@ export function AdvancedTab() {
         title="מתקדם להורה"
         description="הפעלה עלולה להפר את מסלול הלמידה המובנה של הילד."
       >
-        <Toggle
-          label="עקיפת נעילות משחקים"
-          description="אפשר לילד לגשת לכל המשחקים ללא תלות ברמות נעילה"
-          checked={settings.gameUnlockOverride === true}
-          onChange={(v) => updateSettings({ gameUnlockOverride: v })}
-        />
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Toggle
+            label="עקיפת נעילות משחקים"
+            description="אפשר לילד לגשת לכל המשחקים ללא תלות ברמות נעילה"
+            checked={settings.gameUnlockOverride === true}
+            onChange={(v) => updateSettings({ gameUnlockOverride: v })}
+          />
+          <Toggle
+            label="התאמת אורך מילים אוטומטית"
+            description="ילד מתחיל מקבל מילים קצרות; הסינון נפתח עם ההתקדמות"
+            checked={settings.difficultyAutoGate !== false}
+            onChange={(v) => updateSettings({ difficultyAutoGate: v })}
+          />
+        </div>
       </SectionCard>
     </div>
   )

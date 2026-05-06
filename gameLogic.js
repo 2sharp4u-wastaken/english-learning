@@ -1501,6 +1501,43 @@ class GameManager {
         });
     }
 
+    /**
+     * Difficulty auto-gate (Slice 1.9). Limits the candidate pool by English
+     * word-length brackets keyed off `progressManager.learnedWords` size, so a
+     * brand-new learner doesn't get served `transportation` on day one. Tunable;
+     * see master-plan.md → Slice 1.9 for the rationale.
+     *
+     * Tiers (learnedCount):
+     *   0–14  → word ≤ 7 letters; in distractor games (picture-match,
+     *            listening) reject items whose option-set has 2+ words > 5
+     *   15–49 → word ≤ 9 letters
+     *   50+   → no filter
+     *
+     * Bypassed entirely when settings.difficultyAutoGate === false, or for
+     * word-journey (which self-paces via mastery stages). Falls back to the
+     * unfiltered pool if the gate would empty it (defensive).
+     */
+    applyDifficultyGate(items, gameType) {
+        if (!Array.isArray(items) || items.length === 0) return items;
+        if (this.settings?.difficultyAutoGate === false) return items;
+        if (gameType === 'word-journey') return items;
+        const learnedCount = Object.keys(this.progressManager?.learnedWords || {}).length;
+        if (learnedCount >= 50) return items;
+        const maxLen = learnedCount < 15 ? 7 : 9;
+        const checkOptions = learnedCount < 15 && (gameType === 'picture-match' || gameType === 'listening');
+
+        const filtered = items.filter(item => {
+            const word = item?.word || '';
+            if (word.length > maxLen) return false;
+            if (checkOptions && Array.isArray(item.options)) {
+                const longOpts = item.options.filter(o => (o?.word || '').length > 5).length;
+                if (longOpts >= 2) return false;
+            }
+            return true;
+        });
+        return filtered.length > 0 ? filtered : items;
+    }
+
     loadGameData() {
         // Check if gameData is available
         if (typeof gameData === 'undefined' || !gameData) {
@@ -1516,7 +1553,7 @@ class GameManager {
         debugLog(`[Category Filter] Selected categories:`, this.selectedCategories);
         debugLog(`[Category Filter] Filtered vocabulary to ${categoryFilteredVocabulary.length} words from categories: ${this.selectedCategories?.join(', ') || 'all'}`);
 
-        const filteredVocabulary = categoryFilteredVocabulary;
+        const filteredVocabulary = this.applyDifficultyGate(categoryFilteredVocabulary, 'vocabulary');
 
         // All grammar questions included (no difficulty filter)
         const filteredGrammar = [...gameData.grammar];
@@ -1526,17 +1563,19 @@ class GameManager {
             ? gameData.pronunciation.filter(item => this.selectedCategories.includes(item.category))
             : gameData.pronunciation;
 
-        const filteredListening = this.selectedCategories && this.selectedCategories.length > 0
+        const categoryFilteredListening = this.selectedCategories && this.selectedCategories.length > 0
             ? gameData.listening.filter(item => this.selectedCategories.includes(item.category))
             : gameData.listening;
+        const filteredListening = this.applyDifficultyGate(categoryFilteredListening, 'listening');
 
         const filteredReading = this.selectedCategories && this.selectedCategories.length > 0
             ? gameData.reading.filter(item => this.selectedCategories.includes(item.category))
             : gameData.reading;
 
-        const filteredPictureMatch = this.selectedCategories && this.selectedCategories.length > 0
+        const categoryFilteredPictureMatch = this.selectedCategories && this.selectedCategories.length > 0
             ? (gameData['picture-match'] || []).filter(item => this.selectedCategories.includes(item.category))
             : (gameData['picture-match'] || []);
+        const filteredPictureMatch = this.applyDifficultyGate(categoryFilteredPictureMatch, 'picture-match');
 
         this.gameData = {
             vocabulary: [...filteredVocabulary],
