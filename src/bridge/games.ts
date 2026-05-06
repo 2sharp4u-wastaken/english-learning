@@ -16,6 +16,7 @@ interface LegacyGameRegistry {
 interface LegacyGameManager {
   currentGame: string | null
   startGame(gameType: string): void
+  switchGame(gameType: string): void
   endGame(): void
 }
 
@@ -94,8 +95,21 @@ export function getContinueTarget(): ContinueTarget | null {
  */
 export function launchGame(gameId: string): void {
   const mgr = getGameManager()
-  if (mgr) {
+  if (!mgr) return
+  // switchGame activates the legacy #${gameId}-game container, manages the
+  // header, then invokes startGame internally. Calling startGame directly
+  // leaves the legacy game DOM display:none so nothing renders.
+  // Note: legacy performGameSwitch overwrites window.location.hash with
+  // `#${gameId}` (its old hub-style routing). Restore the React Router
+  // path so reloads / back-forward keep working.
+  const reactHash = window.location.hash
+  if (typeof mgr.switchGame === 'function') {
+    mgr.switchGame(gameId)
+  } else {
     mgr.startGame(gameId)
+  }
+  if (window.location.hash !== reactHash) {
+    history.replaceState(null, '', reactHash)
   }
 }
 

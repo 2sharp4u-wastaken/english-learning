@@ -236,9 +236,18 @@ export class WordJourneyGame {
                     <div class="wj-discover-word">${q.word}</div>
                     <div class="wj-discover-translation" data-hebrew-source="${q.hebrew}">${window.getHebrew(q.hebrew)}</div>
                 </div>
+                <div class="controls-row">
+                    <button class="play-audio" id="wj-discover-audio" aria-label="השמע מילה">
+                        <i class="fas fa-volume-up"></i>
+                    </button>
+                    <span class="plays-remaining">השמעות נותרו: <span class="plays-left">∞</span></span>
+                </div>
             </div>
         `;
         renderPicture(area.querySelector('.wj-discover-emoji'), { picture: q.image, imageUrl: q.imageUrl, word: q.word, category: q.category });
+
+        // Sync the play counter with the gameManager's shared word-journey budget
+        this.gm?.updateAllPlayCounters?.('word-journey');
 
         const nextBtn = document.getElementById('wj-next');
         if (nextBtn) {
@@ -247,24 +256,51 @@ export class WordJourneyGame {
             nextBtn.onclick = () => this.advanceDiscover();
         }
 
-        // Enable Next only after audio finishes AND at least 1.5s have passed
-        const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
         document.getElementById('word-journey-reset-btn')?.addEventListener('click', () => {
             this.gm.resetCurrentGame();
         });
-        let speechPromise;
-        if (typeof speechManager !== 'undefined') {
+
+        const playWord = () => {
+            if (typeof speechManager === 'undefined') return Promise.resolve();
             const hebrewOn = this.gm?.settings?.hebrewVocalization !== false;
-            if (hebrewOn && q.hebrew) {
-                speechPromise = speechManager.speakWordWithTranslation(q.word, q.hebrew, { gameContext: 'word-journey' }).catch(() => {});
+            return hebrewOn && q.hebrew
+                ? speechManager.speakWordWithTranslation(q.word, q.hebrew, { gameContext: 'word-journey' }).catch(() => {})
+                : speechManager.speakWord(q.word, '', 'word-journey').catch(() => {});
+        };
+
+        const refreshAudioBtn = () => {
+            const btn = document.getElementById('wj-discover-audio');
+            if (!btn) return;
+            const left = this.gm?.audioPlaysLeft;
+            if (Number.isFinite(left) && left <= 0) {
+                btn.disabled = true;
+                btn.classList.add('disabled');
             } else {
-                speechPromise = speechManager.speakWord(q.word, '', 'word-journey').catch(() => {});
+                btn.disabled = false;
+                btn.classList.remove('disabled');
             }
-        } else {
-            speechPromise = Promise.resolve();
+        };
+
+        const audioBtn = document.getElementById('wj-discover-audio');
+        audioBtn?.addEventListener('click', () => {
+            if (audioBtn.disabled) return;
+            if (this.gm?.consumeAudioPlay && !this.gm.consumeAudioPlay('word-journey')) {
+                refreshAudioBtn();
+                return;
+            }
+            playWord().finally(refreshAudioBtn);
+        });
+
+        // Enable Next only after the auto-play finishes AND at least 1.5s have passed
+        const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
+        let speechPromise = Promise.resolve();
+        if (this.gm?.consumeAudioPlay && this.gm.consumeAudioPlay('word-journey')) {
+            speechPromise = playWord();
         }
+        refreshAudioBtn();
         Promise.all([minDelay, speechPromise]).then(() => {
             if (nextBtn) nextBtn.disabled = false;
+            refreshAudioBtn();
         });
     }
 

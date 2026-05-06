@@ -945,30 +945,29 @@ Carry-forward: this filter logic is added in legacy `gameLogic.js`. When Phase 3
 
 ### Slice 1.8: Word Journey Step-1 Audio Parity
 
-Status: planned
+Status: shipped
 
-Objective: kids sometimes miss hearing the target word on step 1 of Word Journey. Bring step 1 into parity with other games (listening, picture-match) by exposing a visible play button with a play-count budget.
+What landed:
 
-Scope:
+- Discover stage (`renderDiscover` in `games/word-journey-game.js`) now renders a `controls-row` with the canonical `.play-audio` button + `.plays-remaining` counter — visually identical to the listening / picture-match / pronunciation games.
+- Audio plays (both the auto-play on stage entry and replay clicks) consume from `gameManager.audioPlaysLeft` via `consumeAudioPlay('word-journey')`, so the discover stage shares the global per-game audio budget rather than a per-stage local counter.
+- The button auto-disables when the budget is exhausted; counter stays in sync with the gameManager via `updateAllPlayCounters('word-journey')`.
 
-- Add a speaker button on step 1 of Word Journey identical in affordance to the listening game's play button.
-- Wire to `speechManager.speakWord(question.word, ...)` and `consumeAudioPlay('word-journey')`.
-- Respect the existing `settings.audioPlaysAllowed` budget (default 8); disable the button when exhausted.
-- Display remaining play count next to the button.
-- Targeted legacy patch — Word Journey is fully migrated in Slice 3.13 (Wave 4, backlog), so this is a hotfix until then.
+Bonus fix landed in the same slice:
 
-Files likely touched:
+- `src/bridge/games.ts` `launchGame()` now calls `gameManager.switchGame()` (which activates `#${gameType}-game`) instead of `gameManager.startGame()` directly. Direct `startGame` left every legacy game container at `display:none`, so the React Home → /#/game/* path was visually broken. Also restores the React Router hash after the legacy `performGameSwitch` overwrites it with the legacy `#${gameType}` style.
 
-- `games/word-journey-game.js` (legacy, ~1237 lines)
-- `styles.css` — minor styling if the shared `.play-button` class doesn't carry over
+Tests:
 
-Acceptance criteria:
+- `tests/wj-step1.spec.js` — asserts the play button is visible, plays-counter is numeric (or ∞ for unlimited), and clicking the button doesn't increase the count.
 
-- step 1 of Word Journey shows a play button with identical behavior to picture-match
-- play count decrements per press and is shared with the journey's global budget
-- works for every vocabulary category
-- no regression in the existing journey flow (steps 2–N)
-- carried forward in the Slice 3.13 React migration
+Files touched:
+
+- `games/word-journey-game.js`
+- `src/bridge/games.ts`
+- `tests/wj-step1.spec.js` (new)
+
+Objective (original): kids sometimes miss hearing the target word on step 1 of Word Journey. Bring step 1 into parity with other games (listening, picture-match) by exposing a visible play button with a play-count budget. Carried forward in the Slice 3.13 React migration.
 
 ## Phase 2: Shared Gameplay UI
 
