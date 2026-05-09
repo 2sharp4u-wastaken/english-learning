@@ -393,8 +393,8 @@ test.describe('Slice 2.1: GameScreenShell', () => {
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('3');
     await expect(page.locator('[data-testid="qp-total"]')).toHaveText('10');
 
-    // Progress increments + score updates after clicking next
-    await page.locator('[data-testid="demo-next"]').click();
+    // Progress increments + score updates after picking the correct option
+    await page.locator('[data-testid="answer-option"][data-index="0"]').click();
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('4');
     await expect(page.locator('[data-testid="game-header-score"]')).toContainText('50');
 
@@ -421,7 +421,7 @@ test.describe('Slice 2.2: Shared feedback and reward', () => {
     await seedUser(page);
     await gotoHash(page, '/dev/game-shell');
 
-    await page.locator('[data-testid="demo-next"]').click();
+    await page.locator('[data-testid="answer-option"][data-index="0"]').click();
     const banner = page.locator('[data-testid="feedback-banner"]');
     await expect(banner).toBeVisible();
     await expect(banner).toHaveAttribute('data-variant', 'correct');
@@ -434,7 +434,8 @@ test.describe('Slice 2.2: Shared feedback and reward', () => {
   test('wrong answer shows incorrect-variant banner', async ({ page }) => {
     await seedUser(page);
     await gotoHash(page, '/dev/game-shell');
-    await page.locator('[data-testid="demo-wrong"]').click();
+    // Index 1 is a wrong answer in the text-mode demo (correct is 0)
+    await page.locator('[data-testid="answer-option"][data-index="1"]').click();
     const banner = page.locator('[data-testid="feedback-banner"]');
     await expect(banner).toBeVisible();
     await expect(banner).toHaveAttribute('data-variant', 'incorrect');
@@ -473,6 +474,97 @@ test.describe('Slice 2.2: Shared feedback and reward', () => {
     await page.locator('[data-testid="exit-dialog-cancel"]').click();
     await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
     expect(await page.evaluate(() => window.location.hash)).toBe('#/dev/game-shell');
+  });
+});
+
+// ─── Slice 2.3: AnswerGrid + MediaPromptCard ────────────────────────────────
+
+test.describe('Slice 2.3: Shared interaction primitives', () => {
+  test('media prompt and answer grid render with default text mode', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    await expect(page.locator('[data-testid="media-prompt-card"]')).toBeVisible();
+    await expect(page.locator('[data-testid="media-prompt-word"]')).toHaveText('apple');
+    await expect(page.locator('[data-testid="media-prompt-audio"]')).toBeVisible();
+
+    const grid = page.locator('[data-testid="answer-grid"]');
+    await expect(grid).toHaveAttribute('data-variant', 'text');
+    await expect(page.locator('[data-testid="answer-option"]')).toHaveCount(4);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('selecting correct option marks it correct and locks the grid', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    const correctOption = page.locator('[data-testid="answer-option"][data-index="0"]');
+    await correctOption.click();
+    await expect(correctOption).toHaveAttribute('data-state', 'correct');
+    await expect(page.locator('[data-testid="answer-grid"]')).toHaveAttribute(
+      'data-revealed',
+      'true',
+    );
+    // Grid is locked — clicking another option must not flip the revealed state
+    await page.locator('[data-testid="answer-option"][data-index="1"]').click({ force: true });
+    await expect(page.locator('[data-testid="answer-option"][data-index="1"]')).not.toHaveAttribute(
+      'data-state',
+      'selected',
+    );
+  });
+
+  test('selecting wrong option marks selection incorrect and reveals correct', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    await page.locator('[data-testid="answer-option"][data-index="2"]').click();
+    await expect(page.locator('[data-testid="answer-option"][data-index="2"]')).toHaveAttribute(
+      'data-state',
+      'incorrect',
+    );
+    await expect(page.locator('[data-testid="answer-option"][data-index="0"]')).toHaveAttribute(
+      'data-state',
+      'correct',
+    );
+  });
+
+  test('arrow-key navigation moves focus across answer options', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    const first = page.locator('[data-testid="answer-option"][data-index="0"]');
+    await first.focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(page.locator('[data-testid="answer-option"][data-index="1"]')).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(first).toBeFocused();
+  });
+
+  test('switching to media mode swaps the grid variant and option content', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    await page.locator('[data-testid="demo-mode-media"]').click();
+    await expect(page.locator('[data-testid="answer-grid"]')).toHaveAttribute(
+      'data-variant',
+      'media',
+    );
+    await expect(page.locator('[data-testid="media-prompt-audio-hint"]')).toBeVisible();
+    // Word prompt is hidden in media (audio-only) mode
+    await expect(page.locator('[data-testid="media-prompt-word"]')).toHaveCount(0);
+  });
+
+  test('binary mode renders 2 options with image prompt', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    await page.locator('[data-testid="demo-mode-binary"]').click();
+    await expect(page.locator('[data-testid="answer-option"]')).toHaveCount(2);
+    await expect(page.locator('[data-testid="media-prompt-media"]')).toBeVisible();
+    await expect(page.locator('[data-testid="media-prompt-word"]')).toHaveText('sun');
   });
 });
 

@@ -1061,20 +1061,34 @@ Acceptance criteria:
 
 ### Slice 2.3: Shared Interaction Primitives
 
-Files:
+Status: shipped (Option B — components only). Phase 3 game migrations consume these directly; no legacy game is rewired in this slice.
+
+What landed:
+
+- `src/features/games/shared/AnswerGrid.tsx` — generic option grid. Supports text or media options (`AnswerOption.label` / `AnswerOption.media`), `selectedIndex` + `correctIndex` + `revealed` for post-answer styling, `disabled` and `hidden` (audio-gated reveal), arrow-key focus navigation across options, RTL-aware. Auto-derives column count (2 / 3 / 4) from option count, overridable via `columns`. Each button exposes `data-state` (`idle | selected | correct | incorrect`) for assertions and styling, plus `data-index`. Lucide check/x icons mark correct/incorrect after reveal.
+- `src/features/games/shared/MediaPromptCard.tsx` — top-of-game prompt panel. Optional `prompt` (instruction), `media` slot (image/emoji), `word` (LTR English), `translation` (Hebrew, optional — vocab game hides this), and an audio play button driven by `onPlayAudio` + `audioPlaying` + `audioDisabled` + `audioHint`. Covers the four Wave-1 game shapes: vocab (word + audio), listening (audio only), picture-match (audio prompt + media options on the grid), true-or-not (image + word).
+- `src/features/games/shared/GameShellDemo.tsx` — extended with a 3-mode toggle (text / media / binary) wiring AnswerGrid + MediaPromptCard end-to-end, including correct/incorrect feedback, reveal locking, and play-again reset. Validates the "reusable across at least 3 game types" acceptance criterion in-shell.
+- Playwright: 6 new tests under `Slice 2.3: Shared interaction primitives` — render, correct-select + lock, wrong-select reveal, arrow-key nav, mode switch, binary 2-option layout. Slice 2.1/2.2 tests updated to drive feedback/scoring through the new AnswerGrid (replacing the removed `demo-next` / `demo-wrong` buttons). All 13 Slice-2 tests green.
+
+Files added:
 
 - `src/features/games/shared/AnswerGrid.tsx`
 - `src/features/games/shared/MediaPromptCard.tsx`
 
-Deliverables:
+Files changed:
 
-- standard answer option cards
-- media prompt presentation
-- mobile-friendly interactions
+- `src/features/games/shared/GameShellDemo.tsx` — replaced placeholder content with mode-toggled MediaPromptCard + AnswerGrid composition
+- `tests/react-routes.spec.js` — added Slice 2.3 block (6 tests); rewrote Slice 2.1/2.2 click targets
+
+Deliverables (from original plan):
+
+- standard answer option cards ✅ (AnswerGrid)
+- media prompt presentation ✅ (MediaPromptCard)
+- mobile-friendly interactions ✅ (responsive column grid, large tap targets, focus-visible ring)
 
 Acceptance criteria:
 
-- reusable across at least 3 game types
+- reusable across at least 3 game types ✅ — demo proves text (vocab/listening), media (picture-match), and binary (true-or-not) shapes from a single pair of components.
 
 ## Phase 3: Game-by-Game Migration
 
