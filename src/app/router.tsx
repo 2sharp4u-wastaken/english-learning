@@ -6,6 +6,7 @@ import { CoursesPage } from '@/features/courses/CoursesPage'
 import { StatsPage } from '@/features/stats/StatsPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { GameHostPage } from '@/features/games/GameHostPage'
+import { GameShellDemo } from '@/features/games/shared/GameShellDemo'
 
 export const router = createHashRouter([
   {
@@ -17,6 +18,7 @@ export const router = createHashRouter([
       { path: 'courses', element: <CoursesPage /> },
       { path: 'stats', element: <StatsPage /> },
       { path: 'settings', element: <SettingsPage /> },
+      { path: 'dev/game-shell', element: <GameShellDemo /> },
       { path: 'game/:gameId', element: <GameHostPage /> },
       // Catch-all: redirect any unknown hash path (e.g. /settings.html
       // bookmarked from the legacy app) to home so the React shell still

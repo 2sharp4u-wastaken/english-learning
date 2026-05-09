@@ -990,38 +990,74 @@ Objective: standardize the visual chrome around gameplay before migrating each g
 
 ### Slice 2.1: GameScreenShell
 
-Files:
+Status: shipped (Option B — components only). Legacy game wrapping is intentionally deferred — each Phase 3 game adopts the shell as it migrates, at which point the per-game inline `.progress-container` is removed instead of being hidden behind a synced React overlay. No changes to legacy `/game/*` chrome in this slice.
+
+What landed:
+
+- `src/features/games/shared/GameScreenShell.tsx` — full-bleed dark gradient page, max-w-3xl content rail, accepts `header`, optional `progress`, `children`, optional `footer`
+- `src/features/games/shared/GameHeader.tsx` — back button (defaults to `navigate('/home')`, accepts override), centered title + optional subtitle/icon, optional score and coins pills
+- `src/features/games/shared/QuestionProgress.tsx` — Hebrew "שאלה X מתוך Y" counter, optional reset button, gradient progress bar with safe clamping (handles `current > total` and `total = 0`)
+- `src/features/games/shared/GameShellDemo.tsx` — interactive demo wired at `/#/dev/game-shell` showing all primitives composed; clicking "הבא" advances counter + score, "אפס משחק" resets state. Lives inside `AppShell` chrome (acceptable for a dev preview)
+- Routing: `src/app/router.tsx` registers `dev/game-shell` ahead of `game/:gameId`
+- Playwright: `tests/react-routes.spec.js` "Slice 2.1: GameScreenShell" — asserts shell + header + score + progress render, increment-on-click works, and the back button routes to `/#/home`. Both tests green.
+
+Carry-forward: when Phase 3 migrates Vocabulary first, the per-game `.progress-container` in `index.html` for that game's container becomes dead markup. Either delete those blocks per-game during migration, or sweep them all in Slice 4.4. Plan still calls Slice 4.4.
+
+Files added:
 
 - `src/features/games/shared/GameScreenShell.tsx`
 - `src/features/games/shared/GameHeader.tsx`
 - `src/features/games/shared/QuestionProgress.tsx`
+- `src/features/games/shared/GameShellDemo.tsx`
 
-Deliverables:
+Files changed:
 
-- shared shell around all games
-- consistent back, score, progress, reset/exit patterns
+- `src/app/router.tsx` — added `dev/game-shell` route
+- `tests/react-routes.spec.js` — added Slice 2.1 block (2 tests)
+
+Deliverables (from original plan):
+
+- shared shell around all games ✅ (primitive-level — Phase 3 games consume it)
+- consistent back, score, progress, reset/exit patterns ✅
 
 Acceptance criteria:
 
-- legacy games can render inside the shell via bridge
-- header/progress state synchronized
+- legacy games can render inside the shell via bridge — **deferred per Option B**. Phase 3 game migrations adopt the shell directly; legacy games keep their own inline progress chrome until ported.
+- header/progress state synchronized — **deferred per Option B**. The shell is a controlled React component; state ownership lives in the consuming feature (each Phase 3 game).
 
 ### Slice 2.2: Shared Feedback and Reward System
 
-Files:
+Status: shipped (Option B — components only, like Slice 2.1). Each Phase 3 game adopts these primitives as it migrates; no legacy game is rewired in this slice.
+
+What landed:
+
+- `src/features/games/shared/FeedbackBanner.tsx` — fixed-positioned, top-centered status banner with `correct` / `incorrect` variants, optional `autoDismissMs`, Lucide icon, `role="status"` + `aria-live="polite"`. Carries `data-variant` for assertions.
+- `src/features/games/shared/RewardModal.tsx` — end-of-game celebration dialog (`role="dialog"`, `aria-modal`). Renders score (always), optional coins, optional `correct / total` summary, optional close (X), optional "play again" CTA, and an "exit to home" CTA. Backdrop click + Escape dismiss via `onClose ?? onExit`.
+- `src/features/games/shared/ExitConfirmDialog.tsx` — `role="alertdialog"` confirming game exit. Default Hebrew copy ("לצאת מהמשחק?" / "המשך משחק" / "יציאה"). Cancel autofocused, Escape = cancel, backdrop click = cancel.
+- `src/features/games/shared/GameShellDemo.tsx` — extended with three demo buttons ("הבא" → correct banner, "תשובה לא נכונה" → incorrect banner, "סיים משחק" → reward modal). Header back button now opens the exit-confirm dialog instead of navigating directly.
+- `src/styles/globals.css` — added `@keyframes feedbackReveal` (used by all three new components for entrance animation; previously lived only in legacy `styles.css`).
+- Playwright: 5 new tests under `Slice 2.2: Shared feedback and reward`. Slice 2.1 back-button test updated to go through the new exit-confirm flow. All 7 Slice-2 tests green.
+
+Files added:
 
 - `src/features/games/shared/FeedbackBanner.tsx`
 - `src/features/games/shared/RewardModal.tsx`
 - `src/features/games/shared/ExitConfirmDialog.tsx`
 
-Deliverables:
+Files changed:
 
-- shared success/fail/reward patterns
-- improved reward celebration
+- `src/features/games/shared/GameShellDemo.tsx` — wired all three new primitives
+- `src/styles/globals.css` — added `feedbackReveal` keyframes
+- `tests/react-routes.spec.js` — updated Slice 2.1 back-button test, added Slice 2.2 block (5 tests)
+
+Deliverables (from original plan):
+
+- shared success/fail/reward patterns ✅ (FeedbackBanner + RewardModal)
+- improved reward celebration ✅ (gradient hero icon, stats grid, play-again CTA)
 
 Acceptance criteria:
 
-- integrates with current scoring and completion flows
+- integrates with current scoring and completion flows — **deferred per Option B**. Phase 3 game migrations consume these primitives directly, mirroring the Slice 2.1 pattern.
 
 ### Slice 2.3: Shared Interaction Primitives
 

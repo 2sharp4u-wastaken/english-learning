@@ -378,6 +378,104 @@ test.describe('Slice 1.6: Settings', () => {
   });
 });
 
+// ─── Slice 2.1: GameScreenShell ─────────────────────────────────────────────
+
+test.describe('Slice 2.1: GameScreenShell', () => {
+  test('demo route renders shell + header + progress', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+    await expect(page.locator('[data-testid="game-header"]')).toBeVisible();
+    await expect(page.locator('[data-testid="game-header-score"]')).toBeVisible();
+    await expect(page.locator('[data-testid="question-progress"]')).toBeVisible();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('3');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('10');
+
+    // Progress increments + score updates after clicking next
+    await page.locator('[data-testid="demo-next"]').click();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('4');
+    await expect(page.locator('[data-testid="game-header-score"]')).toContainText('50');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('back button opens exit-confirm dialog, confirm routes to /#/home', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+    await page.locator('[data-testid="exit-dialog-confirm"]').click();
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 3000 })
+      .toBe('#/home');
+  });
+});
+
+// ─── Slice 2.2: Feedback + Reward + Exit dialogs ────────────────────────────
+
+test.describe('Slice 2.2: Shared feedback and reward', () => {
+  test('correct answer shows feedback banner and auto-dismisses', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    await page.locator('[data-testid="demo-next"]').click();
+    const banner = page.locator('[data-testid="feedback-banner"]');
+    await expect(banner).toBeVisible();
+    await expect(banner).toHaveAttribute('data-variant', 'correct');
+    await expect(banner).toBeHidden({ timeout: 3000 });
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('wrong answer shows incorrect-variant banner', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+    await page.locator('[data-testid="demo-wrong"]').click();
+    const banner = page.locator('[data-testid="feedback-banner"]');
+    await expect(banner).toBeVisible();
+    await expect(banner).toHaveAttribute('data-variant', 'incorrect');
+  });
+
+  test('reward modal renders score and coins; exit routes to /#/home', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    await page.locator('[data-testid="demo-finish"]').click();
+    const modal = page.locator('[data-testid="reward-modal"]');
+    await expect(modal).toBeVisible();
+    await expect(page.locator('[data-testid="reward-score"]')).toBeVisible();
+    await expect(page.locator('[data-testid="reward-coins"]')).toBeVisible();
+
+    await page.locator('[data-testid="reward-modal-exit"]').click();
+    await expect.poll(() => page.evaluate(() => window.location.hash), { timeout: 3000 })
+      .toBe('#/home');
+  });
+
+  test('reward modal play-again resets and closes', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+    await page.locator('[data-testid="demo-finish"]').click();
+    await page.locator('[data-testid="reward-modal-play-again"]').click();
+    await expect(page.locator('[data-testid="reward-modal"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+    await expect(page.locator('[data-testid="game-header-score"]')).toContainText('0');
+  });
+
+  test('exit-confirm cancel keeps user on game route', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+    expect(await page.evaluate(() => window.location.hash)).toBe('#/dev/game-shell');
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {
