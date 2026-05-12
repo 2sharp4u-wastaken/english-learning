@@ -29,7 +29,7 @@ Read every file you plan to change before touching it. Do not suggest changes to
 When changing any setting, game mechanic, or learning flow — update the relevant file in `docs/` in the same session.
 
 ### Bridge is the only gateway to legacy
-React components must never access `window.*` globals or `localStorage` directly. All legacy data access goes through `src/bridge/*.ts` modules. React hooks in `src/hooks/` consume bridge modules.
+React components must never access `window.*` globals or `localStorage` directly. All legacy data access goes through `src/bridge/*.ts` modules. React hooks in `src/hooks/` consume bridge modules. Existing bridges: `auth`, `audio`, `categories`, `courses`, `feedback`, `games`, `progress`, `settings`, `stats`, `storage`, `textPrefs`, `vocabulary`. Add new ones as needed; never bypass.
 
 ### CSS containment
 - Tailwind Preflight is **disabled** — legacy `styles.css` provides its own resets
@@ -90,6 +90,16 @@ Accessed from React only via `src/bridge/` modules.
 ### React games registry
 - `src/features/games/reactGames.ts` — `REACT_GAME_IDS` set; the source of truth for which games run in React vs legacy. Adding an ID here triggers `react-shell-active` to stay on during that game route so the legacy DOM is suppressed.
 - `src/features/games/GameHostPage.tsx` — `REACT_GAMES` record maps ID → component. Anything not in the record falls through to legacy `launchGame()`.
+
+### Shared game primitives (Phase 3 reuse, do not duplicate)
+- `src/features/games/shared/GameScreenShell.tsx` — header + progress + main + footer slots
+- `src/features/games/shared/GameHeader.tsx` — back button, score, coins, case + nikud toggles (via `useTextPrefs`)
+- `src/features/games/shared/QuestionProgress.tsx` — "שאלה N מתוך M" + reset button
+- `src/features/games/shared/MediaPromptCard.tsx` — word/translation/media slot + audio button (`audioIconOnly` for legacy speaker look; omit `word` for audio-only games)
+- `src/features/games/shared/AnswerGrid.tsx` — N options grid (`columns={2|3|4}`, `variant='text'|'media'`, `hidden` for audio gate)
+- `src/features/games/shared/FeedbackBanner.tsx` — correct/incorrect floating banner
+- `src/features/games/shared/RewardModal.tsx` — end-of-session reward
+- `src/features/games/shared/ExitConfirmDialog.tsx` — "leave game?" modal
 
 ## Phase 3 game migration pattern
 
