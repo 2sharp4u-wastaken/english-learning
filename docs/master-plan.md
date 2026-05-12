@@ -1178,7 +1178,28 @@ Files modified:
 - `src/features/games/GameHostPage.tsx` — registered `'picture-match': PictureMatchGamePage`.
 - `tests/react-routes.spec.js` — Slice 3.3 block (6 tests: learn-first, happy path with English word visible + media variant, incorrect→next, resume with media options, audio-state persistence across refresh, exit dialog).
 - `docs/wiring-map.md` — "Picture Match Game (React — Slice 3.3)" cause/effect chain.
-**Slice 3.4: True or Not** — binary answer variant. ~217 lines. Differences vs 3.1: 2-option `AnswerGrid` (`columns={2}`), prompt is a sentence + image, options are כן/לא or true/false. Question shape includes a boolean correctness flag rather than `correct` index — adapt in the bridge.
+**Slice 3.4: True or Not** — binary answer variant. ~217 lines. ✅ shipped.
+
+Status: complete (2026-05-12). Followed Slice 3.1 template. Differences vs 3.1:
+
+- 2-option `AnswerGrid` (`columns={2}`) with labels `✓ כן` / `✗ לא`. The bridge adapts the legacy `isMatch: boolean` field to a stable `correct` index (0 = כן, 1 = לא) so `AnswerGrid` keeps its index-based contract.
+- Prompt shows the English target word + a **displayed image that may or may not match** the word (legacy `displayImage`/`displayImageUrl` distinct from the word's own `image`/`imageUrl`). The Hebrew translation is rendered too — kids need both cues to judge "does this picture match this word?". Image overrides intentionally only fire on the `isMatch` rounds (consulting overrides on a mismatch round would replace the decoy image with the answer image and give the round away).
+- No audio reveal gate — legacy True-or-Not shows both word and image immediately, the audio is just a cue. The per-question `audioPlaysAllowed` budget is still applied so a refresh doesn't grant unlimited replays.
+- Question building lives in `window.trueOrNotGame.buildQuestions()` (legacy class), not in `gameManager.getScopedQuestionPool` — the bridge waits for both `gameManager` and `trueOrNotGame` to be ready before calling `start`. V2 gating requires ≥5 learned words (mirrors `gameLogic.js:2163-2172`).
+- `caseMode` and nikud applied to the prompt word/translation, like vocab.
+
+Files added:
+
+- `src/bridge/true-or-not.ts` — clone of `src/bridge/picture-match.ts` keyed to `'true-or-not'` gameType + `v2_true_or_not_audio_<userId>` audio-state key. `TrueOrNotQuestion` carries `{word, picture, imageUrl, displayPicture, displayImageUrl, isMatch, correct}`. Bridge calls `window.trueOrNotGame.buildQuestions(pool)` rather than `smartQuestionSelection`.
+- `src/features/games/true-or-not/TrueOrNotGamePage.tsx` — page with image media slot + 2-option grid + auto-play (no reveal gate).
+- `src/features/games/true-or-not/components/TrueOrNotLearnFirst.tsx` — learn-first prompt (requires ≥5 learned words).
+
+Files modified:
+
+- `src/features/games/reactGames.ts` — added `'true-or-not'` to `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — registered `'true-or-not': TrueOrNotGamePage`.
+- `tests/react-routes.spec.js` — Slice 3.4 block (6 tests: learn-first, happy path with 2 options + image prompt + no audio gate, incorrect→next, resume, audio-state persistence across refresh, exit dialog).
+- `docs/wiring-map.md` — "True or Not Game (React — Slice 3.4)" cause/effect chain.
 
 ### Wave 2: Text-building games — BACKLOG
 

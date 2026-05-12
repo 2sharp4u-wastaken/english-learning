@@ -1173,6 +1173,163 @@ test.describe('Slice 3.3: Picture Match Game (React)', () => {
   });
 });
 
+// ─── Slice 3.4: True or Not Game (React) ────────────────────────────────────
+
+test.describe('Slice 3.4: True or Not Game (React)', () => {
+  test('learn-first empty state shows when fewer than 5 words are learned', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/game/true-or-not');
+    await page.waitForTimeout(500);
+
+    await expect(page.locator('[data-testid="true-or-not-learn-first"]')).toBeVisible();
+    await expect(page.locator('[data-testid="answer-grid"]')).toHaveCount(0);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('happy path: word + image prompt + 2 options (כן/לא), correct answer advances', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    const learned = await seedLearnedFromBank(page, 8);
+    expect(learned).toBeGreaterThanOrEqual(5);
+
+    await gotoHash(page, '/game/true-or-not');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+    await expect(page.locator('[data-testid="media-prompt-word"]')).toBeVisible();
+    await expect(page.locator('[data-testid="media-prompt-media"]')).toBeVisible();
+    await expect(page.locator('[data-testid="answer-option"]')).toHaveCount(2);
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+
+    // No audio gate — options interactive immediately.
+    await expect(page.locator('[data-testid="answer-grid"]'))
+      .not.toHaveClass(/pointer-events-none/);
+
+    const isMatch = await page.evaluate(() => {
+      const m = window.gameManager;
+      return m?.shuffledQuestions?.[m.currentQuestionIndex]?.isMatch;
+    });
+    expect(typeof isMatch).toBe('boolean');
+    const correctIndex = isMatch ? 0 : 1;
+
+    await page.locator(`[data-testid="answer-option"][data-index="${correctIndex}"]`).click();
+    await expect(page.locator(`[data-testid="answer-option"][data-index="${correctIndex}"]`))
+      .toHaveAttribute('data-state', 'correct');
+
+    await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
+      timeout: 4000,
+    }).toBe('2');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('incorrect answer reveals correct option and surfaces a Next button', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/true-or-not');
+    await page.waitForTimeout(900);
+
+    const isMatch = await page.evaluate(() => {
+      const m = window.gameManager;
+      return m?.shuffledQuestions?.[m.currentQuestionIndex]?.isMatch;
+    });
+    const correctIndex = isMatch ? 0 : 1;
+    const wrongIndex = correctIndex === 0 ? 1 : 0;
+
+    await page.locator(`[data-testid="answer-option"][data-index="${wrongIndex}"]`).click();
+    await expect(page.locator(`[data-testid="answer-option"][data-index="${correctIndex}"]`))
+      .toHaveAttribute('data-state', 'correct');
+    await expect(page.locator('[data-testid="true-or-not-next"]')).toBeVisible();
+
+    await page.locator('[data-testid="true-or-not-next"]').click();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2');
+  });
+
+  test('resume picks up mid-session save and continues from the correct question', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const bank = window.vocabularyBank || [];
+      const words = bank.slice(0, 5).map((w, i) => ({
+        word: w.word,
+        translation: w.translation,
+        category: w.category,
+        image: w.picture,
+        imageUrl: w.imageUrl,
+        displayImage: w.picture,
+        displayImageUrl: w.imageUrl,
+        isMatch: i % 2 === 0,
+      }));
+      localStorage.setItem(
+        `savedGame_${userId}_true-or-not`,
+        JSON.stringify({
+          gameType: 'true-or-not',
+          currentQuestionIndex: 3,
+          score: 30,
+          totalQuestions: 5,
+          timestamp: Date.now(),
+          shuffledQuestions: words,
+          gameElapsedMs: 0,
+          selectedCategories: [],
+        }),
+      );
+    });
+
+    await gotoHash(page, '/game/true-or-not');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('4');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('5');
+  });
+
+  test('audio counters persist across refresh', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/true-or-not');
+    await page.waitForTimeout(900);
+
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.waitForTimeout(200);
+
+    const beforeRefresh = await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const raw = localStorage.getItem(`v2_true_or_not_audio_${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(beforeRefresh).toBeTruthy();
+    expect(beforeRefresh.audioPlaysLeft).toBeLessThan(8);
+
+    await page.reload();
+    await page.waitForTimeout(1200);
+
+    const afterRefresh = await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const raw = localStorage.getItem(`v2_true_or_not_audio_${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(afterRefresh.audioPlaysLeft).toBe(beforeRefresh.audioPlaysLeft);
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/true-or-not');
+    await page.waitForTimeout(800);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {

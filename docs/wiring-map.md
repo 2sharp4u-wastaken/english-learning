@@ -168,6 +168,27 @@ React route /#/game/picture-match
 
 Legacy `games/picture-match-game.js` and `#picture-match-game` DOM are no longer reached for this route. They remain in the tree until Slice 4.4.
 
+## True or Not Game (React — Slice 3.4)
+
+```
+React route /#/game/true-or-not
+  └─ GameHostPage.tsx → REACT_GAMES['true-or-not'] → TrueOrNotGamePage.tsx
+      ├─ beginTrueOrNotSession()  (src/bridge/true-or-not.ts)
+      │   ├─ speechManager.setGameContext('true-or-not')
+      │   ├─ V2 gating: learnedCount < 5 → render <TrueOrNotLearnFirst />
+      │   ├─ Build pool from learned words (or full bank fallback if <4)
+      │   └─ window.trueOrNotGame.buildQuestions(pool) → 5 matches + 5 mismatches, shuffled
+      │       → adapt {isMatch} → {correct: 0|1} for AnswerGrid
+      ├─ Loop: <MediaPromptCard word=question.word translation media=<DisplayedPicture>> + <AnswerGrid columns=2>
+      │   ├─ Auto-play of the English word on each question (no reveal gate)
+      │   ├─ <DisplayedPicture> renders question.displayImageUrl (may differ from word's real image on mismatch rounds)
+      │   └─ recordTrueOrNotAnswer(selectedIndex) → userSaysMatch (idx 0) vs question.isMatch → recordWordAttempt + scoreManager.addPoints + saveGameState
+      └─ Final question → finishTrueOrNotSession() → gameManager.endGame()
+          → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
+```
+
+Legacy `games/true-or-not-game.js` is still mounted at boot (we call its `buildQuestions` from the bridge), but the legacy `#true-or-not-container` DOM is never displayed for this route. The legacy class can retire alongside Slice 4.4 once `buildQuestions` is reimplemented in the bridge.
+
 ## Critical File Locations
 
 | Function | File | Line |
