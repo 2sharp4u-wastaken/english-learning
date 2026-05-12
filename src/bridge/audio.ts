@@ -33,11 +33,15 @@ export function hardResetSpeech(): void {
   }
 }
 
-export async function speakWord(word: string, gameContext = 'vocabulary'): Promise<void> {
+export async function speakWord(
+  word: string,
+  gameContext = 'vocabulary',
+  options: { allowOverlap?: boolean } = {},
+): Promise<void> {
   const sm = getSpeech()
   if (!sm) return
   try {
-    await sm.speakWord(word, '', gameContext)
+    await sm.speakWord(word, '', gameContext, options.allowOverlap ?? false)
   } catch {
     /* legacy already swallows errors; keep parity */
   }

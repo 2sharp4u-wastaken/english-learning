@@ -140,18 +140,21 @@ export function VocabularyGamePage() {
   )
 
   // Auto-play on each new question; counts toward the reveal gate.
+  //
+  // `allowOverlap: true` bypasses legacy speech queue's `pending` short-circuit
+  // (legacy speak() returns immediately if `synthesis.pending` is true, which
+  // can linger after the post-answer feedback utterance and silently swallow
+  // the next question's auto-play). Manual play button keeps the default
+  // `allowOverlap: false` so rapid taps don't pile up.
   useEffect(() => {
     if (!current) return
     autoPlayedRef.current = false
     const id = window.setTimeout(() => {
       if (autoPlayedRef.current) return
       autoPlayedRef.current = true
-      // First play of a fresh question — always count toward the gate even if
-      // budget is exhausted (gate counter and budget counter are separate, but
-      // we keep them in sync here for simplicity).
       setAudioPlaysLeft((n) => Math.max(0, n - 1))
       setPlaysSoFar((n) => n + 1)
-      void speakWord(current.word, 'vocabulary')
+      void speakWord(current.word, 'vocabulary', { allowOverlap: true })
     }, 250)
     return () => window.clearTimeout(id)
   }, [current])
