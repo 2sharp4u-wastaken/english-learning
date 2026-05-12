@@ -760,6 +760,38 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
     await expect(page.locator('[data-testid="qp-total"]')).toHaveText('5');
   });
 
+  test('case + nikud toggles in the game header transform the prompt and options', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/vocabulary');
+    await page.waitForTimeout(800);
+
+    const wordOriginal = await page.locator('[data-testid="media-prompt-word"]').textContent();
+    expect(wordOriginal).toBeTruthy();
+
+    await page.locator('[data-testid="header-case-toggle"]').click();
+    const wordLower = await page.locator('[data-testid="media-prompt-word"]').textContent();
+    expect(wordLower).toBe((wordOriginal || '').toLowerCase());
+    const bodyClass = await page.evaluate(() => document.body.classList.contains('lowercase-mode'));
+    expect(bodyClass).toBe(true);
+
+    // Toggle nikud off — at least one option label loses its nikud marks.
+    const optionsWithNikud = await page.evaluate(() => {
+      return Array.from(document.querySelectorAll('[data-testid="answer-option"]'))
+        .map((el) => el.textContent || '');
+    });
+    const hadNikud = optionsWithNikud.some((s) => /[֑-ׇ]/.test(s));
+    if (hadNikud) {
+      await page.locator('[data-testid="header-nikud-toggle"]').click();
+      const optionsStripped = await page.evaluate(() => {
+        return Array.from(document.querySelectorAll('[data-testid="answer-option"]'))
+          .map((el) => el.textContent || '');
+      });
+      const stillHasNikud = optionsStripped.some((s) => /[֑-ׇ]/.test(s));
+      expect(stillHasNikud).toBe(false);
+    }
+  });
+
   test('header back button opens the exit-confirm dialog', async ({ page }) => {
     await seedUser(page);
     await seedLearnedFromBank(page, 8);

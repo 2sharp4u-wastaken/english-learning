@@ -1,6 +1,7 @@
 import { ChevronRight, Coins, Trophy } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/cn'
+import { useTextPrefs } from '@/bridge/textPrefs'
 
 export interface GameHeaderProps {
   title: string
@@ -22,6 +23,7 @@ export function GameHeader({
   className,
 }: GameHeaderProps) {
   const navigate = useNavigate()
+  const { caseMode, showNikud, toggleCase, toggleNikud } = useTextPrefs()
 
   const handleBack = () => {
     if (onBack) {
@@ -61,6 +63,30 @@ export function GameHeader({
       </div>
 
       <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={toggleCase}
+          data-testid="header-case-toggle"
+          aria-pressed={caseMode === 'lowercase'}
+          title="החלף רישיות (ABC / abc)"
+          className="flex h-9 items-center gap-1 rounded-full bg-white/5 px-3 text-xs font-bold text-[color:var(--slate-200)] transition hover:bg-white/10 hover:text-white"
+        >
+          <span className={caseMode === 'uppercase' ? 'text-white' : 'opacity-40'}>ABC</span>
+          <span className="opacity-40">/</span>
+          <span className={caseMode === 'lowercase' ? 'text-white' : 'opacity-40'}>abc</span>
+        </button>
+        <button
+          type="button"
+          onClick={toggleNikud}
+          data-testid="header-nikud-toggle"
+          aria-pressed={showNikud}
+          title="הצג/הסתר ניקוד (אֶ/א)"
+          className="flex h-9 min-w-[3.25rem] items-center justify-center gap-1 rounded-full bg-white/5 px-3 text-sm font-bold text-[color:var(--slate-200)] transition hover:bg-white/10 hover:text-white"
+        >
+          <span className={showNikud ? 'text-white' : 'opacity-40'}>אֶ</span>
+          <span className="opacity-40">/</span>
+          <span className={!showNikud ? 'text-white' : 'opacity-40'}>א</span>
+        </button>
         {typeof score === 'number' ? (
           <span
             className="flex items-center gap-1 rounded-full bg-white/5 px-3 py-1.5 text-sm font-semibold text-[color:var(--amber-400)]"

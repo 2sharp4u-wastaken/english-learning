@@ -22,6 +22,7 @@ import {
   triggerConfetti,
 } from '@/bridge/feedback'
 import { getSettings } from '@/bridge/settings'
+import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
 
@@ -35,6 +36,7 @@ const REQUIRED_PLAYS_BEFORE_REVEAL = 3
 
 export function VocabularyGamePage() {
   const navigate = useNavigate()
+  const { caseMode, showNikud } = useTextPrefs()
   const [session, setSession] = useState<VocabularySessionResult | null>(null)
   const [index, setIndex] = useState(0)
   const [score, setScore] = useState(0)
@@ -251,8 +253,16 @@ export function VocabularyGamePage() {
   }
 
   const answerOptions = current
-    ? current.options.map((label, i) => ({ key: i, label }))
+    ? current.options.map((label, i) => ({
+        key: i,
+        label: showNikud ? label : stripNikud(label),
+      }))
     : []
+  const displayedWord = current
+    ? caseMode === 'lowercase'
+      ? current.word.toLowerCase()
+      : current.word
+    : ''
 
   const clicksLeftToReveal = Math.max(
     0,
@@ -283,7 +293,7 @@ export function VocabularyGamePage() {
         {current ? (
           <div className="flex flex-1 flex-col gap-4">
             <MediaPromptCard
-              word={current.word}
+              word={displayedWord}
               onPlayAudio={handleManualPlay}
               audioDisabled={audioPlaysLeft <= 0}
               audioLabel="השמע מילה"
