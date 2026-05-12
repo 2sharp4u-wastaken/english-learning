@@ -2,10 +2,12 @@ import { useEffect, type ComponentType } from 'react'
 import { useParams } from 'react-router-dom'
 import { launchGame } from '@/bridge/games'
 import { VocabularyGamePage } from './vocabulary/VocabularyGamePage'
+import { ListeningGamePage } from './listening/ListeningGamePage'
 import { isReactGame } from './reactGames'
 
 const REACT_GAMES: Record<string, ComponentType> = {
   vocabulary: VocabularyGamePage,
+  listening: ListeningGamePage,
 }
 
 export function GameHostPage() {

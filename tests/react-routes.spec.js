@@ -844,6 +844,167 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
   });
 });
 
+// ─── Slice 3.2: Listening Game (React) ──────────────────────────────────────
+
+test.describe('Slice 3.2: Listening Game (React)', () => {
+  test('learn-first empty state shows when fewer than 4 words are learned', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/game/listening');
+    await page.waitForTimeout(500);
+
+    await expect(page.locator('[data-testid="listening-learn-first"]')).toBeVisible();
+    await expect(page.locator('[data-testid="answer-grid"]')).toHaveCount(0);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('happy path: prompt renders without English word, options appear, correct answer advances', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    const learned = await seedLearnedFromBank(page, 8);
+    expect(learned).toBeGreaterThanOrEqual(4);
+
+    await gotoHash(page, '/game/listening');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+    // Listening prompt MUST NOT show the English target word.
+    await expect(page.locator('[data-testid="media-prompt-word"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="answer-option"]')).toHaveCount(4);
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+
+    // 1-play gate: auto-play satisfies it. Wait for it, then verify revealed.
+    await expect.poll(() => page.locator('[data-testid="answer-grid"]').getAttribute('class'), {
+      timeout: 2500,
+    }).not.toMatch(/pointer-events-none/);
+
+    const correctIndex = await page.evaluate(() => {
+      const m = window.gameManager;
+      return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correct ?? -1;
+    });
+    expect(correctIndex).toBeGreaterThanOrEqual(0);
+
+    await page.locator(`[data-testid="answer-option"][data-index="${correctIndex}"]`).click();
+    await expect(page.locator(`[data-testid="answer-option"][data-index="${correctIndex}"]`))
+      .toHaveAttribute('data-state', 'correct');
+
+    await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
+      timeout: 4000,
+    }).toBe('2');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('incorrect answer reveals correct option and surfaces a Next button', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/listening');
+    await page.waitForTimeout(900);
+
+    await expect.poll(() => page.locator('[data-testid="answer-grid"]').getAttribute('class'), {
+      timeout: 2500,
+    }).not.toMatch(/pointer-events-none/);
+
+    const correctIndex = await page.evaluate(() => {
+      const m = window.gameManager;
+      return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correct ?? -1;
+    });
+    expect(correctIndex).toBeGreaterThanOrEqual(0);
+    const wrongIndex = correctIndex === 0 ? 1 : 0;
+
+    await page.locator(`[data-testid="answer-option"][data-index="${wrongIndex}"]`).click();
+    await expect(page.locator(`[data-testid="answer-option"][data-index="${correctIndex}"]`))
+      .toHaveAttribute('data-state', 'correct');
+    await expect(page.locator('[data-testid="listening-next"]')).toBeVisible();
+
+    await page.locator('[data-testid="listening-next"]').click();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2');
+  });
+
+  test('resume picks up mid-session save and continues from the correct question', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const bank = window.vocabularyBank || [];
+      const words = bank.slice(0, 5).map((w) => ({
+        word: w.word,
+        category: w.category,
+        translation: w.translation,
+        hebrew: w.translation,
+        picture: w.picture,
+        options: [w.word, 'x', 'y', 'z'],
+        correct: 0,
+      }));
+      localStorage.setItem(
+        `savedGame_${userId}_listening`,
+        JSON.stringify({
+          gameType: 'listening',
+          currentQuestionIndex: 3,
+          score: 30,
+          totalQuestions: 5,
+          timestamp: Date.now(),
+          shuffledQuestions: words,
+          gameElapsedMs: 0,
+          selectedCategories: [],
+        }),
+      );
+    });
+
+    await gotoHash(page, '/game/listening');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('4');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('5');
+  });
+
+  test('audio counters persist across refresh', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/listening');
+    await page.waitForTimeout(900);
+
+    // Auto-play consumes 1 play (also clears gate). Click manual twice more.
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.waitForTimeout(200);
+
+    const beforeRefresh = await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const raw = localStorage.getItem(`v2_listening_audio_${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(beforeRefresh).toBeTruthy();
+    expect(beforeRefresh.audioPlaysLeft).toBeLessThan(8);
+
+    await page.reload();
+    await page.waitForTimeout(1200);
+
+    const afterRefresh = await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const raw = localStorage.getItem(`v2_listening_audio_${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(afterRefresh.audioPlaysLeft).toBe(beforeRefresh.audioPlaysLeft);
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/listening');
+    await page.waitForTimeout(800);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {

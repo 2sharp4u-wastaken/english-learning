@@ -129,6 +129,25 @@ React route /#/game/vocabulary
 
 Legacy `games/vocabulary-game.js`, `#vocabulary-game` DOM, and `_setupVocabularyListeners` are no longer reached for this route. They remain in the tree until Slice 4.4.
 
+## Listening Game (React — Slice 3.2)
+
+```
+React route /#/game/listening
+  └─ GameHostPage.tsx → REACT_GAMES['listening'] → ListeningGamePage.tsx
+      ├─ beginListeningSession()  (src/bridge/listening.ts)
+      │   ├─ speechManager.setGameContext('listening')
+      │   ├─ V2 gating mirrors gameLogic.js
+      │   │   └─ pool < 4 → render <ListeningLearnFirst />
+      │   └─ gameManager.smartQuestionSelection(pool) → shuffledQuestions
+      ├─ Loop: <MediaPromptCard> (audio-only — no English word) + <AnswerGrid> + <FeedbackBanner>
+      │   ├─ Auto-play on each question → 1-play gate clears, options reveal
+      │   └─ recordListeningAnswer() → recordWordAttempt + scoreManager.addPoints + saveGameState
+      └─ Final question → finishListeningSession() → gameManager.endGame()
+          → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
+```
+
+Legacy `games/listening-game.js` and `#listening-game` DOM are no longer reached for this route. They remain in the tree until Slice 4.4.
+
 ## Critical File Locations
 
 | Function | File | Line |

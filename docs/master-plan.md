@@ -1137,7 +1137,26 @@ Acceptance criteria met:
 - `npm run build` clean; `tsc --noEmit` clean; full Playwright React suite (33 tests) green.
 
 
-**Slice 3.2: Listening** — same model with audio prompt. ~249 lines. Template files to clone: `src/bridge/vocabulary.ts` → `src/bridge/listening.ts`; `src/features/games/vocabulary/VocabularyGamePage.tsx` → `src/features/games/listening/ListeningGamePage.tsx`. Differences vs 3.1: no English word shown in the prompt (omit `MediaPromptCard.word` so it renders audio-only), audio gate may want a smaller required-plays count or be replaced by the audio-plays-before-answer model the legacy `games/listening-game.js` uses — check that file first. Reuses every shared primitive + hook unchanged.
+**Slice 3.2: Listening** — same model with audio prompt. ~249 lines. ✅ shipped.
+
+Status: complete (2026-05-12). Followed Slice 3.1 template. Differences vs 3.1:
+
+- Prompt is audio-first: `MediaPromptCard` omits `word`, renders `media` (picture/emoji) + `translation` (Hebrew) + icon-only audio button. The English word is never shown — the player must identify it from the audio.
+- `REQUIRED_PLAYS_BEFORE_REVEAL = 1` (vs vocab's 3). Matches legacy `games/listening-game.js`, which reveals options after the first auto-play completes. Voluntary re-plays still consume the per-question `audioPlaysAllowed` budget.
+- caseMode applied to **option labels** (English) instead of the prompt word.
+
+Files added:
+
+- `src/bridge/listening.ts` — clone of `src/bridge/vocabulary.ts` keyed to `'listening'` gameType + `v2_listening_audio_<userId>` audio-state key.
+- `src/features/games/listening/ListeningGamePage.tsx` — clone of `VocabularyGamePage` with the prompt + gate differences above.
+- `src/features/games/listening/components/ListeningLearnFirst.tsx` — copy of vocab learn-first copy (≥4 learned words required).
+
+Files modified:
+
+- `src/features/games/reactGames.ts` — added `'listening'` to `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — registered `listening: ListeningGamePage`.
+- `tests/react-routes.spec.js` — Slice 3.2 block (6 tests: empty state, happy path with no English word visible, incorrect→next, resume, audio-state persistence across refresh, exit dialog).
+- `docs/wiring-map.md` — "Listening Game (React — Slice 3.2)" cause/effect chain.
 **Slice 3.3: Picture Match** — image-heavy answer layout. ~118 lines. Differences vs 3.1: `AnswerGrid` with `variant="media"`, options carry `media` (image element) instead of `label`. Prompt renders a single Hebrew word; no audio gate (legacy doesn't have one).
 **Slice 3.4: True or Not** — binary answer variant. ~217 lines. Differences vs 3.1: 2-option `AnswerGrid` (`columns={2}`), prompt is a sentence + image, options are כן/לא or true/false. Question shape includes a boolean correctness flag rather than `correct` index — adapt in the bridge.
 
