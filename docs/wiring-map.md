@@ -148,6 +148,26 @@ React route /#/game/listening
 
 Legacy `games/listening-game.js` and `#listening-game` DOM are no longer reached for this route. They remain in the tree until Slice 4.4.
 
+## Picture Match Game (React — Slice 3.3)
+
+```
+React route /#/game/picture-match
+  └─ GameHostPage.tsx → REACT_GAMES['picture-match'] → PictureMatchGamePage.tsx
+      ├─ beginPictureMatchSession()  (src/bridge/picture-match.ts)
+      │   ├─ speechManager.setGameContext('picture-match')
+      │   ├─ V2 gating mirrors gameLogic.js
+      │   │   └─ pool < 4 → render <PictureMatchLearnFirst />
+      │   └─ gameManager.smartQuestionSelection(pool) → shuffledQuestions
+      ├─ Loop: <MediaPromptCard word=question.word audioIconOnly> + <AnswerGrid variant="media" columns=4>
+      │   ├─ Auto-play on each question → 1-play gate clears, options reveal
+      │   ├─ <OptionPicture> honors window.wordImageOverrides → real image OR emoji fallback
+      │   └─ recordPictureMatchAnswer() → recordWordAttempt + scoreManager.addPoints + saveGameState
+      └─ Final question → finishPictureMatchSession() → gameManager.endGame()
+          → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
+```
+
+Legacy `games/picture-match-game.js` and `#picture-match-game` DOM are no longer reached for this route. They remain in the tree until Slice 4.4.
+
 ## Critical File Locations
 
 | Function | File | Line |

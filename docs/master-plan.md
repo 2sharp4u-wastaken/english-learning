@@ -1157,7 +1157,27 @@ Files modified:
 - `src/features/games/GameHostPage.tsx` — registered `listening: ListeningGamePage`.
 - `tests/react-routes.spec.js` — Slice 3.2 block (6 tests: empty state, happy path with no English word visible, incorrect→next, resume, audio-state persistence across refresh, exit dialog).
 - `docs/wiring-map.md` — "Listening Game (React — Slice 3.2)" cause/effect chain.
-**Slice 3.3: Picture Match** — image-heavy answer layout. ~118 lines. Differences vs 3.1: `AnswerGrid` with `variant="media"`, options carry `media` (image element) instead of `label`. Prompt renders a single Hebrew word; no audio gate (legacy doesn't have one).
+**Slice 3.3: Picture Match** — image-heavy answer layout. ~118 lines. ✅ shipped.
+
+Status: complete (2026-05-12). Followed Slice 3.1 template. Differences vs 3.1:
+
+- Options are pictures, not text: `AnswerGrid` rendered with `variant="media"`, `columns={4}`, and each option carries `media` (image or emoji) instead of `label`. `option.ariaLabel` set from the English word for a11y.
+- Prompt shows the English target word (audio-icon-only play button + 1-play reveal gate). Legacy also auto-plays the English word and reveals options after the first play — same model as Listening. Reusing `REQUIRED_PLAYS_BEFORE_REVEAL = 1` + the `audioPlaysAllowed` budget. (Master-plan's earlier "no audio gate" note was a misread of the legacy code.)
+- `caseMode` applied to the **prompt word** (English), like vocab.
+- Hebrew translation hidden from the prompt to keep the cue audio-first (matches legacy, which hides `picture-match-hebrew`).
+
+Files added:
+
+- `src/bridge/picture-match.ts` — clone of `src/bridge/listening.ts` keyed to `'picture-match'` gameType + `v2_picture_match_audio_<userId>` audio-state key. `PictureMatchOption` is `{ word, picture?, imageUrl? }` (vs listening's string options).
+- `src/features/games/picture-match/PictureMatchGamePage.tsx` — clone of `ListeningGamePage` with media-option rendering (`OptionPicture` honors `wordImageOverrides`).
+- `src/features/games/picture-match/components/PictureMatchLearnFirst.tsx` — copy of listening learn-first (≥4 learned words required for a viable 4-option pool).
+
+Files modified:
+
+- `src/features/games/reactGames.ts` — added `'picture-match'` to `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — registered `'picture-match': PictureMatchGamePage`.
+- `tests/react-routes.spec.js` — Slice 3.3 block (6 tests: learn-first, happy path with English word visible + media variant, incorrect→next, resume with media options, audio-state persistence across refresh, exit dialog).
+- `docs/wiring-map.md` — "Picture Match Game (React — Slice 3.3)" cause/effect chain.
 **Slice 3.4: True or Not** — binary answer variant. ~217 lines. Differences vs 3.1: 2-option `AnswerGrid` (`columns={2}`), prompt is a sentence + image, options are כן/לא or true/false. Question shape includes a boolean correctness flag rather than `correct` index — adapt in the bridge.
 
 ### Wave 2: Text-building games — BACKLOG
