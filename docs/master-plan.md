@@ -1102,7 +1102,39 @@ Order rationale: start with the simplest and most representative games to valida
 
 These games share a question→answer→feedback loop. Migrating them first validates the shared primitives.
 
-**Slice 3.1: Vocabulary** — the canonical question→answer game. ~266 lines.
+**Slice 3.1: Vocabulary** — the canonical question→answer game. ~266 lines. ✅ shipped.
+
+Status: complete (2026-05-10). Pattern locked in: React UI drives the loop, bridges call directly into the legacy `gameManager` / `scoreManager` / `progressManager` / `speechManager`. `gameLogic.js`, `games/vocabulary-game.js`, and the managers were not modified — the legacy `#vocabulary-game` container stays in `index.html` until Slice 4.4. Slices 3.2–3.4 reuse the bridge shape from `src/bridge/vocabulary.ts` (begin → recordAnswer → finish → abort).
+
+Files added:
+
+- `src/bridge/vocabulary.ts` — session lifecycle + V2 gating; calls `gameManager.smartQuestionSelection`, `recordWordAttempt`, `scoreManager.addPoints`, `saveGameState`, `endGame`.
+- `src/bridge/audio.ts` — thin wrapper over `window.speechManager`.
+- `src/bridge/feedback.ts` — wraps global `getFeedback` + `confetti` + `SettingsManager.getSettings().showConfetti`.
+- `src/features/games/vocabulary/VocabularyGamePage.tsx` — `GameScreenShell` + `MediaPromptCard` + `AnswerGrid` + `FeedbackBanner` + `RewardModal` + `ExitConfirmDialog`.
+- `src/features/games/vocabulary/components/VocabularyLearnFirst.tsx` — React port of the legacy `.learn-first-prompt`; CTA routes to `/game/word-journey`.
+
+Files modified:
+
+- `src/features/games/GameHostPage.tsx` — branches on `gameId`; renders `VocabularyGamePage` when matched, otherwise falls through to `launchGame`. Re-applies the `react-shell-active` body class while a React game owns the route so legacy DOM stays suppressed.
+- `tests/react-routes.spec.js` — Slice 3.1 block (4 tests: empty state, happy path with progress advancement, incorrect-answer reveal + manual next, header back → exit dialog).
+- `docs/wiring-map.md` — new "Vocabulary Game (React — Slice 3.1)" cause/effect chain.
+
+Acceptance criteria met:
+
+- `/#/game/vocabulary` renders the React screen — `performGameSwitch('vocabulary')` is never called.
+- Question pool, distractors, ordering, and length match legacy (uses `gameManager.smartQuestionSelection` + `applyDifficultyGate` + V2 gating).
+- Scoring parity: `scoreManager.addPoints('vocabulary', 10)` on correct; `recordWordAttempt(word, category, isCorrect, 0, 'vocabulary')` and `saveGameState()` on every answer.
+- V2 gating: pool < 4 renders the React empty state; legacy `.learn-first-prompt` is never DOM-injected.
+- Audio parity: word auto-plays via `speechManager.speakWord`; feedback audio via `speechManager.speak`; `setGameContext('vocabulary')` on mount; `cancelSpeech` on unmount and on every new question.
+- Confetti fires on correct answers when `settings.showConfetti` is true.
+- After the configured `questionsPerGame` (default 10) the React `RewardModal` opens with score/correct/total.
+- Mobile + RTL preserved (shared primitives are RTL-correct).
+- Header back opens `ExitConfirmDialog`; confirm aborts the legacy session and routes to `/home`.
+- No regression in non-vocabulary games — they still launch via the existing `launchGame` path.
+- `npm run build` clean; `tsc --noEmit` clean; full Playwright React suite (33 tests) green.
+
+
 **Slice 3.2: Listening** — same model with audio prompt. ~249 lines.
 **Slice 3.3: Picture Match** — image-heavy answer layout. ~118 lines.
 **Slice 3.4: True or Not** — binary answer variant. ~217 lines.

@@ -111,6 +111,24 @@ getFilteredWordsForGame(gameType)
 
 ---
 
+## Vocabulary Game (React — Slice 3.1)
+
+```
+React route /#/game/vocabulary
+  └─ GameHostPage.tsx → REACT_GAMES['vocabulary'] → VocabularyGamePage.tsx
+      ├─ beginVocabularySession()  (src/bridge/vocabulary.ts)
+      │   ├─ speechManager.setGameContext('vocabulary')
+      │   ├─ V2 gating mirrors gameLogic.js:2244–2257
+      │   │   └─ pool < 4 → render <VocabularyLearnFirst />
+      │   └─ gameManager.smartQuestionSelection(pool) → shuffledQuestions
+      ├─ Loop: <MediaPromptCard> + <AnswerGrid> + <FeedbackBanner>
+      │   └─ recordVocabularyAnswer() → recordWordAttempt + scoreManager.addPoints + saveGameState
+      └─ Final question → finishVocabularySession() → gameManager.endGame()
+          → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
+```
+
+Legacy `games/vocabulary-game.js`, `#vocabulary-game` DOM, and `_setupVocabularyListeners` are no longer reached for this route. They remain in the tree until Slice 4.4.
+
 ## Critical File Locations
 
 | Function | File | Line |

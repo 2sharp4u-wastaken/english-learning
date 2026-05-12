@@ -568,6 +568,133 @@ test.describe('Slice 2.3: Shared interaction primitives', () => {
   });
 });
 
+// ─── Slice 3.1: Vocabulary Game (React) ─────────────────────────────────────
+
+/**
+ * Build a learnedWords object from the first N entries of the live
+ * vocabularyBank, so the V2 gating filter in `bridge/vocabulary.ts` admits
+ * them into the question pool.
+ */
+async function seedLearnedFromBank(page, count) {
+  return await page.evaluate((n) => {
+    const bank = window.vocabularyBank || [];
+    const learned = {};
+    for (const w of bank.slice(0, n)) {
+      learned[`${w.word.toLowerCase()}_${w.category}`] = {
+        graduatedDate: '2026-03-20',
+        journeyScore: 90,
+        journeyCompletions: 1,
+        reinforcedIn: [],
+        lastPracticed: '2026-03-20',
+      };
+    }
+    const userId = localStorage.getItem('currentUser');
+    const key = `v2_userProgress_${userId}`;
+    const existing = JSON.parse(localStorage.getItem(key) || '{}');
+    existing.learnedWords = learned;
+    localStorage.setItem(key, JSON.stringify(existing));
+    if (window.app) {
+      window.app.userProgress = existing;
+      if (window.app.progressManager) {
+        window.app.progressManager.learnedWords = learned;
+      }
+    }
+    return Object.keys(learned).length;
+  }, count);
+}
+
+test.describe('Slice 3.1: Vocabulary Game (React)', () => {
+  test('learn-first empty state shows when fewer than 4 words are learned', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/game/vocabulary');
+    await page.waitForTimeout(500);
+
+    await expect(page.locator('[data-testid="vocabulary-learn-first"]')).toBeVisible();
+    await expect(page.locator('[data-testid="answer-grid"]')).toHaveCount(0);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('happy path: question + 4 options render and progress advances after correct answer', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    const learned = await seedLearnedFromBank(page, 8);
+    expect(learned).toBeGreaterThanOrEqual(4);
+
+    await gotoHash(page, '/game/vocabulary');
+    await page.waitForTimeout(800);
+
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+    await expect(page.locator('[data-testid="media-prompt-word"]')).toBeVisible();
+    await expect(page.locator('[data-testid="answer-option"]')).toHaveCount(4);
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+
+    // Click the option whose label matches the current question's correct answer
+    // (read from the React-driven gameManager state).
+    const correctIndex = await page.evaluate(() => {
+      const m = window.gameManager;
+      const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
+      return q?.correct ?? -1;
+    });
+    expect(correctIndex).toBeGreaterThanOrEqual(0);
+
+    await page.locator(`[data-testid="answer-option"][data-index="${correctIndex}"]`).click();
+    await expect(page.locator('[data-testid="answer-option"][data-index="' + correctIndex + '"]'))
+      .toHaveAttribute('data-state', 'correct');
+    await expect(page.locator('[data-testid="feedback-banner"]'))
+      .toHaveAttribute('data-variant', 'correct');
+
+    // After the auto-advance delay, progress moves to question 2 and grid resets.
+    await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
+      timeout: 4000,
+    }).toBe('2');
+    await expect(page.locator('[data-testid="answer-grid"]'))
+      .toHaveAttribute('data-revealed', 'false');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('incorrect answer reveals correct option and surfaces a Next button', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/vocabulary');
+    await page.waitForTimeout(800);
+
+    const correctIndex = await page.evaluate(() => {
+      const m = window.gameManager;
+      return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correct ?? -1;
+    });
+    expect(correctIndex).toBeGreaterThanOrEqual(0);
+    const wrongIndex = correctIndex === 0 ? 1 : 0;
+
+    await page.locator(`[data-testid="answer-option"][data-index="${wrongIndex}"]`).click();
+    await expect(page.locator(`[data-testid="answer-option"][data-index="${wrongIndex}"]`))
+      .toHaveAttribute('data-state', 'incorrect');
+    await expect(page.locator(`[data-testid="answer-option"][data-index="${correctIndex}"]`))
+      .toHaveAttribute('data-state', 'correct');
+    await expect(page.locator('[data-testid="vocabulary-next"]')).toBeVisible();
+
+    await page.locator('[data-testid="vocabulary-next"]').click();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2');
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/vocabulary');
+    await page.waitForTimeout(800);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {
