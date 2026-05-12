@@ -82,8 +82,34 @@ export function VocabularyGamePage() {
   }, [])
 
   useEffect(() => {
-    start()
+    // Legacy app.js initializes `window.app.userProgress` (and
+    // `gameManager.progressManager`) asynchronously after page load. If React
+    // mounts before that finishes — typical on a hard refresh of /game/* —
+    // V2 gating reads `learnedWords = {}` and incorrectly flashes the
+    // "learn-first" empty state. Poll briefly until the legacy state is
+    // ready, then start the session.
+    let cancelled = false
+    let attempts = 0
+    const tryStart = () => {
+      if (cancelled) return
+      const w = window as any
+      const ready =
+        !!w.gameManager &&
+        !!w.app &&
+        !!w.app.userProgress &&
+        // app.userProgress is set early; learnedWords is the field V2 gating
+        // actually consults — wait for it specifically.
+        typeof w.app.userProgress.learnedWords === 'object'
+      if (!ready && attempts < 30) {
+        attempts++
+        window.setTimeout(tryStart, 100)
+        return
+      }
+      start()
+    }
+    tryStart()
     return () => {
+      cancelled = true
       if (advanceTimer.current) {
         window.clearTimeout(advanceTimer.current)
         advanceTimer.current = null

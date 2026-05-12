@@ -90,31 +90,43 @@ export function beginVocabularySession(opts: BeginOptions = {}): VocabularySessi
       saved &&
       Array.isArray(saved.shuffledQuestions) &&
       saved.shuffledQuestions.length > 0 &&
-      typeof saved.currentQuestionIndex === 'number' &&
-      saved.currentQuestionIndex < saved.shuffledQuestions.length
+      typeof saved.currentQuestionIndex === 'number'
     ) {
-      mgr.currentGame = 'vocabulary'
-      mgr.isResuming = true
-      mgr.shuffledQuestions = saved.shuffledQuestions
-      mgr.currentQuestionIndex = saved.currentQuestionIndex
-      mgr.totalQuestions = saved.totalQuestions ?? saved.shuffledQuestions.length
-      mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
-      mgr.gameSessionStartAt = Date.now()
-      mgr.gameCoinHistoryStartIndex =
-        (window as any).app?.userProgress?.coinHistory?.length ?? 0
-      mgr.isGameActive = true
-      const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.('vocabulary') ?? 0
-      // Make sure the scoreManager reflects the resumed score (legacy does this
-      // on resume so subsequent addPoints() builds on it).
-      mgr.scoreManager?.resetScore('vocabulary')
-      if (resumeScore > 0) mgr.scoreManager?.addPoints('vocabulary', resumeScore)
-      if (mgr.lastPersistedScores) mgr.lastPersistedScores['vocabulary'] = resumeScore
-      return {
-        kind: 'ready',
-        questions: saved.shuffledQuestions,
-        total: mgr.totalQuestions,
-        resumeIndex: saved.currentQuestionIndex,
-        resumeScore,
+      // Always honor the user's CURRENT slider value, not the cap that was
+      // active when the savedGame was written. If the user has already gone
+      // past the new cap, treat the session as done and start fresh.
+      const currentCap = getSettings().questionsPerGame || 10
+      const newTotal = Math.min(
+        saved.totalQuestions ?? saved.shuffledQuestions.length,
+        currentCap,
+      )
+      if (saved.currentQuestionIndex >= newTotal) {
+        mgr.deleteGameState?.('vocabulary')
+        // fall through to a fresh session
+      } else {
+        mgr.currentGame = 'vocabulary'
+        mgr.isResuming = true
+        mgr.shuffledQuestions = saved.shuffledQuestions
+        mgr.currentQuestionIndex = saved.currentQuestionIndex
+        mgr.totalQuestions = newTotal
+        mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
+        mgr.gameSessionStartAt = Date.now()
+        mgr.gameCoinHistoryStartIndex =
+          (window as any).app?.userProgress?.coinHistory?.length ?? 0
+        mgr.isGameActive = true
+        const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.('vocabulary') ?? 0
+        // Make sure the scoreManager reflects the resumed score (legacy does this
+        // on resume so subsequent addPoints() builds on it).
+        mgr.scoreManager?.resetScore('vocabulary')
+        if (resumeScore > 0) mgr.scoreManager?.addPoints('vocabulary', resumeScore)
+        if (mgr.lastPersistedScores) mgr.lastPersistedScores['vocabulary'] = resumeScore
+        return {
+          kind: 'ready',
+          questions: saved.shuffledQuestions.slice(0, newTotal),
+          total: newTotal,
+          resumeIndex: saved.currentQuestionIndex,
+          resumeScore,
+        }
       }
     }
   } else {
