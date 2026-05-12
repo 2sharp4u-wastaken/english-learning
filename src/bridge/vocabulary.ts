@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getSettings } from './settings'
 
 export interface VocabularyQuestion {
   word: string
@@ -11,8 +12,18 @@ export interface VocabularyQuestion {
   imageUrl?: string
 }
 
+export interface VocabularySessionReady {
+  kind: 'ready'
+  questions: VocabularyQuestion[]
+  total: number
+  /** When > 0, the session was restored mid-game — jump straight to this index. */
+  resumeIndex: number
+  /** Score carried from the resumed session. */
+  resumeScore: number
+}
+
 export type VocabularySessionResult =
-  | { kind: 'ready'; questions: VocabularyQuestion[]; total: number }
+  | VocabularySessionReady
   | { kind: 'learn-first'; learnedCount: number }
 
 interface LegacyScoreManager {
@@ -40,6 +51,15 @@ interface LegacyGameManager {
   recordWordAttempt(word: string, category: string, isCorrect: boolean, responseTime: number, gameType: string): void
   saveGameState(): boolean
   endGame(gameType: string): Promise<void> | void
+  loadGameState(gameType: string): {
+    shuffledQuestions?: VocabularyQuestion[]
+    currentQuestionIndex?: number
+    totalQuestions?: number
+    score?: number
+    gameElapsedMs?: number
+    selectedCategories?: string[]
+  } | null
+  deleteGameState(gameType: string): void
 }
 
 function getMgr(): LegacyGameManager | null {
@@ -52,11 +72,56 @@ function getLearnedCount(): number {
   return Object.keys((window as any).app?.userProgress?.learnedWords ?? {}).length
 }
 
-export function beginVocabularySession(): VocabularySessionResult {
+export interface BeginOptions {
+  /** Skip the saved-state check (used by reset). */
+  fresh?: boolean
+}
+
+export function beginVocabularySession(opts: BeginOptions = {}): VocabularySessionResult {
   const mgr = getMgr()
   if (!mgr) return { kind: 'learn-first', learnedCount: 0 }
 
   setGameContext('vocabulary')
+
+  // Attempt resume — only when caller didn't ask for a fresh session.
+  if (!opts.fresh) {
+    const saved = mgr.loadGameState?.('vocabulary')
+    if (
+      saved &&
+      Array.isArray(saved.shuffledQuestions) &&
+      saved.shuffledQuestions.length > 0 &&
+      typeof saved.currentQuestionIndex === 'number' &&
+      saved.currentQuestionIndex < saved.shuffledQuestions.length
+    ) {
+      mgr.currentGame = 'vocabulary'
+      mgr.isResuming = true
+      mgr.shuffledQuestions = saved.shuffledQuestions
+      mgr.currentQuestionIndex = saved.currentQuestionIndex
+      mgr.totalQuestions = saved.totalQuestions ?? saved.shuffledQuestions.length
+      mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
+      mgr.gameSessionStartAt = Date.now()
+      mgr.gameCoinHistoryStartIndex =
+        (window as any).app?.userProgress?.coinHistory?.length ?? 0
+      mgr.isGameActive = true
+      const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.('vocabulary') ?? 0
+      // Make sure the scoreManager reflects the resumed score (legacy does this
+      // on resume so subsequent addPoints() builds on it).
+      mgr.scoreManager?.resetScore('vocabulary')
+      if (resumeScore > 0) mgr.scoreManager?.addPoints('vocabulary', resumeScore)
+      if (mgr.lastPersistedScores) mgr.lastPersistedScores['vocabulary'] = resumeScore
+      return {
+        kind: 'ready',
+        questions: saved.shuffledQuestions,
+        total: mgr.totalQuestions,
+        resumeIndex: saved.currentQuestionIndex,
+        resumeScore,
+      }
+    }
+  } else {
+    // Reset path — wipe any stale save so the fresh session doesn't get
+    // overwritten and re-resumed next time.
+    mgr.deleteGameState?.('vocabulary')
+  }
 
   // Reset session state (mirror gameLogic.js startGame for non-resume path).
   mgr.isResuming = false
@@ -84,10 +149,22 @@ export function beginVocabularySession(): VocabularySessionResult {
 
   const shuffled = mgr.smartQuestionSelection(pool) ?? []
   mgr.shuffledQuestions = shuffled
-  mgr.totalQuestions = shuffled.length
+  // Read the cap directly from settings each session so we don't drift from
+  // user-visible state when something inside legacy mutates mgr.totalQuestions
+  // (some game branches assign mgr.totalQuestions = shuffledQuestions.length).
+  // settings.questionsPerGame is the slider value the user sees in /settings.
+  const settingsCap = getSettings().questionsPerGame || 10
+  const total = Math.min(shuffled.length, settingsCap)
+  mgr.totalQuestions = total
   mgr.isGameActive = true
 
-  return { kind: 'ready', questions: shuffled, total: shuffled.length }
+  return {
+    kind: 'ready',
+    questions: shuffled.slice(0, total),
+    total,
+    resumeIndex: 0,
+    resumeScore: 0,
+  }
 }
 
 export interface AnswerOutcome {

@@ -603,6 +603,18 @@ async function seedLearnedFromBank(page, count) {
   }, count);
 }
 
+/**
+ * Drive the 3-play audio gate to the reveal point. Auto-play counts as the
+ * first play; we tap the manual play button twice to complete the gate.
+ */
+async function unlockVocabAudioGate(page) {
+  await page.waitForTimeout(400); // let the deferred auto-play fire
+  await page.locator('[data-testid="media-prompt-audio"]').click();
+  await page.locator('[data-testid="media-prompt-audio"]').click();
+  await expect(page.locator('[data-testid="answer-grid"]'))
+    .not.toHaveClass(/pointer-events-none/);
+}
+
 test.describe('Slice 3.1: Vocabulary Game (React)', () => {
   test('learn-first empty state shows when fewer than 4 words are learned', async ({ page }) => {
     const errors = captureErrors(page);
@@ -630,6 +642,9 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
     await expect(page.locator('[data-testid="media-prompt-word"]')).toBeVisible();
     await expect(page.locator('[data-testid="answer-option"]')).toHaveCount(4);
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+
+    // The 3-play audio gate hides options until the player hears the word 3 times.
+    await unlockVocabAudioGate(page);
 
     // Click the option whose label matches the current question's correct answer
     // (read from the React-driven gameManager state).
@@ -663,6 +678,8 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
     await gotoHash(page, '/game/vocabulary');
     await page.waitForTimeout(800);
 
+    await unlockVocabAudioGate(page);
+
     const correctIndex = await page.evaluate(() => {
       const m = window.gameManager;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correct ?? -1;
@@ -679,6 +696,68 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
 
     await page.locator('[data-testid="vocabulary-next"]').click();
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2');
+  });
+
+  test('audio gate hides options until the word has been heard 3 times', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/vocabulary');
+    await page.waitForTimeout(800);
+
+    // After the deferred auto-play (counts as 1), the grid should still be
+    // gated — the inline class includes pointer-events-none until the gate
+    // clears at 3 plays.
+    await expect(page.locator('[data-testid="answer-grid"]'))
+      .toHaveClass(/pointer-events-none/);
+    await expect(page.locator('[data-testid="media-prompt-audio-hint"]'))
+      .toContainText(/השמע עוד/);
+
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+
+    await expect(page.locator('[data-testid="answer-grid"]'))
+      .not.toHaveClass(/pointer-events-none/);
+    // Audio hint flips to "plays remaining" after the gate clears.
+    await expect(page.locator('[data-testid="media-prompt-audio-hint"]'))
+      .toContainText(/השמעות נותרו/);
+  });
+
+  test('resume picks up mid-session save and continues from the correct question', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    // Seed a saved vocabulary game state directly in localStorage (matches the
+    // legacy `savedGame_<userId>_vocabulary` schema written by `saveGameState`).
+    await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const bank = window.vocabularyBank || [];
+      const words = bank.slice(0, 5).map((w) => ({
+        word: w.word,
+        category: w.category,
+        translation: w.translation,
+        options: [w.translation, 'X', 'Y', 'Z'],
+        correct: 0,
+      }));
+      localStorage.setItem(
+        `savedGame_${userId}_vocabulary`,
+        JSON.stringify({
+          gameType: 'vocabulary',
+          currentQuestionIndex: 3,
+          score: 30,
+          totalQuestions: 5,
+          timestamp: Date.now(),
+          shuffledQuestions: words,
+          gameElapsedMs: 0,
+          selectedCategories: [],
+        }),
+      );
+    });
+
+    await gotoHash(page, '/game/vocabulary');
+    await page.waitForTimeout(900);
+
+    // Should land on question 4 of 5 (resumeIndex = 3, current = index + 1).
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('4');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('5');
   });
 
   test('header back button opens the exit-confirm dialog', async ({ page }) => {

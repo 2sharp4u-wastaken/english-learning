@@ -18,6 +18,8 @@ export interface MediaPromptCardProps {
   /** Hint shown under the audio button (e.g. "השמע עוד 2 פעמים") */
   audioHint?: string
   audioLabel?: string
+  /** When true, the audio button is icon-only (matches the legacy speaker button used by Word Journey, Listening, etc.). */
+  audioIconOnly?: boolean
   className?: string
 }
 
@@ -31,6 +33,7 @@ export function MediaPromptCard({
   audioDisabled = false,
   audioHint,
   audioLabel = 'השמע',
+  audioIconOnly = false,
   className,
 }: MediaPromptCardProps) {
   return (
@@ -88,13 +91,14 @@ export function MediaPromptCard({
             data-playing={audioPlaying ? 'true' : 'false'}
             aria-label={audioLabel}
             className={cn(
-              'flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--blue-400)] to-[color:var(--mint-400)] px-5 py-2.5 text-sm font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110',
+              'flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--blue-400)] to-[color:var(--mint-400)] font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110',
+              audioIconOnly ? 'size-12 p-0' : 'px-5 py-2.5 text-sm',
               'disabled:cursor-not-allowed disabled:opacity-60',
               audioPlaying && 'animate-pulse',
             )}
           >
-            <Volume2 className="size-4" aria-hidden />
-            {audioLabel}
+            <Volume2 className={audioIconOnly ? 'size-5' : 'size-4'} aria-hidden />
+            {audioIconOnly ? null : audioLabel}
           </button>
           {audioHint ? (
             <span

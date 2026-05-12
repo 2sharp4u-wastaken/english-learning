@@ -15,12 +15,13 @@ import {
   type VocabularyQuestion,
   type VocabularySessionResult,
 } from '@/bridge/vocabulary'
-import { cancelSpeech, speak, speakWord } from '@/bridge/audio'
+import { cancelSpeech, hardResetSpeech, speak, speakWord } from '@/bridge/audio'
 import {
   getGameFeedback,
   getShowConfetti,
   triggerConfetti,
 } from '@/bridge/feedback'
+import { getSettings } from '@/bridge/settings'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
 
@@ -30,6 +31,7 @@ interface FeedbackState {
 }
 
 const ADVANCE_DELAY_MS = 1500
+const REQUIRED_PLAYS_BEFORE_REVEAL = 3
 
 export function VocabularyGamePage() {
   const navigate = useNavigate()
@@ -41,20 +43,40 @@ export function VocabularyGamePage() {
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [exitOpen, setExitOpen] = useState(false)
+  // Audio gate: hide options until the player hears the word
+  // REQUIRED_PLAYS_BEFORE_REVEAL times (matches legacy vocab pre-V2 gate).
+  const [playsSoFar, setPlaysSoFar] = useState(0)
+  // Per-question audio plays budget from settings.audioPlaysAllowed.
+  const [audioPlaysLeft, setAudioPlaysLeft] = useState<number>(() =>
+    getSettings().audioPlaysAllowed ?? 8,
+  )
   const advanceTimer = useRef<number | null>(null)
   const isActiveRef = useRef(false)
+  const autoPlayedRef = useRef(false)
 
-  const start = useCallback(() => {
+  const start = useCallback((opts?: { fresh?: boolean }) => {
+    hardResetSpeech()
     cancelSpeech()
-    const result = beginVocabularySession()
+    const result = beginVocabularySession(opts ?? {})
     setSession(result)
-    setIndex(0)
-    setScore(0)
-    setCorrect(0)
+    if (result.kind === 'ready') {
+      setIndex(result.resumeIndex)
+      setScore(result.resumeScore)
+      setCorrect(Math.floor(result.resumeScore / 10))
+      setPhase('awaiting')
+      isActiveRef.current = true
+    } else {
+      setIndex(0)
+      setScore(0)
+      setCorrect(0)
+      setPhase('idle')
+      isActiveRef.current = false
+    }
     setSelectedIndex(null)
     setFeedback(null)
-    setPhase(result.kind === 'ready' ? 'awaiting' : 'idle')
-    isActiveRef.current = result.kind === 'ready'
+    setPlaysSoFar(0)
+    setAudioPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
+    autoPlayedRef.current = false
   }, [])
 
   useEffect(() => {
@@ -76,17 +98,60 @@ export function VocabularyGamePage() {
   const total = session?.kind === 'ready' ? session.total : 0
   const current: VocabularyQuestion | null =
     phase === 'finished' || !questions[index] ? null : questions[index]
+  const optionsHidden = playsSoFar < REQUIRED_PLAYS_BEFORE_REVEAL
 
-  // Auto-play the word audio whenever a fresh question becomes available.
+  const playWord = useCallback(
+    (countTowardGate: boolean) => {
+      if (!current) return
+      if (audioPlaysLeft <= 0) return
+      setAudioPlaysLeft((n) => Math.max(0, n - 1))
+      if (countTowardGate) setPlaysSoFar((n) => n + 1)
+      void speakWord(current.word, 'vocabulary')
+    },
+    [audioPlaysLeft, current],
+  )
+
+  // Auto-play on each new question; counts toward the reveal gate.
   useEffect(() => {
     if (!current) return
-    cancelSpeech()
-    speakWord(current.word, 'vocabulary')
+    autoPlayedRef.current = false
+    const id = window.setTimeout(() => {
+      if (autoPlayedRef.current) return
+      autoPlayedRef.current = true
+      // First play of a fresh question — always count toward the gate even if
+      // budget is exhausted (gate counter and budget counter are separate, but
+      // we keep them in sync here for simplicity).
+      setAudioPlaysLeft((n) => Math.max(0, n - 1))
+      setPlaysSoFar((n) => n + 1)
+      void speakWord(current.word, 'vocabulary')
+    }, 250)
+    return () => window.clearTimeout(id)
   }, [current])
+
+  const handleManualPlay = useCallback(() => {
+    playWord(true)
+  }, [playWord])
+
+  const handleReset = useCallback(() => {
+    if (!window.confirm('האם אתה בטוח שברצונך לאפס את המשחק? כל ההתקדמות תאבד.')) {
+      return
+    }
+    if (advanceTimer.current) {
+      window.clearTimeout(advanceTimer.current)
+      advanceTimer.current = null
+    }
+    if (isActiveRef.current) {
+      abortVocabularySession()
+      isActiveRef.current = false
+    }
+    start({ fresh: true })
+  }, [start])
 
   const advance = useCallback(() => {
     setFeedback(null)
     setSelectedIndex(null)
+    setPlaysSoFar(0)
+    setAudioPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
     setIndex((prev) => {
       const next = prev + 1
       if (next >= total) {
@@ -104,7 +169,7 @@ export function VocabularyGamePage() {
 
   const handleAnswer = useCallback(
     (selected: number) => {
-      if (!current || phase !== 'awaiting') return
+      if (!current || phase !== 'awaiting' || optionsHidden) return
       setSelectedIndex(selected)
       const outcome = recordVocabularyAnswer(current, selected)
       const fb = getGameFeedback('vocabulary', outcome.isCorrect ? 'correct' : 'incorrect')
@@ -115,7 +180,7 @@ export function VocabularyGamePage() {
         setCorrect((c) => c + 1)
         if (getShowConfetti()) triggerConfetti()
       }
-      if (fb.audio) speak(fb.audio)
+      if (fb.audio) void speak(fb.audio)
       if (outcome.isCorrect) {
         if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
         advanceTimer.current = window.setTimeout(() => {
@@ -124,7 +189,7 @@ export function VocabularyGamePage() {
         }, ADVANCE_DELAY_MS)
       }
     },
-    [advance, current, phase],
+    [advance, current, optionsHidden, phase],
   )
 
   const handleNextAfterIncorrect = useCallback(() => {
@@ -162,8 +227,9 @@ export function VocabularyGamePage() {
     () => ({
       current: phase === 'finished' ? total : Math.min(index + 1, total || 1),
       total: total || 1,
+      onReset: handleReset,
     }),
-    [index, phase, total],
+    [handleReset, index, phase, total],
   )
 
   if (!session) {
@@ -188,6 +254,17 @@ export function VocabularyGamePage() {
     ? current.options.map((label, i) => ({ key: i, label }))
     : []
 
+  const clicksLeftToReveal = Math.max(
+    0,
+    REQUIRED_PLAYS_BEFORE_REVEAL - playsSoFar,
+  )
+  const audioHint =
+    optionsHidden && clicksLeftToReveal > 0
+      ? `השמע עוד ${clicksLeftToReveal} ${clicksLeftToReveal === 1 ? 'פעם' : 'פעמים'}`
+      : audioPlaysLeft <= 0
+        ? 'נגמרו ההשמעות'
+        : `השמעות נותרו: ${audioPlaysLeft}`
+
   const footer =
     phase === 'answered' && feedback?.variant === 'incorrect' ? (
       <button
@@ -205,13 +282,21 @@ export function VocabularyGamePage() {
       <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
         {current ? (
           <div className="flex flex-1 flex-col gap-4">
-            <MediaPromptCard word={current.word} />
+            <MediaPromptCard
+              word={current.word}
+              onPlayAudio={handleManualPlay}
+              audioDisabled={audioPlaysLeft <= 0}
+              audioLabel="השמע מילה"
+              audioIconOnly
+              audioHint={audioHint}
+            />
             <AnswerGrid
               options={answerOptions}
               onSelect={handleAnswer}
               selectedIndex={selectedIndex}
               correctIndex={current.correct}
               revealed={phase === 'answered'}
+              hidden={optionsHidden}
               autoFocusFirst
             />
           </div>
@@ -234,7 +319,7 @@ export function VocabularyGamePage() {
         score={score}
         total={total}
         correct={correct}
-        onPlayAgain={start}
+        onPlayAgain={() => start({ fresh: true })}
         onExit={() => navigate('/home')}
       />
     </>

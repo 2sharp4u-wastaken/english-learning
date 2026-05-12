@@ -4,10 +4,16 @@ import { TopNav } from './TopNav'
 import { MobileTopBar } from './MobileTopBar'
 import { MobileBottomNav } from './MobileBottomNav'
 import { PageContainer } from './PageContainer'
+import { isReactGame } from '@/features/games/reactGames'
 
 export function AppShell() {
   const { pathname } = useLocation()
   const isGameRoute = pathname.startsWith('/game/')
+  const gameId = isGameRoute ? pathname.slice('/game/'.length) : null
+  // A "React-driven" route is anything that renders inside #react-root —
+  // i.e. every hub route plus any game whose ID is in REACT_GAME_IDS. Legacy
+  // games need the class removed so their DOM (#listening-game etc.) shows.
+  const isReactDriven = !isGameRoute || isReactGame(gameId)
 
   useEffect(() => {
     const reactRoot = document.getElementById('react-root')
@@ -18,7 +24,7 @@ export function AppShell() {
     // with !important. Class-based hiding survives the legacy
     // top-header.js cssText overwrites; inline display:none did not.
 
-    if (isGameRoute) {
+    if (!isReactDriven) {
       reactRoot.style.position = ''
       reactRoot.style.inset = ''
       reactRoot.style.zIndex = ''
@@ -43,7 +49,7 @@ export function AppShell() {
       reactRoot.style.background = ''
       document.body.classList.remove('react-shell-active')
     }
-  }, [isGameRoute])
+  }, [isReactDriven])
 
   if (isGameRoute) {
     return <Outlet />

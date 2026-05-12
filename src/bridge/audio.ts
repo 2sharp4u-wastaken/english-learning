@@ -17,6 +17,22 @@ export function cancelSpeech(): void {
   getSpeech()?.cancelSpeech()
 }
 
+/**
+ * Hard-reset the browser's speech synthesis queue. The legacy
+ * `speechManager.cancelSpeech()` is a no-op (Chrome bug workaround), but in
+ * practice the queue's `pending` flag can get stuck true, after which every
+ * `speak()` short-circuits. Calling the native `cancel()` clears that state.
+ * Use sparingly — at the start of a fresh game session, not between
+ * utterances.
+ */
+export function hardResetSpeech(): void {
+  try {
+    window.speechSynthesis?.cancel()
+  } catch {
+    /* ignore */
+  }
+}
+
 export async function speakWord(word: string, gameContext = 'vocabulary'): Promise<void> {
   const sm = getSpeech()
   if (!sm) return
