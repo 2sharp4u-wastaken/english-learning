@@ -1102,6 +1102,8 @@ Order rationale: start with the simplest and most representative games to valida
 
 These games share a question→answer→feedback loop. Migrating them first validates the shared primitives.
 
+**Template (read before starting any Wave 1 slice):** Slice 3.1 locked in the pattern. New slices copy `src/bridge/vocabulary.ts` (begin/record/finish/abort + resume + audio-state persistence + V2 gating), copy `src/features/games/vocabulary/VocabularyGamePage.tsx` (mount-time legacy-readiness poll, audio gate, plays counter, manual play button, auto-play on `current` change with voice-readiness wait, gesture-free), register the new game ID in `src/features/games/reactGames.ts` and `src/features/games/GameHostPage.tsx`, then add a Slice 3.X test block to `tests/react-routes.spec.js`. Shared hooks/components to reuse without modification: `useTextPrefs` (case + nikud), `MediaPromptCard` (`audioIconOnly` mode + audio-only via no `word` prop), `AnswerGrid`, `FeedbackBanner`, `RewardModal`, `ExitConfirmDialog`, `QuestionProgress`, `cancelSpeech`/`speakWord`/`hardResetSpeech`, `getGameFeedback`/`getShowConfetti`/`triggerConfetti`, `stripNikud`, `getSettings`.
+
 **Slice 3.1: Vocabulary** — the canonical question→answer game. ~266 lines. ✅ shipped.
 
 Status: complete (2026-05-10). Pattern locked in: React UI drives the loop, bridges call directly into the legacy `gameManager` / `scoreManager` / `progressManager` / `speechManager`. `gameLogic.js`, `games/vocabulary-game.js`, and the managers were not modified — the legacy `#vocabulary-game` container stays in `index.html` until Slice 4.4. Slices 3.2–3.4 reuse the bridge shape from `src/bridge/vocabulary.ts` (begin → recordAnswer → finish → abort).
@@ -1135,9 +1137,9 @@ Acceptance criteria met:
 - `npm run build` clean; `tsc --noEmit` clean; full Playwright React suite (33 tests) green.
 
 
-**Slice 3.2: Listening** — same model with audio prompt. ~249 lines.
-**Slice 3.3: Picture Match** — image-heavy answer layout. ~118 lines.
-**Slice 3.4: True or Not** — binary answer variant. ~217 lines.
+**Slice 3.2: Listening** — same model with audio prompt. ~249 lines. Template files to clone: `src/bridge/vocabulary.ts` → `src/bridge/listening.ts`; `src/features/games/vocabulary/VocabularyGamePage.tsx` → `src/features/games/listening/ListeningGamePage.tsx`. Differences vs 3.1: no English word shown in the prompt (omit `MediaPromptCard.word` so it renders audio-only), audio gate may want a smaller required-plays count or be replaced by the audio-plays-before-answer model the legacy `games/listening-game.js` uses — check that file first. Reuses every shared primitive + hook unchanged.
+**Slice 3.3: Picture Match** — image-heavy answer layout. ~118 lines. Differences vs 3.1: `AnswerGrid` with `variant="media"`, options carry `media` (image element) instead of `label`. Prompt renders a single Hebrew word; no audio gate (legacy doesn't have one).
+**Slice 3.4: True or Not** — binary answer variant. ~217 lines. Differences vs 3.1: 2-option `AnswerGrid` (`columns={2}`), prompt is a sentence + image, options are כן/לא or true/false. Question shape includes a boolean correctness flag rather than `correct` index — adapt in the bridge.
 
 ### Wave 2: Text-building games — BACKLOG
 
