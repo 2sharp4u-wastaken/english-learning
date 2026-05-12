@@ -1,3 +1,5 @@
+import { getSettings } from './settings'
+
 export interface GameFeedback {
   text: string
   audio?: string | null
@@ -5,10 +7,6 @@ export interface GameFeedback {
 
 interface ConfettiFn {
   (opts: Record<string, unknown>): void
-}
-
-interface SettingsManagerLike {
-  getSettings(): { showConfetti?: boolean }
 }
 
 export function getGameFeedback(
@@ -22,13 +20,15 @@ export function getGameFeedback(
   return fn(gameType, kind) ?? { text: '', audio: null }
 }
 
+// Read confetti pref through the settings bridge so we honor both legacy
+// (`englishLearningSettings`) and v2 (`v2_englishLearningSettings`) keys plus
+// the `showConfetti: true` default. Legacy `SettingsManager.getSettings()`
+// reads the unprefixed key only — broken when only the v2 key is populated.
 export function getShowConfetti(): boolean {
-  const sm = (window as any).SettingsManager as SettingsManagerLike | undefined
-  if (!sm?.getSettings) return false
   try {
-    return sm.getSettings().showConfetti !== false
+    return getSettings().showConfetti !== false
   } catch {
-    return false
+    return true
   }
 }
 
