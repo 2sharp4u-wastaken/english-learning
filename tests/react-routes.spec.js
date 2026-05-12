@@ -760,6 +760,44 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
     await expect(page.locator('[data-testid="qp-total"]')).toHaveText('5');
   });
 
+  test('audio counters persist across refresh (no endless-plays exploit)', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/vocabulary');
+    await page.waitForTimeout(800);
+
+    // Auto-play consumes 1 play; click manual play 3 more times to bring
+    // audioPlaysLeft from 8 → 4 and playsSoFar from 1 → 4 (already past the
+    // 3-play gate).
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.waitForTimeout(200);
+
+    const beforeRefresh = await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const raw = localStorage.getItem(`v2_vocab_audio_${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(beforeRefresh).toBeTruthy();
+    expect(beforeRefresh.audioPlaysLeft).toBeLessThan(8);
+    expect(beforeRefresh.playsSoFar).toBeGreaterThanOrEqual(3);
+
+    // Reload — counters must NOT reset.
+    await page.reload();
+    await page.waitForTimeout(1200);
+
+    const afterRefresh = await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const raw = localStorage.getItem(`v2_vocab_audio_${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(afterRefresh.audioPlaysLeft).toBe(beforeRefresh.audioPlaysLeft);
+    // Options should already be revealed (no gate) because we were past 3 plays.
+    await expect(page.locator('[data-testid="answer-grid"]'))
+      .not.toHaveClass(/pointer-events-none/);
+  });
+
   test('case + nikud toggles in the game header transform the prompt and options', async ({ page }) => {
     await seedUser(page);
     await seedLearnedFromBank(page, 8);

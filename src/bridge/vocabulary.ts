@@ -238,3 +238,44 @@ export function abortVocabularySession(): void {
   mgr.isGameActive = false
   mgr.currentGame = null
 }
+
+// ── Per-question audio counters (persisted across refresh) ──────────────────
+
+interface VocabAudioState {
+  questionIndex: number
+  playsSoFar: number
+  audioPlaysLeft: number
+}
+
+function audioKey(): string {
+  const userId = localStorage.getItem('currentUser') || 'default'
+  return `v2_vocab_audio_${userId}`
+}
+
+export function loadVocabAudioState(forIndex: number): VocabAudioState | null {
+  try {
+    const raw = localStorage.getItem(audioKey())
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as VocabAudioState
+    if (parsed.questionIndex !== forIndex) return null
+    return parsed
+  } catch {
+    return null
+  }
+}
+
+export function saveVocabAudioState(state: VocabAudioState): void {
+  try {
+    localStorage.setItem(audioKey(), JSON.stringify(state))
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
+export function clearVocabAudioState(): void {
+  try {
+    localStorage.removeItem(audioKey())
+  } catch {
+    /* ignore */
+  }
+}

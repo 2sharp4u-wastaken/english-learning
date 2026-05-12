@@ -10,8 +10,11 @@ import { VocabularyLearnFirst } from './components/VocabularyLearnFirst'
 import {
   abortVocabularySession,
   beginVocabularySession,
+  clearVocabAudioState,
   finishVocabularySession,
+  loadVocabAudioState,
   recordVocabularyAnswer,
+  saveVocabAudioState,
   type VocabularyQuestion,
   type VocabularySessionResult,
 } from '@/bridge/vocabulary'
@@ -59,6 +62,7 @@ export function VocabularyGamePage() {
   const start = useCallback((opts?: { fresh?: boolean }) => {
     hardResetSpeech()
     cancelSpeech()
+    if (opts?.fresh) clearVocabAudioState()
     const result = beginVocabularySession(opts ?? {})
     setSession(result)
     if (result.kind === 'ready') {
@@ -67,18 +71,33 @@ export function VocabularyGamePage() {
       setCorrect(Math.floor(result.resumeScore / 10))
       setPhase('awaiting')
       isActiveRef.current = true
+      // Restore per-question audio counters if this is a resume of the same
+      // question. Otherwise start fresh for the current question.
+      const restored = loadVocabAudioState(result.resumeIndex)
+      const settingsBudget = getSettings().audioPlaysAllowed ?? 8
+      if (restored) {
+        setPlaysSoFar(restored.playsSoFar)
+        setAudioPlaysLeft(restored.audioPlaysLeft)
+        // If options were already revealed before refresh, skip the auto-play
+        // (the user already heard the word the required number of times).
+        autoPlayedRef.current = restored.playsSoFar >= REQUIRED_PLAYS_BEFORE_REVEAL
+      } else {
+        setPlaysSoFar(0)
+        setAudioPlaysLeft(settingsBudget)
+        autoPlayedRef.current = false
+      }
     } else {
       setIndex(0)
       setScore(0)
       setCorrect(0)
       setPhase('idle')
       isActiveRef.current = false
+      setPlaysSoFar(0)
+      setAudioPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
+      autoPlayedRef.current = false
     }
     setSelectedIndex(null)
     setFeedback(null)
-    setPlaysSoFar(0)
-    setAudioPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
-    autoPlayedRef.current = false
   }, [])
 
   useEffect(() => {
@@ -122,6 +141,17 @@ export function VocabularyGamePage() {
     }
   }, [start])
 
+  // Persist per-question audio counters so a refresh doesn't reset them
+  // (otherwise the user could refresh to get unlimited plays + auto-reveal).
+  useEffect(() => {
+    if (phase !== 'awaiting' && phase !== 'answered') return
+    saveVocabAudioState({
+      questionIndex: index,
+      playsSoFar,
+      audioPlaysLeft,
+    })
+  }, [audioPlaysLeft, index, phase, playsSoFar])
+
   const questions = session?.kind === 'ready' ? session.questions : []
   const total = session?.kind === 'ready' ? session.total : 0
   const current: VocabularyQuestion | null =
@@ -144,19 +174,37 @@ export function VocabularyGamePage() {
   // `allowOverlap: true` bypasses legacy speech queue's `pending` short-circuit
   // (legacy speak() returns immediately if `synthesis.pending` is true, which
   // can linger after the post-answer feedback utterance and silently swallow
-  // the next question's auto-play). Manual play button keeps the default
-  // `allowOverlap: false` so rapid taps don't pile up.
+  // the next question's auto-play). Manual play button keeps the default so
+  // rapid taps don't pile up.
+  //
+  // After a hard refresh the browser hasn't received a user gesture, and
+  // Chrome may silently drop the synthesizer call. We schedule the auto-play
+  // immediately AND on the first pointer/keyboard event as a fallback —
+  // whichever fires first wins.
   useEffect(() => {
     if (!current) return
-    autoPlayedRef.current = false
-    const id = window.setTimeout(() => {
+    if (autoPlayedRef.current) return
+
+    const play = () => {
       if (autoPlayedRef.current) return
       autoPlayedRef.current = true
       setAudioPlaysLeft((n) => Math.max(0, n - 1))
       setPlaysSoFar((n) => n + 1)
       void speakWord(current.word, 'vocabulary', { allowOverlap: true })
-    }, 250)
-    return () => window.clearTimeout(id)
+    }
+
+    const id = window.setTimeout(play, 250)
+    const cleanup = () => {
+      window.removeEventListener('pointerdown', play)
+      window.removeEventListener('keydown', play)
+    }
+    window.addEventListener('pointerdown', play, { once: true })
+    window.addEventListener('keydown', play, { once: true })
+
+    return () => {
+      window.clearTimeout(id)
+      cleanup()
+    }
   }, [current])
 
   const handleManualPlay = useCallback(() => {
@@ -183,6 +231,8 @@ export function VocabularyGamePage() {
     setSelectedIndex(null)
     setPlaysSoFar(0)
     setAudioPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
+    clearVocabAudioState()
+    autoPlayedRef.current = false
     setIndex((prev) => {
       const next = prev + 1
       if (next >= total) {
