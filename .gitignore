@@ -12,7 +12,12 @@
 *.sublime-workspace
 
 # Claude AI assistant
-.claude/
+# Ignore .claude/ contents by default — but track settings.json so any
+# Claude session on this repo inherits the project hook/permission config
+# (slice-closeout reminder, etc.). settings.local.json stays ignored — it
+# holds per-user permission grants.
+.claude/*
+!.claude/settings.json
 
 # Temporary files
 *.tmp

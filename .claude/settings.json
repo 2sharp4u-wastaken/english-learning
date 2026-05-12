@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "if": "Bash(git commit*)",
+            "command": "echo '{\"hookSpecificOutput\":{\"hookEventName\":\"PreToolUse\",\"additionalContext\":\"[Slice closeout reminder] About to commit. For non-trivial changes ensure: master-plan.md slice entry updated; wiring-map.md has new cause/effect chains if a flow shipped; memory has WHY annotations for new invariants; CLAUDE.md auto-load stays lean (pointers, not procedures); a cold-start fresh session could pick up from here. Skip for doc/typo/trivial fixes.\"}}'"
+          }
+        ]
+      }
+    ]
+  }
+}
