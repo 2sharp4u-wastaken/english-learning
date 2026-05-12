@@ -85,6 +85,9 @@ export class ProgressManager {
         stats.lastResult = isCorrect ? 'correct' : 'incorrect';
 
         // Track per-game-type stats
+        // Older wordMastery entries (pre-gameTypeStats) lack this field — guard
+        // against TypeError on `stats.gameTypeStats[gameType]`.
+        if (!stats.gameTypeStats) stats.gameTypeStats = {};
         if (!stats.gameTypeStats[gameType]) {
             stats.gameTypeStats[gameType] = { correct: 0, total: 0 };
         }
