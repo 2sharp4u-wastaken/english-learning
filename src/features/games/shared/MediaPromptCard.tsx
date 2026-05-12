@@ -47,7 +47,8 @@ export function MediaPromptCard({
       {prompt ? (
         <p
           data-testid="media-prompt-text"
-          className="text-sm font-medium text-[color:var(--slate-300)]"
+          dir="rtl"
+          className="text-lg font-medium text-[color:var(--slate-300)] sm:text-xl"
         >
           {prompt}
         </p>
@@ -75,7 +76,8 @@ export function MediaPromptCard({
       {translation ? (
         <p
           data-testid="media-prompt-translation"
-          className="text-base text-[color:var(--slate-200)]"
+          dir="rtl"
+          className="text-2xl font-semibold text-[color:var(--slate-100)] sm:text-3xl"
         >
           {translation}
         </p>
@@ -103,7 +105,8 @@ export function MediaPromptCard({
           {audioHint ? (
             <span
               data-testid="media-prompt-audio-hint"
-              className="text-xs text-[color:var(--amber-400)]"
+              dir="rtl"
+              className="text-sm font-medium text-[color:var(--amber-400)] sm:text-base"
             >
               {audioHint}
             </span>

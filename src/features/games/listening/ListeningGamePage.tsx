@@ -340,7 +340,7 @@ export function ListeningGamePage() {
   // the prompt word. Nikud strip is a no-op for English but harmless.
   const answerOptions = current
     ? current.options.map((label, i) => {
-        const cased = caseMode === 'lowercase' ? label.toLowerCase() : label
+        const cased = caseMode === 'lowercase' ? label.toLowerCase() : label.toUpperCase()
         return {
           key: i,
           label: showNikud ? cased : stripNikud(cased),

@@ -45,14 +45,18 @@ export function FeedbackBanner({
       data-testid="feedback-banner"
       data-variant={variant}
       className={cn(
-        'pointer-events-none fixed inset-x-0 top-20 z-[1000] mx-auto flex max-w-md items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-base font-semibold backdrop-blur-md transition-all',
+        'pointer-events-none fixed inset-x-0 top-20 z-[1000] mx-auto flex max-w-lg items-center justify-center gap-3 rounded-2xl border px-5 py-4 text-xl font-bold backdrop-blur-md transition-all sm:text-2xl',
         'animate-[feedbackReveal_0.25s_ease-out]',
         VARIANT_STYLES[variant],
         className,
       )}
     >
-      <Icon className="size-5 shrink-0" aria-hidden />
-      <span>{message}</span>
+      <Icon className="size-6 shrink-0 sm:size-7" aria-hidden />
+      {/* Feedback strings come from feedback.js and are written in English
+          ("Wonderful! Keep it up!"). The surrounding document is RTL, so
+          without an explicit dir="ltr" the bidi algorithm renders trailing
+          punctuation at the wrong end ("! Wonderful Keep it up"). */}
+      <span dir="ltr">{message}</span>
     </div>
   )
 }

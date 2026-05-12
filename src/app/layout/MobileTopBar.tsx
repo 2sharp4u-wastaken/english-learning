@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Coins, LogOut, Settings, Trophy, User } from 'lucide-react'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useUserProgress } from '@/hooks/useUserProgress'
+import { NikudToggle } from './NikudToggle'
 
 export function MobileTopBar() {
   const { pathname } = useLocation()
@@ -85,8 +86,9 @@ export function MobileTopBar() {
           )}
         </div>
 
-        {/* Score + Coins */}
+        {/* Nikud toggle + Score + Coins */}
         <div className="flex items-center gap-2">
+          <NikudToggle compact />
           <div className="flex items-center gap-1 rounded-full border border-white/10 bg-white/5 px-2 py-0.5 text-xs font-medium text-muted">
             <Trophy size={12} className="text-challenge" />
             <span>{totalScore.toLocaleString()}</span>

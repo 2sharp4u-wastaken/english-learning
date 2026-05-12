@@ -358,7 +358,7 @@ export function VocabularyGamePage() {
   const displayedWord = current
     ? caseMode === 'lowercase'
       ? current.word.toLowerCase()
-      : current.word
+      : current.word.toUpperCase()
     : ''
 
   const clicksLeftToReveal = Math.max(

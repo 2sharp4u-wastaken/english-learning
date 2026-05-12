@@ -335,21 +335,16 @@ export function TrueOrNotGamePage() {
     )
   }
 
-  const promptWordRaw =
-    current && caseMode === 'lowercase' ? current.word.toLowerCase() : current?.word
+  const promptWordRaw = current
+    ? caseMode === 'lowercase'
+      ? current.word.toLowerCase()
+      : current.word.toUpperCase()
+    : undefined
   const promptWord = promptWordRaw
     ? showNikud
       ? promptWordRaw
       : stripNikud(promptWordRaw)
     : undefined
-  const promptTranslation = current
-    ? showNikud
-      ? current.translation
-      : current.translation
-        ? stripNikud(current.translation)
-        : undefined
-    : undefined
-
   const answerOptions = current
     ? [
         { key: 'yes', label: '✓ כן', ariaLabel: 'כן, מתאים' },
@@ -380,7 +375,6 @@ export function TrueOrNotGamePage() {
             <MediaPromptCard
               prompt="האם התמונה מתאימה למילה?"
               word={promptWord}
-              translation={promptTranslation}
               media={<DisplayedPicture question={current} />}
               onPlayAudio={playWord}
               audioDisabled={audioPlaysLeft <= 0}

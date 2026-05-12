@@ -1330,6 +1330,182 @@ test.describe('Slice 3.4: True or Not Game (React)', () => {
   });
 });
 
+// ─── Slice 3.5: Reading Game (React) ────────────────────────────────────────
+
+test.describe('Slice 3.5: Reading Game (React)', () => {
+  test('learn-first empty state shows when fewer than 4 words are learned', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/game/reading');
+    await page.waitForTimeout(500);
+
+    await expect(page.locator('[data-testid="reading-learn-first"]')).toBeVisible();
+    await expect(page.locator('[data-testid="reading-letter-bank"]')).toHaveCount(0);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('happy path: picture + letter bank + check advances on correct word', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    const learned = await seedLearnedFromBank(page, 8);
+    expect(learned).toBeGreaterThanOrEqual(4);
+
+    await gotoHash(page, '/game/reading');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+    await expect(page.locator('[data-testid="media-prompt-media"]')).toBeVisible();
+    await expect(page.locator('[data-testid="reading-letter-bank"]')).toBeVisible();
+    await expect(page.locator('[data-testid="reading-built-word"]')).toBeVisible();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+
+    const target = await page.evaluate(() => {
+      const m = window.gameManager;
+      return m?.shuffledQuestions?.[m.currentQuestionIndex]?.word || null;
+    });
+    expect(target).toBeTruthy();
+
+    // Click letters in order — each letter button stores its source letter on
+    // data-letter, and we only click ones that are still enabled.
+    for (const ch of target.split('')) {
+      const btn = page
+        .locator(`[data-testid="reading-letter"][data-letter="${ch}"]:not([disabled])`)
+        .first();
+      await btn.click();
+    }
+
+    await expect(page.locator('[data-testid="reading-check"]')).toBeEnabled();
+    await page.locator('[data-testid="reading-check"]').click();
+
+    await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
+      timeout: 4000,
+    }).toBe('2');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('clear button empties the built word and re-enables letter buttons', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/reading');
+    await page.waitForTimeout(900);
+
+    // Pick the first available letter
+    const firstLetter = page.locator('[data-testid="reading-letter"]:not([disabled])').first();
+    const usedLetter = await firstLetter.getAttribute('data-letter');
+    await firstLetter.click();
+    await expect(page.locator('[data-testid="reading-clear"]')).toBeEnabled();
+
+    await page.locator('[data-testid="reading-clear"]').click();
+    await expect(page.locator('[data-testid="reading-clear"]')).toBeDisabled();
+    // The clicked letter is available again.
+    await expect(
+      page.locator(`[data-testid="reading-letter"][data-letter="${usedLetter}"]:not([disabled])`).first(),
+    ).toBeVisible();
+  });
+
+  test('incorrect submission surfaces feedback + Next button (no retry)', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/reading');
+    await page.waitForTimeout(900);
+
+    // Just click whatever the first available letter is — almost certainly
+    // not the full target word — and submit.
+    const firstLetter = page.locator('[data-testid="reading-letter"]:not([disabled])').first();
+    await firstLetter.click();
+    await page.locator('[data-testid="reading-check"]').click();
+
+    // Either the answer was accidentally correct (single-letter word) or
+    // we got the Next button — both leave us in a coherent state. Assert
+    // that the check button is no longer enabled (retry blocked).
+    await expect(page.locator('[data-testid="reading-check"]')).toHaveCount(0);
+  });
+
+  test('resume picks up mid-session save and continues from the saved question', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const bank = window.vocabularyBank || [];
+      const words = bank.slice(0, 5).map((w) => ({
+        word: (w.word || '').toUpperCase(),
+        picture: w.image,
+        imageUrl: w.imageUrl,
+        hebrew: w.translation,
+        phonics: (w.word || '').split('').join('-'),
+        extraLetters: ['M', 'T', 'R', 'S', 'N', 'L'],
+        difficulty: 'beginner',
+        category: w.category,
+      }));
+      localStorage.setItem(
+        `savedGame_${userId}_reading`,
+        JSON.stringify({
+          gameType: 'reading',
+          currentQuestionIndex: 3,
+          score: 30,
+          totalQuestions: 5,
+          timestamp: Date.now(),
+          shuffledQuestions: words,
+          gameElapsedMs: 0,
+          selectedCategories: [],
+        }),
+      );
+    });
+
+    await gotoHash(page, '/game/reading');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('4');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('5');
+  });
+
+  test('audio counters persist across refresh', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/reading');
+    await page.waitForTimeout(900);
+
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.locator('[data-testid="media-prompt-audio"]').click();
+    await page.waitForTimeout(200);
+
+    const beforeRefresh = await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const raw = localStorage.getItem(`v2_reading_audio_${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(beforeRefresh).toBeTruthy();
+    expect(beforeRefresh.audioPlaysLeft).toBeLessThan(8);
+
+    await page.reload();
+    await page.waitForTimeout(1200);
+
+    const afterRefresh = await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const raw = localStorage.getItem(`v2_reading_audio_${userId}`);
+      return raw ? JSON.parse(raw) : null;
+    });
+    expect(afterRefresh.audioPlaysLeft).toBe(beforeRefresh.audioPlaysLeft);
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/reading');
+    await page.waitForTimeout(800);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {

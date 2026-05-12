@@ -1205,7 +1205,30 @@ Files modified:
 
 These involve constructing text rather than choosing answers.
 
-**Slice 3.5: Reading** — letter-building UI. ~343 lines.
+**Slice 3.5: Reading** — letter-building UI. ~343 lines. ✅ shipped.
+
+Status: complete (2026-05-13). Followed Slice 3.1 template. Differences vs 3.1:
+
+- Letter-bank/built-word UI replaces `AnswerGrid` — first text-building Wave 2 slice. Each letter button has a stable `key` (index-letter pair) so duplicate letters render as distinct buttons; clicking moves a token from bank to built-word, "נקה" resets all `used` flags.
+- Submission flow: bridge `recordReadingAnswer(question, builtWord, attempts)` returns `{isCorrect, pointsAwarded: max(0, 10 - attempts)}` matching legacy `games/reading-game.js`. The legacy "wrong-answer-still-advances-index" semantics are preserved by advancing `currentQuestionIndex` inside the bridge on every submission, then surfacing a Next button on incorrect (no retry exploit).
+- 3-second English-word reveal cycle on each new question (and again after a wrong answer): `wordVisible` state + `wordHideTimer` ref. Hebrew translation stays visible the entire time.
+- No 3-play audio reveal gate (the picture + initial English word are exposure). Per-question `audioPlaysAllowed` budget still applied so refresh can't grant unlimited replays.
+- V2 gating reuses `getScopedQuestionPool('reading')` + `smartQuestionSelection` (reading is in legacy `VOCAB_GATED_GAMES`); requires ≥4 learned words, like vocabulary.
+- `caseMode` toggles letter buttons + built word + prompt word between upper/lowercase. Legacy data stores letters uppercase; rendering decides display case at the React layer.
+
+Files added:
+
+- `src/bridge/reading.ts` — clone of `src/bridge/vocabulary.ts` keyed to `'reading'` gameType + `v2_reading_audio_<userId>` audio-state key. Signature change: `recordReadingAnswer(question, builtWord, attempts)` instead of selectedIndex.
+- `src/features/games/reading/ReadingGamePage.tsx` — page with picture media slot + letter-bank/built-word + Check/Clear footer + auto-play (no reveal gate) + 3s word reveal cycle.
+- `src/features/games/reading/components/ReadingLearnFirst.tsx` — learn-first prompt (requires ≥4 learned words).
+
+Files modified:
+
+- `src/features/games/reactGames.ts` — added `'reading'` to `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — registered `'reading': ReadingGamePage`.
+- `tests/react-routes.spec.js` — Slice 3.5 block (7 tests: learn-first, happy path with picture+letter bank+check advances, clear button resets state, incorrect→no retry, resume, audio-state persistence across refresh, exit dialog).
+- `docs/wiring-map.md` — "Reading Game (React — Slice 3.5)" cause/effect chain.
+
 **Slice 3.6: Word Builder** — word construction. ~182 lines.
 **Slice 3.7: Fill Blanks** — sentence completion. ~205 lines.
 **Slice 3.8: Sentence Scramble** — drag/tap reordering. ~428 lines.

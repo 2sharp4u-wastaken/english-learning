@@ -348,7 +348,11 @@ export function PictureMatchGamePage() {
 
   // The prompt word is the target English word. Apply caseMode like vocab.
   const promptWordRaw =
-    current && caseMode === 'lowercase' ? current.word.toLowerCase() : current?.word
+    current
+      ? caseMode === 'lowercase'
+        ? current.word.toLowerCase()
+        : current.word.toUpperCase()
+      : undefined
   const promptWord = promptWordRaw
     ? showNikud
       ? promptWordRaw

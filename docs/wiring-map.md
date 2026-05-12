@@ -189,6 +189,34 @@ React route /#/game/true-or-not
 
 Legacy `games/true-or-not-game.js` is still mounted at boot (we call its `buildQuestions` from the bridge), but the legacy `#true-or-not-container` DOM is never displayed for this route. The legacy class can retire alongside Slice 4.4 once `buildQuestions` is reimplemented in the bridge.
 
+## Reading Game (React — Slice 3.5)
+
+```
+React route /#/game/reading
+  └─ GameHostPage.tsx → REACT_GAMES['reading'] → ReadingGamePage.tsx
+      ├─ beginReadingSession()  (src/bridge/reading.ts)
+      │   ├─ speechManager.setGameContext('reading')
+      │   ├─ Resume from savedGame_<userId>_reading if mid-session
+      │   ├─ V2 gating (reading ∈ VOCAB_GATED_GAMES): filter pool to learned words
+      │   │   → if learnedPool < 4 → render <ReadingLearnFirst />
+      │   └─ gameManager.smartQuestionSelection(pool) → shuffledQuestions clamped to settings.questionsPerGame
+      ├─ Loop: <MediaPromptCard media=<ReadingPicture> word=question.word> + built-word box + <letter-bank>
+      │   ├─ On new question: shuffle (word.split + extraLetters) into LetterToken[]; auto-play English word once
+      │   ├─ 3s English-word reveal cycle: wordVisible state + wordHideTimer (Hebrew stays visible)
+      │   ├─ Letter click → move LetterToken from bank.used=false → built[]; speak(letter.toLowerCase())
+      │   ├─ "נקה" → empty built[], reset all bank tokens to used=false
+      │   └─ "בדוק" → recordReadingAnswer(question, builtWord, attempts)
+      │       → isCorrect = builtWord === question.word
+      │       → pointsAwarded = isCorrect ? max(0, 10 - attempts) : 0
+      │       → recordWordAttempt + scoreManager.addPoints + currentQuestionIndex++ + saveGameState
+      │       → wrong: setAttempts+1, restart 3s word-reveal timer, replay audio, show "השאלה הבאה" (no retry)
+      │       → correct: confetti (if enabled), auto-advance after 1500ms
+      └─ Final question → finishReadingSession() → gameManager.endGame()
+          → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
+```
+
+Reading is the first Wave 2 (text-building) React slice — the page replaces `AnswerGrid` with a letter bank + built-word box, but reuses every other shared primitive and the bridge shape from Slice 3.1.
+
 ## Critical File Locations
 
 | Function | File | Line |

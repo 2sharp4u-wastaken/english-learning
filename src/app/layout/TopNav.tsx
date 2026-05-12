@@ -4,6 +4,7 @@ import { Home, User, BookOpen, BarChart3, Settings, LogOut, Coins, Trophy } from
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { cn } from '@/lib/cn'
+import { NikudToggle } from './NikudToggle'
 
 const navItems = [
   { to: '/home', label: 'בית', icon: Home },
@@ -73,8 +74,10 @@ export function TopNav() {
           })}
         </nav>
 
-        {/* Right side: score, coins, user menu */}
+        {/* Right side: nikud toggle, score, coins, user menu */}
         <div className="flex items-center gap-3">
+          <NikudToggle />
+
           {/* Score pill */}
           <div className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-muted">
             <Trophy size={14} className="text-challenge" />
