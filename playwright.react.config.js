@@ -12,6 +12,12 @@ export default defineConfig({
     video: 'off',
     trace: 'off',
     ignoreHTTPSErrors: true,
+    // --mute-audio silences speechSynthesis + audio effects during tests so
+    // running the suite in headed mode (or even on a machine with audio out)
+    // doesn't blast the kid voice on every Slice 3.1 run.
+    launchOptions: {
+      args: ['--mute-audio'],
+    },
   },
   reporter: [['list']],
   projects: [

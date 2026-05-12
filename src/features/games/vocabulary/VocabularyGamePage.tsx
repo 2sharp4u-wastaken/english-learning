@@ -72,15 +72,17 @@ export function VocabularyGamePage() {
       setPhase('awaiting')
       isActiveRef.current = true
       // Restore per-question audio counters if this is a resume of the same
-      // question. Otherwise start fresh for the current question.
+      // question. Otherwise start fresh.
       const restored = loadVocabAudioState(result.resumeIndex)
       const settingsBudget = getSettings().audioPlaysAllowed ?? 8
       if (restored) {
         setPlaysSoFar(restored.playsSoFar)
         setAudioPlaysLeft(restored.audioPlaysLeft)
-        // If options were already revealed before refresh, skip the auto-play
-        // (the user already heard the word the required number of times).
-        autoPlayedRef.current = restored.playsSoFar >= REQUIRED_PLAYS_BEFORE_REVEAL
+        // Resumed mid-question — the user already heard the word in the
+        // previous session. Suppress the auto-play so a refresh can't be used
+        // to cheat through the gate by silently bumping playsSoFar past the
+        // threshold (Chrome blocks autoplay after a hard refresh anyway).
+        autoPlayedRef.current = true
       } else {
         setPlaysSoFar(0)
         setAudioPlaysLeft(settingsBudget)
@@ -161,14 +163,13 @@ export function VocabularyGamePage() {
   const playWord = useCallback(
     (countTowardGate: boolean) => {
       if (!current) return
-      // While the gate is active, plays don't consume the per-question budget
-      // — those plays are mandatory exposure, not voluntary extras. The
-      // budget only decrements after the gate has cleared.
+      // Budget accounts for ALL plays on this question (gate + voluntary).
+      // settings.audioPlaysAllowed is the total per-question ceiling. Gate
+      // plays are mandatory and always go through, even if the budget is
+      // already at 0 from a misconfigured setting (audioPlaysAllowed < 3).
       const gateActive = playsSoFar < REQUIRED_PLAYS_BEFORE_REVEAL
       if (!gateActive && audioPlaysLeft <= 0) return
-      if (!gateActive) {
-        setAudioPlaysLeft((n) => Math.max(0, n - 1))
-      }
+      setAudioPlaysLeft((n) => Math.max(0, n - 1))
       if (countTowardGate) setPlaysSoFar((n) => n + 1)
       void speakWord(current.word, 'vocabulary')
     },
@@ -197,9 +198,9 @@ export function VocabularyGamePage() {
     const fire = () => {
       if (cancelled || autoPlayedRef.current) return
       autoPlayedRef.current = true
-      // First play of a fresh question is always part of the gate (playsSoFar
-      // starts at 0), so it doesn't decrement audioPlaysLeft. Only count it
-      // toward the gate.
+      // First play of a fresh question consumes a budget slot and counts
+      // toward the audio gate.
+      setAudioPlaysLeft((n) => Math.max(0, n - 1))
       setPlaysSoFar((n) => n + 1)
       void speakWord(current.word, 'vocabulary', { allowOverlap: true })
     }
