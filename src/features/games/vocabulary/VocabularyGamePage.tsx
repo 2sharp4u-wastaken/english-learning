@@ -161,12 +161,18 @@ export function VocabularyGamePage() {
   const playWord = useCallback(
     (countTowardGate: boolean) => {
       if (!current) return
-      if (audioPlaysLeft <= 0) return
-      setAudioPlaysLeft((n) => Math.max(0, n - 1))
+      // While the gate is active, plays don't consume the per-question budget
+      // — those plays are mandatory exposure, not voluntary extras. The
+      // budget only decrements after the gate has cleared.
+      const gateActive = playsSoFar < REQUIRED_PLAYS_BEFORE_REVEAL
+      if (!gateActive && audioPlaysLeft <= 0) return
+      if (!gateActive) {
+        setAudioPlaysLeft((n) => Math.max(0, n - 1))
+      }
       if (countTowardGate) setPlaysSoFar((n) => n + 1)
       void speakWord(current.word, 'vocabulary')
     },
-    [audioPlaysLeft, current],
+    [audioPlaysLeft, current, playsSoFar],
   )
 
   // Auto-play on each new question; counts toward the reveal gate.
@@ -177,33 +183,44 @@ export function VocabularyGamePage() {
   // the next question's auto-play). Manual play button keeps the default so
   // rapid taps don't pile up.
   //
-  // After a hard refresh the browser hasn't received a user gesture, and
-  // Chrome may silently drop the synthesizer call. We schedule the auto-play
-  // immediately AND on the first pointer/keyboard event as a fallback —
-  // whichever fires first wins.
+  // Voice readiness: `speechManager.selectVoices()` targets "Google UK English
+  // Male", which Chrome loads asynchronously via `onvoiceschanged`. If we
+  // fire too early, Chrome substitutes whatever en-* voice is already loaded
+  // and the word sounds different from later plays. Poll briefly until the
+  // target voice (or any voice) is available before kicking off the
+  // utterance — capped so a missing voice never blocks the game.
   useEffect(() => {
     if (!current) return
     if (autoPlayedRef.current) return
+    let cancelled = false
 
-    const play = () => {
-      if (autoPlayedRef.current) return
+    const fire = () => {
+      if (cancelled || autoPlayedRef.current) return
       autoPlayedRef.current = true
-      setAudioPlaysLeft((n) => Math.max(0, n - 1))
+      // First play of a fresh question is always part of the gate (playsSoFar
+      // starts at 0), so it doesn't decrement audioPlaysLeft. Only count it
+      // toward the gate.
       setPlaysSoFar((n) => n + 1)
       void speakWord(current.word, 'vocabulary', { allowOverlap: true })
     }
 
-    const id = window.setTimeout(play, 250)
-    const cleanup = () => {
-      window.removeEventListener('pointerdown', play)
-      window.removeEventListener('keydown', play)
+    let attempts = 0
+    const tryFire = () => {
+      if (cancelled || autoPlayedRef.current) return
+      const sm = (window as any).speechManager
+      const ready = sm?.englishVoice || (sm?.voices && sm.voices.length > 0)
+      if (ready || attempts >= 10) {
+        fire()
+        return
+      }
+      attempts++
+      window.setTimeout(tryFire, 150)
     }
-    window.addEventListener('pointerdown', play, { once: true })
-    window.addEventListener('keydown', play, { once: true })
 
+    const id = window.setTimeout(tryFire, 250)
     return () => {
+      cancelled = true
       window.clearTimeout(id)
-      cleanup()
     }
   }, [current])
 
