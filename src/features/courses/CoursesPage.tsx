@@ -23,7 +23,6 @@ const ACTIVITY_LABELS: Record<string, string> = {
   reading: 'קריאה',
   abc: 'ABC',
   'true-or-not': 'נכון או לא?',
-  'word-builder': 'בונה משפטים',
   'story-time': 'זמן סיפור',
   'picture-match': 'מילה לתמונה',
   'grammar-beginner': 'דקדוק למתחילים',

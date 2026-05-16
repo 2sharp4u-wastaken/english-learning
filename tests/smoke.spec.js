@@ -185,7 +185,7 @@ test.describe('Game Gating', () => {
             'listening': { unlocked: true }, 'picture-match': { unlocked: true },
             'true-or-not': { unlocked: true }, 'reading': { unlocked: true },
             'pronunciation': { unlocked: true }, 'vocabulary': { unlocked: true },
-            'story-time': { unlocked: true }, 'word-builder': { unlocked: true },
+            'story-time': { unlocked: true },
             'fill-blanks': { unlocked: true }, 'scramble': { unlocked: true },
             'grammar': { unlocked: true, unlockedDate: '2026-03-20' },
         };
@@ -318,7 +318,7 @@ test.describe('Home Screen', () => {
         const expectedGames = [
             'word-journey', 'abc',
             'listening', 'picture-match', 'true-or-not', 'memory', 'grammar-beginner',
-            'reading', 'pronunciation', 'fill-blanks', 'story-time', 'word-builder', 'scramble', 'grammar',
+            'reading', 'pronunciation', 'fill-blanks', 'story-time', 'scramble', 'grammar',
             'vocabulary',
         ];
 

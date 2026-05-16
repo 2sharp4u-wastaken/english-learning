@@ -17,7 +17,6 @@ import { SentenceScrambleGame } from './games/sentence-scramble-game.js';
 import { FillBlanksGame } from './games/fill-blanks-game.js';
 import { WordJourneyGame } from './games/word-journey-game.js?t=1776320001';
 import { TrueOrNotGame } from './games/true-or-not-game.js?t=1776400001';
-import { WordBuilderGame } from './games/word-builder-game.js?t=1776400001';
 import { StoryTimeGame } from './games/story-time-game.js?t=1776400001';
 
 // ── V2 storage isolation ──────────────────────────────────────────────────────
@@ -81,6 +80,13 @@ class AppManager {
             this.currentUser = userId;
             this.userProgress = this.loadUserProgress();
             this.initializeManagers();
+            // Slice 3.7.1: drop any orphaned word-builder state from when the
+            // game existed. Bookmarks to /#/game/word-builder redirect to
+            // fill-blanks (see GameHostPage.RETIRED_GAMES).
+            try {
+                localStorage.removeItem(`savedGame_${userId}_word-builder`);
+                localStorage.removeItem(`v2_wordbuilder_audio_${userId}`);
+            } catch (e) { /* ignore quota/serialization */ }
             console.log(`App initialized for user: ${userId}`);
         } else {
             console.log('No authenticated user, waiting for login');
@@ -110,9 +116,6 @@ class AppManager {
 
         this.trueOrNotGame = new TrueOrNotGame();
         window.trueOrNotGame = this.trueOrNotGame;
-
-        this.wordBuilderGame = new WordBuilderGame();
-        window.wordBuilderGame = this.wordBuilderGame;
 
         this.storyTimeGame = new StoryTimeGame();
         window.storyTimeGame = this.storyTimeGame;
@@ -310,7 +313,7 @@ class AppManager {
                         vocabulary: 'אוצר מילים', listening: 'הקשבה', memory: 'זיכרון',
                         scramble: 'סידור', 'fill-blanks': 'השלמה', grammar: 'דקדוק',
                         pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC',
-                        'true-or-not': 'נכון או לא?', 'word-builder': 'בונה משפטים', 'story-time': 'זמן סיפור'
+                        'true-or-not': 'נכון או לא?', 'story-time': 'זמן סיפור'
                     };
                     return `<span class="activity-badge ${done ? 'done' : ''}">${labels[act] || act}</span>`;
                 }).join('');
@@ -392,7 +395,7 @@ class AppManager {
                         vocabulary: 'אוצר מילים', listening: 'הקשבה', memory: 'זיכרון',
                         scramble: 'סידור', 'fill-blanks': 'השלמה', grammar: 'דקדוק',
                         pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC',
-                        'true-or-not': 'נכון או לא?', 'word-builder': 'בונה משפטים', 'story-time': 'זמן סיפור'
+                        'true-or-not': 'נכון או לא?', 'story-time': 'זמן סיפור'
                     };
                     return `<span class="activity-badge ${done ? 'done' : ''}">${labels[act] || act}</span>`;
                 }).join('');
@@ -447,13 +450,13 @@ class AppManager {
             vocabulary: '📚', listening: '👂', memory: '🃏',
             scramble: '🔀', 'fill-blanks': '✍️', grammar: '✏️',
             pronunciation: '🎤', reading: '📖', abc: '🔤',
-            'true-or-not': '✅', 'word-builder': '🔨', 'story-time': '📖'
+            'true-or-not': '✅', 'story-time': '📖'
         };
         const activityLabels = {
             vocabulary: 'אוצר מילים', listening: 'הקשבה', memory: 'זיכרון',
             scramble: 'סידור משפטים', 'fill-blanks': 'השלמת משפט',
             grammar: 'דקדוק', pronunciation: 'הגייה', reading: 'קריאה', abc: 'ABC',
-            'true-or-not': 'נכון או לא?', 'word-builder': 'בונה משפטים', 'story-time': 'זמן סיפור'
+            'true-or-not': 'נכון או לא?', 'story-time': 'זמן סיפור'
         };
 
         const picker = document.createElement('div');
@@ -697,7 +700,6 @@ class AppManager {
                 'scramble':      '🔀 נסה את משחק ערבוב המילים!',
                 'grammar':       '📐 נסה את משחק הדקדוק!',
                 'true-or-not':   '✅ נסה את נכון או לא?',
-                'word-builder':  '🔨 נסה את בונה משפטים!',
                 'story-time':    '📖 נסה את זמן סיפור!',
             };
 
@@ -737,7 +739,6 @@ class AppManager {
                     reading: 'קריאה',
                     abc: 'ABC',
                     'true-or-not': 'נכון או לא?',
-                    'word-builder': 'בונה משפטים',
                     'story-time': 'זמן סיפור'
                 };
                 const activityName = activityLabels[rec.activityType] || rec.activityType || '';
@@ -828,7 +829,6 @@ class AppManager {
             { type: 'scramble',        icon: '🔀', name: 'ערבוב' },
             { type: 'grammar',         icon: '📐', name: 'דקדוק' },
             { type: 'true-or-not',     icon: '✅', name: 'נכון או לא?' },
-            { type: 'word-builder',    icon: '🔨', name: 'בונה משפטים' },
             { type: 'story-time',      icon: '📖', name: 'זמן סיפור' },
         ];
 
@@ -1430,7 +1430,6 @@ class AppManager {
                 scramble: 0,
                 'fill-blanks': 0,
                 'true-or-not': 0,
-                'word-builder': 0,
                 'story-time': 0
             },
             streakDays: 0,
@@ -1474,7 +1473,6 @@ class AppManager {
                 "grammar":          { unlocked: false, requirement: "50 מילים + 3 נושאים",     requiredCount: 50, requiredTopics: 3 },
                 "vocabulary":       { unlocked: false, requirement: "10 מילים שנלמדו",         requiredCount: 10 },
                 "true-or-not":      { unlocked: false, requirement: "5 מילים שנלמדו",          requiredCount: 5 },
-                "word-builder":     { unlocked: false, requirement: "20 מילים + 1 נושא",       requiredCount: 20, requiredTopics: 1 },
                 "story-time":       { unlocked: false, requirement: "15 מילים שנלמדו",         requiredCount: 15 },
             },
 

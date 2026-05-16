@@ -83,7 +83,7 @@ export function FillBlanksGamePage() {
     if (result.kind === 'ready') {
       setIndex(result.resumeIndex)
       setScore(result.resumeScore)
-      setCorrect(Math.floor(result.resumeScore / 10))
+      setCorrect(Math.floor(result.resumeScore / 15))
       setPhase('awaiting')
       isActiveRef.current = true
       const restored = loadFillBlanksAudioState(result.resumeIndex)

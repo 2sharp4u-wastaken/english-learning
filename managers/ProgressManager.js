@@ -666,7 +666,6 @@ export class ProgressManager {
         tryUnlock('grammar',       learnedCount >= 50 && topicsDone >= 3);
         tryUnlock('vocabulary',    learnedCount >= 10);
         tryUnlock('true-or-not',   learnedCount >= 5);
-        tryUnlock('word-builder',  learnedCount >= 20 && topicsDone >= 1);
         tryUnlock('story-time',    learnedCount >= 15);
 
         return newlyUnlocked;

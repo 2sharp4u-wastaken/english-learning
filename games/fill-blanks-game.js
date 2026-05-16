@@ -138,7 +138,7 @@ export class FillBlanksGame {
         window.gameManager.saveGameState();
 
         if (isCorrect) {
-            window.scoreManager.addPoints('fill-blanks', 10);
+            window.scoreManager.addPoints('fill-blanks', 15);
             window.gameManager.updateScore('fill-blanks');
             if (typeof confetti === 'function') {
                 confetti({ particleCount: 60, spread: 50, origin: { y: 0.7 } });

@@ -107,7 +107,6 @@ const GAME_BADGES = [
   { type: 'scramble', icon: '🔀', name: 'ערבוב' },
   { type: 'grammar', icon: '📐', name: 'דקדוק' },
   { type: 'true-or-not', icon: '✅', name: 'נכון או לא?' },
-  { type: 'word-builder', icon: '🔨', name: 'בונה משפטים' },
   { type: 'story-time', icon: '📚', name: 'זמן סיפור' },
 ]
 

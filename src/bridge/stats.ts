@@ -57,7 +57,6 @@ export const GAME_NAMES: Record<string, { name: string; icon: string }> = {
   scramble: { name: 'סידור משפטים', icon: '🔀' },
   'fill-blanks': { name: 'השלם את המשפט', icon: '✏️' },
   'true-or-not': { name: 'נכון או לא?', icon: '✅' },
-  'word-builder': { name: 'בונה משפטים', icon: '🔨' },
   'story-time': { name: 'זמן סיפור', icon: '📖' },
 }
 

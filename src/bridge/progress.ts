@@ -123,7 +123,7 @@ export function getVocabularyBank(): Array<{ word: string; translation: string; 
 const RESET_GAME_TYPES = [
   'vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening',
   'reading', 'abc', 'memory', 'scramble', 'fill-blanks', 'practice',
-  'true-or-not', 'picture-match', 'word-journey', 'word-builder', 'story-time',
+  'true-or-not', 'picture-match', 'word-journey', 'story-time',
 ]
 
 /**

@@ -1466,7 +1466,7 @@ function resetUserStats(userId) {
         return;
     }
 
-    const gameTypes = ['vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'memory', 'scramble', 'fill-blanks', 'practice', 'true-or-not', 'picture-match', 'word-journey', 'word-builder', 'story-time'];
+    const gameTypes = ['vocabulary', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'memory', 'scramble', 'fill-blanks', 'practice', 'true-or-not', 'picture-match', 'word-journey', 'story-time'];
 
     // Clear per-game score history
     gameTypes.forEach(game => {

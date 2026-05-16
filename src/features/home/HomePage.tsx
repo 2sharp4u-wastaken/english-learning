@@ -28,7 +28,6 @@ const GAME_ORDER: GameCardMeta[] = [
   { id: 'reading', tier: 'challenge', fallbackIcon: '📖', fallbackName: 'משחק קריאה', description: 'עוברים מזיהוי מילים לקריאה עצמאית.' },
   { id: 'pronunciation', tier: 'challenge', fallbackIcon: '🎤', fallbackName: 'משחק הגייה', description: 'משפרים הגייה וביטחון בדיבור.' },
   { id: 'story-time', tier: 'challenge', fallbackIcon: '📚', fallbackName: 'זמן סיפור', description: 'קוראים סיפורים קצרים ומבינים הקשר.' },
-  { id: 'word-builder', tier: 'challenge', fallbackIcon: '🔨', fallbackName: 'בונה משפטים', description: 'מרכיבים מילים ומשפטים מחלקים מוכרים.' },
   { id: 'fill-blanks', tier: 'challenge', fallbackIcon: '✍️', fallbackName: 'השלם את המשפט', description: 'משלימים משפטים עם המילה המתאימה.' },
   { id: 'scramble', tier: 'challenge', fallbackIcon: '🔀', fallbackName: 'סידור משפטים', description: 'מסדרים מילים לסדר נכון ומשמעותי.' },
   { id: 'grammar', tier: 'challenge', fallbackIcon: '✏️', fallbackName: 'תרגול דקדוק', description: 'מעמיקים בדקדוק אחרי בסיס רחב יותר.' },

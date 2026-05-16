@@ -1229,7 +1229,7 @@ Files modified:
 - `tests/react-routes.spec.js` — Slice 3.5 block (7 tests: learn-first, happy path with picture+letter bank+check advances, clear button resets state, incorrect→no retry, resume, audio-state persistence across refresh, exit dialog).
 - `docs/wiring-map.md` — "Reading Game (React — Slice 3.5)" cause/effect chain.
 
-**Slice 3.6: Word Builder** — sentence-with-blank, choose-the-missing-word. ~182 lines. ✅ shipped.
+**Slice 3.6: Word Builder** — sentence-with-blank, choose-the-missing-word. ~182 lines. ✅ shipped, **retired by Slice 3.7.1** (folded into Fill Blanks).
 
 Status: complete (2026-05-16). Followed Slice 3.1 template. Differences vs 3.1:
 
@@ -1258,7 +1258,7 @@ Files modified:
 
 Status: complete (2026-05-16). Followed Slice 3.6 (Word Builder) page shape verbatim — same data shape (sentences with `blank.options[3]`), same custom prompt card + always-on next button, same AnswerGrid. Differences vs 3.6:
 
-- Scoring: 10 pts per correct (matches legacy `fill-blanks-game.js:141`). Resume derives `correct = Math.floor(resumeScore / 10)`.
+- Scoring: 10 pts per correct (matches legacy `fill-blanks-game.js:141`). Resume derives `correct = Math.floor(resumeScore / 10)`. **Slice 3.7.1 raised this to 15** when word-builder was retired and its 15pt rate was inherited.
 - V2 gating mirrors `gameLogic.js:2049` — requires ≥30 learned words. `MIN_LEARNED = 30` in bridge.
 - Base sentence count: `getRandomSentences(10, ...)` (legacy already pulls 10; no over-fetch needed since `questionsPerGame` cap is also 10).
 - Game title "השלם את המשפט", icon "✍️" (per `index.html:163` legacy card).
@@ -1273,6 +1273,18 @@ Files modified:
 
 - `src/features/games/reactGames.ts` — added `'fill-blanks'` to `REACT_GAME_IDS`.
 - `src/features/games/GameHostPage.tsx` — registered `'fill-blanks': FillBlanksGamePage`.
+
+**Slice 3.7.1: Retire Word Builder, fold into Fill Blanks** — ✅ shipped.
+
+Status: complete (2026-05-16). After Slice 3.7 we noticed Word Builder and Fill Blanks are near-duplicates: both pull from the same `data/sentences.js` pool via `getRandomSentences(…, 'beginner', themes)`, render a sentence-with-blank + 3 multiple-choice options, advance index regardless of correctness, and use identical audio behavior. The only meaningful differences were the gate (≥20 vs ≥30) and scoring (15 vs 10). Decision: keep `fill-blanks` (canonical), retire `word-builder`, inherit word-builder's 15 pts/correct (sentence-with-blank arguably deserves the bonus over plain vocabulary).
+
+Code deltas:
+
+- Bumped `recordFillBlanksAnswer` reward 10 → 15; resume divisor 10 → 15; legacy `games/fill-blanks-game.js:141` raised to 15 to match.
+- Deleted `games/word-builder-game.js`, `src/bridge/word-builder.ts`, `src/features/games/word-builder/`.
+- Removed `'word-builder'` from: `REACT_GAME_IDS`, `GameHostPage.REACT_GAMES`, `gameLogic.js` (registry register, challenge-games set, gameTypes array, gating branch, switch case), `ScoreManager.js`, `ProgressManager.js` unlock list, `settings.js` gameTypes, `stats.js` games map, `components/top-header.js`, React `src/bridge/{progress,stats}.ts`, `src/features/{home,profile,courses}/*.tsx`, `index.html` (game card + legacy game container), `tests/smoke.spec.js`, `CLAUDE.md` game-types line.
+- Added `GameHostPage.RETIRED_GAMES = { 'word-builder': 'fill-blanks' }` → `<Navigate to="/game/fill-blanks" replace />` for bookmark safety.
+- Added one-time localStorage sweep in `app.js:setupWithAuth` to drop `savedGame_<uid>_word-builder` and `v2_wordbuilder_audio_<uid>` orphans. Historical `wordMastery[…].gameTypeStats['word-builder']` left in place (read-only stat, no live code path).
 
 **Slice 3.8: Sentence Scramble** — drag/tap reordering. ~428 lines.
 
@@ -1316,6 +1328,26 @@ Common acceptance criteria:
 ## Phase 4: Cleanup and Consolidation
 
 Objective: remove dead legacy code and shrink maintenance burden.
+
+### Slice 4.0: Code-split React game pages — PLANNED
+
+Vite's post-build warning has been flagging the main bundle as oversize (~1 MB minified / 256 KB gzipped) since the Wave 1 game migrations started landing. Every first-visit user downloads, parses, and executes all React games before anything interactive renders — wasteful since most users open one game per session. Each new Wave 2/3/4 slice grows the monolith.
+
+Approach:
+
+- Replace each static import in `src/features/games/GameHostPage.tsx` with `React.lazy(() => import('./<game>/GameScreenPage'))`.
+- Wrap the resolved `<ReactGame />` in `<Suspense fallback={<GameScreenShell header={{ title: '…', icon: '⏳', score: 0, onBack: () => navigate('/home') }}>טוען…</GameScreenShell>}>` so the back button still works during chunk fetch.
+- Sanity: confirm `RETIRED_GAMES` redirect still wins over the lazy import (it renders `<Navigate>` before `<ReactGame />` is resolved).
+- Optional vendor split via `build.rollupOptions.output.manualChunks`: group React/Router/Lucide into a `vendor` chunk so per-game chunks stay tiny and the vendor chunk caches across deploys.
+
+Acceptance:
+
+- `npm run build` reports the main app chunk below 500 KB minified.
+- Each React game becomes its own chunk in `dist/assets/`.
+- Playwright route tests still pass (chunks load on demand without breaking navigation).
+- The retired-games redirect still fires for `/#/game/word-builder` (no `<Suspense>` flash).
+
+Carries no UX-visible behavior change — purely a perf/loading slice. Should land before Phase 4.4 since 4.4 deletes the legacy game files that share the bundle; doing 4.0 first lets us measure the win cleanly.
 
 ### Slice 4.1: Retire Legacy Home Markup/CSS
 

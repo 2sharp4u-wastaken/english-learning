@@ -217,32 +217,7 @@ React route /#/game/reading
 
 Reading is the first Wave 2 (text-building) React slice — the page replaces `AnswerGrid` with a letter bank + built-word box, but reuses every other shared primitive and the bridge shape from Slice 3.1.
 
-## Word Builder Game (React — Slice 3.6)
-
-```
-React route /#/game/word-builder
-  └─ GameHostPage.tsx → REACT_GAMES['word-builder'] → WordBuilderGamePage.tsx
-      ├─ beginWordBuilderSession()  (src/bridge/word-builder.ts)
-      │   ├─ speechManager.setGameContext('word-builder')
-      │   ├─ Resume from savedGame_<userId>_word-builder if mid-session
-      │   ├─ V2 gating (MIN_LEARNED=20): if learnedCount < 20 → render <WordBuilderLearnFirst />
-      │   └─ getRandomSentences(20, 'beginner', themes) → shuffledQuestions clamped to settings.questionsPerGame
-      ├─ Loop: theme badge + Hebrew translation + sentence-with-blank + speaker button + <AnswerGrid variant='text'>
-      │   ├─ On new question: auto-speak full English sentence once (voice readiness poll); shuffle options (correct=blank.options[0])
-      │   ├─ Option click → recordWordBuilderAnswer(question, selectedWord)
-      │   │   → isCorrect = selectedWord.toLowerCase() === blank.options[0].toLowerCase()
-      │   │   → pointsAwarded = isCorrect ? 15 : 0
-      │   │   → recordWordAttempt(blankWordVocabEntry) + scoreManager.addPoints + currentQuestionIndex++ + saveGameState
-      │   │   → correct: re-speak full sentence; incorrect: speak target word; both reveal correctIndex in grid
-      │   └─ "השאלה הבאה" (always shown after any answer — no auto-advance, kids need to read)
-      └─ Final question → finishWordBuilderSession() → gameManager.endGame()
-          → RewardModal opens → voices English tier ("Perfect", "Excellent", etc.) via speak()
-          → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
-```
-
-Word Builder is the second Wave 2 slice (after Reading). Distinct from Wave 1: 15 pts/correct (not 10), always-on next button (no auto-advance on correct), and a custom prompt card replacing `MediaPromptCard` because the sentence-with-inline-blank can't fit the card's word/translation slots.
-
-## Fill Blanks Game (React — Slice 3.7)
+## Fill Blanks Game (React — Slices 3.7 + 3.7.1)
 
 ```
 React route /#/game/fill-blanks
@@ -256,7 +231,7 @@ React route /#/game/fill-blanks
       │   ├─ On new question: auto-speak full English sentence once (voice readiness poll); shuffle options (correct=blank.options[0])
       │   ├─ Option click → recordFillBlanksAnswer(question, selectedWord)
       │   │   → isCorrect = selectedWord.toLowerCase() === blank.options[0].toLowerCase()
-      │   │   → pointsAwarded = isCorrect ? 10 : 0
+      │   │   → pointsAwarded = isCorrect ? 15 : 0   ← 3.7.1 raised from 10 (folded word-builder's rate)
       │   │   → recordWordAttempt(blankWordVocabEntry) + scoreManager.addPoints + currentQuestionIndex++ + saveGameState
       │   │   → correct: re-speak full sentence; incorrect: speak target word; both reveal correctIndex in grid
       │   └─ "השאלה הבאה" (always shown after any answer — no auto-advance, kids need to read)
@@ -265,7 +240,7 @@ React route /#/game/fill-blanks
           → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
 ```
 
-Fill Blanks reuses the Slice 3.6 (Word Builder) page shape verbatim — same custom sentence-with-blank prompt card, always-on next button, and AnswerGrid. Differences vs Word Builder: 10 pts/correct (matches Wave 1), MIN_LEARNED=30 (higher gate), base sentence count 10 (no over-fetch since `questionsPerGame` cap is also 10), resume score divisor is /10. Audio-state localStorage key is `v2_fillblanks_audio_<userId>`.
+Slice 3.7.1 retired the duplicate `word-builder` game (shipped briefly in 3.6) and folded its 15 pts/correct scoring into Fill Blanks — both games pulled from the same `data/sentences.js` pool with near-identical UX, so the duplication was UI-only. Legacy `/#/game/word-builder` bookmarks redirect via `GameHostPage.RETIRED_GAMES`. Orphan localStorage (`savedGame_<uid>_word-builder`, `v2_wordbuilder_audio_<uid>`) is swept on first boot in `app.js:setupWithAuth`. Audio-state key for the surviving game is `v2_fillblanks_audio_<userId>`.
 
 ## Critical File Locations
 

@@ -197,8 +197,9 @@ export interface AnswerOutcome {
 }
 
 /**
- * Legacy fill-blanks-game.js awards 10 points on correct and advances the
- * question index regardless of correctness; we preserve both invariants.
+ * Slice 3.7.1 folded the retired word-builder game into fill-blanks; the
+ * surviving game inherited word-builder's 15 pts/correct rate (was 10).
+ * Index advances regardless of correctness (legacy invariant).
  */
 export function recordFillBlanksAnswer(
   question: FillBlanksQuestion,
@@ -217,7 +218,7 @@ export function recordFillBlanksAnswer(
     mgr.recordWordAttempt(vocabEntry.word, vocabEntry.category, isCorrect, 0, GAME_TYPE)
   }
 
-  const pointsAwarded = isCorrect ? 10 : 0
+  const pointsAwarded = isCorrect ? 15 : 0
   if (pointsAwarded > 0) {
     mgr.scoreManager?.addPoints(GAME_TYPE, pointsAwarded)
   }

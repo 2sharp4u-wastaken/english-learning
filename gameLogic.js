@@ -423,17 +423,6 @@ class GameManager {
             }
         });
 
-        registry.register('word-builder', {
-            displayName: 'Word Builder',
-            displayNameHebrew: 'בונה משפטים',
-            icon: '🔨',
-            config: {
-                questionsPerGame: 8,
-                pointsPerCorrect: 15,
-                categories: ['vocabulary', 'sentences']
-            }
-        });
-
         registry.register('story-time', {
             displayName: 'Story Time',
             displayNameHebrew: 'זמן סיפור',
@@ -474,7 +463,7 @@ class GameManager {
     getGameTier(gameType) {
         const learnGames = new Set(['word-journey', 'abc']);
         const practiceGames = new Set(['listening', 'picture-match', 'memory', 'grammar-beginner', 'practice', 'true-or-not']);
-        const challengeGames = new Set(['reading', 'pronunciation', 'fill-blanks', 'scramble', 'grammar', 'vocabulary', 'word-builder', 'story-time']);
+        const challengeGames = new Set(['reading', 'pronunciation', 'fill-blanks', 'scramble', 'grammar', 'vocabulary', 'story-time']);
 
         if (learnGames.has(gameType)) return 'learn';
         if (practiceGames.has(gameType)) return 'practice';
@@ -1488,7 +1477,7 @@ class GameManager {
     }
 
     _setupResetListeners(signal) {
-        const gameTypes = ['vocab', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'scramble', 'fill-blanks', 'memory', 'word-journey', 'picture-match', 'true-or-not', 'word-builder', 'story-time'];
+        const gameTypes = ['vocab', 'grammar', 'grammar-beginner', 'pronunciation', 'listening', 'reading', 'abc', 'scramble', 'fill-blanks', 'memory', 'word-journey', 'picture-match', 'true-or-not', 'story-time'];
         gameTypes.forEach(gameType => {
             const resetBtn = document.getElementById(`${gameType}-reset-btn`);
             if (resetBtn) {
@@ -2187,28 +2176,6 @@ class GameManager {
                     this.totalQuestions = questions.length;
                     debugLog(`[TrueOrNot] ${this.totalQuestions} questions built`);
                 }
-            } else if (gameType === 'word-builder') {
-                if (!this.isResuming) {
-                    // V2 Game Gating: require ≥20 learned words + 1 topic
-                    if (!this.settings?.gameUnlockOverride) {
-                        const learnedCount = Object.keys(window.app?.userProgress?.learnedWords || {}).length;
-                        if (learnedCount < 20) {
-                            this.showLearnFirstPrompt(gameType);
-                            this.isGameActive = false;
-                            return;
-                        }
-                    }
-                    const diff = 'beginner';
-                    const scopedThemes = this.currentTopicActivity === 'word-builder'
-                        ? [...new Set(this.getActiveTopicWords().map(word => word.category).filter(category => SENTENCE_THEMES.has(category)))]
-                        : [];
-                    const wbThemes = scopedThemes.length > 0
-                        ? scopedThemes
-                        : (this.selectedCategories || []).filter(c => SENTENCE_THEMES.has(c));
-                    this.shuffledQuestions = getRandomSentences(8, diff, wbThemes.length > 0 ? wbThemes : null);
-                    this.totalQuestions = this.shuffledQuestions.length;
-                    debugLog(`[WordBuilder] ${this.totalQuestions} sentences loaded (${diff})`);
-                }
             } else if (gameType === 'story-time') {
                 if (!this.isResuming) {
                     // V2 Game Gating: require ≥15 learned words
@@ -2602,9 +2569,6 @@ class GameManager {
                     break;
                 case 'true-or-not':
                     window.trueOrNotGame.loadQuestion(question);
-                    break;
-                case 'word-builder':
-                    window.wordBuilderGame.loadQuestion(question);
                     break;
                 case 'story-time': {
                     // Story-time uses storyIndex to pick stories (not currentQuestionIndex which tracks quiz questions)

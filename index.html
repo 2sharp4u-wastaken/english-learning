@@ -179,17 +179,6 @@
                                     <span class="lock-text"></span>
                                 </div>
                             </div>
-                            <div class="game-card" data-game="word-builder" data-gate="20 מילים + 1 נושא">
-                                <div class="game-card-main">
-                                    <div class="game-card-icon">🔨</div>
-                                    <h3>בונה משפטים</h3>
-                                    <p>בחר את המילה הנכונה לבניית משפט</p>
-                                </div>
-                                <div class="card-lock-overlay">
-                                    <span class="lock-icon">🔒</span>
-                                    <span class="lock-text"></span>
-                                </div>
-                            </div>
                             <div class="game-card" data-game="scramble" data-gate="30 מילים + 2 נושאים">
                                 <div class="game-card-main">
                                     <div class="game-card-icon">🔀</div>
@@ -764,35 +753,6 @@
                     <div class="feedback" id="true-or-not-feedback" aria-live="polite" style="display: none;"></div>
                     <button class="next-btn" id="true-or-not-next" onclick="gameManager.loadQuestion('true-or-not')" style="display: none;">
                         <span>הבא ➡️</span>
-                    </button>
-                </div>
-            </div>
-
-            <!-- Word Builder Game -->
-            <div id="word-builder-game" class="game-content">
-                <div class="progress-container">
-                    <span class="question-counter">שאלה <span id="word-builder-current-q">1</span> מתוך <span id="word-builder-total-q">8</span></span>
-                    <span class="scramble-theme-badge progress-category-badge" id="word-builder-theme"></span>
-                    <button class="reset-game-btn" id="word-builder-reset-btn" title="אפס משחק">אפס משחק</button>
-                    <div class="progress-bar">
-                        <div class="progress-fill" id="word-builder-progress-fill"></div>
-                    </div>
-                </div>
-                <div class="game-board">
-                    <div id="word-builder-container">
-                        <div class="wb-hint" id="word-builder-hint"></div>
-                        <div class="wb-sentence-card">
-                            <div id="word-builder-sentence" class="wb-sentence">
-                                <!-- Sentence with blank slot populated by JS -->
-                            </div>
-                        </div>
-                        <div id="word-builder-options" class="wb-options">
-                            <!-- Options populated by JS -->
-                        </div>
-                    </div>
-                    <div class="feedback" id="word-builder-feedback" aria-live="polite" style="display: none;"></div>
-                    <button class="next-btn" id="word-builder-next" onclick="gameManager.loadQuestion('word-builder')" style="display: none;">
-                        <span>המשפט הבא ➡️</span>
                     </button>
                 </div>
             </div>
