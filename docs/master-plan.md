@@ -1254,7 +1254,26 @@ Files modified:
 - `src/features/games/shared/RewardModal.tsx` — **shared change affecting all 6 React games**: removed static title; introduced 10 English tiers (Perfect/Outstanding/Excellent/Great job/Well done/Nice effort/Keep going/Don't give up/You can do it/Let's try again) selected by `Math.round(correct/total*100)`; speaks the English tier on open via `speak()`; `dir="ltr"` on headline + Stat value to prevent RTL bidi flipping (was rendering "10 / 8" instead of "8 / 10", and "👏 !Great job" instead of "Great job! 👏"). Percentage is computed but **not** displayed.
 - `src/bridge/audio.ts` — added `speakHebrew(text)` helper (passes `{ language: 'hebrew' }` to legacy `speechManager.speak`). Currently unused — kept for any future Hebrew-completion voice work.
 
-**Slice 3.7: Fill Blanks** — sentence completion. ~205 lines.
+**Slice 3.7: Fill Blanks** — sentence completion. ~205 lines. ✅ shipped.
+
+Status: complete (2026-05-16). Followed Slice 3.6 (Word Builder) page shape verbatim — same data shape (sentences with `blank.options[3]`), same custom prompt card + always-on next button, same AnswerGrid. Differences vs 3.6:
+
+- Scoring: 10 pts per correct (matches legacy `fill-blanks-game.js:141`). Resume derives `correct = Math.floor(resumeScore / 10)`.
+- V2 gating mirrors `gameLogic.js:2049` — requires ≥30 learned words. `MIN_LEARNED = 30` in bridge.
+- Base sentence count: `getRandomSentences(10, ...)` (legacy already pulls 10; no over-fetch needed since `questionsPerGame` cap is also 10).
+- Game title "השלם את המשפט", icon "✍️" (per `index.html:163` legacy card).
+
+Files added:
+
+- `src/bridge/fill-blanks.ts` — clone of Slice 3.6 bridge keyed to `'fill-blanks'` + `v2_fillblanks_audio_<userId>` audio-state key. `recordFillBlanksAnswer(question, selectedWord)` returns `{isCorrect, pointsAwarded: isCorrect ? 10 : 0}` and advances `currentQuestionIndex` regardless of correctness (matches legacy).
+- `src/features/games/fill-blanks/FillBlanksGamePage.tsx` — page with custom sentence-with-blank prompt + AnswerGrid (text) + always-on next button.
+- `src/features/games/fill-blanks/components/FillBlanksLearnFirst.tsx` — learn-first prompt (≥30 learned).
+
+Files modified:
+
+- `src/features/games/reactGames.ts` — added `'fill-blanks'` to `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — registered `'fill-blanks': FillBlanksGamePage`.
+
 **Slice 3.8: Sentence Scramble** — drag/tap reordering. ~428 lines.
 
 ### Wave 3: Grammar and structured learning — BACKLOG

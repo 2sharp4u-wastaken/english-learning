@@ -7,6 +7,7 @@ import { PictureMatchGamePage } from './picture-match/PictureMatchGamePage'
 import { TrueOrNotGamePage } from './true-or-not/TrueOrNotGamePage'
 import { ReadingGamePage } from './reading/ReadingGamePage'
 import { WordBuilderGamePage } from './word-builder/WordBuilderGamePage'
+import { FillBlanksGamePage } from './fill-blanks/FillBlanksGamePage'
 import { isReactGame } from './reactGames'
 
 const REACT_GAMES: Record<string, ComponentType> = {
@@ -16,6 +17,7 @@ const REACT_GAMES: Record<string, ComponentType> = {
   'true-or-not': TrueOrNotGamePage,
   reading: ReadingGamePage,
   'word-builder': WordBuilderGamePage,
+  'fill-blanks': FillBlanksGamePage,
 }
 
 export function GameHostPage() {

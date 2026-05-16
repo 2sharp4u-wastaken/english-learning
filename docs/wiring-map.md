@@ -242,6 +242,31 @@ React route /#/game/word-builder
 
 Word Builder is the second Wave 2 slice (after Reading). Distinct from Wave 1: 15 pts/correct (not 10), always-on next button (no auto-advance on correct), and a custom prompt card replacing `MediaPromptCard` because the sentence-with-inline-blank can't fit the card's word/translation slots.
 
+## Fill Blanks Game (React — Slice 3.7)
+
+```
+React route /#/game/fill-blanks
+  └─ GameHostPage.tsx → REACT_GAMES['fill-blanks'] → FillBlanksGamePage.tsx
+      ├─ beginFillBlanksSession()  (src/bridge/fill-blanks.ts)
+      │   ├─ speechManager.setGameContext('fill-blanks')
+      │   ├─ Resume from savedGame_<userId>_fill-blanks if mid-session
+      │   ├─ V2 gating (MIN_LEARNED=30): if learnedCount < 30 → render <FillBlanksLearnFirst />
+      │   └─ getRandomSentences(10, 'beginner', themes) → shuffledQuestions clamped to settings.questionsPerGame
+      ├─ Loop: theme badge + Hebrew translation + sentence-with-blank + speaker button + <AnswerGrid variant='text'>
+      │   ├─ On new question: auto-speak full English sentence once (voice readiness poll); shuffle options (correct=blank.options[0])
+      │   ├─ Option click → recordFillBlanksAnswer(question, selectedWord)
+      │   │   → isCorrect = selectedWord.toLowerCase() === blank.options[0].toLowerCase()
+      │   │   → pointsAwarded = isCorrect ? 10 : 0
+      │   │   → recordWordAttempt(blankWordVocabEntry) + scoreManager.addPoints + currentQuestionIndex++ + saveGameState
+      │   │   → correct: re-speak full sentence; incorrect: speak target word; both reveal correctIndex in grid
+      │   └─ "השאלה הבאה" (always shown after any answer — no auto-advance, kids need to read)
+      └─ Final question → finishFillBlanksSession() → gameManager.endGame()
+          → RewardModal opens → voices English tier via speak()
+          → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
+```
+
+Fill Blanks reuses the Slice 3.6 (Word Builder) page shape verbatim — same custom sentence-with-blank prompt card, always-on next button, and AnswerGrid. Differences vs Word Builder: 10 pts/correct (matches Wave 1), MIN_LEARNED=30 (higher gate), base sentence count 10 (no over-fetch since `questionsPerGame` cap is also 10), resume score divisor is /10. Audio-state localStorage key is `v2_fillblanks_audio_<userId>`.
+
 ## Critical File Locations
 
 | Function | File | Line |
