@@ -1,6 +1,29 @@
 import { useEffect } from 'react'
 import { Coins, RotateCcw, Sparkles, Trophy, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { speak } from '@/bridge/audio'
+
+interface Tier {
+  message: string
+  emoji: string
+}
+
+const TIERS: Array<{ min: number } & Tier> = [
+  { min: 100, message: 'Perfect',     emoji: '🌟' },
+  { min: 90,  message: 'Outstanding', emoji: '🏆' },
+  { min: 80,  message: 'Excellent',   emoji: '🎉' },
+  { min: 70,  message: 'Great job',   emoji: '👏' },
+  { min: 60,  message: 'Well done',   emoji: '✨' },
+  { min: 50,  message: 'Nice effort', emoji: '💪' },
+  { min: 40,  message: 'Keep going',  emoji: '🚀' },
+  { min: 30,  message: "Don't give up", emoji: '🌱' },
+  { min: 20,  message: 'You can do it', emoji: '🌈' },
+  { min: 0,   message: "Let's try again", emoji: '🎯' },
+]
+
+function tierFor(pct: number): Tier {
+  return TIERS.find((t) => pct >= t.min) ?? TIERS[TIERS.length - 1]
+}
 
 export interface RewardModalProps {
   open: boolean
@@ -18,7 +41,7 @@ export interface RewardModalProps {
 
 export function RewardModal({
   open,
-  title = 'כל הכבוד! 🎉',
+  title,
   message,
   score,
   coins,
@@ -29,6 +52,11 @@ export function RewardModal({
   onClose,
   className,
 }: RewardModalProps) {
+  const hasTally = typeof correct === 'number' && typeof total === 'number' && total > 0
+  const pct = hasTally ? Math.round((correct! / total!) * 100) : null
+  const tier = pct == null ? null : tierFor(pct)
+  const headline = title ?? (tier ? `${tier.message}! ${tier.emoji}` : 'Done! 🎉')
+
   useEffect(() => {
     if (!open) return
     const handler = (e: KeyboardEvent) => {
@@ -37,6 +65,13 @@ export function RewardModal({
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
   }, [open, onClose, onExit])
+
+  useEffect(() => {
+    if (!open) return
+    if (title) return // caller-supplied title — let the caller handle audio
+    if (pct == null || !tier) return
+    void speak(`${tier.message}!`)
+  }, [open, pct, tier, title])
 
   if (!open) return null
 
@@ -81,9 +116,10 @@ export function RewardModal({
         <h2
           id="reward-modal-title"
           data-testid="reward-modal-title"
+          dir="ltr"
           className="text-2xl font-bold text-white"
         >
-          {title}
+          {headline}
         </h2>
         {message ? (
           <p className="mt-2 text-sm text-[color:var(--slate-200)]">{message}</p>
@@ -175,7 +211,7 @@ function Stat({
         {icon}
         {label}
       </span>
-      <span className={cn('text-lg font-bold', toneClass)}>{value}</span>
+      <span dir="ltr" className={cn('text-lg font-bold', toneClass)}>{value}</span>
     </div>
   )
 }

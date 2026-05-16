@@ -1229,7 +1229,31 @@ Files modified:
 - `tests/react-routes.spec.js` — Slice 3.5 block (7 tests: learn-first, happy path with picture+letter bank+check advances, clear button resets state, incorrect→no retry, resume, audio-state persistence across refresh, exit dialog).
 - `docs/wiring-map.md` — "Reading Game (React — Slice 3.5)" cause/effect chain.
 
-**Slice 3.6: Word Builder** — word construction. ~182 lines.
+**Slice 3.6: Word Builder** — sentence-with-blank, choose-the-missing-word. ~182 lines. ✅ shipped.
+
+Status: complete (2026-05-16). Followed Slice 3.1 template. Differences vs 3.1:
+
+- Question source is `data/sentences.js` via legacy `getRandomSentences(20, 'beginner', themes)`; bridge fetches 20 (was 8 in legacy `gameLogic.js:2208`) so the `settings.questionsPerGame` cap up to 20 actually applies, then `Math.min(shuffled.length, settingsCap)`.
+- 3 options per question (data shape: `blank.options = [correct, wrong1, wrong2]`). Options shuffled at the page layer; `correctIndex` recomputed per question via `useMemo`. AnswerGrid `variant='text'`, columns auto (3).
+- Scoring: 15 pts per correct (matches legacy `word-builder-game.js:140`), no partial credit. Resume derives `correct = Math.floor(resumeScore / 15)` (not /10 like other Wave-1 slices).
+- V2 gating mirrors `gameLogic.js:2190` — requires ≥20 learned words. `MIN_LEARNED = 20` in bridge.
+- Always-on "השאלה הבאה" button after any answer (correct or incorrect). No auto-advance — kids need time to read the full sentence. Pressing the answer also re-speaks the full sentence (correct) or the target word (incorrect).
+- Custom prompt card (not `MediaPromptCard`): theme badge + Hebrew translation (text-2xl/3xl matching prior slices) + sentence with inline blank slot styled by phase. `key={index}` on the prompt-section root forces a clean remount per question.
+- Audio button is a separate gradient pill (speaker icon) above an amber "השמעות נותרו" hint — matches MediaPromptCard's `audioIconOnly` styling but standalone since the card layout is custom.
+
+Files added:
+
+- `src/bridge/word-builder.ts` — clone of Slice 3.1 bridge keyed to `'word-builder'` + `v2_wordbuilder_audio_<userId>` audio-state key. `recordWordBuilderAnswer(question, selectedWord)` returns `{isCorrect, pointsAwarded: isCorrect ? 15 : 0}` and advances `currentQuestionIndex` regardless of correctness (matches legacy).
+- `src/features/games/word-builder/WordBuilderGamePage.tsx` — page with custom sentence-with-blank prompt + AnswerGrid (text) + always-on next button.
+- `src/features/games/word-builder/components/WordBuilderLearnFirst.tsx` — learn-first prompt (≥20 learned).
+
+Files modified:
+
+- `src/features/games/reactGames.ts` — added `'word-builder'` to `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — registered `'word-builder': WordBuilderGamePage`.
+- `src/features/games/shared/RewardModal.tsx` — **shared change affecting all 6 React games**: removed static title; introduced 10 English tiers (Perfect/Outstanding/Excellent/Great job/Well done/Nice effort/Keep going/Don't give up/You can do it/Let's try again) selected by `Math.round(correct/total*100)`; speaks the English tier on open via `speak()`; `dir="ltr"` on headline + Stat value to prevent RTL bidi flipping (was rendering "10 / 8" instead of "8 / 10", and "👏 !Great job" instead of "Great job! 👏"). Percentage is computed but **not** displayed.
+- `src/bridge/audio.ts` — added `speakHebrew(text)` helper (passes `{ language: 'hebrew' }` to legacy `speechManager.speak`). Currently unused — kept for any future Hebrew-completion voice work.
+
 **Slice 3.7: Fill Blanks** — sentence completion. ~205 lines.
 **Slice 3.8: Sentence Scramble** — drag/tap reordering. ~428 lines.
 

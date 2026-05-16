@@ -56,3 +56,13 @@ export async function speak(text: string): Promise<void> {
     /* swallow */
   }
 }
+
+export async function speakHebrew(text: string): Promise<void> {
+  const sm = getSpeech()
+  if (!sm || !text) return
+  try {
+    await sm.speak(text, { language: 'hebrew' })
+  } catch {
+    /* swallow */
+  }
+}

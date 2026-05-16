@@ -217,6 +217,31 @@ React route /#/game/reading
 
 Reading is the first Wave 2 (text-building) React slice — the page replaces `AnswerGrid` with a letter bank + built-word box, but reuses every other shared primitive and the bridge shape from Slice 3.1.
 
+## Word Builder Game (React — Slice 3.6)
+
+```
+React route /#/game/word-builder
+  └─ GameHostPage.tsx → REACT_GAMES['word-builder'] → WordBuilderGamePage.tsx
+      ├─ beginWordBuilderSession()  (src/bridge/word-builder.ts)
+      │   ├─ speechManager.setGameContext('word-builder')
+      │   ├─ Resume from savedGame_<userId>_word-builder if mid-session
+      │   ├─ V2 gating (MIN_LEARNED=20): if learnedCount < 20 → render <WordBuilderLearnFirst />
+      │   └─ getRandomSentences(20, 'beginner', themes) → shuffledQuestions clamped to settings.questionsPerGame
+      ├─ Loop: theme badge + Hebrew translation + sentence-with-blank + speaker button + <AnswerGrid variant='text'>
+      │   ├─ On new question: auto-speak full English sentence once (voice readiness poll); shuffle options (correct=blank.options[0])
+      │   ├─ Option click → recordWordBuilderAnswer(question, selectedWord)
+      │   │   → isCorrect = selectedWord.toLowerCase() === blank.options[0].toLowerCase()
+      │   │   → pointsAwarded = isCorrect ? 15 : 0
+      │   │   → recordWordAttempt(blankWordVocabEntry) + scoreManager.addPoints + currentQuestionIndex++ + saveGameState
+      │   │   → correct: re-speak full sentence; incorrect: speak target word; both reveal correctIndex in grid
+      │   └─ "השאלה הבאה" (always shown after any answer — no auto-advance, kids need to read)
+      └─ Final question → finishWordBuilderSession() → gameManager.endGame()
+          → RewardModal opens → voices English tier ("Perfect", "Excellent", etc.) via speak()
+          → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
+```
+
+Word Builder is the second Wave 2 slice (after Reading). Distinct from Wave 1: 15 pts/correct (not 10), always-on next button (no auto-advance on correct), and a custom prompt card replacing `MediaPromptCard` because the sentence-with-inline-blank can't fit the card's word/translation slots.
+
 ## Critical File Locations
 
 | Function | File | Line |
