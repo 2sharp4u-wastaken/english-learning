@@ -298,16 +298,25 @@ export function ReadingGamePage() {
   const handleLetterPick = useCallback(
     (key: string) => {
       if (phase !== 'awaiting') return
-      setLetterBank((bank) => {
-        const idx = bank.findIndex((t) => t.key === key && !t.used)
-        if (idx === -1) return bank
-        const next = bank.slice()
-        next[idx] = { ...next[idx], used: true }
-        setBuilt((b) => [...b, next[idx]])
-        // Speak the letter (legacy reading-game.js addLetterToWord behavior).
-        void speak(next[idx].letter.toLowerCase())
-        return next
-      })
+      const token = letterBank.find((t) => t.key === key && !t.used)
+      if (!token) return
+      setLetterBank((bank) =>
+        bank.map((t) => (t.key === key ? { ...t, used: true } : t)),
+      )
+      setBuilt((b) => [...b, { ...token, used: true }])
+      // Speak the letter (legacy reading-game.js addLetterToWord behavior).
+      void speak(token.letter.toLowerCase())
+    },
+    [phase, letterBank],
+  )
+
+  const handleBuiltLetterRemove = useCallback(
+    (key: string) => {
+      if (phase !== 'awaiting') return
+      setBuilt((b) => b.filter((t) => t.key !== key))
+      setLetterBank((bank) =>
+        bank.map((t) => (t.key === key ? { ...t, used: false } : t)),
+      )
     },
     [phase],
   )
@@ -488,10 +497,21 @@ export function ReadingGamePage() {
                   dir="rtl"
                   className="text-lg font-normal text-[color:var(--slate-300)] sm:text-xl"
                 >
-                  בחרו אותיות מהבנק…
+                  בחרו אותיות...
                 </span>
               ) : (
-                built.map((t) => <span key={t.key}>{renderLetter(t.letter)}</span>)
+                built.map((t) => (
+                  <button
+                    key={t.key}
+                    type="button"
+                    onClick={() => handleBuiltLetterRemove(t.key)}
+                    disabled={phase !== 'awaiting'}
+                    data-testid="reading-built-letter"
+                    className="inline-flex items-center justify-center rounded-md px-1 transition hover:bg-white/10 disabled:cursor-not-allowed"
+                  >
+                    {renderLetter(t.letter)}
+                  </button>
+                ))
               )}
             </div>
 

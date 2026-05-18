@@ -1,6 +1,6 @@
 import { useMemo, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, BookOpen, Flame, Lock, Medal, Play, Settings, Sparkles, Star, Trophy, User } from 'lucide-react'
+import { ArrowLeft, BookOpen, Flame, Lock, Medal, Play, Settings, Star, Trophy, User } from 'lucide-react'
 import { getContinueTarget, getGameCatalog } from '@/bridge/games'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useGameUnlocks } from '@/hooks/useGameUnlocks'
@@ -91,10 +91,6 @@ export function HomePage() {
       <section data-testid="home-hero" className="overflow-hidden rounded-2xl border border-white/10 bg-surface shadow-panel">
         <div className="grid gap-5 bg-[radial-gradient(circle_at_top_right,rgba(99,230,198,0.18),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-5 sm:grid-cols-[1.5fr_1fr] sm:p-6">
           <div className="space-y-4">
-            <div className="inline-flex w-fit items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted">
-              <Sparkles size={14} className="text-learn" />
-              מסך הבית החדש פעיל על גבי ה-bridge
-            </div>
             <div className="space-y-2">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 font-display text-lg font-semibold text-text">

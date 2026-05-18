@@ -706,9 +706,6 @@ class AuthUIController {
             this.hideLoginModal();
             this.updateUserDisplay();
 
-            // Show welcome message
-            this.showWelcomeNotification(result.user.name);
-
             // Reload app with new user context (if appManager exists)
             if (typeof appManager !== 'undefined' && appManager.userProgress) {
                 appManager.userProgress = appManager.loadUserProgress();

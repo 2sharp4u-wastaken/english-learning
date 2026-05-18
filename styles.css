@@ -2802,6 +2802,9 @@ body::after {
 }
 
 /* ========== Authentication UI Styles ========== */
+/* Restyled to match React home/game palette (dark ink + mint→blue accents).
+   Markup lives in legacy index.html / auth.js; a future slice will port
+   the auth flow to React (see docs/master-plan.md). */
 
 /* Login Modal */
 .auth-modal {
@@ -2810,10 +2813,11 @@ body::after {
     left: 0;
     width: 100%;
     height: 100%;
-    background: linear-gradient(135deg,
-        rgba(102, 126, 234, 0.95) 0%,
-        rgba(118, 75, 162, 0.95) 100%);
-    backdrop-filter: blur(10px);
+    background:
+        radial-gradient(circle at 20% 10%, rgba(99, 230, 198, 0.10), transparent 35%),
+        radial-gradient(circle at 80% 90%, rgba(104, 168, 255, 0.12), transparent 40%),
+        linear-gradient(135deg, #07101d 0%, #0c1728 100%);
+    backdrop-filter: blur(8px);
     display: flex;
     align-items: center;
     justify-content: center;
@@ -2830,36 +2834,42 @@ body::after {
 }
 
 .auth-modal-content {
-    background: rgba(255, 255, 255, 0.95);
+    background: linear-gradient(180deg, rgba(20, 35, 58, 0.85), rgba(12, 23, 40, 0.85));
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 24px;
     padding: 40px;
-    max-width: 450px;
+    max-width: 460px;
     width: 90%;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    color: #f4f7fc;
+    box-shadow: 0 25px 60px rgba(1, 8, 20, 0.55);
     animation: slideUp 0.4s ease;
 }
 
 .auth-header {
     text-align: center;
-    margin-bottom: 30px;
+    margin-bottom: 28px;
 }
 
 .auth-icon {
-    font-size: 3rem;
-    color: #667eea;
-    margin-bottom: 15px;
+    font-size: 2.8rem;
+    background: linear-gradient(135deg, #63e6c6, #68a8ff);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    margin-bottom: 14px;
 }
 
 .auth-header h2 {
-    margin: 0 0 5px 0;
-    font-size: 1.8rem;
-    color: #2d3748;
+    margin: 0 0 6px 0;
+    font-size: 1.7rem;
+    color: #f4f7fc;
+    font-weight: 700;
 }
 
 .auth-subtitle {
     margin: 0;
-    font-size: 1.1rem;
-    color: #718096;
+    font-size: 1rem;
+    color: #b4c2d8;
     font-weight: 400;
 }
 
@@ -2869,106 +2879,119 @@ body::after {
 
 .auth-screen h3 {
     text-align: center;
-    color: #2d3748;
-    margin: 0 0 25px 0;
-    font-size: 1.3rem;
+    color: #d8e2f1;
+    margin: 0 0 22px 0;
+    font-size: 1.15rem;
+    font-weight: 600;
 }
 
 /* User Selection Grid */
 .user-selection-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-    gap: 15px;
-    margin-top: 20px;
+    gap: 14px;
+    margin-top: 18px;
 }
 
 .user-select-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border: none;
-    border-radius: 16px;
-    padding: 20px;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 18px;
+    padding: 20px 16px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
     display: flex;
     flex-direction: column;
     align-items: center;
     gap: 10px;
-    color: white;
+    color: #f4f7fc;
     font-weight: 600;
     font-size: 0.95rem;
 }
 
 .user-select-card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    transform: translateY(-3px);
+    background: rgba(255, 255, 255, 0.07);
+    border-color: rgba(99, 230, 198, 0.35);
+    box-shadow: 0 14px 32px rgba(1, 8, 20, 0.45);
 }
 
 .user-select-card:active {
-    transform: translateY(-2px);
+    transform: translateY(-1px);
 }
 
 .user-select-avatar {
     width: 60px;
     height: 60px;
     border-radius: 50%;
-    background: rgba(255, 255, 255, 0.2);
+    background: linear-gradient(135deg, #63e6c6, #68a8ff);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 1.8rem;
+    font-size: 1.7rem;
     font-weight: 700;
-    border: 3px solid rgba(255, 255, 255, 0.3);
+    color: #07101d;
+    border: 2px solid rgba(255, 255, 255, 0.18);
 }
 
 /* Password Entry Screen */
 .back-btn {
-    background: none;
-    border: none;
-    color: #667eea;
-    font-size: 1.2rem;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    color: #d8e2f1;
+    width: 38px;
+    height: 38px;
+    border-radius: 999px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
     cursor: pointer;
-    padding: 8px;
-    margin-bottom: 20px;
-    transition: transform 0.2s ease;
+    padding: 0;
+    margin-bottom: 18px;
+    transition: transform 0.2s ease, background 0.2s ease;
 }
 
 .back-btn:hover {
-    transform: translateX(5px);
+    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.10);
 }
 
 .user-login-info {
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-bottom: 30px;
+    margin-bottom: 26px;
 }
 
 .login-avatar {
     width: 80px;
     height: 80px;
     border-radius: 50%;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    background: linear-gradient(135deg, #63e6c6, #68a8ff);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 2.5rem;
+    font-size: 2.4rem;
     font-weight: 700;
-    color: white;
-    border: 4px solid rgba(102, 126, 234, 0.2);
-    margin-bottom: 15px;
+    color: #07101d;
+    border: 3px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 12px 28px rgba(104, 168, 255, 0.25);
+    margin-bottom: 14px;
 }
 
 .user-login-info h3 {
     margin: 0;
-    font-size: 1.5rem;
-    color: #2d3748;
+    font-size: 1.4rem;
+    color: #f4f7fc;
+    font-weight: 700;
 }
 
 /* Login Form */
 .login-form {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 18px;
 }
 
 .form-group {
@@ -2979,8 +3002,8 @@ body::after {
 
 .form-group label {
     font-weight: 600;
-    color: #2d3748;
-    font-size: 0.95rem;
+    color: #d8e2f1;
+    font-size: 0.9rem;
 }
 
 .password-input-wrapper {
@@ -2992,16 +3015,23 @@ body::after {
 .password-input {
     width: 100%;
     padding: 12px 45px 12px 15px;
-    border: 2px solid #e2e8f0;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
     border-radius: 12px;
     font-size: 1rem;
-    transition: border-color 0.3s ease;
+    color: #f4f7fc;
+    transition: border-color 0.2s ease, background 0.2s ease;
     font-family: inherit;
+}
+
+.password-input::placeholder {
+    color: rgba(180, 194, 216, 0.55);
 }
 
 .password-input:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: #63e6c6;
+    background: rgba(255, 255, 255, 0.08);
 }
 
 .toggle-password {
@@ -3009,47 +3039,48 @@ body::after {
     left: 10px;
     background: none;
     border: none;
-    color: #718096;
+    color: #b4c2d8;
     cursor: pointer;
     padding: 5px 10px;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
     transition: color 0.2s ease;
 }
 
 .toggle-password:hover {
-    color: #667eea;
+    color: #63e6c6;
 }
 
 .password-hint {
     font-size: 0.85rem;
-    color: #718096;
+    color: #b4c2d8;
     line-height: 1.5;
-    background: rgba(102, 126, 234, 0.1);
-    padding: 10px;
-    border-radius: 8px;
+    background: rgba(104, 168, 255, 0.08);
+    border: 1px solid rgba(104, 168, 255, 0.18);
+    padding: 10px 12px;
+    border-radius: 10px;
     margin: 5px 0 0 0;
 }
 
 .auth-error {
-    background: rgba(245, 101, 101, 0.1);
-    border: 1px solid rgba(245, 101, 101, 0.3);
-    color: #c53030;
+    background: rgba(255, 122, 102, 0.12);
+    border: 1px solid rgba(255, 122, 102, 0.35);
+    color: #ffb4a8;
     padding: 12px;
-    border-radius: 8px;
+    border-radius: 10px;
     font-size: 0.9rem;
     text-align: center;
 }
 
 .auth-btn {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: linear-gradient(135deg, #63e6c6 0%, #68a8ff 100%);
+    color: #07101d;
     border: none;
-    border-radius: 12px;
-    padding: 14px 20px;
-    font-size: 1.1rem;
-    font-weight: 600;
+    border-radius: 999px;
+    padding: 13px 20px;
+    font-size: 1.05rem;
+    font-weight: 700;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -3058,7 +3089,8 @@ body::after {
 
 .auth-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    filter: brightness(1.05);
+    box-shadow: 0 14px 32px rgba(104, 168, 255, 0.35);
 }
 
 .auth-btn:active {
