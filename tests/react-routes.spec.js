@@ -1506,6 +1506,177 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
   });
 });
 
+// ─── Slice 3.8: Sentence Scramble Game (React) ──────────────────────────────
+
+test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
+  test('learn-first empty state shows when fewer than 30 words are learned', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/game/scramble');
+    await page.waitForTimeout(500);
+
+    await expect(page.locator('[data-testid="scramble-learn-first"]')).toBeVisible();
+    await expect(page.locator('[data-testid="scramble-word-bank"]')).toHaveCount(0);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('happy path: tap word bank → answer zone, check advances', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    const learned = await seedLearnedFromBank(page, 35);
+    expect(learned).toBeGreaterThanOrEqual(30);
+
+    await gotoHash(page, '/game/scramble');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+    await expect(page.locator('[data-testid="scramble-hint"]')).toBeVisible();
+    await expect(page.locator('[data-testid="scramble-theme"]')).toBeVisible();
+    await expect(page.locator('[data-testid="scramble-word-bank"]')).toBeVisible();
+    await expect(page.locator('[data-testid="scramble-answer-zone"]')).toBeVisible();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+
+    const target = await page.evaluate(() => {
+      const m = window.gameManager;
+      return m?.shuffledQuestions?.[m.currentQuestionIndex]?.words || null;
+    });
+    expect(target).toBeTruthy();
+
+    // Tap each word in correct order (strip punctuation to match button labels).
+    for (const raw of target) {
+      const word = raw.replace(/[.,!?;:]+$/, '');
+      const btn = page
+        .locator(`[data-testid="scramble-word-btn"]:has-text("${word}"):not([disabled])`)
+        .first();
+      await btn.click();
+    }
+
+    await expect(page.locator('[data-testid="scramble-check"]')).toBeEnabled();
+    await page.locator('[data-testid="scramble-check"]').click();
+
+    // Index advances regardless of correctness (legacy invariant).
+    await expect(page.locator('[data-testid="scramble-next"]')).toBeVisible();
+    await page.locator('[data-testid="scramble-next"]').click();
+    await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
+      timeout: 4000,
+    }).toBe('2');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('tapping a placed chip returns it to the word bank', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 35);
+    await gotoHash(page, '/game/scramble');
+    await page.waitForTimeout(900);
+
+    const before = await page.locator('[data-testid="scramble-word-btn"]').count();
+    const firstWord = page.locator('[data-testid="scramble-word-btn"]').first();
+    await firstWord.click();
+
+    await expect(page.locator('[data-testid="scramble-answer-chip"]')).toHaveCount(1);
+    await expect(page.locator('[data-testid="scramble-word-btn"]')).toHaveCount(before - 1);
+
+    // Click the placed chip — it should return to the bank.
+    await page.locator('[data-testid="scramble-answer-chip"]').first().click();
+    await expect(page.locator('[data-testid="scramble-answer-chip"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="scramble-word-btn"]')).toHaveCount(before);
+  });
+
+  test('check is disabled until all words are placed', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 35);
+    await gotoHash(page, '/game/scramble');
+    await page.waitForTimeout(900);
+
+    // No words placed → check is disabled.
+    await expect(page.locator('[data-testid="scramble-check"]')).toBeDisabled();
+
+    // Place one word → still disabled (multi-word sentences).
+    await page.locator('[data-testid="scramble-word-btn"]').first().click();
+    await expect(page.locator('[data-testid="scramble-check"]')).toBeDisabled();
+  });
+
+  test('incorrect submission reveals the correct order and shows Next', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 35);
+    await gotoHash(page, '/game/scramble');
+    await page.waitForTimeout(900);
+
+    const target = await page.evaluate(() => {
+      const m = window.gameManager;
+      return m?.shuffledQuestions?.[m.currentQuestionIndex]?.words || null;
+    });
+    if (!target || target.length < 2) test.skip();
+
+    // Place in reverse order to almost certainly be wrong.
+    const reversed = [...target].reverse().map((w) => w.replace(/[.,!?;:]+$/, ''));
+    for (const word of reversed) {
+      const btn = page
+        .locator(`[data-testid="scramble-word-btn"]:has-text("${word}"):not([disabled])`)
+        .first();
+      await btn.click();
+    }
+
+    await page.locator('[data-testid="scramble-check"]').click();
+    // Reveal animation populates the answer zone with the correct words.
+    await page.waitForTimeout(500 + target.length * 200 + 200);
+    await expect(page.locator('[data-testid="scramble-next"]')).toBeVisible();
+  });
+
+  test('resume picks up mid-session save and continues from the saved question', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 35);
+    await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      // Hand-build 5 scramble questions matching the shape gameManager expects:
+      // requires `words` (array) for valid-resume guard.
+      const sentences = [
+        { sentence: 'I am happy', translation: 'אני שמח', words: ['I', 'am', 'happy'], theme: 'daily', difficulty: 'beginner' },
+        { sentence: 'The cat is here', translation: 'החתול כאן', words: ['The', 'cat', 'is', 'here'], theme: 'animals', difficulty: 'beginner' },
+        { sentence: 'I like apples', translation: 'אני אוהב תפוחים', words: ['I', 'like', 'apples'], theme: 'food', difficulty: 'beginner' },
+        { sentence: 'My family is big', translation: 'המשפחה שלי גדולה', words: ['My', 'family', 'is', 'big'], theme: 'family', difficulty: 'beginner' },
+        { sentence: 'Hello my friend', translation: 'שלום חבר שלי', words: ['Hello', 'my', 'friend'], theme: 'greetings', difficulty: 'beginner' },
+      ];
+      localStorage.setItem(
+        `savedGame_${userId}_scramble`,
+        JSON.stringify({
+          gameType: 'scramble',
+          currentQuestionIndex: 2,
+          score: 20,
+          totalQuestions: 5,
+          timestamp: Date.now(),
+          shuffledQuestions: sentences,
+          gameElapsedMs: 0,
+          selectedCategories: [],
+        }),
+      );
+    });
+
+    await gotoHash(page, '/game/scramble');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('3');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('5');
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 35);
+    await gotoHash(page, '/game/scramble');
+    await page.waitForTimeout(800);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {

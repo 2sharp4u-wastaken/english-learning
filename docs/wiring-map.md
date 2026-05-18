@@ -242,6 +242,35 @@ React route /#/game/fill-blanks
 
 Slice 3.7.1 retired the duplicate `word-builder` game (shipped briefly in 3.6) and folded its 15 pts/correct scoring into Fill Blanks — both games pulled from the same `data/sentences.js` pool with near-identical UX, so the duplication was UI-only. Legacy `/#/game/word-builder` bookmarks redirect via `GameHostPage.RETIRED_GAMES`. Orphan localStorage (`savedGame_<uid>_word-builder`, `v2_wordbuilder_audio_<uid>`) is swept on first boot in `app.js:setupWithAuth`. Audio-state key for the surviving game is `v2_fillblanks_audio_<userId>`.
 
+## Sentence Scramble Game (React — Slice 3.8)
+
+```
+React route /#/game/scramble
+  └─ GameHostPage.tsx → REACT_GAMES['scramble'] → SentenceScrambleGamePage.tsx
+      ├─ beginScrambleSession()  (src/bridge/sentence-scramble.ts)
+      │   ├─ speechManager.setGameContext('scramble')
+      │   ├─ Resume from savedGame_<userId>_scramble if mid-session (requires shuffledQuestions[i].words array)
+      │   ├─ V2 gating (MIN_LEARNED=30): if learnedCount < 30 → render <ScrambleLearnFirst />
+      │   └─ getRandomSentences(10, 'beginner', themes) → shuffledQuestions clamped to settings.questionsPerGame
+      ├─ Per question:
+      │   ├─ buildShuffledBank(question) — words stripped of trailing punctuation, Fisher-Yates shuffled, stable keys
+      │   ├─ Auto-speak full English sentence once on mount (no audio gate, no plays budget)
+      │   ├─ Tap word-bank chip → moves token to answer zone + speaks that word
+      │   ├─ Tap placed chip (awaiting phase) → returns it to bank
+      │   ├─ Drag chip within answer zone → reorder (native HTML5 DnD + parallel touch handlers via elementFromPoint)
+      │   ├─ "השמע את המשפט שלי" speaks placed words in current order
+      │   └─ "בדוק תשובה" enabled only when placed.length === question.words.length
+      ├─ Check → recordScrambleAnswer(question, playerWords[])
+      │   → isCorrect = playerWords.join(' ').toLowerCase() === question.words.map(stripPunct).join(' ').toLowerCase()
+      │   → pointsAwarded = isCorrect ? 10 : 0   (legacy sentence-scramble-game.js:330)
+      │   → recordWordAttempt for every vocab-bank word in the sentence + scoreManager.addPoints + currentQuestionIndex++ + saveGameState
+      │   → correct: re-speak full sentence + confetti + show "Next"
+      │   → incorrect: stagger-reveal correct order (500ms initial delay + 180ms per word) before "Next" appears
+      └─ Final question → finishScrambleSession() → gameManager.endGame() → RewardModal
+```
+
+No audio-state localStorage key (no gate). The reveal animation uses setTimeouts tracked in `revealTimersRef` and cleared on unmount, exit-confirm, or reset to avoid stale chips bleeding into the next question.
+
 ## Critical File Locations
 
 | Function | File | Line |

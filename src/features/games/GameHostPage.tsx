@@ -7,6 +7,7 @@ import { PictureMatchGamePage } from './picture-match/PictureMatchGamePage'
 import { TrueOrNotGamePage } from './true-or-not/TrueOrNotGamePage'
 import { ReadingGamePage } from './reading/ReadingGamePage'
 import { FillBlanksGamePage } from './fill-blanks/FillBlanksGamePage'
+import { SentenceScrambleGamePage } from './sentence-scramble/SentenceScrambleGamePage'
 import { isReactGame } from './reactGames'
 
 const REACT_GAMES: Record<string, ComponentType> = {
@@ -16,6 +17,7 @@ const REACT_GAMES: Record<string, ComponentType> = {
   'true-or-not': TrueOrNotGamePage,
   reading: ReadingGamePage,
   'fill-blanks': FillBlanksGamePage,
+  scramble: SentenceScrambleGamePage,
 }
 
 // Retired games → bookmark-safe redirects. Slice 3.7.1 folded word-builder

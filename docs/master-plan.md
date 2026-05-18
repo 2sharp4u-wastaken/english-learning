@@ -1286,7 +1286,26 @@ Code deltas:
 - Added `GameHostPage.RETIRED_GAMES = { 'word-builder': 'fill-blanks' }` → `<Navigate to="/game/fill-blanks" replace />` for bookmark safety.
 - Added one-time localStorage sweep in `app.js:setupWithAuth` to drop `savedGame_<uid>_word-builder` and `v2_wordbuilder_audio_<uid>` orphans. Historical `wordMastery[…].gameTypeStats['word-builder']` left in place (read-only stat, no live code path).
 
-**Slice 3.8: Sentence Scramble** — drag/tap reordering. ~428 lines.
+**Slice 3.8: Sentence Scramble** — drag/tap reordering. ~428 lines. ✅ shipped.
+
+Status: complete (2026-05-17). Followed Slice 3.1 template loosely — this is the first React game whose answer surface isn't an `AnswerGrid` of fixed N options; words flow between a shuffled word bank and a reorderable answer zone. Differences vs 3.1:
+
+- No audio gate — legacy never had one (the target sentence speaks once on load; player taps a play button to hear their in-progress sentence). Skipped `audioPlaysLeft` budget, audio-state persistence, and the auto-play voice-readiness wait entirely.
+- Custom answer surface: `scramble-word-bank` (shuffled `<button>` chips) → tap moves token to `scramble-answer-zone`. Tokens carry stable `key` so duplicate words (e.g. "the … the") render as distinct buttons. Tap a placed chip → returns it to the bank.
+- Reorder via native HTML5 DnD (`draggable` + drag/over/drop handlers on the chip), with a parallel touch path (`touchstart`/`move`/`end` + `elementFromPoint`) for mobile. No new dependency.
+- Index advances regardless of correctness (matches `gameLogic.js` invariant); 10 pts/correct (legacy `sentence-scramble-game.js:330`). On wrong, the answer zone replays the **correct** order with a 180ms-staggered animation before "next" appears — mirrors `animateCorrectOrder()`.
+- V2 gating: ≥30 learned words (matches `gameLogic.js:2000`); reuses the same theme-filter logic as Fill Blanks.
+
+Files added:
+- `src/bridge/sentence-scramble.ts` — clone of Slice 3.7's `fill-blanks.ts`, keyed to `'scramble'`. No audio-state helpers (no gate). `recordScrambleAnswer(question, playerWords[])` joins words with single spaces, case-insensitive compares against `question.words.map(stripPunct).join(' ')`, records a `recordWordAttempt` for every vocab-bank word in the sentence, +10 pts on correct, advances index regardless.
+- `src/features/games/sentence-scramble/SentenceScrambleGamePage.tsx` — page (~450 lines). Bank + answer zone with `dir="ltr"` for LTR English flow inside the RTL shell. Reuses `GameScreenShell`, `GameHeader`, `QuestionProgress`, `RewardModal`, `ExitConfirmDialog`, `FeedbackBanner`. Reveal animation uses `setTimeout` budget tracked in `revealTimersRef` and cleared on unmount/exit/reset.
+- `src/features/games/sentence-scramble/components/ScrambleLearnFirst.tsx` — 30-word gate empty state, links to Word Journey.
+
+Files modified:
+- `src/features/games/reactGames.ts` — added `'scramble'` to `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — registered `scramble → SentenceScrambleGamePage`.
+- `tests/react-routes.spec.js` — Slice 3.8 block (7 tests: empty state, happy path with index advance, tap-to-return, check-disabled-until-complete, incorrect-reveal, resume, exit dialog).
+- `docs/wiring-map.md` — "Sentence Scramble Game (React — Slice 3.8)" cause/effect chain.
 
 ### Wave 3: Grammar and structured learning — BACKLOG
 
@@ -1373,6 +1392,7 @@ Carries no UX-visible behavior change — purely a perf/loading slice. Should la
 - remove `gameLogic.js` if fully replaced
 - remove `app.js` orchestration (replaced by React app)
 - remove `auth.js` global script — `src/bridge/auth.ts` transitions from adapter to standalone auth owner (see Auth End-State section)
+- port login + password-entry screens to React (LoginPage / PasswordEntryPage) consuming `useAuthSession`; legacy modal markup in `index.html` is deleted alongside `auth.js`. (Interim: 2026-05 restyled the legacy modal CSS to match the React palette — `.auth-modal*` / `.user-select-*` / `.login-*` / `.password-*` / `.auth-btn` blocks in `styles.css` — so visuals stay consistent until the port lands.)
 
 ### Slice 4.5: CSS Rationalization
 
