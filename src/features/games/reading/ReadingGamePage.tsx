@@ -222,7 +222,9 @@ export function ReadingGamePage() {
     if (!current) return
     if (audioPlaysLeft <= 0) return
     setAudioPlaysLeft((n) => Math.max(0, n - 1))
-    void speakWord(current.word, 'reading')
+    // Lowercase before TTS — all-caps short strings get spelled out as
+    // letters by most speech engines (legacy reading-game.js:74).
+    void speakWord(current.word.toLowerCase(), 'reading')
   }, [audioPlaysLeft, current])
 
   // Auto-play on each new question. Mirrors the Slice 3.1 template (voice
@@ -236,7 +238,7 @@ export function ReadingGamePage() {
       if (cancelled || autoPlayedRef.current) return
       autoPlayedRef.current = true
       setAudioPlaysLeft((n) => Math.max(0, n - 1))
-      void speakWord(current.word, 'reading', { allowOverlap: true })
+      void speakWord(current.word.toLowerCase(), 'reading', { allowOverlap: true })
     }
 
     let attemptsCount = 0
@@ -348,7 +350,7 @@ export function ReadingGamePage() {
       setAttempts((a) => a + 1)
       startWordHideTimer()
       try {
-        void speakWord(current.word, 'reading', { allowOverlap: true })
+        void speakWord(current.word.toLowerCase(), 'reading', { allowOverlap: true })
       } catch {
         /* ignore */
       }
@@ -472,7 +474,7 @@ export function ReadingGamePage() {
         {current ? (
           <div className="flex flex-1 flex-col gap-4">
             <MediaPromptCard
-              prompt="הרכיבו את המילה"
+              prompt={showNikud ? 'הַרְכִּיבוּ אֶת הַמִּלָּה' : 'הרכיבו את המילה'}
               media={<ReadingPicture question={current} />}
               word={wordVisible ? renderLetter(current.word) : undefined}
               translation={promptHebrew || undefined}
