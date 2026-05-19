@@ -23,6 +23,7 @@ import {
   getBestScores,
   getVocabularyBank,
 } from '@/bridge/progress'
+import { getGameCatalog } from '@/bridge/games'
 import { cn } from '@/lib/cn'
 
 // ─── Level system ───────────────────────────────────────────────────────────
@@ -93,21 +94,21 @@ const ACHIEVEMENTS: AchievementDef[] = [
 
 // ─── Game badges ────────────────────────────────────────────────────────────
 
-const GAME_BADGES = [
-  { type: 'word-journey', icon: '🗺️', name: 'מסע מילים' },
-  { type: 'abc', icon: '🔤', name: 'ABC' },
-  { type: 'memory', icon: '🧠', name: 'זיכרון' },
-  { type: 'grammar-beginner', icon: '📐', name: 'דקדוק מתחילים' },
-  { type: 'listening', icon: '👂', name: 'האזנה' },
-  { type: 'picture-match', icon: '🖼️', name: 'תמונות' },
-  { type: 'reading', icon: '📖', name: 'קריאה' },
-  { type: 'pronunciation', icon: '🎤', name: 'הגייה' },
-  { type: 'vocabulary', icon: '📝', name: 'מבחן מילים' },
-  { type: 'fill-blanks', icon: '✍️', name: 'השלמה' },
-  { type: 'scramble', icon: '🔀', name: 'ערבוב' },
-  { type: 'grammar', icon: '📐', name: 'דקדוק' },
-  { type: 'true-or-not', icon: '✅', name: 'נכון או לא?' },
-  { type: 'story-time', icon: '📚', name: 'זמן סיפור' },
+const GAME_BADGES: { type: string; icon: string; fallbackName: string }[] = [
+  { type: 'word-journey', icon: '🗺️', fallbackName: 'מסע המילים' },
+  { type: 'abc', icon: '🔤', fallbackName: 'ABC אותיות' },
+  { type: 'memory', icon: '🧠', fallbackName: 'משחק זיכרון' },
+  { type: 'grammar-beginner', icon: '📐', fallbackName: 'דקדוק למתחילים' },
+  { type: 'listening', icon: '👂', fallbackName: 'הקשבה' },
+  { type: 'picture-match', icon: '🖼️', fallbackName: 'מילה לתמונה' },
+  { type: 'reading', icon: '📖', fallbackName: 'קריאה' },
+  { type: 'pronunciation', icon: '🎤', fallbackName: 'הגייה' },
+  { type: 'vocabulary', icon: '📝', fallbackName: 'אוצר מילים' },
+  { type: 'fill-blanks', icon: '✍️', fallbackName: 'השלם את המשפט' },
+  { type: 'scramble', icon: '🔀', fallbackName: 'סידור משפטים' },
+  { type: 'grammar', icon: '📐', fallbackName: 'דקדוק' },
+  { type: 'true-or-not', icon: '✅', fallbackName: 'נכון או לא?' },
+  { type: 'story-time', icon: '📚', fallbackName: 'זמן סיפור' },
 ]
 
 const ALWAYS_OPEN = new Set(['word-journey', 'abc', 'memory', 'grammar-beginner'])
@@ -369,6 +370,13 @@ function UnlockedGamesGrid({
 }: {
   unlocks: Record<string, { unlocked: boolean; requirement?: string }>
 }) {
+  const badges = useMemo(() => {
+    const byId = new Map(getGameCatalog().map((g) => [g.type, g]))
+    return GAME_BADGES.map((badge) => ({
+      ...badge,
+      name: byId.get(badge.type)?.displayNameHebrew ?? badge.fallbackName,
+    }))
+  }, [])
   return (
     <div className="rounded-2xl border border-white/10 bg-surface/90 p-4 shadow-panel">
       <div className="mb-3 flex items-center gap-2 text-sm text-muted">
@@ -376,7 +384,7 @@ function UnlockedGamesGrid({
         <span>משחקים</span>
       </div>
       <div className="flex flex-wrap gap-2">
-        {GAME_BADGES.map((game) => {
+        {badges.map((game) => {
           const isOpen = ALWAYS_OPEN.has(game.type) || unlocks[game.type]?.unlocked
           return (
             <div
