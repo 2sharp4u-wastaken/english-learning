@@ -128,3 +128,17 @@ body.react-shell-active .app-layout {
     transform: translateY(0) scale(1);
   }
 }
+
+@keyframes gbFlash {
+  0% {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  60% {
+    opacity: 1;
+    transform: scale(1.04);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
