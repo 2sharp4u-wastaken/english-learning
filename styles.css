@@ -5649,7 +5649,7 @@ body.lowercase-mode .english-sentence-display,
 body.lowercase-mode .story-highlight,
 body.lowercase-mode .story-sentence,
 body.lowercase-mode .st-option-btn {
-    text-transform: none;
+    text-transform: lowercase;
 }
 
 /* ABC Completion/Mastery Message */
