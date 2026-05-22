@@ -227,7 +227,7 @@ React route /#/game/fill-blanks
       │   ├─ Resume from savedGame_<userId>_fill-blanks if mid-session
       │   ├─ V2 gating (MIN_LEARNED=30): if learnedCount < 30 → render <FillBlanksLearnFirst />
       │   └─ getRandomSentences(10, 'beginner', themes) → shuffledQuestions clamped to settings.questionsPerGame
-      ├─ Loop: theme badge + Hebrew translation + sentence-with-blank + speaker button + <AnswerGrid variant='text'>
+      ├─ Loop: Hebrew translation + sentence-with-blank + speaker button + <AnswerGrid variant='text'>
       │   ├─ On new question: auto-speak full English sentence once (voice readiness poll); shuffle options (correct=blank.options[0])
       │   ├─ Option click → recordFillBlanksAnswer(question, selectedWord)
       │   │   → isCorrect = selectedWord.toLowerCase() === blank.options[0].toLowerCase()
@@ -271,6 +271,32 @@ React route /#/game/scramble
 
 No audio-state localStorage key (no gate). The reveal animation uses setTimeouts tracked in `revealTimersRef` and cleared on unmount, exit-confirm, or reset to avoid stale chips bleeding into the next question.
 
+## Grammar Beginner Game (React — Slice 3.9)
+
+```
+React route /#/game/grammar-beginner
+  └─ GameHostPage.tsx → REACT_GAMES['grammar-beginner'] → GrammarBeginnerGamePage.tsx
+      ├─ beginGrammarBeginnerSession()  (src/bridge/grammar-beginner.ts)
+      │   ├─ speechManager.setGameContext('grammar-beginner')
+      │   ├─ Resume from savedGame_<userId>_grammar-beginner if mid-session
+      │   └─ Fresh: generateGrammarBeginnerQuestions(settings.questionsPerGame)
+      │       from data/grammarBeginnerData.js — regenerates each fresh start
+      │       (no smartQuestionSelection, no V2 learn-first gate, no audio-state key)
+      ├─ Per question — branches on question.type (discriminated union):
+      │   ├─ who-says-it     → <WhoSaysItView>     auto-speaks sentenceAudio on enter; tap subject image
+      │   ├─ complete-sound  → <CompleteSoundView> auto-speaks subjectAudio + 500ms + predicate.word; tap verb chip
+      │   ├─ sounds-right    → <SoundsRightView>   no auto-play (legacy parity); tap sentence card to hear, tap option
+      │   └─ match-picture   → <MatchPictureView>  auto-speaks sentenceAudio on enter; tap subject image
+      ├─ Select option → recordGrammarBeginnerAnswer(question, selected, attemptsBefore=0)
+      │   → isCorrect = selected === question.correctAnswer
+      │   → pointsAwarded = isCorrect ? max(0, 10 - attempts + 1) : 0  (legacy grammar-beginner-game.js:331)
+      │   → scoreManager.addPoints + currentQuestionIndex++ + saveGameState
+      │   → both paths: <TranslationFlash hebrew={hebrewSentence}> + speak full correctSentence + "השאלה הבאה"
+      └─ Final question → finishGrammarBeginnerSession() → gameManager.endGame() → RewardModal
+```
+
+Subtype views live in `src/features/games/grammar-beginner/components/` and are intentionally NOT promoted to shared primitives — no other game uses image-grid subject pickers or verb audio chips. Hebrew agreement (masc/fem/plural predicate forms) is handled by `getPredicateHebrew(predicate, subjectKey)` in the bridge, mirroring `data/grammarBeginnerData.js`.
+
 ## Grammar Game (React — Slice 3.10)
 
 ```
@@ -286,11 +312,12 @@ React route /#/game/grammar
       │   └─ smartQuestionSelection() orders by mastery + session rotation,
       │       capped to settings.questionsPerGame (default 10)
       ├─ Per question:
-      │   ├─ Render category badge (GRAMMAR_CATEGORY_LABELS), Hebrew sentence,
-      │   │   English sentence with `___` blank, and AnswerGrid of shuffled options
-      │   ├─ No audio gate / no plays budget — full English sentence speaks
-      │   │   on answer (both correct + incorrect paths)
-      │   └─ caseMode (lowercase/uppercase) applied to all rendered letters
+      │   ├─ Render Hebrew sentence (blank filled with hebrewOptions[correct]
+      │   │   for full meaning), English sentence with `___` blank, audio button,
+      │   │   and AnswerGrid of shuffled options (English + Hebrew sublabel)
+      │   ├─ Auto-play once per question (sentence with blank skipped via comma
+      │   │   pause); manual play button speaks the full filled sentence after answer
+      │   └─ caseMode + showNikud toggles apply to English + Hebrew display
       ├─ Select option → recordGrammarAnswer(question, selectedWord)
       │   → isCorrect = selectedWord === question.options[question.correct]
       │   → pointsAwarded = isCorrect ? 10 : 0   (legacy grammar-game.js:143)

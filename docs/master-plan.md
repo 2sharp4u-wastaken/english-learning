@@ -1312,6 +1312,25 @@ Files modified:
 
 **Slice 3.9: Grammar Beginner** — guided grammar. ~384 lines. ✅ shipped.
 
+Status: complete (2026-05-20, commit `aa805f3`). Did NOT follow the Slice 3.1 template — this is the first React game with four distinct question subtypes (`who-says-it`, `complete-sound`, `sounds-right`, `match-picture`) instead of a single question→answer model. Each subtype has its own answer surface (image-grid subject pickers, verb audio buttons, sentence audio cards). Differences vs 3.1:
+
+- Question source: `data/grammarBeginnerData.js`'s `generateGrammarBeginnerQuestions(n)` — regenerates fresh each fresh start (no `smartQuestionSelection`).
+- Question shape is a discriminated union (`type: QuestionType`) — see `src/bridge/grammar-beginner.ts` for the four `BaseQuestion` extensions and `getPredicateHebrew()` helper for gendered Hebrew agreement.
+- Scoring: `max(0, 10 - attempts + 1)` from legacy `grammar-beginner-game.js:331` (first-try correct = 10 pts). Advances on first answer regardless of correctness.
+- No V2 learn-first gate, no audio-state persistence key.
+- Subtype audio behavior differs: `who-says-it`/`match-picture` auto-play sentence audio; `complete-sound` plays subject then predicate with a 500ms gap; `sounds-right` has no auto-play (legacy parity).
+- Per-subtype view components live under `src/features/games/grammar-beginner/components/` (`WhoSaysItView`, `CompleteSoundView`, `SoundsRightView`, `MatchPictureView`, `TranslationFlash`) — kept here, not promoted to shared primitives, because no other game uses these specific layouts.
+
+Slice closeout:
+
+- `src/bridge/grammar-beginner.ts` — bridge keyed to `'grammar-beginner'`. `recordGrammarBeginnerAnswer(question, selected, attemptsBefore)` returns `{isCorrect, pointsAwarded}` using the legacy attempts formula.
+- `src/features/games/grammar-beginner/GrammarBeginnerGamePage.tsx` — page component (~345 lines). Mount-time legacy-readiness poll; per-subtype audio handlers; translation flash on answer.
+- `src/features/games/grammar-beginner/components/*.tsx` — five subtype-specific views.
+- `src/features/games/reactGames.ts` — `'grammar-beginner'` in `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — `'grammar-beginner': GrammarBeginnerGamePage` in `REACT_GAMES`.
+- `docs/wiring-map.md` — "Grammar Beginner Game (React — Slice 3.9)" cause/effect chain (backfilled 2026-05-23).
+- **Test gap (open):** no Playwright tests yet. Next session should add a Slice 3.9 block — at minimum: happy path for each of the four subtypes + resume + exit dialog.
+
 **Slice 3.10: Grammar** — advanced grammar. ~207 lines. ✅ shipped.
 
 Status: complete (2026-05-21). Followed the Slice 3.7 (Fill Blanks) page shape — sentence-with-blank + N-option AnswerGrid + always-on Next button + advance regardless of correctness. Differences vs 3.7:

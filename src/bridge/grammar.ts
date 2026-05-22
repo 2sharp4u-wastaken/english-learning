@@ -219,22 +219,3 @@ export function abortGrammarSession(): void {
   mgr.currentGame = null
 }
 
-// Category labels (mirrors grammar-game.js GRAMMAR_CATEGORY_LABELS).
-export const GRAMMAR_CATEGORY_LABELS: Record<string, string> = {
-  'verb-to-be': '🔵 I am / She is',
-  'verb-to-be-negative': '🚫 I am not',
-  'verb-to-be-question': '❓ Is she...?',
-  'verb-to-be-past': '⏮️ was / were',
-  'present-simple': '▶️ Present Simple',
-  'present-continuous': '🔄 Present Continuous',
-  'past-simple': '⏪ Past Simple',
-  plurals: '👥 Plurals',
-  prepositions: '📍 Prepositions',
-  possessives: '👤 Possessives',
-  pronouns: '👆 Pronouns',
-  'question-words': '🤔 Question Words',
-  comparatives: '📊 Comparatives',
-  articles: '📝 a / an / the',
-  modals: "💪 can / can't",
-  future: '🔮 Future (will)',
-}
