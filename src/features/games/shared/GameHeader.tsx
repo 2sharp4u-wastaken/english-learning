@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 import { useTextPrefs } from '@/bridge/textPrefs'
 
+/**
+ * `title`, `subtitle`, `icon` are still accepted for API compatibility but are
+ * no longer rendered here — they live in `<GameHero>` above the header card
+ * (canonical placement adopted 2026-05-23). `GameScreenShell` reads these
+ * fields and renders the hero. Keeping them on `GameHeaderProps` lets each
+ * game page declare a single `headerProps` object the shell forwards to both.
+ */
 export interface GameHeaderProps {
   title: string
   subtitle?: string
@@ -14,9 +21,6 @@ export interface GameHeaderProps {
 }
 
 export function GameHeader({
-  title,
-  subtitle,
-  icon,
   score,
   coins,
   onBack,
@@ -51,16 +55,6 @@ export function GameHeader({
         <ChevronRight className="size-5" />
         <span>חזרה</span>
       </button>
-
-      <div className="flex min-w-0 flex-1 items-center justify-center gap-2 text-center">
-        {icon ? <span className="text-xl leading-none">{icon}</span> : null}
-        <div className="flex min-w-0 flex-col leading-tight">
-          <span className="truncate text-base font-semibold text-white">{title}</span>
-          {subtitle ? (
-            <span className="truncate text-xs text-[color:var(--slate-300)]">{subtitle}</span>
-          ) : null}
-        </div>
-      </div>
 
       <div className="flex items-center gap-2">
         <button

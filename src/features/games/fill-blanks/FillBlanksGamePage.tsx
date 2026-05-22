@@ -35,17 +35,6 @@ interface FeedbackState {
   text: string
 }
 
-const THEME_ICONS: Record<string, string> = {
-  greetings: '👋',
-  family: '👨‍👩‍👧‍👦',
-  animals: '🐾',
-  food: '🍎',
-  colors: '🎨',
-  numbers: '🔢',
-  school: '🏫',
-  daily: '☀️',
-}
-
 function shuffleOptions(options: string[]): { order: string[]; correctIndex: number } {
   const correct = options[0]
   const shuffled = [...options]
@@ -334,7 +323,6 @@ export function FillBlanksGamePage() {
     label: renderWord(opt),
   }))
 
-  const themeIcon = current ? THEME_ICONS[current.theme] || '📖' : '📖'
   const audioHint =
     audioPlaysLeft <= 0 ? 'נגמרו ההשמעות' : `השמעות נותרו: ${audioPlaysLeft}`
 
@@ -356,12 +344,6 @@ export function FillBlanksGamePage() {
         {current ? (
           <div key={index} className="flex flex-1 flex-col gap-4">
             <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-3xl border border-white/10 bg-[color:var(--ink-900)]/70 p-5 text-center backdrop-blur">
-              <span
-                data-testid="fill-blanks-theme"
-                className="inline-flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-semibold text-[color:var(--slate-200)]"
-              >
-                {themeIcon} {current.theme}
-              </span>
               <p
                 data-testid="fill-blanks-hint"
                 className="text-2xl font-semibold text-[color:var(--slate-100)] sm:text-3xl"

@@ -271,6 +271,68 @@ React route /#/game/scramble
 
 No audio-state localStorage key (no gate). The reveal animation uses setTimeouts tracked in `revealTimersRef` and cleared on unmount, exit-confirm, or reset to avoid stale chips bleeding into the next question.
 
+## Grammar Game (React — Slice 3.10)
+
+```
+React route /#/game/grammar
+  └─ GameHostPage.tsx → REACT_GAMES['grammar'] → GrammarGamePage.tsx
+      ├─ beginGrammarSession()  (src/bridge/grammar.ts)
+      │   ├─ speechManager.setGameContext('grammar')
+      │   ├─ Resume from savedGame_<userId>_grammar if mid-session
+      │   │   (guard: shuffledQuestions[i].options[0] must be a string —
+      │   │    rejects stale grammar-beginner-shape entries, mirrors gameLogic.js:2072)
+      │   ├─ Fresh: gameManager.getFilteredGrammarQuestions() filters
+      │   │   gameData.grammar by settings.selectedCategories
+      │   └─ smartQuestionSelection() orders by mastery + session rotation,
+      │       capped to settings.questionsPerGame (default 10)
+      ├─ Per question:
+      │   ├─ Render category badge (GRAMMAR_CATEGORY_LABELS), Hebrew sentence,
+      │   │   English sentence with `___` blank, and AnswerGrid of shuffled options
+      │   ├─ No audio gate / no plays budget — full English sentence speaks
+      │   │   on answer (both correct + incorrect paths)
+      │   └─ caseMode (lowercase/uppercase) applied to all rendered letters
+      ├─ Select option → recordGrammarAnswer(question, selectedWord)
+      │   → isCorrect = selectedWord === question.options[question.correct]
+      │   → pointsAwarded = isCorrect ? 10 : 0   (legacy grammar-game.js:143)
+      │   → scoreManager.addPoints + currentQuestionIndex++ + saveGameState
+      │   → correct: blank fills green + confetti + speak praise audio then full sentence + show "Next"
+      │   → incorrect: blank fills red with the correct word + explanation surfaces + speak full sentence + show "Next"
+      └─ Final question → finishGrammarSession() → gameManager.endGame() → RewardModal
+```
+
+No audio-state localStorage key (no gate, no per-question plays budget). Index advances regardless of correctness (legacy invariant — grammar-game.js:151 & 199).
+
+### Slice 3.10 polish (2026-05-23) — bilingual options + filled Hebrew sentence
+
+```
+data/grammarQuestions.js  (now ships hebrewOptions: string[4] per question)
+  └─ data/_loader.js — bumped cache-buster ?t= so Vite refetches grammar data
+  └─ src/bridge/grammar.ts
+      ├─ GrammarQuestion.hebrewOptions?: string[]   (optional, per-option Hebrew gloss)
+      └─ Resume path re-hydrates each saved shuffledQuestion against the
+         current gameData.grammar by sentence text — old saves (pre-hebrewOptions)
+         pick up the new field on next resume.
+  └─ src/features/games/grammar/GrammarGamePage.tsx
+      ├─ Hebrew sentence blank fills with hebrewOptions[correct] for full meaning
+      └─ Each AnswerGrid option carries `sublabel` = matching hebrewOptions entry
+         (shuffled.order.indexOf back to options[] keeps the mapping intact)
+  └─ src/features/games/shared/AnswerGrid.tsx — new optional `sublabel` per option
+     (small dim Hebrew gloss under the main label; first consumer is grammar)
+```
+
+## Hero title (canonical placement, adopted 2026-05-23 — applies to ALL React games)
+
+```
+src/features/games/shared/GameScreenShell.tsx
+  ├─ <GameHeader {...header} />                    ← top bar: back button + toggles + score/coins
+  ├─ <GameHero title icon subtitle />              ← below header, above progress
+  ├─ <QuestionProgress {...progress} />?
+  ├─ <main>{children}</main>
+  └─ <div className="pt-2">{footer}</div>?
+```
+
+Pages still declare a single `headerProps = { title, icon, score, onBack }` and the shell forwards the title/icon/subtitle to `<GameHero>`. `<GameHeader>` accepts those fields on the props for forwarding but no longer renders them — its center area is gone, so the back button and toggle/score pills aren't visually crowded by the title. The hero sits between the controls row and the progress strip so it reads as a section heading for the question card. Slices 3.1–3.9 inherit this for free; no per-page change.
+
 ## Critical File Locations
 
 | Function | File | Line |

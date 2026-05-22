@@ -994,8 +994,9 @@ Status: shipped (Option B — components only). Legacy game wrapping is intentio
 
 What landed:
 
-- `src/features/games/shared/GameScreenShell.tsx` — full-bleed dark gradient page, max-w-3xl content rail, accepts `header`, optional `progress`, `children`, optional `footer`
-- `src/features/games/shared/GameHeader.tsx` — back button (defaults to `navigate('/home')`, accepts override), centered title + optional subtitle/icon, optional score and coins pills
+- `src/features/games/shared/GameScreenShell.tsx` — full-bleed dark gradient page, max-w-3xl content rail, accepts `header`, optional `progress`, `children`, optional `footer`. Forwards `header.title/icon/subtitle` to `<GameHero>` and the rest to `<GameHeader>`.
+- `src/features/games/shared/GameHero.tsx` — **canonical title placement** (adopted 2026-05-23 — Slice 3.10 polish). Big centered icon + title rendered *between* the header card and the progress strip, with a hairline gradient divider. Replaced the in-header centered title to stop it visually competing with the toggle/score pills; sits between the controls row and the progress bar so it reads as a section heading. Game pages keep their existing `headerProps = { title, icon, score, onBack }` declaration — no per-page change required. Do NOT render a title elsewhere in a game page; see `feedback_react_game_hero_title` memory.
+- `src/features/games/shared/GameHeader.tsx` — controls row only: back button (defaults to `navigate('/home')`, accepts override), optional score and coins pills, case + nikud toggles. `title`/`icon`/`subtitle` are accepted on props for shell forwarding but not rendered here.
 - `src/features/games/shared/QuestionProgress.tsx` — Hebrew "שאלה X מתוך Y" counter, optional reset button, gradient progress bar with safe clamping (handles `current > total` and `total = 0`)
 - `src/features/games/shared/GameShellDemo.tsx` — interactive demo wired at `/#/dev/game-shell` showing all primitives composed; clicking "הבא" advances counter + score, "אפס משחק" resets state. Lives inside `AppShell` chrome (acceptable for a dev preview)
 - Routing: `src/app/router.tsx` registers `dev/game-shell` ahead of `game/:gameId`
@@ -1309,8 +1310,36 @@ Files modified:
 
 ### Wave 3: Grammar and structured learning — BACKLOG
 
-**Slice 3.9: Grammar Beginner** — guided grammar. ~384 lines.
-**Slice 3.10: Grammar** — advanced grammar. ~207 lines.
+**Slice 3.9: Grammar Beginner** — guided grammar. ~384 lines. ✅ shipped.
+
+**Slice 3.10: Grammar** — advanced grammar. ~207 lines. ✅ shipped.
+
+Status: complete (2026-05-21). Followed the Slice 3.7 (Fill Blanks) page shape — sentence-with-blank + N-option AnswerGrid + always-on Next button + advance regardless of correctness. Differences vs 3.7:
+
+- Data source: legacy `gameData.grammar` (data/grammarQuestions.js) filtered via `gameManager.getFilteredGrammarQuestions()` (respects `selectedCategories`) and ordered via `gameManager.smartQuestionSelection()`. No `getRandomSentences`-style helper, so the bridge calls the legacy manager methods directly.
+- No V2 learn-first gate. No audio plays budget. Empty state shows only if `gameData.grammar` is unavailable.
+- Question shape: `{ sentence (with ___), hebrewSentence, options: string[], correct: number, category, explanation, hebrewExplanation, difficulty }`.
+- Scoring: 10 pts per correct (legacy grammar-game.js:143). Resume derives `correct = Math.floor(resumeScore / 10)`.
+- Audio: speak praise (if correct) + full correct sentence on every answer. No auto-play of the prompt.
+- UI: category badge (`GRAMMAR_CATEGORY_LABELS`), Hebrew translation, English sentence split around `___` with a styled blank `<span>` that fills with the chosen word (green if correct, red if incorrect — and shows the *correct* answer in red on incorrect). Explanation (`hebrewExplanation` first, falling back to `explanation`) surfaces after answering.
+- Resume guard: stale state checker rejects saves whose `options[0]` isn't a string (mirrors legacy `gameLogic.js:2072` — guards against grammar-beginner-shape blobs cross-polluting `grammar`).
+
+Slice closeout:
+
+- `src/bridge/grammar.ts` — bridge keyed to `'grammar'`. `recordGrammarAnswer(question, selectedWord)` returns `{isCorrect, pointsAwarded: isCorrect ? 10 : 0}` and advances `currentQuestionIndex` regardless of correctness.
+- `src/features/games/grammar/GrammarGamePage.tsx` — page component (~290 lines).
+- `src/features/games/reactGames.ts` — `'grammar'` added to `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — `'grammar': GrammarGamePage` added to `REACT_GAMES`.
+- `tests/react-routes.spec.js` — Slice 3.10 block (4 tests: happy path with index advance, incorrect→reveal+explanation, resume, exit dialog).
+- `docs/wiring-map.md` — "Grammar Game (React — Slice 3.10)" cause/effect chain.
+
+Polish pass (2026-05-23):
+
+- **Nikud + audio + UX fixes:** wired `useTextPrefs().showNikud` so the toggle strips nikud from the Hebrew sentence and explanation. Added a Volume2 play button — speaks the sentence with the blank replaced by a comma pause before answering, and speaks the full sentence with the correct answer filled in after answering. Auto-plays once per question after voices are ready.
+- **Bilingual options + filled Hebrew sentence (data work):** added `hebrewOptions: string[]` to all 98 entries in `data/grammarQuestions.js`. The grammar page now (a) fills the Hebrew sentence blank with the gloss of the correct answer (e.g. `אנחנו לא יכול לשחק בחוץ בגשם`) and (b) renders each `AnswerGrid` option with a small Hebrew sublabel under the English word. Bumped the cache-buster on the grammar import in `data/_loader.js`. Bridge resume path now re-hydrates saved questions against the current `gameData.grammar` (matched by sentence) so older localStorage saves pick up the new field.
+- **AnswerGrid `sublabel` field:** new optional per-option field rendered under the main label. First consumer is grammar; available to any future slice that wants bilingual options.
+- **Hero title redesign (cross-cutting):** the shared `GameHeader` no longer renders the centered icon/title. A new `src/features/games/shared/GameHero.tsx` displays them between the header card and the progress strip with a gradient divider — applied to ALL React games via `GameScreenShell`. Slices 3.1–3.9 inherit the new look for free; no page changes needed. Documented in `CLAUDE.md` "Shared game primitives" and the `feedback_react_game_hero_title` memory so future slices follow.
+- **Theme pills removed from Fill Blanks + Sentence Scramble:** the "food 🍎" / "colors 🎨" etc. badge in the prompt card was redundant (sentence content already revealed the topic) and present in only 2 of 9 React games. Removed from `FillBlanksGamePage.tsx` + `SentenceScrambleGamePage.tsx` along with their `THEME_ICONS` maps. The scramble test that asserted on `[data-testid="scramble-theme"]` is gone. Future sentence-bearing games should NOT re-introduce a theme/category badge in the prompt card.
 
 ### Wave 4: Special/complex games — BACKLOG
 

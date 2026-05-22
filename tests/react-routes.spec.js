@@ -1533,7 +1533,6 @@ test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
 
     await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
     await expect(page.locator('[data-testid="scramble-hint"]')).toBeVisible();
-    await expect(page.locator('[data-testid="scramble-theme"]')).toBeVisible();
     await expect(page.locator('[data-testid="scramble-word-bank"]')).toBeVisible();
     await expect(page.locator('[data-testid="scramble-answer-zone"]')).toBeVisible();
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
@@ -1667,6 +1666,136 @@ test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
     await seedUser(page);
     await seedLearnedFromBank(page, 35);
     await gotoHash(page, '/game/scramble');
+    await page.waitForTimeout(800);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
+// ─── Slice 3.10: Grammar Game (React) ───────────────────────────────────────
+
+test.describe('Slice 3.10: Grammar Game (React)', () => {
+  test('happy path: sentence with blank + 4 options render and progress advances', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/game/grammar');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+    await expect(page.locator('[data-testid="grammar-sentence"]')).toBeVisible();
+    await expect(page.locator('[data-testid="grammar-play"]')).toBeVisible();
+    await expect(page.locator('[data-testid="grammar-blank"]')).toHaveAttribute('data-state', 'empty');
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+
+    const opts = page.locator('[data-testid="answer-option"]');
+    await expect(opts).toHaveCount(4);
+
+    // Click the correct option using the gameManager state.
+    const correctText = await page.evaluate(() => {
+      const m = window.gameManager;
+      const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
+      return q ? q.options[q.correct] : null;
+    });
+    expect(correctText).toBeTruthy();
+
+    const optCount = await opts.count();
+    let clickedCorrect = false;
+    for (let i = 0; i < optCount; i++) {
+      // Each button has a label span + optional Hebrew sublabel; match only
+      // the English label (first child span text).
+      const text = (await opts.nth(i).locator('span > span').first().textContent())?.trim().toLowerCase();
+      if (text === correctText.toLowerCase()) {
+        await opts.nth(i).click();
+        clickedCorrect = true;
+        break;
+      }
+    }
+    expect(clickedCorrect).toBe(true);
+
+    await expect(page.locator('[data-testid="grammar-next"]')).toBeVisible();
+    await expect(page.locator('[data-testid="grammar-blank"]')).toHaveAttribute('data-state', 'correct');
+
+    await page.locator('[data-testid="grammar-next"]').click();
+    await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
+      timeout: 4000,
+    }).toBe('2');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('incorrect answer reveals the correct option and shows explanation', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/game/grammar');
+    await page.waitForTimeout(900);
+
+    const { correctText, wrongText } = await page.evaluate(() => {
+      const m = window.gameManager;
+      const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
+      if (!q) return { correctText: null, wrongText: null };
+      const correctText = q.options[q.correct];
+      const wrongText = q.options.find((_, i) => i !== q.correct);
+      return { correctText, wrongText };
+    });
+    if (!wrongText) test.skip();
+
+    const opts = page.locator('[data-testid="answer-option"]');
+    const optCount = await opts.count();
+    let clickedWrong = false;
+    for (let i = 0; i < optCount; i++) {
+      const text = (await opts.nth(i).locator('span > span').first().textContent())?.trim().toLowerCase();
+      if (text === wrongText.toLowerCase()) {
+        await opts.nth(i).click();
+        clickedWrong = true;
+        break;
+      }
+    }
+    expect(clickedWrong).toBe(true);
+
+    await expect(page.locator('[data-testid="grammar-blank"]')).toHaveAttribute('data-state', 'incorrect');
+    await expect(page.locator('[data-testid="grammar-explanation"]')).toBeVisible();
+    await expect(page.locator('[data-testid="grammar-next"]')).toBeVisible();
+  });
+
+  test('resume picks up mid-session save and continues from the saved question', async ({ page }) => {
+    await seedUser(page);
+    await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const questions = [
+        { sentence: 'I ___ happy', hebrewSentence: 'אני ___ שמח', options: ['am', 'is', 'are', 'be'], correct: 0, category: 'verb-to-be', explanation: "Use 'am' with 'I'", hebrewExplanation: "משתמשים ב'am' עם 'I'", difficulty: 'beginner' },
+        { sentence: 'She ___ here', hebrewSentence: 'היא ___ כאן', options: ['am', 'is', 'are', 'be'], correct: 1, category: 'verb-to-be', explanation: "Use 'is' with 'she'", hebrewExplanation: "משתמשים ב'is' עם 'she'", difficulty: 'beginner' },
+        { sentence: 'They ___ cool', hebrewSentence: 'הם ___ מגניבים', options: ['am', 'is', 'are', 'be'], correct: 2, category: 'verb-to-be', explanation: "Use 'are' with 'they'", hebrewExplanation: "משתמשים ב'are' עם 'they'", difficulty: 'beginner' },
+        { sentence: 'He ___ tall', hebrewSentence: 'הוא ___ גבוה', options: ['am', 'is', 'are', 'be'], correct: 1, category: 'verb-to-be', explanation: "Use 'is' with 'he'", hebrewExplanation: "משתמשים ב'is' עם 'he'", difficulty: 'beginner' },
+        { sentence: 'We ___ ready', hebrewSentence: 'אנחנו ___ מוכנים', options: ['am', 'is', 'are', 'be'], correct: 2, category: 'verb-to-be', explanation: "Use 'are' with 'we'", hebrewExplanation: "משתמשים ב'are' עם 'we'", difficulty: 'beginner' },
+      ];
+      localStorage.setItem(
+        `savedGame_${userId}_grammar`,
+        JSON.stringify({
+          gameType: 'grammar',
+          currentQuestionIndex: 2,
+          score: 20,
+          totalQuestions: 5,
+          timestamp: Date.now(),
+          shuffledQuestions: questions,
+          gameElapsedMs: 0,
+        }),
+      );
+    });
+
+    await gotoHash(page, '/game/grammar');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('3');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('5');
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/game/grammar');
     await page.waitForTimeout(800);
 
     await page.locator('[data-testid="game-header-back"]').click();

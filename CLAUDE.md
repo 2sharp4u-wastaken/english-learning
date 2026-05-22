@@ -95,11 +95,12 @@ Accessed from React only via `src/bridge/` modules.
 - `src/features/games/GameHostPage.tsx` — `REACT_GAMES` record maps ID → component. Anything not in the record falls through to legacy `launchGame()`.
 
 ### Shared game primitives (Phase 3 reuse, do not duplicate)
-- `src/features/games/shared/GameScreenShell.tsx` — header + progress + main + footer slots
-- `src/features/games/shared/GameHeader.tsx` — back button, score, coins, case + nikud toggles (via `useTextPrefs`)
+- `src/features/games/shared/GameScreenShell.tsx` — hero + header + progress + main + footer slots. Forwards `header.title/icon/subtitle` to `<GameHero>` and the rest of `header` to `<GameHeader>`.
+- `src/features/games/shared/GameHero.tsx` — **canonical title placement** (adopted 2026-05-23). Big centered icon + title rendered *between* the header card and the progress strip, with a hairline gradient divider. Every React game gets this for free via `GameScreenShell`; pages just declare `headerProps = { title, icon, score, onBack }` as before. Do NOT render the title anywhere else, and do NOT add another title element inside game pages.
+- `src/features/games/shared/GameHeader.tsx` — controls row only: back button, score, coins, case + nikud toggles (via `useTextPrefs`). `title`/`icon`/`subtitle` are accepted on the props for shell forwarding but intentionally not rendered here.
 - `src/features/games/shared/QuestionProgress.tsx` — "שאלה N מתוך M" + reset button
 - `src/features/games/shared/MediaPromptCard.tsx` — word/translation/media slot + audio button (`audioIconOnly` for legacy speaker look; omit `word` for audio-only games)
-- `src/features/games/shared/AnswerGrid.tsx` — N options grid (`columns={2|3|4}`, `variant='text'|'media'`, `hidden` for audio gate)
+- `src/features/games/shared/AnswerGrid.tsx` — N options grid (`columns={2|3|4}`, `variant='text'|'media'`, `hidden` for audio gate). Supports an optional `sublabel` per option, rendered as small Hebrew gloss under the main label (used by Slice 3.10 Grammar for bilingual options).
 - `src/features/games/shared/FeedbackBanner.tsx` — correct/incorrect floating banner
 - `src/features/games/shared/RewardModal.tsx` — end-of-session reward
 - `src/features/games/shared/ExitConfirmDialog.tsx` — "leave game?" modal

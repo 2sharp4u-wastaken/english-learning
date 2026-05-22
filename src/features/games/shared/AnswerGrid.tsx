@@ -5,6 +5,10 @@ import { cn } from '@/lib/cn'
 export interface AnswerOption {
   key?: string | number
   label?: string
+  /** Optional secondary label rendered under `label` in a smaller, dimmer
+   *  font. Used by the React grammar game (Slice 3.10) to show Hebrew
+   *  translations beneath each English option. */
+  sublabel?: string
   media?: ReactNode
   ariaLabel?: string
 }
@@ -120,7 +124,24 @@ export function AnswerGrid({
             {option.media ? (
               <span className="flex w-full items-center justify-center">{option.media}</span>
             ) : null}
-            {option.label ? <span className="truncate">{option.label}</span> : null}
+            {option.label || option.sublabel ? (
+              <span
+                className={cn(
+                  'flex min-w-0 flex-col items-center justify-center',
+                  option.sublabel ? 'gap-0.5' : '',
+                )}
+              >
+                {option.label ? <span className="truncate">{option.label}</span> : null}
+                {option.sublabel ? (
+                  <span
+                    dir="rtl"
+                    className="truncate text-xs font-medium text-[color:var(--slate-300)]"
+                  >
+                    {option.sublabel}
+                  </span>
+                ) : null}
+              </span>
+            ) : null}
             {isCorrect ? (
               <Check
                 className="absolute end-2 top-2 size-4 text-emerald-300"
