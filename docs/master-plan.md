@@ -1360,11 +1360,40 @@ Polish pass (2026-05-23):
 - **Hero title redesign (cross-cutting):** the shared `GameHeader` no longer renders the centered icon/title. A new `src/features/games/shared/GameHero.tsx` displays them between the header card and the progress strip with a gradient divider — applied to ALL React games via `GameScreenShell`. Slices 3.1–3.9 inherit the new look for free; no page changes needed. Documented in `CLAUDE.md` "Shared game primitives" and the `feedback_react_game_hero_title` memory so future slices follow.
 - **Theme pills removed from Fill Blanks + Sentence Scramble:** the "food 🍎" / "colors 🎨" etc. badge in the prompt card was redundant (sentence content already revealed the topic) and present in only 2 of 9 React games. Removed from `FillBlanksGamePage.tsx` + `SentenceScrambleGamePage.tsx` along with their `THEME_ICONS` maps. The scramble test that asserted on `[data-testid="scramble-theme"]` is gone. Future sentence-bearing games should NOT re-introduce a theme/category badge in the prompt card.
 
-### Wave 4: Special/complex games — BACKLOG
+### Wave 4: Special/complex games
 
 These have unique interaction models and require the most custom work.
 
-**Slice 3.11: Pronunciation** — recording/feedback, microphone access. ~325 lines.
+**Slice 3.11: Pronunciation** — SHIPPED 2026-05-23. Speech-recognition + comparePronunciation flow in React, clones the Slice 3.1 shape with picture-match's learn-first gate.
+
+Pattern notes (mirrors `feedback_phase3_game_template`):
+
+- Bridge keyed to `'pronunciation'`. Question shape: `{ word, hebrew, phonetic, picture, imageUrl, category, difficulty }` (matches `data/converters.js convertToPronunciation`).
+- Gating: `pronunciation` is in legacy `VOCAB_GATED_GAMES` (`gameLogic.js:2212`) — bridge filters scoped pool by `_getLearnedWordSet()`; <4 learned → `kind:'learn-first'`. Reuses `PictureMatchLearnFirst` (same threshold + copy).
+- Scoring: `pointsAwarded = isCorrect ? round(accuracy * 10) : 0`; `isCorrect = accuracy >= 0.7` (legacy `pronunciation-game.js:214 + 253`). Resume derives `correct = floor(resumeScore / 10)` — close enough given non-correct answers award 0.
+- `recordPronunciationAttempt` advances `currentQuestionIndex` + saves regardless of correctness (legacy invariant — prevents retry exploit).
+- Mic flow goes through bridge wrappers: `isSpeechRecognitionAvailable`, `startPronunciationRecording`, `stopPronunciationRecording`, `isCurrentlyRecording`. `RECORDING_CANCELLED` is swallowed (user-initiated stop); other errors render under the mic button.
+- Audio: auto-plays target on each new question (10-attempt voice poll, 250 ms warmup). Manual listen button disabled while recording so kids can't cheat. Incorrect path speaks praise audio, waits 400 ms, then replays the target word before showing "Next".
+- No per-question audio-state localStorage key (no play budget on pronunciation).
+
+Slice closeout:
+
+- `src/bridge/pronunciation.ts` — bridge (~280 lines).
+- `src/features/games/pronunciation/PronunciationGamePage.tsx` — page (~400 lines).
+- `src/features/games/reactGames.ts` — `'pronunciation'` added to `REACT_GAME_IDS`.
+- `src/features/games/GameHostPage.tsx` — `'pronunciation': PronunciationGamePage` added to `REACT_GAMES`.
+- `docs/wiring-map.md` — "Pronunciation Game (React — Slice 3.11)" cause/effect chain.
+
+Polish pass (2026-05-23, same-day):
+
+- **Fanfare SFX parity:** added `playAnswerSfx('correct'|'incorrect')` to `src/bridge/feedback.ts` (calls `window.audioEffects.playCorrect/playWrong`). Pronunciation reads `comparison.feedback` directly so it bypassed the implicit SFX trigger inside `getGameFeedback()`; now it fires the same WAV other games do, accompanying confetti.
+- **Replay your recording:** parallel `getUserMedia` + `MediaRecorder` runs alongside `webkitSpeechRecognition` (recognition doesn't expose raw audio). On stop we build a Blob → ObjectURL and surface a "שמע את עצמך" button next to "השמע שוב" in the comparison panel. Blob URLs are released on advance / reset / exit / unmount to avoid leaks. Failure of the parallel capture is silent — recognition still drives scoring.
+- **Resume autoplay suppression:** `start()` now sets `autoPlayedRef.current = true` when `resumeIndex > 0`. Chrome's autoplay policy blocks audio on a refreshed tab (no prior gesture); previously we attempted and silently failed. User taps the speaker to hear the word, like other React games on resume.
+- **Comparison label:** "היעד" → "צָרִיךְ לוֹמַר" (responds to nikud toggle: plain "צריך לומר" when off).
+- **Reset chip (cross-cutting, all React games):** `QuestionProgress.tsx` reset button gained an amber border + `RotateCcw` icon so it stands out from the panel background. Every React game inherits the change for free.
+
+Playwright coverage is deliberately deferred to a follow-up — Web Speech API (mic + recognition) cannot be exercised in headless browsers without `--use-fake-device-for-media-stream` + a fake recognition stub; the rest of the slice (load, learn-first, exit dialog) shadows existing picture-match tests closely enough that reviewing those is sufficient until the stub lands.
+
 **Slice 3.12: Story Time** — narrative flow, multi-step. ~307 lines.
 **Slice 3.13: Word Journey** — multi-stage progression. ~1,237 lines.
 **Slice 3.14: Memory** — card-flip grid, timer-based. ~1,589 lines.

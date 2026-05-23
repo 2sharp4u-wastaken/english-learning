@@ -32,6 +32,28 @@ export function getShowConfetti(): boolean {
   }
 }
 
+interface AudioEffects {
+  playCorrect(): Promise<void>
+  playWrong(): Promise<void>
+}
+
+/**
+ * Trigger the shared correct/wrong WAV. Other games hit this implicitly via
+ * `getGameFeedback()` (legacy feedback.js:165); pronunciation reads
+ * `comparison.feedback` directly so it has to fire the SFX explicitly to stay
+ * in parity with vocab/listening/etc.
+ */
+export function playAnswerSfx(kind: 'correct' | 'incorrect'): void {
+  const fx = (window as any).audioEffects as AudioEffects | undefined
+  if (!fx) return
+  const fn = kind === 'correct' ? fx.playCorrect : fx.playWrong
+  try {
+    fn.call(fx)?.catch?.(() => {})
+  } catch {
+    /* swallow */
+  }
+}
+
 export function triggerConfetti(): void {
   const confetti = (window as any).confetti as ConfettiFn | undefined
   if (typeof confetti !== 'function') return

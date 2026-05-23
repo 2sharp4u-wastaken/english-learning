@@ -347,6 +347,73 @@ data/grammarQuestions.js  (now ships hebrewOptions: string[4] per question)
      (small dim Hebrew gloss under the main label; first consumer is grammar)
 ```
 
+## Pronunciation Game (React — Slice 3.11)
+
+```
+React route /#/game/pronunciation
+  └─ GameHostPage.tsx → REACT_GAMES['pronunciation'] → PronunciationGamePage.tsx
+      ├─ beginPronunciationSession()  (src/bridge/pronunciation.ts)
+      │   ├─ speechManager.setGameContext('pronunciation')
+      │   ├─ Resume from savedGame_<userId>_pronunciation if mid-session
+      │   │   (guard: shuffledQuestions[i].word must be a string)
+      │   ├─ Fresh: gameManager.getScopedQuestionPool('pronunciation') →
+      │   │   filtered to learned words (mirrors VOCAB_GATED_GAMES filter,
+      │   │   gameLogic.js:2212–2223); <4 learned → kind:'learn-first'
+      │   └─ smartQuestionSelection() orders by mastery, capped to
+      │       settings.questionsPerGame (default 10)
+      ├─ Per question:
+      │   ├─ MediaPromptCard renders picture (img or emoji), English word
+      │   │   (caseMode), Hebrew translation (showNikud)
+      │   ├─ Auto-play target word once via speakWord(word.toLowerCase(),
+      │   │   'pronunciation') after voices ready (10-attempt poll, ~250 ms)
+      │   └─ Manual "Listen" speaker button replays target; disabled while
+      │       recording so kids can't cheat
+      ├─ Tap mic → startPronunciationRecording() (speechManager.startRecording)
+      │   → cancels speech, requests mic permission on first use
+      │   → returns { transcript, confidence }
+      │   → tap mic again to stop (RECORDING_CANCELLED rejects gracefully)
+      ├─ Result → recordPronunciationAttempt(question, { transcript })
+      │   → speechManager.comparePronunciation(target, transcript)
+      │     → { accuracy, feedback, audioFeedback }
+      │   → isCorrect = accuracy >= 0.7
+      │   → pointsAwarded = isCorrect ? round(accuracy * 10) : 0  (legacy
+      │     pronunciation-game.js:253)
+      │   → recordWordAttempt + scoreManager.addPoints +
+      │     currentQuestionIndex++ + saveGameState (always, prevents retry exploit)
+      │   → comparison panel renders target/transcript/accuracy %
+      │   → correct: speak praise audio + confetti + auto-advance 1.5s
+      │   → incorrect: speak praise audio + 400 ms pause + replay target word +
+      │     show "Next" button + mic disabled (no retry)
+      └─ Final question → finishPronunciationSession() → gameManager.endGame() → RewardModal
+```
+
+No audio-state localStorage key (recording isn't gated by a play budget). The learn-first view reuses `PictureMatchLearnFirst` since the gating threshold + CTA copy match exactly. Mic permission errors (`not-allowed`, `audio-capture`, `no-speech`, `network`) bubble up as Hebrew error strings from `speechManager` and render under the mic button without crashing the session.
+
+### Slice 3.11 polish (2026-05-23, same-day)
+
+```
+src/bridge/feedback.ts
+  └─ new playAnswerSfx('correct'|'incorrect') → window.audioEffects.play{Correct,Wrong}
+     (other games hit this implicitly via getGameFeedback's side effect at
+      legacy feedback.js:165; pronunciation reads comparison.feedback directly
+      so it must call playAnswerSfx explicitly to fire the fanfare WAV).
+
+src/features/games/pronunciation/PronunciationGamePage.tsx
+  ├─ Parallel MediaRecorder alongside startPronunciationRecording():
+  │   getUserMedia(audio) → MediaRecorder → Blob chunks → ObjectURL,
+  │   plumbed into ComparisonState.recordingUrl. Released on advance/
+  │   reset/exit/unmount via releaseRecordingUrl()/stopMediaCapture().
+  │   "שמע את עצמך" button in comparison panel plays it back via new Audio().
+  ├─ Resume autoplay suppression: autoPlayedRef = (resumeIndex > 0). Chrome
+  │   autoplay policy blocks audio without prior gesture on a refreshed tab.
+  ├─ "צָרִיךְ לוֹמַר" label (showNikud-aware: strips to "צריך לומר" when off).
+  └─ playAnswerSfx fires before confetti/audio-feedback in both branches.
+
+src/features/games/shared/QuestionProgress.tsx
+  └─ Reset chip: amber border + bg + RotateCcw icon. Cross-cutting visual
+     upgrade — every React game inherits it without any per-page change.
+```
+
 ## Hero title (canonical placement, adopted 2026-05-23 — applies to ALL React games)
 
 ```

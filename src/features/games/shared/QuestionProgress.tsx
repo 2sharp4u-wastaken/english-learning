@@ -1,3 +1,4 @@
+import { RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
 export interface QuestionProgressProps {
@@ -30,8 +31,10 @@ export function QuestionProgress({ current, total, onReset, className }: Questio
           <button
             type="button"
             onClick={onReset}
-            className="rounded-full bg-white/5 px-3 py-1 text-xs text-[color:var(--slate-300)] transition hover:bg-white/10 hover:text-white"
+            data-testid="qp-reset"
+            className="flex items-center gap-1.5 rounded-full border border-[color:var(--amber-400)]/40 bg-[color:var(--amber-400)]/15 px-3 py-1 text-xs font-semibold text-[color:var(--amber-400)] transition hover:bg-[color:var(--amber-400)]/25 hover:text-[color:var(--amber-300)]"
           >
+            <RotateCcw className="size-3.5" aria-hidden />
             אפס משחק
           </button>
         ) : null}
