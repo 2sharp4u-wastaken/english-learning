@@ -1394,7 +1394,29 @@ Polish pass (2026-05-23, same-day):
 
 Playwright coverage is deliberately deferred to a follow-up — Web Speech API (mic + recognition) cannot be exercised in headless browsers without `--use-fake-device-for-media-stream` + a fake recognition stub; the rest of the slice (load, learn-first, exit dialog) shadows existing picture-match tests closely enough that reviewing those is sufficient until the stub lands.
 
-**Slice 3.12: Story Time** — narrative flow, multi-step. ~307 lines.
+**Slice 3.12: Story Time** — SHIPPED 2026-05-24. Two-phase read+quiz game with per-story progression. ~307 legacy lines → ~450 lines of React (page + 3 components + bridge).
+
+Status: complete (2026-05-24). Did NOT follow the Slice 3.1 template — story-time is the first React game with internal phase transitions (read ↔ quiz) and per-session multi-document content (`stories[]`, each with its own quiz). Differences vs 3.1:
+
+- **Phase state machine inside the page:** `phase: 'read' | 'quiz' | 'answered' | 'finished'`. Read renders `StoryReadPhase` (tappable highlights + per-sentence speakers + "מוכן לשאלות" CTA). Quiz renders `StoryQuizPhase` using the shared `AnswerGrid` (text variant, 3 cols by default). Advance order is: next quiz Q within story → next story (jump back to `read`) → finish.
+- **Total = sum across stories, not stories.length:** the progress strip counts answered quiz questions (mirrors legacy `totalQuestions = stories.reduce(sum quizQs)`). So a 3-story session with 2 questions each shows 1..6 across the whole run.
+- **No audio gate:** read phase plays words/sentences on tap only (no required-plays-before-reveal). Quiz options are visible immediately on phase switch.
+- **Resume disabled (intentional):** legacy persists `currentQuestionIndex` (quiz count) but not `storyIndex`, so reopening silently restarts at story 0. The React bridge `deleteGameState` on every `begin` to keep behavior consistent with what legacy *appeared* to do. Documented in the bridge JSDoc and `feedback_story_time_resume_disabled` memory.
+- **Learn-first gate:** ≥15 learned words (legacy gameLogic.js:2184). Bespoke `StoryTimeLearnFirst` component (the picture-match copy mentions "4 מילים" and CTA wording doesn't fit a 15-word story game).
+- **Scoring:** +15 pts per correct quiz answer, matches legacy `story-time-game.js:249`. On correct we also `recordWordAttempt` for every `story.highlights` entry so highlighted words feed mastery (legacy parity).
+- **Speech model:** `speakWord(word, 'story-time')` for highlight taps; `speak(sentence)` for the per-sentence 🔊 button (full-sentence TTS, not single-word). No nikud/case toggles in the read phase since story text is rendered LTR verbatim.
+
+Files added:
+- `src/bridge/story-time.ts` — `beginStoryTimeSession`, `recordStoryQuizAnswer`, `finishStoryTimeSession`, `abortStoryTimeSession` + `Story`, `StoryHighlight`, `StoryQuizQuestion` types. Imports legacy `data/stories.js` directly (no .d.ts).
+- `src/features/games/story-time/StoryTimeGamePage.tsx` — page orchestrator with phase state machine + reward/exit handling.
+- `src/features/games/story-time/components/StoryReadPhase.tsx` — sentence list with tappable highlights (translation tooltip + speakWord) and per-sentence speakers.
+- `src/features/games/story-time/components/StoryQuizPhase.tsx` — wraps shared `AnswerGrid` with story title + question counter + Hebrew question text.
+- `src/features/games/story-time/components/StoryTimeLearnFirst.tsx` — 15-word gate prompt.
+- Registered in `src/features/games/reactGames.ts` (`REACT_GAME_IDS`) + `src/features/games/GameHostPage.tsx` (`REACT_GAMES`).
+- `tests/react-routes.spec.js` — Slice 3.12 block (4 tests: learn-first under 15 learned, happy path read→quiz→correct→advance, incorrect→reveal+next, exit dialog).
+- `docs/wiring-map.md` — "Story Time Game (React — Slice 3.12)" cause/effect chain.
+
+
 **Slice 3.13: Word Journey** — multi-stage progression. ~1,237 lines.
 **Slice 3.14: Memory** — card-flip grid, timer-based. ~1,589 lines.
 **Slice 3.15: ABC** — alphabet learning, custom layout. ~778 lines.

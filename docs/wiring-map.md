@@ -414,6 +414,40 @@ src/features/games/shared/QuestionProgress.tsx
      upgrade — every React game inherits it without any per-page change.
 ```
 
+## Story Time Game (React — Slice 3.12)
+
+```
+React route /#/game/story-time
+  └─ GameHostPage.tsx → REACT_GAMES['story-time'] → StoryTimeGamePage.tsx
+      ├─ beginStoryTimeSession()  (src/bridge/story-time.ts)
+      │   ├─ setGameContext('story-time') + deleteGameState (resume disabled)
+      │   ├─ Learn-first gate: <15 learned words → kind:'learn-first'
+      │   ├─ Build learnedWordsList from app.userProgress.learnedWords keys
+      │   │   (mirrors gameLogic.js:2191–2196)
+      │   ├─ getStoriesForSession(learned, vocabularyBank, 3) → 0..3 stories
+      │   │   (fallbacks fill slots when a category has no learned word)
+      │   └─ Stash on gameManager: shuffledQuestions=stories,
+      │       totalQuestions=sum(quizQuestions), currentQuestionIndex=0
+      ├─ Phase state machine (read → quiz → answered → next):
+      │   ├─ Read phase: StoryReadPhase renders sentences with tappable
+      │   │   highlights (speakWord on tap + 1.5s translation tooltip) and a
+      │   │   per-sentence 🔊 button (speak() on tap).
+      │   ├─ "מוכן לשאלות" → switches to quiz phase, cancels speech.
+      │   ├─ Quiz phase: StoryQuizPhase reuses shared AnswerGrid (2–3 cols,
+      │   │   text variant) over question.options.
+      │   └─ Answer → recordStoryQuizAnswer(story, question, idx):
+      │       +15 pts on correct (legacy story-time-game.js:249) +
+      │       recordWordAttempt for every story.highlight +
+      │       currentQuestionIndex++ + saveGameState (always).
+      ├─ Correct → confetti + getGameFeedback audio + auto-advance 1.5s
+      ├─ Incorrect → reveal correct option + "השאלה הבאה" footer button
+      ├─ Advance order: next quiz Q within story → next story (back to read)
+      │   → finishStoryTimeSession → gameManager.endGame → RewardModal.
+      └─ Exit/reset/unmount → abortStoryTimeSession() + cancelSpeech.
+```
+
+Resume is intentionally unsupported in the React port: legacy story-time persists `currentQuestionIndex` (quiz answers across stories) but not `storyIndex`, so reopening silently restarts at story 0 — broken. The bridge clears saved state on every `begin` to keep behavior consistent with what legacy *appeared* to do. Total progress counter (`qp-current`) tracks answered quiz questions across all stories so the user sees one monotonic bar from story 1 through the final reward modal.
+
 ## Hero title (canonical placement, adopted 2026-05-23 — applies to ALL React games)
 
 ```

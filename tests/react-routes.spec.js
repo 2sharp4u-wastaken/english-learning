@@ -1933,6 +1933,116 @@ test.describe('Slice 3.10: Grammar Game (React)', () => {
   });
 });
 
+// ─── Slice 3.12: Story Time Game (React) ────────────────────────────────────
+
+test.describe('Slice 3.12: Story Time Game (React)', () => {
+  test('learn-first empty state shows when fewer than 15 words are learned', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 4);
+    await gotoHash(page, '/game/story-time');
+    await page.waitForTimeout(800);
+
+    await expect(page.locator('[data-testid="story-time-learn-first"]')).toBeVisible();
+  });
+
+  test('happy path: read phase renders, ready button switches to quiz, correct answer advances', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await seedLearnedFromBank(page, 20);
+    await gotoHash(page, '/game/story-time');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+    await expect(page.locator('[data-testid="story-time-read"]')).toBeVisible();
+    await expect(page.locator('[data-testid="story-time-title"]')).toBeVisible();
+    await expect(page.locator('[data-testid="story-sentence"]').first()).toBeVisible();
+    await expect(page.locator('[data-testid="story-sentence-play"]').first()).toBeVisible();
+
+    // Switch to quiz.
+    await page.locator('[data-testid="story-time-ready"]').click();
+    await expect(page.locator('[data-testid="story-time-quiz"]')).toBeVisible();
+    await expect(page.locator('[data-testid="story-time-question"]')).toBeVisible();
+    const opts = page.locator('[data-testid="answer-option"]');
+    await expect(opts.first()).toBeVisible();
+
+    // Pick the correct option by matching the option text against the bridge's story data.
+    const correctText = await page.evaluate(() => {
+      const stories = window.gameManager?.shuffledQuestions;
+      const q = stories?.[0]?.questions?.[0];
+      return q ? q.options[q.correctIndex] : null;
+    });
+    expect(correctText).toBeTruthy();
+
+    const optCount = await opts.count();
+    let clicked = false;
+    for (let i = 0; i < optCount; i++) {
+      const text = (await opts.nth(i).textContent())?.trim();
+      if (text === correctText) {
+        await opts.nth(i).click();
+        clicked = true;
+        break;
+      }
+    }
+    expect(clicked).toBe(true);
+
+    // The auto-advance fires after ~1.5s on correct; the progress current should bump.
+    await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
+      timeout: 4000,
+    }).not.toBe('1');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('incorrect answer reveals correct option and surfaces next button', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 20);
+    await gotoHash(page, '/game/story-time');
+    await page.waitForTimeout(900);
+
+    await page.locator('[data-testid="story-time-ready"]').click();
+    await expect(page.locator('[data-testid="story-time-quiz"]')).toBeVisible();
+
+    const wrongText = await page.evaluate(() => {
+      const stories = window.gameManager?.shuffledQuestions;
+      const q = stories?.[0]?.questions?.[0];
+      if (!q) return null;
+      const idx = q.options.findIndex((_, i) => i !== q.correctIndex);
+      return idx >= 0 ? q.options[idx] : null;
+    });
+    if (!wrongText) test.skip();
+
+    const opts = page.locator('[data-testid="answer-option"]');
+    const optCount = await opts.count();
+    let clicked = false;
+    for (let i = 0; i < optCount; i++) {
+      const text = (await opts.nth(i).textContent())?.trim();
+      if (text === wrongText) {
+        await opts.nth(i).click();
+        clicked = true;
+        break;
+      }
+    }
+    expect(clicked).toBe(true);
+
+    await expect(page.locator('[data-testid="answer-grid"]')).toHaveAttribute('data-revealed', 'true');
+    await expect(page.locator('[data-testid="story-time-next"]')).toBeVisible();
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 20);
+    await gotoHash(page, '/game/story-time');
+    await page.waitForTimeout(800);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {
