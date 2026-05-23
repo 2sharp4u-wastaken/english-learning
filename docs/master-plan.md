@@ -1329,7 +1329,7 @@ Slice closeout:
 - `src/features/games/reactGames.ts` — `'grammar-beginner'` in `REACT_GAME_IDS`.
 - `src/features/games/GameHostPage.tsx` — `'grammar-beginner': GrammarBeginnerGamePage` in `REACT_GAMES`.
 - `docs/wiring-map.md` — "Grammar Beginner Game (React — Slice 3.9)" cause/effect chain (backfilled 2026-05-23).
-- **Test gap (open):** no Playwright tests yet. Next session should add a Slice 3.9 block — at minimum: happy path for each of the four subtypes + resume + exit dialog.
+- `tests/react-routes.spec.js` — Slice 3.9 block (4 tests: happy path with correct answer advancing index, translation+Next on any answer, resume from saved state, exit dialog). Backfilled 2026-05-23.
 
 **Slice 3.10: Grammar** — advanced grammar. ~207 lines. ✅ shipped.
 

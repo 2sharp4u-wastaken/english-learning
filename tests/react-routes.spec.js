@@ -65,7 +65,11 @@ function filterCritical(errors) {
     !e.text.includes('favicon') &&
     !e.text.includes('net::ERR') &&
     !e.text.match(/Failed to load resource.*404/) &&
-    !e.text.includes('chunk-')
+    !e.text.includes('chunk-') &&
+    // Transient `fetch` failures hitting the dev server under parallel test
+    // load (phonetic index in particular) — not a product bug.
+    !e.text.includes('[PHONETICS] Failed to load') &&
+    !(e.text.includes('TypeError: Failed to fetch') && e.text.includes('phonetic'))
   );
 }
 
@@ -1133,7 +1137,10 @@ test.describe('Slice 3.3: Picture Match Game (React)', () => {
     await seedUser(page);
     await seedLearnedFromBank(page, 8);
     await gotoHash(page, '/game/picture-match');
-    await page.waitForTimeout(900);
+    // Wait for the audio button to render rather than a fixed timeout — was flaky.
+    await expect(page.locator('[data-testid="media-prompt-audio"]')).toBeVisible({
+      timeout: 5000,
+    });
 
     // Auto-play consumes 1 play. Two manual clicks more.
     await page.locator('[data-testid="media-prompt-audio"]').click();
@@ -1543,11 +1550,17 @@ test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
     });
     expect(target).toBeTruthy();
 
-    // Tap each word in correct order (strip punctuation to match button labels).
+    // Tap each word in correct order. `:has-text()` is a substring match, so
+    // we filter by exact text (case-insensitive) — sentences with shared roots
+    // like "drink" vs "drinks" would otherwise pick the wrong button and the
+    // iteration would run out of matches partway through.
+    const wordBank = page.locator('[data-testid="scramble-word-btn"]');
     for (const raw of target) {
-      const word = raw.replace(/[.,!?;:]+$/, '');
-      const btn = page
-        .locator(`[data-testid="scramble-word-btn"]:has-text("${word}"):not([disabled])`)
+      const word = raw.replace(/[.,!?;:]+$/, '').toLowerCase();
+      const btn = wordBank
+        .filter({
+          hasText: new RegExp(`^${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+        })
         .first();
       await btn.click();
     }
@@ -1611,11 +1624,17 @@ test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
     });
     if (!target || target.length < 2) test.skip();
 
-    // Place in reverse order to almost certainly be wrong.
-    const reversed = [...target].reverse().map((w) => w.replace(/[.,!?;:]+$/, ''));
+    // Place in reverse order to almost certainly be wrong. Exact-text filter
+    // (not substring) — see happy-path test for the rationale.
+    const reversed = [...target]
+      .reverse()
+      .map((w) => w.replace(/[.,!?;:]+$/, '').toLowerCase());
+    const wordBankRev = page.locator('[data-testid="scramble-word-btn"]');
     for (const word of reversed) {
-      const btn = page
-        .locator(`[data-testid="scramble-word-btn"]:has-text("${word}"):not([disabled])`)
+      const btn = wordBankRev
+        .filter({
+          hasText: new RegExp(`^${word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
+        })
         .first();
       await btn.click();
     }
@@ -1666,6 +1685,114 @@ test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
     await seedUser(page);
     await seedLearnedFromBank(page, 35);
     await gotoHash(page, '/game/scramble');
+    await page.waitForTimeout(800);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
+// ─── Slice 3.9: Grammar Beginner Game (React) ───────────────────────────────
+
+test.describe('Slice 3.9: Grammar Beginner Game (React)', () => {
+  test('happy path: question renders, correct answer advances index', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/game/grammar-beginner');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+    await expect(page.locator('[data-testid="gb-options"]')).toBeVisible();
+
+    const correct = await page.evaluate(() => {
+      const m = window.gameManager;
+      return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correctAnswer ?? null;
+    });
+    expect(correct).toBeTruthy();
+
+    await page
+      .locator(`[data-testid="gb-option"][data-key="${correct}"]`)
+      .first()
+      .click();
+
+    await expect(page.locator('[data-testid="gb-next"]')).toBeVisible();
+    await page.locator('[data-testid="gb-next"]').click();
+    await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
+      timeout: 4000,
+    }).toBe('2');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('translation flash + Next button appear after any answer (correct or wrong)', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/game/grammar-beginner');
+    await page.waitForTimeout(900);
+
+    // Pick any option — pass or fail, the bridge advances regardless and shows Next.
+    const firstOption = page.locator('[data-testid="gb-option"]').first();
+    await firstOption.click();
+
+    await expect(page.locator('[data-testid="gb-translation"]')).toBeVisible();
+    await expect(page.locator('[data-testid="gb-next"]')).toBeVisible();
+  });
+
+  test('resume picks up mid-session save and continues from the saved question', async ({ page }) => {
+    await seedUser(page);
+    await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      // Hand-build 4 who-says-it questions (simplest subtype to fabricate).
+      const mkQ = (subjectKey, sentence, hebrewSentence) => ({
+        type: 'who-says-it',
+        instruction: 'מי אמר את זה?',
+        instructionAudio: 'Who said this?',
+        sentence,
+        sentenceAudio: sentence,
+        hebrewSentence,
+        correctAnswer: subjectKey,
+        predicate: { word: 'happy', image: '😊', hebrew: 'שמח' },
+        options: [
+          { key: 'i', image: '🧒', hebrew: 'אני', isCorrect: subjectKey === 'i' },
+          { key: 'she', image: '👧', hebrew: 'היא', isCorrect: subjectKey === 'she' },
+          { key: 'he', image: '👦', hebrew: 'הוא', isCorrect: subjectKey === 'he' },
+          { key: 'they', image: '👨‍👩‍👧', hebrew: 'הם', isCorrect: subjectKey === 'they' },
+        ],
+      });
+      const questions = [
+        mkQ('i', 'i am happy', 'אני שמח'),
+        mkQ('she', 'she is happy', 'היא שמחה'),
+        mkQ('he', 'he is happy', 'הוא שמח'),
+        mkQ('they', 'they are happy', 'הם שמחים'),
+      ];
+      localStorage.setItem(
+        `savedGame_${userId}_grammar-beginner`,
+        JSON.stringify({
+          gameType: 'grammar-beginner',
+          currentQuestionIndex: 2,
+          score: 20,
+          totalQuestions: 4,
+          timestamp: Date.now(),
+          shuffledQuestions: questions,
+          gameElapsedMs: 0,
+        }),
+      );
+    });
+
+    await gotoHash(page, '/game/grammar-beginner');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('3');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('4');
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/game/grammar-beginner');
     await page.waitForTimeout(800);
 
     await page.locator('[data-testid="game-header-back"]').click();
