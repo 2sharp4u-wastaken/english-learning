@@ -382,6 +382,12 @@ Due badge, and Continue reorder. No E2E for say-word/recall/celebration (needs a
 cleaned and the file+data verified correct, but the runtime cause (likely a stale
 `wordImageOverrides` entry from a prior in-app upload, or a cache) was NOT confirmed.
 
+**⚪ Pre-existing test noise (NOT this effort):** `tests/smoke.spec.js` Home/Profile/Lock
+cases target the **legacy** home/profile DOM (`.game-card[data-game]`, `.tier-section`),
+which the React shell hides — they've failed since the React home shipped (Phase 1) and
+are slated for cleanup in master-plan Slice 4.6. Combined full-suite runs also flake on a
+few React specs due to Vite HMR reloads while editing; they pass in isolation.
+
 **✅ Done this effort:** lifecycle model + spacing + hysteresis + grandfather; tiered
 gates; Word Journey React port + polish (double-audio, 3D flip, shared slot mechanic +
 SpellingComparison, voice-on-correct); consolidation repoint (regression closed); Due
