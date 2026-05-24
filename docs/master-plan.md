@@ -1419,6 +1419,12 @@ Files added:
 
 #### Learning Flow Redesign — prerequisite for Slice 3.13 (approved 2026-05-24)
 
+> **Status (2026-05-25): IMPLEMENTED — steps 1–7 shipped** (commits up to `2f42e06` on
+> `v3-react-migration`). The stamp regression is closed. **Remaining before merge:** a
+> certificate-recalibration product decision + a human play-test of the Word Journey
+> stages/unlock modal. Authoritative status + loose ends: `docs/learning-flow-redesign.md`
+> §10 + §12. The build-order list below is kept for historical context.
+
 Planning the Word Journey port surfaced two design leaks in the progression model:
 graduation is batch-average (a weak word rides its batchmates into "learned"), and the
 accurate per-word `wordMastery` signal is ignored in favor of a binary `learnedWords`
