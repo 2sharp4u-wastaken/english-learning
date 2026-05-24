@@ -3113,8 +3113,14 @@ class GameManager {
                 }
             }
 
-            // After ABC game, re-check game unlocks (Reading gate requires ABC mastery)
-            if (gameType === 'abc' && window.app?.progressManager) {
+            // Re-check game unlocks after EVERY completion. Under the V3 model
+            // (docs/learning-flow-redesign.md) review games promote words to
+            // Learned — not just Word Journey — so unlocks can change after any
+            // game. checkAndUnlockGames derives its counts internally (the passed
+            // learnedCount is ignored). Queue any newly-unlocked games so the
+            // Home screen shows the celebration modal on the next visit.
+            // (React Word Journey handles its own queue via finishWordJourney.)
+            if (window.app?.progressManager) {
                 const pm = window.app.progressManager;
                 const learnedCount = pm.getLearnedWordCount();
                 const topicsDone = pm.getCompletedTopicCount();
@@ -3127,7 +3133,11 @@ class GameManager {
                     const data = pm.getProgressData();
                     window.app.userProgress.gameUnlocks = data.gameUnlocks;
                     window.app.saveUserProgress();
-                    console.log('[V2] ABC completion unlocked games:', newlyUnlocked);
+                    try {
+                        const cur = JSON.parse(sessionStorage.getItem('v3_pendingUnlocks') || '[]');
+                        sessionStorage.setItem('v3_pendingUnlocks', JSON.stringify([...new Set([...(Array.isArray(cur) ? cur : []), ...newlyUnlocked])]));
+                    } catch (_) {}
+                    console.log('[V2] Newly unlocked games:', newlyUnlocked);
                 }
             }
 

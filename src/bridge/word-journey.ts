@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { queuePendingUnlocks } from './games'
 
 // ─── Word shape ──────────────────────────────────────────────────────────────
 
@@ -355,6 +356,7 @@ export function finishWordJourney(
   if (pm) {
     newlyUnlocked =
       pm.checkAndUnlockGames(0, pm.getCompletedTopicCount?.() ?? 0, abcMasteryPercent()) ?? []
+    queuePendingUnlocks(newlyUnlocked) // surfaced by the modal on next Home view
     const data = pm.getProgressData()
     if (app?.userProgress) {
       app.userProgress.learnedWords = data.learnedWords

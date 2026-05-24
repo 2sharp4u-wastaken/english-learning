@@ -122,3 +122,36 @@ export function exitGame(): void {
     mgr.endGame()
   }
 }
+
+// ─── Newly-unlocked-games queue ──────────────────────────────────────────────
+// Games unlocked at the moment a session completes are queued here, then shown
+// in an animated modal the next time Home mounts (so the celebration happens on
+// the home screen, not layered over the reward/celebration). Survives the
+// /game → /home navigation via sessionStorage.
+
+const PENDING_UNLOCKS_KEY = 'v3_pendingUnlocks'
+
+/** Queue game IDs newly unlocked at completion (deduped, merged). */
+export function queuePendingUnlocks(ids: string[]): void {
+  if (!Array.isArray(ids) || ids.length === 0) return
+  try {
+    const cur = JSON.parse(sessionStorage.getItem(PENDING_UNLOCKS_KEY) || '[]')
+    const merged = Array.from(new Set([...(Array.isArray(cur) ? cur : []), ...ids]))
+    sessionStorage.setItem(PENDING_UNLOCKS_KEY, JSON.stringify(merged))
+  } catch {
+    /* sessionStorage unavailable — skip the celebration, no harm */
+  }
+}
+
+/** Read and clear the queued newly-unlocked game IDs. */
+export function takePendingUnlocks(): string[] {
+  try {
+    const raw = sessionStorage.getItem(PENDING_UNLOCKS_KEY)
+    if (!raw) return []
+    sessionStorage.removeItem(PENDING_UNLOCKS_KEY)
+    const ids = JSON.parse(raw)
+    return Array.isArray(ids) ? ids : []
+  } catch {
+    return []
+  }
+}

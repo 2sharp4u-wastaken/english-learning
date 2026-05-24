@@ -1,7 +1,8 @@
-import { useMemo, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { ArrowLeft, BookOpen, Flame, Lock, Medal, Play, Settings, Star, Trophy, User } from 'lucide-react'
-import { getContinueTarget, getGameCatalog } from '@/bridge/games'
+import { getContinueTarget, getGameCatalog, takePendingUnlocks } from '@/bridge/games'
+import { NewlyUnlockedModal } from './components/NewlyUnlockedModal'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useGameUnlocks } from '@/hooks/useGameUnlocks'
 import { useUserProgress } from '@/hooks/useUserProgress'
@@ -79,6 +80,23 @@ export function HomePage() {
         games: catalog.filter((game) => game.tier === tier),
       })),
     [catalog],
+  )
+
+  // Show the "newly unlocked games" celebration once, for games queued by the
+  // session that just finished (see queuePendingUnlocks / gameLogic completion).
+  const [unlockedIds, setUnlockedIds] = useState<string[]>([])
+  useEffect(() => {
+    const ids = takePendingUnlocks()
+    if (ids.length > 0) setUnlockedIds(ids)
+  }, [])
+
+  const unlockedMeta = useMemo(
+    () =>
+      unlockedIds.map((id) => {
+        const game = catalog.find((c) => c.id === id)
+        return { id, icon: game?.icon ?? '🎮', name: game?.name ?? id }
+      }),
+    [unlockedIds, catalog],
   )
 
   const greetingName = displayName ?? 'לומד'
@@ -240,6 +258,10 @@ export function HomePage() {
           </div>
         </section>
       ))}
+
+      {unlockedMeta.length > 0 ? (
+        <NewlyUnlockedModal games={unlockedMeta} onClose={() => setUnlockedIds([])} />
+      ) : null}
     </div>
   )
 }
