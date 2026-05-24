@@ -78,6 +78,8 @@ export interface WordMasteryInfo {
   accuracy: number
   category: string
   categoryLabel: string
+  /** V3: a Learned word past its spacing interval — surfaced for review. */
+  isDue?: boolean
 }
 
 export interface MasteryStats {
@@ -272,6 +274,7 @@ function getWordDisplayInfo(wordKey: string, vocabIndex: VocabIndex) {
 function getWordMasteryStats(progress: UserProgress): MasteryStats {
   const wm = progress.wordMastery || {}
   const stats: MasteryStats = { total: 0, struggling: [], learning: [], mastered: [] }
+  const pm = (window as any).app?.progressManager
 
   for (const [wordKey, data] of Object.entries(wm)) {
     if (!data || typeof data !== 'object') continue
@@ -281,13 +284,16 @@ function getWordMasteryStats(progress: UserProgress): MasteryStats {
     const totalAttempts = data.totalAttempts || 0
     const correctAttempts = data.correctAttempts || 0
     const meta = getCategoryMeta(data.category)
+    const word = data.word || wordKey.split('_')[0]
+    const category = data.category || 'custom'
     const info: WordMasteryInfo = {
-      word: data.word || wordKey.split('_')[0],
+      word,
       mastery,
       attempts: totalAttempts,
       accuracy: totalAttempts > 0 ? Math.round((correctAttempts / totalAttempts) * 100) : 0,
-      category: data.category || 'custom',
+      category,
       categoryLabel: meta.name,
+      isDue: pm?.isWordDue ? pm.isWordDue(word, category) : false,
     }
 
     if (mastery < 0.5) stats.struggling.push(info)

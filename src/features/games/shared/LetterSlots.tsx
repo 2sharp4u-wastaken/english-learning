@@ -101,7 +101,7 @@ export function LetterSlots({
               onClick={backspace}
               disabled={disabled || !entry}
               className={cn(
-                'flex h-13 w-10 items-center justify-center border-b-[3px] pb-1 text-3xl font-bold transition-colors sm:w-11',
+                'flex w-10 items-center justify-center border-b-[3px] pb-1 text-3xl font-bold transition-colors sm:w-11',
                 slotColor,
               )}
               style={{ height: '3.25rem' }}

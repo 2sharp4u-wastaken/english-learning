@@ -41,6 +41,7 @@ export function getUserProgress(): UserProgress | null {
 
 function getProgressManager(): {
   getDerivedLearnedCount?: () => number
+  getIntroducedCount?: () => number
   getLearnedWordKeys?: () => Set<string>
 } | null {
   return (
@@ -55,6 +56,25 @@ export function getDerivedLearnedCount(): number {
   const pm = getProgressManager()
   if (pm?.getDerivedLearnedCount) return pm.getDerivedLearnedCount()
   return Object.keys(getUserProgress()?.learnedWords ?? {}).length
+}
+
+/** Count of words the child has been introduced to (Learning ∪ Learned). */
+export function getIntroducedCount(): number {
+  const pm = getProgressManager()
+  if (pm?.getIntroducedCount) return pm.getIntroducedCount()
+  return Object.keys(getUserProgress()?.learnedWords ?? {}).length
+}
+
+/**
+ * The word-collection map keyed by derived-Learned words (preserving the
+ * grandfathered graduation date where one exists). Replaces the raw stamp so the
+ * sticker book stays populated under the V3 model (the stamp no longer grows).
+ */
+export function getLearnedCollection(): Record<string, { graduatedDate?: string }> {
+  const stamp = getLearnedWords()
+  const out: Record<string, { graduatedDate?: string }> = {}
+  for (const key of getLearnedWordKeySet()) out[key] = stamp[key] ?? {}
+  return out
 }
 
 /** Derived "Learned" word-key set for consolidation-tier content selection. */
@@ -74,8 +94,9 @@ export function getUserSummary(): UserSummary {
   }
   return {
     streakDays: p.streakDays ?? 0,
-    // V3: derived Learned count, not the frozen learnedWords stamp.
-    wordsLearned: getDerivedLearnedCount(),
+    // V3 (redesign §8): "words learned" = introduced (words met) for momentum;
+    // mastery is reported separately as getWordsMasteredCount (= derived Learned).
+    wordsLearned: getIntroducedCount(),
     coins: p.coins ?? 0,
     totalScore: p.totalPoints ?? 0,
     totalGamesPlayed: p.totalGamesPlayed ?? 0,
@@ -100,18 +121,12 @@ export function getCertificates(): Certificate[] {
 }
 
 /**
- * Get the number of mastered words (masteryLevel >= 0.8).
+ * Number of words "mastered" — under the V3 model this is the derived Learned
+ * count (mastery-stable ∪ grandfathered), the same number the consolidation
+ * gates use, so the profile "שליטה" stat matches what unlocks the hard games.
  */
 export function getWordsMasteredCount(): number {
-  const mgr = getAppManager()
-  if (mgr?.progressManager?.getMasteryStats) {
-    return mgr.progressManager.getMasteryStats().mastered ?? 0
-  }
-  const p = getUserProgress()
-  if (!p?.wordMastery) return 0
-  return Object.values(p.wordMastery).filter(
-    (w) => (w.masteryLevel ?? 0) >= 0.8,
-  ).length
+  return getDerivedLearnedCount()
 }
 
 /**

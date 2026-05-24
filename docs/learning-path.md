@@ -1,10 +1,9 @@
 # Learning Path — How the App Guides a Child Through English
 
-> **Note (2026-05-24):** This document describes the *current* graduation/gating
-> model. A mastery-driven redesign of the word lifecycle (per-word graduation,
-> two-step promotion, light spacing, tiered unlocks) is approved and pending
-> implementation — see `docs/learning-flow-redesign.md`. Sections below will be
-> updated as that ships.
+> **Note (2026-05-24):** Updated to the **V3 mastery-driven model** (per-word
+> graduation, two-step promotion via review, light spacing, tiered unlocks). Full
+> design + remaining loose ends: `docs/learning-flow-redesign.md`. The legacy Memory,
+> ABC, and Practice games are not yet migrated to React, but the model below applies.
 
 ## Overview
 
@@ -31,37 +30,42 @@ Every child starts here. Word Journey is a 5-stage structured lesson for a batch
 | 5. Recall | See the image, pick the correct English word | Yes |
 
 - **Batch size** is controlled by the Learning Pace setting (3 / 5 / 8 words)
-- If the child scores **≥60% across scored stages**, the words are **graduated** into the learned-words bank
-- Graduated words are the currency that unlocks other games
+- **(V3 — mastery-driven, see `learning-flow-redesign.md`)** Word Journey no longer
+  graduates a whole batch at ≥60%. Each stage records that word's real performance,
+  so a word the child nails reaches **Learned** while a fumbled one stays **Learning**.
+  Word Journey is the *first encounter*; the review games promote Learning → Learned.
 
 ### Step 2: Games Unlock Progressively
 
-As the child accumulates learned words, new games unlock automatically:
+Games unlock on two tiers (numbers unchanged from the table below; only the *counter*
+differs). **Review-tier** games gate on words **introduced** (Learning ∪ Learned) so the
+child always has somewhere to promote new words. **Consolidation-tier** games gate on
+words genuinely **Learned**.
 
-| Tier | Game | Unlock Requirement |
+| Tier | Game | Unlock Requirement (V3) |
 |------|------|--------------------|
 | **Learn** | Word Journey | Always open |
 | **Learn** | ABC Letters | Always open |
-| **Practice** | Memory Game | Always open (uses learned words when ≥12 available) |
+| **Practice** | Memory Game | Always open (word mode when ≥12 *introduced*) |
 | **Practice** | Grammar Beginner | Always open |
-| **Practice** | Listening | 5 learned words |
-| **Practice** | Picture Match | 5 learned words |
-| **Practice** | True or Not? | 5 learned words |
-| **Challenge** | Reading | 10 learned words + ABC 60% mastery |
-| **Challenge** | Pronunciation | 10 learned words |
-| **Challenge** | Story Time | 15 learned words |
-| **Challenge** | Word Builder | 20 learned words + 1 topic complete |
-| **Challenge** | Fill the Blank | 30 learned words + 2 topics complete |
-| **Challenge** | Sentence Scramble | 30 learned words + 2 topics complete |
-| **Challenge** | Grammar | 50 learned words + 3 topics complete |
-| **Test** | Word Test | 10 learned words |
+| **Practice** | Listening / Picture Match / True or Not? | 5 *introduced* |
+| **Challenge** | Reading | 10 *introduced* + ABC 60% mastery |
+| **Challenge** | Pronunciation / Vocabulary | 10 *introduced* |
+| **Challenge** | Story Time | 15 *Learned* |
+| **Challenge** | Fill the Blank / Sentence Scramble | 30 *Learned* + 2 topics |
+| **Challenge** | Grammar | 50 *Learned* + 3 topics |
+| **Test** | Word Test | 10 *Learned* |
 
-Locked games are visible on the home screen with a semi-transparent overlay showing the unlock requirement, so the child can see what's coming.
+(Word Builder was retired into Fill the Blank — Slice 3.7.1.) Locked games are visible
+on the home screen with a semi-transparent overlay showing the unlock requirement.
 
 ### Step 3: Practice & Reinforcement
 
-Once games are unlocked, they draw from the child's learned-words pool. This means:
-- Every game reinforces words the child already studied in Word Journey
+Review games draw from the **Learning ∪ Due** pool (Due = a Learned word past its
+spacing interval — 3/7/14/30 days), prioritizing Due words. This means:
+- Review games are the **promotion path**: practicing a Learning word raises its mastery
+  until it becomes Learned; old Learned words resurface as Due before they're forgotten.
+- Consolidation games draw from genuinely **Learned** words.
 - No game throws unfamiliar words at the child (except Memory with <12 learned words, and grammar-beginner)
 - The more words they learn, the richer and more varied each game becomes
 
@@ -202,7 +206,7 @@ This ensures the child is always nudged toward learning new words first, but can
 
 1. **Never block the child** — there's always at least Word Journey + ABC + Memory + Grammar Beginner available
 2. **Show what's locked** — locked game cards are visible (semi-transparent overlay) so the child sees what they're working toward
-3. **Reinforce, don't test cold** — gated games only use words the child has already learned through Word Journey
+3. **Reinforce, don't test cold** — games only use words the child has already *met*: review games draw from Learning∪Due words (introduced via Word Journey), consolidation games from genuinely Learned words
 4. **Reward everything** — coins, certificates, levels, word stickers, streaks, confetti
 5. **Parent control without friction** — settings are password-protected but the child's experience is self-guided
 6. **Adjustable intensity** — parents can tune learning pace, difficulty, categories, and even bypass gates entirely

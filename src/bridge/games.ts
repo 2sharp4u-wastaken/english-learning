@@ -80,13 +80,18 @@ export function getContinueTarget(): ContinueTarget | null {
   const progress = getUserProgress()
   if (!progress) return null
 
-  // Default to word-journey for new users
-  const learnedCount = Object.keys(progress.learnedWords ?? {}).length
-  if (learnedCount === 0) {
-    return { gameId: 'word-journey', label: 'מסע המילים', icon: '🗺️' }
+  // V3 (redesign §8) recommendation order: review words that are slipping
+  // (Due) → otherwise introduce/strengthen via Word Journey. (Learning words
+  // are already surfaced inside the review games, so they need no separate nudge.)
+  const pm = (window as any).app?.progressManager
+  const dueCount: number = pm?.getLifecycleCounts ? pm.getLifecycleCounts().due : 0
+  if (dueCount > 0) {
+    const unlocks = progress.gameUnlocks ?? {}
+    const reviewOrder = ['listening', 'picture-match', 'true-or-not', 'pronunciation', 'reading', 'vocabulary']
+    const open = reviewOrder.find((id) => (unlocks as any)[id]?.unlocked)
+    if (open) return { gameId: open, label: 'תרגול מילים שצריך לחזק', icon: '🔁' }
   }
 
-  // If user has been playing, suggest word-journey to continue learning
   return { gameId: 'word-journey', label: 'מסע המילים', icon: '🗺️' }
 }
 

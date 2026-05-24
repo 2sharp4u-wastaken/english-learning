@@ -720,7 +720,18 @@ function WordMasteryTable({ words, color }: { words: WordMasteryInfo[]; color: '
         <tbody>
           {words.map((w) => (
             <tr key={w.word + w.category} className="border-b border-white/5 last:border-0">
-              <td className="py-3 pe-4 font-bold text-text">{w.word}</td>
+              <td className="py-3 pe-4 font-bold text-text">
+                {w.word}
+                {w.isDue ? (
+                  <span
+                    data-testid="stats-due-badge"
+                    title="הגיע הזמן לחזור על המילה"
+                    className="ms-2 rounded-full bg-amber-400/15 px-2 py-0.5 align-middle text-[0.65rem] font-semibold text-amber-300"
+                  >
+                    🔁 לחזרה
+                  </span>
+                ) : null}
+              </td>
               <td className="py-3 px-2 text-muted">{w.categoryLabel}</td>
               <td className="py-3 px-2 text-center text-muted">{w.attempts}</td>
               <td className="py-3 px-2 text-center text-muted">{w.accuracy}%</td>

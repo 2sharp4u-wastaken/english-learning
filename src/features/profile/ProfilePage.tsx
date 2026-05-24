@@ -18,7 +18,7 @@ import { useGameUnlocks } from '@/hooks/useGameUnlocks'
 import {
   getCertificates,
   getWordsMasteredCount,
-  getLearnedWords,
+  getLearnedCollection,
   getActivityDates,
   getBestScores,
   getVocabularyBank,
@@ -134,7 +134,7 @@ export function ProfilePage() {
 
   const certificates = useMemo(() => getCertificates(), [summary])
   const wordsMastered = useMemo(() => getWordsMasteredCount(), [summary])
-  const learnedWords = useMemo(() => getLearnedWords(), [summary])
+  const learnedWords = useMemo(() => getLearnedCollection(), [summary])
   const activityDates = useMemo(() => getActivityDates(), [summary])
   const bestScores = useMemo(() => getBestScores(), [summary])
   const vocabBank = useMemo(() => getVocabularyBank(), [])
