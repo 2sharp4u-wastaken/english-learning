@@ -34,6 +34,36 @@ export function getUserProgress(): UserProgress | null {
   return getKey<UserProgress>(v2Key(`userProgress_${userId}`))
 }
 
+// ─── V3 mastery-driven learned helpers (docs/learning-flow-redesign.md) ───────
+// "Learned" is now derived from wordMastery (∪ grandfathered), NOT the legacy
+// learnedWords stamp — Word Journey no longer writes that stamp. Everything that
+// needs a "learned" count/set must go through these so it tracks new progress.
+
+function getProgressManager(): {
+  getDerivedLearnedCount?: () => number
+  getLearnedWordKeys?: () => Set<string>
+} | null {
+  return (
+    (window as any).app?.progressManager ??
+    (window as any).appManager?.progressManager ??
+    null
+  )
+}
+
+/** Derived "Learned" count (mastery-stable ∪ grandfathered, excl. ABC letters). */
+export function getDerivedLearnedCount(): number {
+  const pm = getProgressManager()
+  if (pm?.getDerivedLearnedCount) return pm.getDerivedLearnedCount()
+  return Object.keys(getUserProgress()?.learnedWords ?? {}).length
+}
+
+/** Derived "Learned" word-key set for consolidation-tier content selection. */
+export function getLearnedWordKeySet(): Set<string> {
+  const pm = getProgressManager()
+  if (pm?.getLearnedWordKeys) return pm.getLearnedWordKeys()
+  return new Set(Object.keys(getUserProgress()?.learnedWords ?? {}))
+}
+
 /**
  * Get a high-level summary of the current user's progress.
  */
@@ -44,7 +74,8 @@ export function getUserSummary(): UserSummary {
   }
   return {
     streakDays: p.streakDays ?? 0,
-    wordsLearned: Object.keys(p.learnedWords ?? {}).length,
+    // V3: derived Learned count, not the frozen learnedWords stamp.
+    wordsLearned: getDerivedLearnedCount(),
     coins: p.coins ?? 0,
     totalScore: p.totalPoints ?? 0,
     totalGamesPlayed: p.totalGamesPlayed ?? 0,

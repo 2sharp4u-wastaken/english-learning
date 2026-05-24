@@ -73,7 +73,11 @@ const SENTENCE_THEMES = new Set([
   'animals', 'colors', 'daily', 'family', 'food', 'greetings', 'numbers', 'school',
 ])
 
+// V3: consolidation gate counts derived "Learned" (mastery-stable ∪ grandfathered),
+// not the frozen learnedWords stamp (Word Journey no longer writes it).
 function getLearnedCount(): number {
+  const pm = (window as any).app?.progressManager
+  if (pm?.getDerivedLearnedCount) return pm.getDerivedLearnedCount()
   return Object.keys((window as any).app?.userProgress?.learnedWords ?? {}).length
 }
 

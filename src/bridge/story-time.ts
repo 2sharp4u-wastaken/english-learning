@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getDerivedLearnedCount, getLearnedWordKeySet } from './progress'
 // Legacy data module — same one gameLogic.js imports.
 // @ts-expect-error — legacy .js import without a .d.ts
 import { getStoriesForSession } from '../../data/stories.js'
@@ -77,8 +78,9 @@ const LEARN_FIRST_THRESHOLD = 15
 const SESSION_STORY_COUNT = 3
 const POINTS_PER_CORRECT = 15
 
+// V3: "learned" = derived (mastery-stable ∪ grandfathered), not the frozen stamp.
 function getLearnedCount(): number {
-  return Object.keys((window as any).app?.userProgress?.learnedWords ?? {}).length
+  return getDerivedLearnedCount()
 }
 
 export interface BeginOptions {
@@ -112,9 +114,8 @@ export function beginStoryTimeSession(opts: BeginOptions = {}): StoryTimeSession
   }
 
   // Build stories from learned words — mirrors gameLogic.js:2191-2205.
-  const learnedWordsMap = (window as any).app?.userProgress?.learnedWords ?? {}
   const allWords = ((window as any).vocabularyBank as any[]) ?? []
-  const learnedWordsList = (Object.keys(learnedWordsMap) as string[])
+  const learnedWordsList = [...getLearnedWordKeySet()]
     .map((key) => {
       const [word, category] = key.split('_')
       return (

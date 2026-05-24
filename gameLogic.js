@@ -2339,10 +2339,11 @@ class GameManager {
 
         // --- Categorize FRESH words by mastery level ---
         const categorized = {
+            due: [],        // V3: Learned but past its review interval — review FIRST
             new: [],        // Never seen (mastery = 0)
             struggling: [], // Low mastery (0 < mastery < 0.5)
             learning: [],   // Medium mastery (0.5 <= mastery < 0.8)
-            mastered: []    // High mastery (mastery >= 0.8)
+            mastered: []    // High mastery (mastery >= 0.8), not yet due
         };
 
         freshWords.forEach(q => {
@@ -2352,7 +2353,11 @@ class GameManager {
             const mastery = wordStats?.masteryLevel || 0;
             q.masteryLevel = mastery;
 
-            if (mastery === 0) categorized.new.push(q);
+            // V3 (docs/learning-flow-redesign.md): a Learned word past its spacing
+            // interval is "due" — surface it for review ahead of everything else,
+            // instead of letting its high mastery bury it in the 'mastered' bucket.
+            if (this.progressManager?.isWordDue?.(q.word, q.category)) categorized.due.push(q);
+            else if (mastery === 0) categorized.new.push(q);
             else if (mastery < 0.5) categorized.struggling.push(q);
             else if (mastery < 0.8) categorized.learning.push(q);
             else categorized.mastered.push(q);
@@ -2378,17 +2383,24 @@ class GameManager {
         // --- PHASE 1: Fill from fresh words using mastery weights ---
         if (freshWords.length > 0) {
             const freshTarget = Math.min(freshWords.length, targetCount);
-            const counts = {
-                struggling: Math.ceil(freshTarget * weights.struggling),
-                new: Math.ceil(freshTarget * weights.new),
-                learning: Math.ceil(freshTarget * weights.learning),
-                mastered: Math.ceil(freshTarget * weights.mastered)
-            };
 
-            selected.push(...selectRandom(categorized.struggling, counts.struggling));
-            selected.push(...selectRandom(categorized.new, counts.new));
-            selected.push(...selectRandom(categorized.learning, counts.learning));
-            selected.push(...selectRandom(categorized.mastered, counts.mastered));
+            // V3: Due words (Learned but stale) get top priority for review.
+            selected.push(...selectRandom(categorized.due, freshTarget));
+
+            const remaining = freshTarget - selected.length;
+            if (remaining > 0) {
+                const counts = {
+                    struggling: Math.ceil(remaining * weights.struggling),
+                    new: Math.ceil(remaining * weights.new),
+                    learning: Math.ceil(remaining * weights.learning),
+                    mastered: Math.ceil(remaining * weights.mastered)
+                };
+
+                selected.push(...selectRandom(categorized.struggling, counts.struggling));
+                selected.push(...selectRandom(categorized.new, counts.new));
+                selected.push(...selectRandom(categorized.learning, counts.learning));
+                selected.push(...selectRandom(categorized.mastered, counts.mastered));
+            }
 
             // Fill any remaining fresh slots (deduplication via key set)
             if (selected.length < freshTarget) {
