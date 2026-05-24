@@ -1347,7 +1347,7 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
     await page.waitForTimeout(500);
 
     await expect(page.locator('[data-testid="reading-learn-first"]')).toBeVisible();
-    await expect(page.locator('[data-testid="reading-letter-bank"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="letter-slots"]')).toHaveCount(0);
 
     const critical = filterCritical(errors);
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
@@ -1364,8 +1364,7 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
 
     await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
     await expect(page.locator('[data-testid="media-prompt-media"]')).toBeVisible();
-    await expect(page.locator('[data-testid="reading-letter-bank"]')).toBeVisible();
-    await expect(page.locator('[data-testid="reading-built-word"]')).toBeVisible();
+    await expect(page.locator('[data-testid="letter-slots"]')).toBeVisible();
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
 
     const target = await page.evaluate(() => {
@@ -1374,11 +1373,11 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
     });
     expect(target).toBeTruthy();
 
-    // Click letters in order — each letter button stores its source letter on
-    // data-letter, and we only click ones that are still enabled.
+    // Tap the matching tiles into the slots — tiles expose a lowercase
+    // data-letter; click only ones still enabled (handles duplicate letters).
     for (const ch of target.split('')) {
       const btn = page
-        .locator(`[data-testid="reading-letter"][data-letter="${ch}"]:not([disabled])`)
+        .locator(`[data-testid="letter-tile"][data-letter="${ch.toLowerCase()}"]:not([disabled])`)
         .first();
       await btn.click();
     }
@@ -1400,17 +1399,17 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
     await gotoHash(page, '/game/reading');
     await page.waitForTimeout(900);
 
-    // Pick the first available letter
-    const firstLetter = page.locator('[data-testid="reading-letter"]:not([disabled])').first();
+    // Pick the first available tile
+    const firstLetter = page.locator('[data-testid="letter-tile"]:not([disabled])').first();
     const usedLetter = await firstLetter.getAttribute('data-letter');
     await firstLetter.click();
     await expect(page.locator('[data-testid="reading-clear"]')).toBeEnabled();
 
     await page.locator('[data-testid="reading-clear"]').click();
     await expect(page.locator('[data-testid="reading-clear"]')).toBeDisabled();
-    // The clicked letter is available again.
+    // The cleared tile is available again.
     await expect(
-      page.locator(`[data-testid="reading-letter"][data-letter="${usedLetter}"]:not([disabled])`).first(),
+      page.locator(`[data-testid="letter-tile"][data-letter="${usedLetter}"]:not([disabled])`).first(),
     ).toBeVisible();
   });
 
@@ -1422,7 +1421,7 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
 
     // Just click whatever the first available letter is — almost certainly
     // not the full target word — and submit.
-    const firstLetter = page.locator('[data-testid="reading-letter"]:not([disabled])').first();
+    const firstLetter = page.locator('[data-testid="letter-tile"]:not([disabled])').first();
     await firstLetter.click();
     await page.locator('[data-testid="reading-check"]').click();
 
@@ -1439,7 +1438,7 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
     await page.waitForTimeout(900);
 
     // One letter is almost never the full word → wrong → comparison shown.
-    await page.locator('[data-testid="reading-letter"]:not([disabled])').first().click();
+    await page.locator('[data-testid="letter-tile"]:not([disabled])').first().click();
     await page.locator('[data-testid="reading-check"]').click();
 
     const next = page.locator('[data-testid="reading-next"]');

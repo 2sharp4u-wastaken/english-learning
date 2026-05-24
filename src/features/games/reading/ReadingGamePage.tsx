@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { MediaPromptCard } from '@/features/games/shared/MediaPromptCard'
 import { SpellingComparison } from '@/features/games/shared/SpellingComparison'
+import { LetterSlots } from '@/features/games/shared/LetterSlots'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
@@ -26,7 +27,6 @@ import {
 } from '@/bridge/feedback'
 import { getSettings } from '@/bridge/settings'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
-import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
 
@@ -35,33 +35,20 @@ interface FeedbackState {
   text: string
 }
 
-interface LetterToken {
-  /** Stable per-bank-build key so duplicate letters render as distinct buttons. */
-  key: string
-  /** Letter as stored in legacy data (uppercase). */
-  letter: string
-  used: boolean
-}
-
 // Longer than the usual 1.5s so the correct word is fully spoken (praise sound
 // then the word itself) before the next question loads.
 const ADVANCE_DELAY_MS = 2400
 const WORD_REVEAL_MS = 3000
 
-function buildLetterBank(question: ReadingQuestion): LetterToken[] {
-  const wordLetters = question.word.split('')
+function buildTiles(question: ReadingQuestion): string[] {
   const extras = Array.isArray(question.extraLetters) ? question.extraLetters : []
-  // Combine and Fisher-Yates shuffle (matches legacy reading-game.js).
-  const all = [...wordLetters, ...extras]
+  const all = [...question.word.split(''), ...extras]
+  // Fisher-Yates shuffle (matches legacy reading-game.js).
   for (let i = all.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1))
     ;[all[i], all[j]] = [all[j], all[i]]
   }
-  return all.map((letter, index) => ({
-    key: `${index}-${letter}`,
-    letter,
-    used: false,
-  }))
+  return all
 }
 
 function ReadingPicture({ question }: { question: ReadingQuestion }) {
@@ -95,9 +82,10 @@ export function ReadingGamePage() {
   const [phase, setPhase] = useState<Phase>('idle')
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
   const [exitOpen, setExitOpen] = useState(false)
-  // Letter-building state.
-  const [letterBank, setLetterBank] = useState<LetterToken[]>([])
-  const [built, setBuilt] = useState<LetterToken[]>([])
+  // Letter-building state (slots live in the shared LetterSlots component; this
+  // tracks the built word it reports + a nonce to clear it).
+  const [built, setBuilt] = useState('')
+  const [clearNonce, setClearNonce] = useState(0)
   const [attempts, setAttempts] = useState(0)
   // English word reveal cycles: visible on each new question / after a wrong
   // answer, then auto-hidden after WORD_REVEAL_MS. Hebrew stays visible.
@@ -158,7 +146,7 @@ export function ReadingGamePage() {
       setAudioPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
       autoPlayedRef.current = false
     }
-    setBuilt([])
+    setBuilt('')
     setAttempts(0)
     setFeedback(null)
   }, [])
@@ -202,11 +190,13 @@ export function ReadingGamePage() {
   const current: ReadingQuestion | null =
     phase === 'finished' || !questions[index] ? null : questions[index]
 
-  // Build a fresh letter bank when the current question changes.
+  // Fresh shuffled tiles per question (slot/used state lives in LetterSlots).
+  const tiles = useMemo(() => (current ? buildTiles(current) : []), [current])
+
+  // Reset per-question state when the current question changes.
   useEffect(() => {
     if (!current) return
-    setLetterBank(buildLetterBank(current))
-    setBuilt([])
+    setBuilt('')
     setAttempts(0)
     startWordHideTimer()
   }, [current, startWordHideTimer])
@@ -300,41 +290,9 @@ export function ReadingGamePage() {
     })
   }, [total])
 
-  const handleLetterPick = useCallback(
-    (key: string) => {
-      if (phase !== 'awaiting') return
-      const token = letterBank.find((t) => t.key === key && !t.used)
-      if (!token) return
-      setLetterBank((bank) =>
-        bank.map((t) => (t.key === key ? { ...t, used: true } : t)),
-      )
-      setBuilt((b) => [...b, { ...token, used: true }])
-      // Speak the letter (legacy reading-game.js addLetterToWord behavior).
-      void speak(token.letter.toLowerCase())
-    },
-    [phase, letterBank],
-  )
-
-  const handleBuiltLetterRemove = useCallback(
-    (key: string) => {
-      if (phase !== 'awaiting') return
-      setBuilt((b) => b.filter((t) => t.key !== key))
-      setLetterBank((bank) =>
-        bank.map((t) => (t.key === key ? { ...t, used: false } : t)),
-      )
-    },
-    [phase],
-  )
-
-  const handleClearBuilt = useCallback(() => {
-    if (phase !== 'awaiting') return
-    setBuilt([])
-    setLetterBank((bank) => bank.map((t) => ({ ...t, used: false })))
-  }, [phase])
-
   const handleCheck = useCallback(() => {
     if (!current || phase !== 'awaiting' || built.length === 0) return
-    const builtWord = built.map((t) => t.letter).join('')
+    const builtWord = built
     const outcome = recordReadingAnswer(current, builtWord, attempts)
     const fb = getGameFeedback('reading', outcome.isCorrect ? 'correct' : 'incorrect')
     setFeedback({
@@ -452,7 +410,7 @@ export function ReadingGamePage() {
       <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-3">
         <button
           type="button"
-          onClick={handleClearBuilt}
+          onClick={() => setClearNonce((n) => n + 1)}
           disabled={!canClear}
           data-testid="reading-clear"
           className="rounded-full border border-white/20 bg-white/5 px-6 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
@@ -500,65 +458,22 @@ export function ReadingGamePage() {
             {phase === 'answered' && feedback?.variant === 'incorrect' ? (
               <SpellingComparison
                 target={current.word}
-                attempt={built.map((t) => t.letter).join('')}
+                attempt={built}
                 caseMode={caseMode}
                 showNikud={showNikud}
               />
             ) : (
-              <div
-                data-testid="reading-built-word"
-                dir="ltr"
-                className={cn(
-                  'mx-auto flex min-h-[3.5rem] min-w-[8rem] flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[color:var(--ink-900)]/70 px-4 py-2 text-3xl font-bold tracking-wide text-white backdrop-blur',
-                  phase === 'answered' && feedback?.variant === 'correct' && 'border-[color:var(--mint-400)] text-[color:var(--mint-400)]',
-                )}
-              >
-                {built.length === 0 ? (
-                  <span
-                    dir="rtl"
-                    className="text-lg font-normal text-[color:var(--slate-300)] sm:text-xl"
-                  >
-                    בחרו אותיות...
-                  </span>
-                ) : (
-                  built.map((t) => (
-                    <button
-                      key={t.key}
-                      type="button"
-                      onClick={() => handleBuiltLetterRemove(t.key)}
-                      disabled={phase !== 'awaiting'}
-                      data-testid="reading-built-letter"
-                      className="inline-flex items-center justify-center rounded-md px-1 transition hover:bg-white/10 disabled:cursor-not-allowed"
-                    >
-                      {renderLetter(t.letter)}
-                    </button>
-                  ))
-                )}
-              </div>
+              <LetterSlots
+                target={current.word}
+                tiles={tiles}
+                caseMode={caseMode}
+                result={phase === 'answered' && feedback?.variant === 'correct' ? 'correct' : null}
+                disabled={phase !== 'awaiting'}
+                resetKey={`${index}:${clearNonce}`}
+                onChange={setBuilt}
+                onPlaceLetter={(l) => void speak(l.toLowerCase())}
+              />
             )}
-
-            <div
-              data-testid="reading-letter-bank"
-              dir="ltr"
-              className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-2"
-            >
-              {letterBank.map((t) => (
-                <button
-                  key={t.key}
-                  type="button"
-                  data-testid="reading-letter"
-                  data-letter={t.letter}
-                  onClick={() => handleLetterPick(t.key)}
-                  disabled={t.used || phase !== 'awaiting'}
-                  className={cn(
-                    'inline-flex size-12 items-center justify-center rounded-xl border border-white/10 bg-white/5 text-2xl font-bold text-white shadow-sm transition hover:brightness-110 sm:size-14 sm:text-3xl',
-                    'disabled:cursor-not-allowed disabled:opacity-30',
-                  )}
-                >
-                  {renderLetter(t.letter)}
-                </button>
-              ))}
-            </div>
           </div>
         ) : null}
       </GameScreenShell>

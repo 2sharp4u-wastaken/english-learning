@@ -38,19 +38,23 @@ export function ListenMatchStage({ items, onAnswer, onComplete }: Props) {
     setPlaysLeft(MAX_PLAYS)
     setFeedback(null)
     let cancelled = false
-    void (async () => {
-      try {
-        await speakWord(item.word.word.toLowerCase(), 'word-journey', { allowOverlap: true })
-      } catch {
-        /* ignore */
-      }
-      if (!cancelled) {
-        setGateOpen(true)
-        setPlaysLeft((n) => Math.max(0, n - 1))
-      }
-    })()
+    // Deferred auto-play (StrictMode-safe — see DiscoverStage).
+    const playId = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await speakWord(item.word.word.toLowerCase(), 'word-journey', { allowOverlap: true })
+        } catch {
+          /* ignore */
+        }
+        if (!cancelled) {
+          setGateOpen(true)
+          setPlaysLeft((n) => Math.max(0, n - 1))
+        }
+      })()
+    }, 200)
     return () => {
       cancelled = true
+      window.clearTimeout(playId)
       cancelSpeech()
       if (timer.current) window.clearTimeout(timer.current)
     }

@@ -30,22 +30,28 @@ export function DiscoverStage({
     setCanAdvance(false)
     setPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
     let cancelled = false
-    const dwell = new Promise((r) => setTimeout(r, MIN_DWELL_MS))
-    const speak = (async () => {
-      try {
-        await speakWord(word.word.toLowerCase(), 'word-journey', { allowOverlap: true })
-        if (getSettings().hebrewVocalization !== false && word.hebrew) {
-          await speakHebrew(word.hebrew)
+    // Defer the auto-play: React 18 StrictMode mounts→unmounts→remounts effects
+    // in dev, so playing immediately fires twice. A deferred timer is cancelled
+    // by the intermediate cleanup, leaving exactly one play.
+    const playId = window.setTimeout(() => {
+      void (async () => {
+        try {
+          await speakWord(word.word.toLowerCase(), 'word-journey', { allowOverlap: true })
+          if (getSettings().hebrewVocalization !== false && word.hebrew) {
+            await speakHebrew(word.hebrew)
+          }
+        } catch {
+          /* ignore */
         }
-      } catch {
-        /* ignore */
-      }
-    })()
-    void Promise.all([dwell, speak]).then(() => {
+      })()
+    }, 200)
+    const dwellId = window.setTimeout(() => {
       if (!cancelled) setCanAdvance(true)
-    })
+    }, MIN_DWELL_MS)
     return () => {
       cancelled = true
+      window.clearTimeout(playId)
+      window.clearTimeout(dwellId)
       cancelSpeech()
     }
   }, [word])

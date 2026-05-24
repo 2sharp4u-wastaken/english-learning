@@ -118,22 +118,33 @@ export function RecallStage({ words, onAnswer, onComplete }: Props) {
                 ? card.word.hebrew
                 : stripNikud(card.word.hebrew)
           return (
-            <button
+            <div
               key={card.id}
-              type="button"
               data-testid="wj-recall-card"
               data-up={isUp ? 'true' : 'false'}
               onClick={() => onCard(card)}
-              className={cn(
-                'flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border p-1 text-center transition',
-                isUp
-                  ? 'border-white/10 bg-[color:var(--ink-900)]/80'
-                  : 'border-white/10 bg-gradient-to-br from-[color:var(--blue-400)]/30 to-[color:var(--mint-400)]/30 hover:brightness-110',
-                isMatched && 'border-[color:var(--mint-400)]/60 ring-1 ring-[color:var(--mint-400)]/50',
-              )}
+              className="aspect-square cursor-pointer [perspective:800px]"
             >
-              {isUp ? (
-                <>
+              {/* 3D flip container — legacy memory-card-inner rotateY (styles.css:5820). */}
+              <div
+                className="relative size-full transition-transform duration-500 [transform-style:preserve-3d]"
+                style={{ transform: isUp ? 'rotateY(180deg)' : 'rotateY(0deg)' }}
+              >
+                {/* Back (shown face-down) */}
+                <div
+                  className="absolute inset-0 flex items-center justify-center rounded-xl border-2 border-white/70 bg-gradient-to-br from-[#667eea] to-[#764ba2] text-2xl text-white/90 shadow-md [backface-visibility:hidden]"
+                >
+                  ?
+                </div>
+                {/* Front (revealed when flipped) */}
+                <div
+                  className={cn(
+                    'absolute inset-0 flex flex-col items-center justify-center gap-1 rounded-xl border-2 p-1 text-center shadow-md [backface-visibility:hidden] [transform:rotateY(180deg)]',
+                    isMatched
+                      ? 'border-[color:var(--mint-400)] bg-gradient-to-br from-[#11998e] to-[#38ef7d]'
+                      : 'border-white/80 bg-gradient-to-br from-[#f093fb] to-[#f5576c]',
+                  )}
+                >
                   <WordJourneyPicture word={card.word} className="max-h-10 object-contain" />
                   <span
                     dir={card.type === 'word' ? 'ltr' : 'rtl'}
@@ -141,11 +152,9 @@ export function RecallStage({ words, onAnswer, onComplete }: Props) {
                   >
                     {label}
                   </span>
-                </>
-              ) : (
-                <span className="text-2xl text-white/70">?</span>
-              )}
-            </button>
+                </div>
+              </div>
+            </div>
           )
         })}
       </div>

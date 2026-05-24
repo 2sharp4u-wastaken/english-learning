@@ -58,8 +58,12 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
     setTranscript(null)
     setIsCorrect(false)
     setFeedback(null)
-    void speakWord(word.word.toLowerCase(), 'word-journey', { allowOverlap: true })
+    // Deferred auto-play (StrictMode-safe — see DiscoverStage).
+    const playId = window.setTimeout(() => {
+      void speakWord(word.word.toLowerCase(), 'word-journey', { allowOverlap: true })
+    }, 200)
     return () => {
+      window.clearTimeout(playId)
       cancelSpeech()
       if (isCurrentlyRecording()) void stopPronunciationRecording()
       if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
