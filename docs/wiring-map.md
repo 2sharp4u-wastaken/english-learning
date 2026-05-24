@@ -448,6 +448,43 @@ React route /#/game/story-time
 
 Resume is intentionally unsupported in the React port: legacy story-time persists `currentQuestionIndex` (quiz answers across stories) but not `storyIndex`, so reopening silently restarts at story 0 — broken. The bridge clears saved state on every `begin` to keep behavior consistent with what legacy *appeared* to do. Total progress counter (`qp-current`) tracks answered quiz questions across all stories so the user sees one monotonic bar from story 1 through the final reward modal.
 
+## Word Journey Game (React — Slice 3.13)
+
+```
+React route /#/game/word-journey
+  └─ GameHostPage.tsx → REACT_GAMES['word-journey'] → WordJourneyGamePage.tsx
+      ├─ beginWordJourney()  (src/bridge/word-journey.ts)
+      │   ├─ setGameContext('word-journey') + deleteGameState (no resume)
+      │   ├─ words = gameManager.getWordJourneyWords() (mastery-aware, paced
+      │   │   3/5/8 by learningPace); <3 → kind:'no-words'
+      │   ├─ Pre-builds per-stage data: listen-match options (selectDistractors),
+      │   │   spell tiles (+distractor letters), recall word list
+      │   └─ Stash on gameManager: shuffledQuestions=5 stage ids, totalQuestions=5
+      ├─ Fixed stage machine (WJStageBar shows the map):
+      │   ├─ Discover (unscored): picture+word+audio, per-word listen budget
+      │   │   (Slice 3.0 carry-forward), Next enables after dwell + speech.
+      │   ├─ Listen-Match (+10): audio gate → AnswerGrid media options.
+      │   ├─ Spell (+10): letter bank → built word; correct voices the word,
+      │   │   wrong shows shared SpellingComparison (letter-by-letter green/red).
+      │   ├─ Say-Word (+10): reuses pronunciation bridge mic + local levenshtein
+      │   │   compare, records under 'word-journey'. (No E2E — speech stub gap.)
+      │   └─ Recall (+5/pair): memory grid; match = same word, word vs translation.
+      ├─ Each scored answer → recordWJAttempt(word, isCorrect, points):
+      │   recordWordAttempt('word-journey') (feeds the mastery lifecycle) +
+      │   scoreManager.addPoints. Page tallies correct / totalScored in refs.
+      ├─ After recall → finishWordJourney(words, correct, totalScored):
+      │   history + totalPoints reconcile + coins (half in replay) +
+      │   checkAndUnlockGames (NEW counts) + persist. **No graduateWord** — the
+      │   legacy endGame batch-graduation path is never called. Returns
+      │   {percentage, newlyUnlocked, summary[]}.
+      ├─ Celebration: WJCelebration animates this journey's words in with
+      │   picture + audio + status (✓ נלמד / ⏳ לומד). Play-again / practice
+      │   (setReplayMode) / home.
+      └─ Exit/reset/unmount → abortWordJourney() + cancelSpeech.
+```
+
+Per-word graduation is emergent: WJ records real per-word attempts each stage, so a word the child nails climbs toward Learned on its own while a fumbled word stays Learning — there is no batch ≥60% rule. `newlyUnlocked` from `finishWordJourney` will feed the app-wide unlock modal (step 6).
+
 ## Hero title (canonical placement, adopted 2026-05-23 — applies to ALL React games)
 
 ```

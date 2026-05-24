@@ -311,7 +311,7 @@ port; the port then rides on the new model.
    step 4):** consolidation games (story-time etc.) still read the raw `learnedWords`
    stamp for content/gate — repoint them to `getLearnedWordKeys` when Word Journey
    stops writing the stamp in step 4, so the transition stays consistent.
-4. **Word Journey React port** (the original Slice 3.13) against the new model:
+4. ✅ **Word Journey React port** (the original Slice 3.13) against the new model — shipped 2026-05-24:
    5 stages, custom celebration, practice mode, **no batch graduation, no
    mid-journey resume** (justified: graduation is now per-word/continuous, so an
    abandoned journey still banks per-word mastery for the stages played). The

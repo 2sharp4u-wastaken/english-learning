@@ -1448,11 +1448,20 @@ Practice** becomes the dedicated Due/weak-word surface; **Phase 5** keeps its se
 `expressionMastery`, but the lifecycle helpers should be written generically so it can
 reuse New/Learning/Learned/Due.
 
-**Slice 3.13: Word Journey** — multi-stage progression (5 stages). ~1,237 legacy lines.
-Ported against the redesign above: **per-word graduation, no batch ≥60% rule, no
-mid-journey resume** (an abandoned journey still banks the per-word mastery earned in the
-stages played). Honors `docs/word-journey-flow.md` structure (5 fixed stages,
-`learningPace`-only batch size, free-play vs topic-scoped, completion guidance).
+**Slice 3.13: Word Journey** — multi-stage progression (5 stages). ✅ **Shipped (React,
+2026-05-24).** ~1,237 legacy lines → React: `src/bridge/word-journey.ts` + page +
+6 components (`WJStageBar`, `DiscoverStage`, `ListenMatchStage`, `SpellStage`,
+`SayWordStage`, `RecallStage`, `WJCelebration`). Built against the redesign:
+**per-word graduation, no batch ≥60% rule, no mid-journey resume** (an abandoned journey
+still banks the per-word mastery earned in the stages played). The bridge does its own
+`finishWordJourney` (history/points/coins/unlock-recheck) and never calls the legacy
+`endGame`, so the old batch-`graduateWord` path is simply never reached — no gameLogic
+edit was needed. Spell stage reuses `SpellingComparison` + voices the word on correct;
+Discover keeps the Slice 3.0 per-word listen budget; celebration is the animated
+per-journey summary (word + picture + audio + status). Say-word reuses the pronunciation
+bridge's mic; full E2E is limited by the speech-recognition stub gap (see Slice 3.11), so
+`tests/wj-step1.spec.js` covers render/stage-map/Discover-budget/advance. Honors
+`docs/word-journey-flow.md` structure (5 fixed stages, `learningPace`-only batch size).
 **Slice 3.14: Memory** — card-flip grid, timer-based. ~1,589 lines. Word-mode pool gates
 on *introduced* word count.
 **Slice 3.15: ABC** — alphabet learning, custom layout. ~778 lines.

@@ -1,10 +1,22 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
 
-const TEST_USER_ID = 'wjsmoketest';
+/**
+ * Word Journey — React port (Slice 3.13). Replaces the old legacy step-1 test.
+ * Full happy-path E2E is limited by the say-word stage's speech recognition
+ * (same webkitSpeechRecognition stub gap deferred for Pronunciation, Slice 3.11),
+ * so these cover the deterministic parts: render, stage map, Discover audio
+ * budget (carried-forward Slice 3.0 parity), and Discover advancement.
+ *
+ * NOTE: the legacy nikud injection vowelizes Hebrew text in the live DOM, so we
+ * assert via testids / numeric attributes rather than plain-Hebrew text matches
+ * (see testing_legacy_nikud_injection).
+ */
+
+const TEST_USER_ID = 'wjreacttest';
 const V2_PREFIX = 'v2_';
 
-async function seedAndStartJourney(page) {
+async function seedAndStart(page) {
   await page.goto('/');
   await page.evaluate(({ userId, prefix }) => {
     localStorage.setItem('users', JSON.stringify({
@@ -18,41 +30,45 @@ async function seedAndStartJourney(page) {
       userId, userName: 'WJ', displayName: 'WJ', initial: 'W',
       authenticated: true, loginTime: Date.now(), lastActivity: Date.now(),
     }));
-    const key = `${prefix}userProgress_${userId}`;
-    localStorage.setItem(key, JSON.stringify({ version: 4, gameUnlockOverride: true }));
-    // Force unlock all games via settings override
+    localStorage.setItem(`${prefix}userProgress_${userId}`, JSON.stringify({ version: 4, gameUnlockOverride: true }));
     localStorage.setItem(`${prefix}englishLearningSettings`, JSON.stringify({ gameUnlockOverride: true }));
   }, { userId: TEST_USER_ID, prefix: V2_PREFIX });
   await page.reload();
   await page.waitForTimeout(2500);
   await page.evaluate(() => { window.location.hash = '/game/word-journey'; });
-  // Word Journey may take a bit to render its first stage
-  await page.waitForTimeout(2500);
+  await page.waitForTimeout(1200);
 }
 
-test('Word Journey step 1 (Discover) shows a play button with shared budget', async ({ page }) => {
-  await seedAndStartJourney(page);
+test('renders the 5-stage map and the Discover stage', async ({ page }) => {
+  await seedAndStart(page);
+  await expect(page.locator('[data-testid="wj-stage-bar"]')).toBeVisible({ timeout: 6000 });
+  await expect(
+    page.locator('[data-testid="wj-stage-bar"] [data-stage="discover"][data-state="active"]'),
+  ).toBeVisible();
+  await expect(page.locator('[data-testid="media-prompt-audio"]')).toBeVisible();
+  await expect(page.locator('[data-testid="wj-discover-counter"]')).toBeVisible();
+  await expect(page.locator('[data-testid="wj-discover-next"]')).toBeVisible();
+});
 
-  // The discover card should render with an audio button
-  const audioBtn = page.locator('#wj-discover-audio');
-  await expect(audioBtn).toBeVisible({ timeout: 5000 });
+test('Discover audio button consumes the per-word listen budget', async ({ page }) => {
+  await seedAndStart(page);
+  const card = page.locator('[data-testid="media-prompt-card"]');
+  await expect(card).toBeVisible({ timeout: 6000 });
+  // The only digits in the prompt card are the budget count ("…נותרו: 8").
+  const readBudget = async () => parseInt((await card.innerText()).match(/\d+/)?.[0] || '0', 10);
+  const before = await readBudget();
+  expect(before).toBeGreaterThan(0);
+  await page.locator('[data-testid="media-prompt-audio"]').click();
+  await page.waitForTimeout(300);
+  expect(await readBudget()).toBe(before - 1);
+});
 
-  // plays-left counter inside the discover card should show a numeric value
-  const playsLeft = page.locator('.wj-discover-card .plays-left');
-  await expect(playsLeft).toBeVisible();
-  const text = (await playsLeft.textContent())?.trim();
-  expect(text === '∞' || /^\d+$/.test(text || '')).toBe(true);
-
-  // After clicking the button once, count either decrements by 1 or remains ∞ (when limit is unbounded)
-  const before = (await playsLeft.textContent())?.trim();
-  await audioBtn.click();
-  await page.waitForTimeout(400);
-  const after = (await playsLeft.textContent())?.trim();
-  if (before === '∞') {
-    expect(after).toBe('∞');
-  } else {
-    const beforeNum = parseInt(before || '0', 10);
-    const afterNum = parseInt(after || '0', 10);
-    expect(afterNum).toBeLessThanOrEqual(beforeNum);
-  }
+test('Discover advances to the next word once the Next button enables', async ({ page }) => {
+  await seedAndStart(page);
+  const counter = page.locator('[data-testid="wj-discover-counter"]');
+  const next = page.locator('[data-testid="wj-discover-next"]');
+  await expect(counter).toHaveAttribute('data-item', '1', { timeout: 6000 });
+  await expect(next).toBeEnabled({ timeout: 6000 });
+  await next.click();
+  await expect(counter).toHaveAttribute('data-item', '2', { timeout: 6000 });
 });
