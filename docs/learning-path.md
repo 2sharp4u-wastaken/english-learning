@@ -1,5 +1,11 @@
 # Learning Path — How the App Guides a Child Through English
 
+> **Note (2026-05-24):** This document describes the *current* graduation/gating
+> model. A mastery-driven redesign of the word lifecycle (per-word graduation,
+> two-step promotion, light spacing, tiered unlocks) is approved and pending
+> implementation — see `docs/learning-flow-redesign.md`. Sections below will be
+> updated as that ships.
+
 ## Overview
 
 The app is built as a guided learning journey for Hebrew-speaking kids (ages 5–8). Instead of a flat list of games, it uses a tiered progression system where learning new words unlocks more games. The core loop is:

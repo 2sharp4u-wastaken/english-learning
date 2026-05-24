@@ -2253,8 +2253,21 @@ class GameManager {
 
     // ── V2 Game Gating helpers ─────────────────────────────────────────────────
 
-    /** Returns a Set of "word_category" keys for all graduated words. */
+    /**
+     * Eligibility set for REVIEW-tier vocab games (vocabulary, listening,
+     * picture-match, pronunciation, reading, true-or-not).
+     *
+     * V3 (docs/learning-flow-redesign.md): returns every word the child has been
+     * INTRODUCED to (Learning ∪ Learned), not just graduated ones — so review
+     * games can surface Learning words and promote them to Learned. Delegates to
+     * ProgressManager (the source of truth that survives Phase 4). Falls back to
+     * the legacy `learnedWords` stamp set if the manager isn't available yet.
+     */
     _getLearnedWordSet() {
+        const pm = this.progressManager || window.app?.progressManager;
+        if (pm?.getIntroducedWordKeys) {
+            return pm.getIntroducedWordKeys();
+        }
         const learnedWords = window.app?.userProgress?.learnedWords || {};
         return new Set(Object.keys(learnedWords));
     }

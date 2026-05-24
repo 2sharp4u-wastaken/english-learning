@@ -1432,6 +1432,30 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
     await expect(page.locator('[data-testid="reading-check"]')).toHaveCount(0);
   });
 
+  test('wrong answer shows the letter-by-letter spelling comparison', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/reading');
+    await page.waitForTimeout(900);
+
+    // One letter is almost never the full word → wrong → comparison shown.
+    await page.locator('[data-testid="reading-letter"]:not([disabled])').first().click();
+    await page.locator('[data-testid="reading-check"]').click();
+
+    const next = page.locator('[data-testid="reading-next"]');
+    if (await next.count()) {
+      await expect(page.locator('[data-testid="spelling-comparison"]')).toBeVisible();
+      // The full correct word is revealed (all target letters shown)…
+      await expect(
+        page.locator('[data-testid="spelling-target-letter"]').first(),
+      ).toBeVisible();
+      // …and the child's single attempted letter is rendered for comparison.
+      await expect(
+        page.locator('[data-testid="spelling-attempt-letter"]'),
+      ).toHaveCount(1);
+    }
+  });
+
   test('resume picks up mid-session save and continues from the saved question', async ({ page }) => {
     await seedUser(page);
     await seedLearnedFromBank(page, 8);

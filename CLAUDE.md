@@ -104,6 +104,7 @@ Accessed from React only via `src/bridge/` modules.
 - `src/features/games/shared/FeedbackBanner.tsx` — correct/incorrect floating banner
 - `src/features/games/shared/RewardModal.tsx` — end-of-session reward
 - `src/features/games/shared/ExitConfirmDialog.tsx` — "leave game?" modal
+- `src/features/games/shared/SpellingComparison.tsx` — "learn from the mistake" panel for letter-building games: correct word (green) above the child's attempt with per-position green/red letters. Used by Reading; reused by the Word Journey spell stage (step 4). Pair it with voicing the correct word on a correct answer.
 
 ## Phase 3 game migration pattern
 

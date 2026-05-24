@@ -1417,10 +1417,47 @@ Files added:
 - `docs/wiring-map.md` — "Story Time Game (React — Slice 3.12)" cause/effect chain.
 
 
-**Slice 3.13: Word Journey** — multi-stage progression. ~1,237 lines.
-**Slice 3.14: Memory** — card-flip grid, timer-based. ~1,589 lines.
+#### Learning Flow Redesign — prerequisite for Slice 3.13 (approved 2026-05-24)
+
+Planning the Word Journey port surfaced two design leaks in the progression model:
+graduation is batch-average (a weak word rides its batchmates into "learned"), and the
+accurate per-word `wordMastery` signal is ignored in favor of a binary `learnedWords`
+stamp that Word Journey alone writes. Approved fix: a **mastery-driven word lifecycle**
+(New → Learning → Learned → Due) derived from `wordMastery`, with per-word graduation,
+two-step promotion (Word Journey introduces → review games promote), light spacing, and
+tiered unlocks (review games gate on *introduced* count, consolidation games on *Learned*
+count). Existing users are grandfathered — no game/word access regression.
+
+**Full spec:** [`docs/learning-flow-redesign.md`](learning-flow-redesign.md). This lands
+*before* the Word Journey React port and reshapes it. Build order:
+
+1. Progress-model refactor in `managers/ProgressManager.js` (derived status helpers,
+   spacing interval, grandfather migration).
+2. Re-tier unlock gates + repoint each game's word pool (`gameLogic.js` gating +
+   `src/bridge/*` filters), keeping logic in managers/bridges so Phase 4.4 can still
+   retire `gameLogic.js`.
+3. **Slice 3.13** below (the React port) against the new model.
+4. Repoint review games to the Learning/Due pools; wire Slice 3.16 (Practice) to the Due
+   bucket.
+5. Mechanics polish (Word Collection Learning/Learned states, level/cert recalibration,
+   Continue-recommendation reorder, Stats Due indicator).
+
+Cross-slice notes: **3.14 Memory** word-mode threshold reads *introduced* instead of
+learned; **3.15 ABC** is unaffected (still feeds the Reading `abcMastery` gate); **3.16
+Practice** becomes the dedicated Due/weak-word surface; **Phase 5** keeps its separate
+`expressionMastery`, but the lifecycle helpers should be written generically so it can
+reuse New/Learning/Learned/Due.
+
+**Slice 3.13: Word Journey** — multi-stage progression (5 stages). ~1,237 legacy lines.
+Ported against the redesign above: **per-word graduation, no batch ≥60% rule, no
+mid-journey resume** (an abandoned journey still banks the per-word mastery earned in the
+stages played). Honors `docs/word-journey-flow.md` structure (5 fixed stages,
+`learningPace`-only batch size, free-play vs topic-scoped, completion guidance).
+**Slice 3.14: Memory** — card-flip grid, timer-based. ~1,589 lines. Word-mode pool gates
+on *introduced* word count.
 **Slice 3.15: ABC** — alphabet learning, custom layout. ~778 lines.
-**Slice 3.16: Practice** — weak-word review, meta-game. ~289 lines.
+**Slice 3.16: Practice** — weak-word review, meta-game. ~289 lines. Becomes the dedicated
+review surface for **Due** words under the redesign.
 
 ### Per-game migration template
 

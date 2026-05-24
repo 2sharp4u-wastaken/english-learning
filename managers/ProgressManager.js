@@ -19,6 +19,12 @@ export class ProgressManager {
             minAttempts: 3,     // Minimum attempts for stable mastery
             consecutiveForMastery: 2  // Consecutive correct needed
         };
+
+        // V3 mastery-driven lifecycle (see docs/learning-flow-redesign.md).
+        // Light spacing: a Learned word resurfaces as "Due" after a growing gap,
+        // indexed by its per-word reviewStage (advances on a correct review,
+        // resets to 0 on a missed review). Last bucket repeats indefinitely.
+        this.reviewIntervalsDays = [3, 7, 14, 30];
     }
 
     /**
@@ -35,6 +41,8 @@ export class ProgressManager {
         this.learnedWords = userProgress.learnedWords || {};
         this.wordJourneyProgress = userProgress.wordJourneyProgress || {};
         this.gameUnlocks = userProgress.gameUnlocks || {};
+
+        this.migrateToLifecycleModel();
     }
 
     // ==========================================
@@ -66,6 +74,10 @@ export class ProgressManager {
      */
     recordWordAttempt(word, category, isCorrect, gameType, responseTime = null) {
         const key = `${word.toLowerCase()}_${category}`;
+
+        // V3 spacing: snapshot due-state from PRE-update state, so a correct
+        // answer to a due word advances its review interval (and a miss resets it).
+        const wasDue = this.isWordDue(word, category);
 
         // Get or create word stats
         let stats = this.wordMastery[key] || this.createDefaultWordStats(word, category);
@@ -117,6 +129,32 @@ export class ProgressManager {
         stats.justMastered = previousMastery < this.thresholds.mastered &&
                             stats.masteryLevel >= this.thresholds.mastered;
 
+        // V3 spacing: only words that were Due move the review clock.
+        if (typeof stats.reviewStage !== 'number') stats.reviewStage = 0;
+        if (wasDue) {
+            stats.reviewStage = isCorrect ? stats.reviewStage + 1 : 0;
+        }
+
+        // V3 lifecycle hysteresis: a word becomes Learned the moment its mastery
+        // is stable (`_isDerivedLearned`), and stays Learned through a single slip —
+        // it is only DEMOTED after 2 consecutive misses (a correct answer in between
+        // forgives). Prevents a kid's "learned" count flickering down on one mistake.
+        if (typeof stats.lapses !== 'number') stats.lapses = 0;
+        if (this._isDerivedLearned(stats)) {
+            stats.reachedLearned = true;
+            stats.lapses = 0;
+        } else if (stats.reachedLearned) {
+            if (isCorrect) {
+                stats.lapses = 0; // still demonstrating it — reset the lapse counter
+            } else {
+                stats.lapses += 1;
+                if (stats.lapses >= 2) {     // second miss → demote to Learning
+                    stats.reachedLearned = false;
+                    stats.lapses = 0;
+                }
+            }
+        }
+
         // Save to object
         this.wordMastery[key] = stats;
 
@@ -142,7 +180,10 @@ export class ProgressManager {
             masteryLevel: 0,
             gameTypeStats: {},
             responseTimes: [],
-            averageResponseTime: null
+            averageResponseTime: null,
+            reviewStage: 0,        // V3 spacing: index into reviewIntervalsDays
+            reachedLearned: false, // V3: has ever crossed the Learned bar (sticky w/ hysteresis)
+            lapses: 0              // V3: consecutive misses while Learned; demote at 2
         };
     }
 
@@ -623,6 +664,205 @@ export class ProgressManager {
     }
 
     // ==========================================
+    // V3 MASTERY-DRIVEN WORD LIFECYCLE
+    // (see docs/learning-flow-redesign.md)
+    // ==========================================
+
+    /** Canonical lowercased `${word}_${category}` key. */
+    _key(word, category) {
+        return `${String(word ?? '').toLowerCase()}_${category}`;
+    }
+
+    /**
+     * One-time, idempotent, NON-DESTRUCTIVE migration to the lifecycle model.
+     *
+     * Grandfather is enforced at READ time in `getWordStatus` (any key present in
+     * `learnedWords` counts as Learned, forever — no current child loses access).
+     * This pass only tags existing learned entries for auditability and back-fills
+     * the `reviewStage` field on older mastery entries. It never deletes data.
+     */
+    migrateToLifecycleModel() {
+        for (const entry of Object.values(this.learnedWords)) {
+            if (entry && entry.grandfathered === undefined) entry.grandfathered = true;
+        }
+        for (const stats of Object.values(this.wordMastery)) {
+            if (!stats) continue;
+            if (typeof stats.reviewStage !== 'number') stats.reviewStage = 0;
+            if (typeof stats.lapses !== 'number') stats.lapses = 0;
+            // Seed the sticky flag from current mastery so already-mastered words
+            // inherit the same 2-miss protection from their next attempt onward.
+            if (stats.reachedLearned === undefined) stats.reachedLearned = this._isDerivedLearned(stats);
+        }
+    }
+
+    /** True if a word has ever been encountered (Word Journey or any review game). */
+    isWordIntroduced(word, category) {
+        if (this._key(word, category) in this.learnedWords) return true; // grandfather
+        const stats = this.getWordStats(word, category);
+        return !!stats && (stats.totalAttempts || 0) > 0;
+    }
+
+    /** Derived "Learned" purely from mastery — no grandfather, can revert (decay). */
+    _isDerivedLearned(stats) {
+        if (!stats) return false;
+        const t = this.thresholds;
+        return (stats.totalAttempts || 0) >= t.minAttempts
+            && (stats.masteryLevel || 0) >= t.mastered
+            && (stats.consecutiveCorrect || 0) >= t.consecutiveForMastery;
+    }
+
+    /**
+     * Live lifecycle status of a word: 'new' | 'learning' | 'learned'.
+     * - new:      never introduced
+     * - learning: introduced but mastery not yet stable at ≥0.8
+     * - learned:  mastery-stable now, OR Learned-with-protection (≤1 lapse since),
+     *             OR grandfathered (sticky for old users)
+     * "Due" is an overlay on Learned — see `isWordDue`.
+     */
+    getWordStatus(word, category) {
+        const grandfathered = this._key(word, category) in this.learnedWords;
+        const stats = this.getWordStats(word, category);
+        const introduced = grandfathered || (!!stats && (stats.totalAttempts || 0) > 0);
+        if (!introduced) return 'new';
+        // `reachedLearned` carries the 2-miss hysteresis: it's only cleared in
+        // recordWordAttempt after the second consecutive miss.
+        const stickyLearned = !!stats && stats.reachedLearned === true;
+        if (grandfathered || this._isDerivedLearned(stats) || stickyLearned) return 'learned';
+        return 'learning';
+    }
+
+    /** Review interval (days) for a given reviewStage; last bucket repeats. */
+    reviewIntervalDays(reviewStage = 0) {
+        const a = this.reviewIntervalsDays;
+        return a[Math.min(Math.max(reviewStage | 0, 0), a.length - 1)];
+    }
+
+    /** Most recent review/graduation anchor (ms epoch), or null if never anchored. */
+    _lastReviewedAt(word, category) {
+        const key = this._key(word, category);
+        const lw = this.learnedWords[key];
+        const candidates = [
+            this.wordMastery[key]?.lastSeen,
+            lw?.lastPracticed,
+            lw?.graduatedDate,
+        ].filter(Boolean).map(d => Date.parse(d)).filter(n => !Number.isNaN(n));
+        return candidates.length ? Math.max(...candidates) : null;
+    }
+
+    /** True if a Learned word is past its review interval (or never anchored). */
+    isWordDue(word, category, now = Date.now()) {
+        if (this.getWordStatus(word, category) !== 'learned') return false;
+        const last = this._lastReviewedAt(word, category);
+        if (last === null) return true; // learned but never anchored → review it
+        const days = (now - last) / 86400000;
+        const stage = this.getWordStats(word, category)?.reviewStage || 0;
+        return days >= this.reviewIntervalDays(stage);
+    }
+
+    /**
+     * Visit every distinct vocabulary word the child has touched (union of
+     * mastery entries + grandfathered learned words), excluding ABC letters.
+     */
+    _eachVocabWord(cb) {
+        const seen = new Set();
+        const visit = (word, category) => {
+            if (!word || category === 'abc') return;
+            const key = this._key(word, category);
+            if (seen.has(key)) return;
+            seen.add(key);
+            cb(word, category, key);
+        };
+        Object.values(this.wordMastery).forEach(s => visit(s.word, s.category));
+        Object.keys(this.learnedWords).forEach(k => {
+            const idx = k.lastIndexOf('_');
+            if (idx > 0) visit(k.slice(0, idx), k.slice(idx + 1));
+        });
+    }
+
+    /** All words at a given lifecycle status, optionally filtered by categories. */
+    getWordsByStatus(status, categories = null) {
+        const out = [];
+        this._eachVocabWord((word, category) => {
+            if (categories && !categories.includes(category)) return;
+            if (this.getWordStatus(word, category) === status) out.push({ word, category });
+        });
+        return out;
+    }
+
+    /** All Learned words currently Due for review (fuels review games + Practice). */
+    getDueWords(categories = null) {
+        const out = [];
+        this._eachVocabWord((word, category) => {
+            if (categories && !categories.includes(category)) return;
+            if (this.isWordDue(word, category)) out.push({ word, category });
+        });
+        return out;
+    }
+
+    /** Single-pass lifecycle tally: { learning, learned, due, introduced, total }. */
+    getLifecycleCounts(categories = null) {
+        const counts = { learning: 0, learned: 0, due: 0, introduced: 0, total: 0 };
+        this._eachVocabWord((word, category) => {
+            if (categories && !categories.includes(category)) return;
+            counts.total++;
+            const status = this.getWordStatus(word, category);
+            if (status === 'learning') counts.learning++;
+            else if (status === 'learned') {
+                counts.learned++;
+                if (this.isWordDue(word, category)) counts.due++;
+            }
+            if (status !== 'new') counts.introduced++;
+        });
+        return counts;
+    }
+
+    /**
+     * Count of words the child has been introduced to (Learning + Learned).
+     * Gates the review-tier games under the redesign.
+     */
+    getIntroducedCount(categories = null) {
+        return this.getLifecycleCounts(categories).introduced;
+    }
+
+    /**
+     * Count of words genuinely Learned (derived ∪ grandfathered).
+     * The new meaning of "learned count" — gates the consolidation-tier games.
+     * NOTE: legacy `getLearnedWordCount()` still counts the raw `learnedWords`
+     * stamp; gating is switched to this method in the step-3 (gate re-tier) slice.
+     */
+    getDerivedLearnedCount(categories = null) {
+        return this.getLifecycleCounts(categories).learned;
+    }
+
+    /**
+     * Set of `${word}_${category}` keys for every word the child has been
+     * introduced to (Learning ∪ Learned). This is the eligibility pool for the
+     * REVIEW-tier games — including Learning words is what lets review promote
+     * them to Learned. Used by GameManager._getLearnedWordSet under the redesign.
+     */
+    getIntroducedWordKeys(categories = null) {
+        const keys = new Set();
+        this._eachVocabWord((word, category, key) => {
+            if (categories && !categories.includes(category)) return;
+            if (this.getWordStatus(word, category) !== 'new') keys.add(key);
+        });
+        return keys;
+    }
+
+    /**
+     * Set of `${word}_${category}` keys for words genuinely Learned (derived ∪
+     * grandfathered). Eligibility pool for the CONSOLIDATION-tier games.
+     */
+    getLearnedWordKeys(categories = null) {
+        const keys = new Set();
+        this._eachVocabWord((word, category, key) => {
+            if (categories && !categories.includes(category)) return;
+            if (this.getWordStatus(word, category) === 'learned') keys.add(key);
+        });
+        return keys;
+    }
+
+    // ==========================================
     // V2 LEARNING SYSTEM — GAME UNLOCKS
     // ==========================================
 
@@ -648,6 +888,16 @@ export class ProgressManager {
         const today = new Date().toISOString().slice(0, 10);
         const newlyUnlocked = [];
 
+        // V3 tiered gating (docs/learning-flow-redesign.md): review-tier games gate
+        // on words INTRODUCED (so the child can promote them through play);
+        // consolidation-tier games gate on words genuinely LEARNED. The passed
+        // `learnedCount` is kept for call-site compatibility but is superseded by
+        // the authoritative derived counts below. Unlocks are one-way, so existing
+        // users never lose a game (grandfathered words count toward both totals).
+        const introduced = this.getIntroducedCount();
+        const learned = this.getDerivedLearnedCount();
+        void learnedCount;
+
         const tryUnlock = (gameType, condition) => {
             const entry = this.gameUnlocks[gameType];
             if (entry && !entry.unlocked && condition) {
@@ -657,16 +907,19 @@ export class ProgressManager {
             }
         };
 
-        tryUnlock('listening',     learnedCount >= 5);
-        tryUnlock('picture-match', learnedCount >= 5);
-        tryUnlock('reading',       learnedCount >= 10 && abcMastery >= 60);
-        tryUnlock('pronunciation', learnedCount >= 10);
-        tryUnlock('fill-blanks',   learnedCount >= 30 && topicsDone >= 2);
-        tryUnlock('scramble',      learnedCount >= 30 && topicsDone >= 2);
-        tryUnlock('grammar',       learnedCount >= 50 && topicsDone >= 3);
-        tryUnlock('vocabulary',    learnedCount >= 10);
-        tryUnlock('true-or-not',   learnedCount >= 5);
-        tryUnlock('story-time',    learnedCount >= 15);
+        // Review tier — gate on introduced count, draw from Learning ∪ Due.
+        tryUnlock('listening',     introduced >= 5);
+        tryUnlock('picture-match', introduced >= 5);
+        tryUnlock('true-or-not',   introduced >= 5);
+        tryUnlock('vocabulary',    introduced >= 10);
+        tryUnlock('pronunciation', introduced >= 10);
+        tryUnlock('reading',       introduced >= 10 && abcMastery >= 60);
+
+        // Consolidation tier — gate on genuinely-Learned count.
+        tryUnlock('story-time',    learned >= 15);
+        tryUnlock('fill-blanks',   learned >= 30 && topicsDone >= 2);
+        tryUnlock('scramble',      learned >= 30 && topicsDone >= 2);
+        tryUnlock('grammar',       learned >= 50 && topicsDone >= 3);
 
         return newlyUnlocked;
     }

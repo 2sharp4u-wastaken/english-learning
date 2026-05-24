@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { MediaPromptCard } from '@/features/games/shared/MediaPromptCard'
+import { SpellingComparison } from '@/features/games/shared/SpellingComparison'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
@@ -42,7 +43,9 @@ interface LetterToken {
   used: boolean
 }
 
-const ADVANCE_DELAY_MS = 1500
+// Longer than the usual 1.5s so the correct word is fully spoken (praise sound
+// then the word itself) before the next question loads.
+const ADVANCE_DELAY_MS = 2400
 const WORD_REVEAL_MS = 3000
 
 function buildLetterBank(question: ReadingQuestion): LetterToken[] {
@@ -343,25 +346,34 @@ export function ReadingGamePage() {
       setScore((s) => s + outcome.pointsAwarded)
       setCorrect((c) => c + 1)
       if (getShowConfetti()) triggerConfetti()
-    } else {
-      // Wrong answer: legacy redisplays the English word for 3s and replays
-      // audio. The index already advanced in the bridge — show the Next
-      // button (no retry) so this matches legacy reading-game.js semantics.
-      setAttempts((a) => a + 1)
-      startWordHideTimer()
-      try {
-        void speakWord(current.word.toLowerCase(), 'reading', { allowOverlap: true })
-      } catch {
-        /* ignore */
-      }
-    }
-    if (fb.audio) void speak(fb.audio)
-    if (outcome.isCorrect) {
+      // Voice the correct word as positive reinforcement (praise sound first,
+      // then the word itself) so the child hears what they just spelled right.
+      void (async () => {
+        try {
+          if (fb.audio) await speak(fb.audio)
+          await speakWord(current.word.toLowerCase(), 'reading')
+        } catch {
+          /* ignore */
+        }
+      })()
       if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
       advanceTimer.current = window.setTimeout(() => {
         advanceTimer.current = null
         advance()
       }, ADVANCE_DELAY_MS)
+    } else {
+      // Wrong answer: show the letter-by-letter comparison (rendered below) so
+      // the child sees which letters were off, replay the word, and re-reveal
+      // the English word. Index already advanced in the bridge — Next button
+      // (no retry), matching legacy reading-game.js semantics.
+      setAttempts((a) => a + 1)
+      startWordHideTimer()
+      try {
+        if (fb.audio) void speak(fb.audio)
+        void speakWord(current.word.toLowerCase(), 'reading', { allowOverlap: true })
+      } catch {
+        /* ignore */
+      }
     }
   }, [advance, attempts, built, current, phase, startWordHideTimer])
 
@@ -485,37 +497,45 @@ export function ReadingGamePage() {
               audioHint={audioHint}
             />
 
-            <div
-              data-testid="reading-built-word"
-              dir="ltr"
-              className={cn(
-                'mx-auto flex min-h-[3.5rem] min-w-[8rem] flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[color:var(--ink-900)]/70 px-4 py-2 text-3xl font-bold tracking-wide text-white backdrop-blur',
-                phase === 'answered' && feedback?.variant === 'correct' && 'border-[color:var(--mint-400)] text-[color:var(--mint-400)]',
-                phase === 'answered' && feedback?.variant === 'incorrect' && 'border-red-400 text-red-300',
-              )}
-            >
-              {built.length === 0 ? (
-                <span
-                  dir="rtl"
-                  className="text-lg font-normal text-[color:var(--slate-300)] sm:text-xl"
-                >
-                  בחרו אותיות...
-                </span>
-              ) : (
-                built.map((t) => (
-                  <button
-                    key={t.key}
-                    type="button"
-                    onClick={() => handleBuiltLetterRemove(t.key)}
-                    disabled={phase !== 'awaiting'}
-                    data-testid="reading-built-letter"
-                    className="inline-flex items-center justify-center rounded-md px-1 transition hover:bg-white/10 disabled:cursor-not-allowed"
+            {phase === 'answered' && feedback?.variant === 'incorrect' ? (
+              <SpellingComparison
+                target={current.word}
+                attempt={built.map((t) => t.letter).join('')}
+                caseMode={caseMode}
+                showNikud={showNikud}
+              />
+            ) : (
+              <div
+                data-testid="reading-built-word"
+                dir="ltr"
+                className={cn(
+                  'mx-auto flex min-h-[3.5rem] min-w-[8rem] flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[color:var(--ink-900)]/70 px-4 py-2 text-3xl font-bold tracking-wide text-white backdrop-blur',
+                  phase === 'answered' && feedback?.variant === 'correct' && 'border-[color:var(--mint-400)] text-[color:var(--mint-400)]',
+                )}
+              >
+                {built.length === 0 ? (
+                  <span
+                    dir="rtl"
+                    className="text-lg font-normal text-[color:var(--slate-300)] sm:text-xl"
                   >
-                    {renderLetter(t.letter)}
-                  </button>
-                ))
-              )}
-            </div>
+                    בחרו אותיות...
+                  </span>
+                ) : (
+                  built.map((t) => (
+                    <button
+                      key={t.key}
+                      type="button"
+                      onClick={() => handleBuiltLetterRemove(t.key)}
+                      disabled={phase !== 'awaiting'}
+                      data-testid="reading-built-letter"
+                      className="inline-flex items-center justify-center rounded-md px-1 transition hover:bg-white/10 disabled:cursor-not-allowed"
+                    >
+                      {renderLetter(t.letter)}
+                    </button>
+                  ))
+                )}
+              </div>
+            )}
 
             <div
               data-testid="reading-letter-bank"

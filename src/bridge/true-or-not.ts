@@ -97,7 +97,12 @@ const LEGACY_GAME_CONTAINER_ID = 'true-or-not-container'
 const GAME_TYPE = 'true-or-not'
 const MIN_LEARNED_WORDS = 5
 
+// V3 (docs/learning-flow-redesign.md): True-or-Not is a REVIEW-tier game, so its
+// gate counts words INTRODUCED (Learning ∪ Learned), matching its now-introduced
+// word pool. Falls back to the legacy learnedWords stamp if the manager is absent.
 function getLearnedCount(): number {
+  const pm = (window as any).app?.progressManager
+  if (pm?.getIntroducedCount) return pm.getIntroducedCount()
   return Object.keys((window as any).app?.userProgress?.learnedWords ?? {}).length
 }
 

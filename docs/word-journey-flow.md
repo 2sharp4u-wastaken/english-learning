@@ -1,5 +1,13 @@
 # Word Journey And Learning Flow
 
+> **Note (2026-05-24):** The **structure** below (5 fixed stages, `learningPace` as the
+> only batch-size knob, free-play vs topic-scoped flows, completion guidance) remains
+> binding — the React port must honor it. The **graduation model** below (≥60% *batch*
+> accuracy graduates the whole batch into `learnedWords`) is **superseded** by the
+> mastery-driven redesign in [`learning-flow-redesign.md`](learning-flow-redesign.md):
+> graduation becomes per-word and derived from `wordMastery`, exactly the "Follow-Up
+> Improvement" this doc already anticipated. Sections marked ⚠️ below are the old model.
+
 ## Purpose
 
 Word Journey is the vocabulary-growth path of the app. It is the main place where a player first learns words, strengthens weak words, and unlocks additional games through accumulated learned words.
@@ -39,8 +47,8 @@ Word Journey is the vocabulary-growth path of the app. It is the main place wher
 - Journey accuracy is calculated from the scored stages only:
   - `discover` is instructional and does not count toward accuracy
   - `listen-match`, `spell-tiles`, `say-word`, and `recall` are scored
-- If final journey accuracy is at least `60%`, the batch is considered learned and the words are graduated into the learned-word bank.
-- Learned words increase `learnedWords`, which is the main unlock currency for gated games.
+- ⚠️ *(old model — superseded by the redesign)* If final journey accuracy is at least `60%`, the batch is considered learned and the words are graduated into the learned-word bank.
+- ⚠️ *(old model)* Learned words increase `learnedWords`, which is the main unlock currency for gated games. **New model:** Word Journey moves words into *Learning* per-word; *Learned* is earned through review and derived from `wordMastery`.
 - `totalPoints` are banked only when a game is completed, not during mid-run progress.
 - Resetting or leaving a Word Journey mid-run should clear the run without banking new all-time points.
 
@@ -77,6 +85,6 @@ Word Journey is the vocabulary-growth path of the app. It is the main place wher
 
 ## Follow-Up Improvements
 
-- Graduation should eventually become per-word instead of whole-batch, so a weak word is not promoted by stronger words in the same run.
+- ✅ *Now approved & specified in [`learning-flow-redesign.md`](learning-flow-redesign.md).* Graduation should eventually become per-word instead of whole-batch, so a weak word is not promoted by stronger words in the same run.
 - Long words should not silently skip spelling. They need a lighter spelling interaction instead of being omitted from that stage.
 - Recommendation logic should become more explicit about when the player is on a vocabulary-growth path versus a course/topic path.

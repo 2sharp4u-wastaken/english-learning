@@ -2,13 +2,21 @@
 
 ## Starting the servers
 
-Three sibling projects share the same codebase pattern, each on a fixed port:
+This project (`english-learning-v3`, the active React-migration repo) runs **two**
+servers side by side during development:
 
-| Port | Directory | Description |
-|------|-----------|-------------|
-| 3000 | `english-learning` | v1 / original |
-| 3001 | `english-learning-redesign` | v2 redesign |
-| 3002 | `english-learning-ui-overhaul` | active ui-overhaul branch |
+| Port | Process | Role |
+|------|---------|------|
+| 3000 | `python3 server.py` | Python API/static server — handles `/api/*`, HTTPS, image writes |
+| 3002 | `npm run dev` | Vite dev server — serves the React app, proxies `/api/*` → :3000 |
+
+Open the app at **`http://localhost:3002`**. Both servers must be running for full
+functionality (the Python server can be skipped for pure frontend work — `/api/*` calls
+just fail silently).
+
+> Historical note: earlier sibling projects (`english-learning` v1 on :3000,
+> `english-learning-redesign` v2 on :3001) used the same `server.py` pattern; the
+> `start-servers.sh` helper below can still launch them by directory + port.
 
 Launch all three at once:
 
