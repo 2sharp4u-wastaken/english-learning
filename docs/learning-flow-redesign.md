@@ -307,10 +307,14 @@ port; the port then rides on the new model.
    `getDerivedLearnedCount`; `GameManager._getLearnedWordSet()` now returns the
    *introduced* set (`getIntroducedWordKeys`), repointing all five VOCAB-gated review
    bridges + legacy true-or-not in one change; `true-or-not.ts` count gate switched to
-   introduced. Grandfather no-regression test included. **NOT YET DONE (folds into
-   step 4):** consolidation games (story-time etc.) still read the raw `learnedWords`
-   stamp for content/gate — repoint them to `getLearnedWordKeys` when Word Journey
-   stops writing the stamp in step 4, so the transition stays consistent.
+   introduced. Grandfather no-regression test included. **⚠️ LIVE GAP (do in step 5):**
+   consolidation games (`story-time`, `fill-blanks`, `sentence-scramble`, `grammar`)
+   still read the raw `learnedWords` stamp for their in-bridge learn-first gate +
+   content, and "words learned" displays (`progress.ts`, certificates, Word Collection,
+   `games.ts` Continue) read it too. **Step 4 stopped writing that stamp (React WJ does
+   not call `graduateWord`), so for NEW users the stamp is frozen → those gates/displays
+   break.** Existing/grandfathered users are unaffected. Repoint all of them to
+   `getDerivedLearnedCount`/`getLearnedWordKeys`. **Do not merge to main before this.**
 4. ✅ **Word Journey React port** (the original Slice 3.13) against the new model — shipped 2026-05-24:
    5 stages, custom celebration, practice mode, **no batch graduation, no
    mid-journey resume** (justified: graduation is now per-word/continuous, so an
@@ -349,3 +353,48 @@ port; the port then rides on the new model.
 - Unlock numbers (5/10/15/30/50 + topic gates) are unchanged; only the counter
   meaning (introduced vs Learned) differs per tier.
 - RTL, audio, scoring, and coin parity preserved in the Word Journey React port.
+
+## 12. Handoff — remaining work & loose ends (as of 2026-05-24, commit f383cef)
+
+All code is committed on `v3-react-migration` (not merged). Steps 1–4 + WJ polish
+done. A fresh session can resume from this list.
+
+**🔴 Critical (blocks merge) — step 5 consolidation repoint:** see the ⚠️ note in
+step 3 above. React WJ no longer writes the `learnedWords` stamp, but `story-time` /
+`fill-blanks` / `sentence-scramble` / `grammar` bridges + the "words learned" displays
+(`src/bridge/progress.ts`, certificates, Word Collection, `src/bridge/games.ts`
+`getContinueTarget`) still read it → broken for NEW users. Repoint to
+`getDerivedLearnedCount` / `getLearnedWordKeys`. (Review-tier bridges are fine — they
+gate via `_getLearnedWordSet` = introduced; only their cosmetic learn-first `learnedCount`
+number is stale.)
+
+**🟠 Step 5 (rest):** point review games at Learning∪Due and prioritize Due in
+`GameManager.smartQuestionSelection`; wire the Practice game (Slice 3.16) to `getDueWords`.
+
+**🟠 Step 6:** app-wide "newly unlocked games" animated modal. Data is ready —
+`finishWordJourney` and `checkAndUnlockGames` already return `newlyUnlocked`; nothing
+consumes it yet. Needs one app-level trigger both React + legacy completions feed.
+
+**🟡 Step 7 — open decisions (not yet made):** level & certificate recalibration
+(introduced vs Learned weighting); `wordJourneyProgress` retire-vs-surface; Word
+Collection Learning(faded)/Learned(full) sticker states; Stats "Due" indicator;
+Continue-recommendation reorder (Due → promote Learning → introduce new).
+
+**🟡 Verification gaps:** the Word Journey recall 3D flip, slot interaction, say-word
+recording, and celebration animation/audio were built but NOT play-tested by a human,
+and have no E2E (say-word needs a `webkitSpeechRecognition` stub — same gap as Slice
+3.11). Per-word graduation surfacing (✓נלמד/⏳לומד) also unverified in-app.
+
+**🟡 Doc loose ends:** `docs/learning-path.md` body still describes the OLD model
+(≥60% batch graduation + old unlock table); only a pointer banner was added — reconcile
+in the step-7 docs pass.
+
+**⚪ Minor / unconfirmed:**
+- `back.png` shows the emoji fallback in-app; `body.js` corruption was cleaned and the
+  file+data verified correct, but the runtime cause (likely a stale `wordImageOverrides`
+  entry from a prior in-app upload, or a cache) was NOT confirmed/fixed.
+- `src/features/games/shared/LetterSlots.tsx` uses an invalid Tailwind class `h-13`
+  (line ~104) — harmless (inline `height` style overrides it) but dead; remove it.
+
+**✅ Settled:** spacing 3/7/14/30, 2-miss demotion, grandfather, pacing (5 introduced),
+letter-by-letter comparison, double-audio fix, recall flip, shared slot mechanic.
