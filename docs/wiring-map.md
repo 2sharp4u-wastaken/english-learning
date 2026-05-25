@@ -522,6 +522,46 @@ React route /#/game/memory
 
 Memory's React port intentionally gates on *introduced* words (legacy used the full bank, ungated) and drops mid-run resume — React owns the DOM, so the legacy phantom-flip guards (stale listeners, ghost-click lock, board generation) are not reimplemented.
 
+## ABC Game (React — Slice 3.15)
+
+```
+React route /#/game/abc
+  └─ GameHostPage.tsx → REACT_GAMES['abc'] → ABCGamePage.tsx
+      ├─ beginABCSession({fresh?})  (src/bridge/abc.ts)
+      │   ├─ setGameContext('abc')
+      │   ├─ resume: loadGameState('abc') (savedGame_<userId>_abc) → restore
+      │   │   shuffledQuestions/index/score (Grammar Beginner pattern)
+      │   └─ fresh: generateABCQuestions(20) (legacy data/abcData.js, reads
+      │       app.userProgress.wordMastery, filters letters at mastery ≥ 0.8)
+      │       ├─ []  → kind:'all-mastered' → <ABCAllMastered/> congrats screen
+      │       │        (reset → gameManager.resetABCMastery() + fresh restart)
+      │       └─ else → stash on gameManager (shuffledQuestions=fresh, totalQuestions
+      │                =min(20,len), resetScore('abc'), coinHistoryStartIndex). NOT
+      │                reshuffled (generator pre-orders for variety).
+      ├─ 6 subtypes, one page (switch on question.type):
+      │   ├─ match-case / letter-sound / identify-case / alphabet-order → AnswerGrid,
+      │   │   AUDIO-GATED: options hidden until letter phonetic auto-plays (voice
+      │   │   readiness poll → setAudioRevealed). letter-sound shows '?' glyph.
+      │   ├─ word-picture → emoji prompt, options shown immediately, voices the WORD.
+      │   └─ say-letter → mic button (isSpeechRecognitionAvailable / startABCRecording);
+      │       unsupported → message + skip. No audio gate.
+      ├─ answer (MC) → recordABCAnswer(q, idx): recordWordAttempt(letter,'abc',correct)
+      │   → <letter>_abc mastery; +10 on correct; mgr.currentQuestionIndex++; saveGameState.
+      ├─ answer (say-letter) → recordABCSpeechAttempt(q, {transcript}): lenient match
+      │   (contains phonetic/letter OR Levenshtein ≤ 2); same mastery/score/index advance.
+      ├─ settleAnswer: getGameFeedback('abc',…) (fires SFX implicitly) + banner.
+      │   correct → confetti + auto-advance 1.5s. wrong → voice correct letter/word +
+      │   reveal correct option + abc-next button (manual advance).
+      ├─ advance → index+1; next ≥ total → phase 'finished' → finishABCSession()
+      │   (legacy endGame) → RewardModal.
+      └─ Exit/reset/unmount → abortABCSession() + stopABCRecording + cancelSpeech.
+```
+
+ABC is mastery-driven (its own `<letter>_abc` keys), NOT learned-word gated — it is a
+learn-tier game, always unlocked. Six subtypes live in one page (Grammar Beginner Slice 3.9
+model). The `say-letter` mic path has no Playwright coverage (Slice 3.11 stub gap); tests
+inject deterministic `match-case` saved state.
+
 ## Hero title (canonical placement, adopted 2026-05-23 — applies to ALL React games)
 
 ```

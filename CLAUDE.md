@@ -20,7 +20,7 @@ Behavioral rules for Claude Code in this project. These override defaults.
 Always ask before committing or pushing. Show the diff summary and wait for explicit approval.
 
 ### Slice closeout discipline
-Before committing a non-trivial change or ending a session, consult the `feedback_cross_session_continuity` memory and run its 6-item closeout (master-plan + wiring-map + memory with WHY annotations + lean auto-load + cold-start verification). A PreToolUse hook nudges this on every `git commit` — don't ignore it. Skip for doc/typo/trivial fixes.
+Before committing a non-trivial change or ending a session, consult the `feedback_cross_session_continuity` memory and run its closeout (master-plan + wiring-map + memory with WHY annotations + lean auto-load + cold-start verification). This includes a **forward-propagation review**: ask whether what this slice taught should update the instructions for *following* slices, *broader*/template-level patterns, or project-wide conventions — and edit those (master-plan slice entries, templates/recipes, docs, CLAUDE.md) so a fresh session inherits it without the user re-stating it. A PreToolUse hook nudges this on every `git commit` — don't ignore it. Skip for doc/typo/trivial fixes.
 
 ### Read before modifying
 Read every file you plan to change before touching it. Do not suggest changes to code you haven't read.

@@ -1496,7 +1496,40 @@ Differences / decisions vs legacy `memory-game.js`:
   level 2, exit dialog). Cards expose `data-pair`/`data-index`/`data-state` for deterministic
   pair-matching in tests.
 - `docs/wiring-map.md` — "Memory Game (React — Slice 3.14)" cause/effect chain.
-**Slice 3.15: ABC** — alphabet learning, custom layout. ~778 lines.
+**Slice 3.15: ABC** — alphabet learning, custom layout. ✅ **Shipped (React, 2026-05-25).**
+~778 legacy lines (`games/abc-game.js` + `data/abcData.js`) → `src/bridge/abc.ts` +
+`ABCGamePage` + `components/ABCAllMastered`. Followed the Slice 3.9 (Grammar Beginner)
+multi-subtype model — one page switching on six question subtypes — rather than the single
+question→answer Slice 3.1 template. Differences / decisions vs legacy:
+- **Six subtypes in one page**: `match-case`, `letter-sound`, `identify-case`,
+  `alphabet-order`, `word-picture` (all multiple-choice via shared `AnswerGrid`) +
+  `say-letter` (speech recognition, reusing the pronunciation Slice 3.11 recognition flow).
+  Question generation is delegated unchanged to legacy `generateABCQuestions(20)`.
+- **Mastery-driven, NOT learned-word gated**: ABC is a learn-tier game (always unlocked).
+  The generator filters out letters at mastery ≥ 0.8 and returns `[]` once all 26 are
+  mastered → bridge surfaces `kind: 'all-mastered'` → `ABCAllMastered` congratulations
+  screen (🎓) with reset-mastery / back-home, mirroring legacy `showABCMasteryComplete`.
+  Reset goes through `gameManager.resetABCMastery()` (wipes `<letter>_abc` keys).
+- **20 fixed questions** (legacy registry config), NOT the global `questionsPerGame`
+  setting. Questions are pre-ordered by the generator for variety, so never reshuffled.
+- **Audio gate**: the four letter-sound subtypes hide options (`AnswerGrid hidden`) until
+  the letter phonetic auto-plays (voice-readiness poll, listening-Slice-3.2 model);
+  `word-picture` shows options immediately and voices the *word*; `say-letter` has no gate.
+- Scoring 10 pts/correct via `scoreManager`; `recordWordAttempt(letter, 'abc', …)` feeds
+  `<letter>_abc` mastery; index advances on every answer (correct OR wrong). Correct
+  auto-advances after 1.5s; wrong reveals the correct option, voices it, and shows Next.
+- `say-letter` matching ported verbatim from legacy (transcript contains phonetic/letter,
+  or Levenshtein ≤ 2). Graceful degradation: unsupported recognition shows a message + a
+  skip button (no Playwright coverage of the mic path — same stub gap as Slice 3.11).
+- Resume via the generic `savedGame_<userId>_abc` state (Grammar Beginner bridge pattern).
+- Files: `src/bridge/abc.ts`, `src/features/games/abc/ABCGamePage.tsx` +
+  `components/ABCAllMastered.tsx`; registered in `reactGames.ts` + `GameHostPage.tsx` (abc
+  was already in `app.js` unlocks, HomePage `GAME_ORDER`, and `gameLogic.js`).
+- `tests/react-routes.spec.js` — Slice 3.15 block (5 tests: audio-gated reveal + correct
+  advance, incorrect → reveal + Next, resume mid-session, all-26-mastered congratulations,
+  exit dialog). Tests inject deterministic `match-case` saved state to dodge the random
+  `say-letter`/mic path.
+- `docs/wiring-map.md` — "ABC Game (React — Slice 3.15)" cause/effect chain.
 **Slice 3.16: Practice** — weak-word review, meta-game. ~289 lines. Becomes the dedicated
 review surface for **Due** words under the redesign.
 

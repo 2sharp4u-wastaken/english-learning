@@ -2223,6 +2223,152 @@ test.describe('Slice 3.14: Memory Game (React)', () => {
   });
 });
 
+// ─── Slice 3.15: ABC Game (React) ───────────────────────────────────────────
+
+/**
+ * Inject a deterministic ABC saved-game state so the bridge takes the resume
+ * path (instead of mastery-driven random generation). All questions are
+ * `match-case` — avoids the random `say-letter` type that needs a microphone.
+ * Matches the `savedGame_<userId>_abc` schema written by legacy `saveGameState`.
+ */
+async function seedABCSaved(page, { currentQuestionIndex = 0, score = 0 } = {}) {
+  await page.evaluate(({ idx, score }) => {
+    const userId = localStorage.getItem('currentUser');
+    const mk = (lower, upper, phonetic) => ({
+      type: 'match-case',
+      questionType: 'abc',
+      letter: lower,
+      letterUpper: upper,
+      phonetic,
+      isUppercase: false,
+      options: [upper, 'X', 'Y', 'Z'],
+      correct: 0,
+      category: 'abc',
+      word: upper,
+      instruction: 'מצא את האות הגדולה',
+      instructionEn: 'Find the uppercase letter',
+    });
+    const shuffledQuestions = [
+      mk('a', 'A', 'ay'),
+      mk('b', 'B', 'bee'),
+      mk('c', 'C', 'see'),
+    ];
+    localStorage.setItem(
+      `savedGame_${userId}_abc`,
+      JSON.stringify({
+        gameType: 'abc',
+        currentQuestionIndex: idx,
+        score,
+        totalQuestions: shuffledQuestions.length,
+        timestamp: Date.now(),
+        shuffledQuestions,
+        gameElapsedMs: 0,
+        selectedCategories: [],
+      }),
+    );
+  }, { idx: currentQuestionIndex, score });
+}
+
+test.describe('Slice 3.15: ABC Game (React)', () => {
+  test('happy path: audio-gated options reveal, then a correct answer advances', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await seedABCSaved(page);
+    await gotoHash(page, '/game/abc');
+    await page.waitForTimeout(900);
+
+    // The big letter prompt + instruction render.
+    await expect(page.locator('[data-testid="abc-letter-display"]')).toHaveText('a');
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('3');
+
+    // Options are audio-gated (pointer-events-none) until the letter sound
+    // auto-plays. The reveal fires after the voice-readiness poll — once it
+    // does, the grid becomes interactive. (We don't assert the pre-reveal state:
+    // when voices are already loaded the auto-play fires within a few hundred ms,
+    // so the gated window is too short to catch deterministically.)
+    const grid = page.locator('[data-testid="answer-grid"]');
+    await expect(grid).not.toHaveClass(/pointer-events-none/, { timeout: 4000 });
+
+    await page.locator('[data-testid="answer-option"][data-index="0"]').click();
+
+    // recordABCAnswer advances the legacy index immediately; the React index
+    // follows on the 1.5s auto-advance.
+    await expect
+      .poll(() => page.evaluate(() => window.gameManager?.currentQuestionIndex), { timeout: 3000 })
+      .toBe(1);
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2', { timeout: 3000 });
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('incorrect answer reveals correct option and surfaces a Next button', async ({ page }) => {
+    await seedUser(page);
+    await seedABCSaved(page);
+    await gotoHash(page, '/game/abc');
+    await page.waitForTimeout(900);
+
+    const grid = page.locator('[data-testid="answer-grid"]');
+    await expect(grid).not.toHaveClass(/pointer-events-none/, { timeout: 4000 });
+
+    // Click a wrong option (index 1 = 'X').
+    await page.locator('[data-testid="answer-option"][data-index="1"]').click();
+
+    await expect(page.locator('[data-testid="feedback-banner"]')).toBeVisible();
+    // Correct option marked, no auto-advance — a Next button appears instead.
+    await expect(
+      page.locator('[data-testid="answer-option"][data-index="0"]'),
+    ).toHaveAttribute('data-state', 'correct');
+    const next = page.locator('[data-testid="abc-next"]');
+    await expect(next).toBeVisible();
+
+    await next.click();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2');
+  });
+
+  test('resume picks up mid-session save and continues from the correct question', async ({ page }) => {
+    await seedUser(page);
+    await seedABCSaved(page, { currentQuestionIndex: 2, score: 20 });
+    await gotoHash(page, '/game/abc');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('3');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('3');
+    await expect(page.locator('[data-testid="game-header-score"]')).toContainText('20');
+  });
+
+  test('all 26 letters mastered shows the congratulations screen', async ({ page }) => {
+    await seedUser(page);
+    // Drive the mastery-based generator to return [] by mastering every letter.
+    await page.evaluate(() => {
+      const wm = (window.app.userProgress.wordMastery ||= {});
+      for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+        wm[`${ch}_abc`] = { masteryLevel: 1, attempts: 10, correct: 10 };
+      }
+    });
+    await gotoHash(page, '/game/abc');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="abc-all-mastered"]')).toBeVisible();
+    await expect(page.locator('[data-testid="answer-grid"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="abc-back-home"]')).toBeVisible();
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedABCSaved(page);
+    await gotoHash(page, '/game/abc');
+    await page.waitForTimeout(900);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {
