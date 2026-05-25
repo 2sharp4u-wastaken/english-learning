@@ -81,6 +81,11 @@ export function ListeningGamePage() {
   const advanceTimer = useRef<number | null>(null)
   const isActiveRef = useRef(false)
   const autoPlayedRef = useRef(false)
+  // True when the current question was restored from a saved mid-game session.
+  // On resume we still want the auto-play to *voice* the word (so entry always
+  // plays, matching Grammar Beginner) but we must NOT re-spend the audio budget
+  // or re-count the reveal gate — those counters were already restored.
+  const resumedRef = useRef(false)
 
   const start = useCallback((opts?: { fresh?: boolean }) => {
     hardResetSpeech()
@@ -99,11 +104,15 @@ export function ListeningGamePage() {
       if (restored) {
         setPlaysSoFar(restored.playsSoFar)
         setAudioPlaysLeft(restored.audioPlaysLeft)
-        autoPlayedRef.current = true
+        // Let the auto-play fire on resume too (it just voices the word), but
+        // flag it so fire() skips the budget/gate counters.
+        autoPlayedRef.current = false
+        resumedRef.current = true
       } else {
         setPlaysSoFar(0)
         setAudioPlaysLeft(settingsBudget)
         autoPlayedRef.current = false
+        resumedRef.current = false
       }
     } else {
       setIndex(0)
@@ -114,6 +123,7 @@ export function ListeningGamePage() {
       setPlaysSoFar(0)
       setAudioPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
       autoPlayedRef.current = false
+      resumedRef.current = false
     }
     setSelectedIndex(null)
     setFeedback(null)
@@ -187,8 +197,13 @@ export function ListeningGamePage() {
     const fire = () => {
       if (cancelled || autoPlayedRef.current) return
       autoPlayedRef.current = true
-      setAudioPlaysLeft((n) => Math.max(0, n - 1))
-      setPlaysSoFar((n) => n + 1)
+      if (resumedRef.current) {
+        // Resumed question: counters were restored, just voice the word.
+        resumedRef.current = false
+      } else {
+        setAudioPlaysLeft((n) => Math.max(0, n - 1))
+        setPlaysSoFar((n) => n + 1)
+      }
       void speakWord(current.word, 'listening', { allowOverlap: true })
     }
 
@@ -238,6 +253,7 @@ export function ListeningGamePage() {
     setAudioPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
     clearListeningAudioState()
     autoPlayedRef.current = false
+    resumedRef.current = false
     setIndex((prev) => {
       const next = prev + 1
       if (next >= total) {

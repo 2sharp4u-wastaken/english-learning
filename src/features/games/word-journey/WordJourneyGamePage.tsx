@@ -134,9 +134,17 @@ export function WordJourneyGamePage() {
   }, [navigate])
   const cancelExit = useCallback(() => setExitOpen(false), [])
 
+  const stage = phase === 'playing' ? STAGE_ORDER[stageIndex] : null
+
   const headerProps = useMemo(
-    () => ({ title: 'מסע מילים', icon: '🗺️', score, onBack: requestExit }),
-    [requestExit, score],
+    () => ({
+      title: 'מסע מילים',
+      icon: '🗺️',
+      score,
+      onBack: requestExit,
+      heroAside: stage ? <WJStageBar activeStage={stage} /> : undefined,
+    }),
+    [requestExit, score, stage],
   )
 
   const progressProps = useMemo(
@@ -183,13 +191,10 @@ export function WordJourneyGamePage() {
     )
   }
 
-  const stage = STAGE_ORDER[stageIndex]
-
   return (
     <>
       <GameScreenShell header={headerProps} progress={progressProps}>
         <div className="flex flex-1 flex-col gap-4">
-          <WJStageBar activeStage={stage} />
           {stage === 'discover' ? (
             <DiscoverStage words={words} onComplete={handleStageComplete} />
           ) : stage === 'listen-match' ? (

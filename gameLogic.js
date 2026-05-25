@@ -287,6 +287,32 @@ class GameManager {
             }
         });
 
+        // Focused grammar-practice games — React-only (no module). Both run on
+        // the shared blank-fill engine (src/bridge/grammarLike.ts).
+        registry.register('articles', {
+            displayName: 'Articles (a/an/the)',
+            displayNameHebrew: 'a / an / the',
+            icon: '📝',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['language', 'grammar'],
+                skillLevel: 'beginner'
+            }
+        });
+
+        registry.register('progressive', {
+            displayName: 'Progressive Tenses',
+            displayNameHebrew: 'זמן מתמשך',
+            icon: '🏃',
+            config: {
+                questionsPerGame: 10,
+                pointsPerCorrect: 10,
+                categories: ['language', 'grammar'],
+                skillLevel: 'beginner'
+            }
+        });
+
         registry.register('pronunciation', {
             module: this,
             loadQuestion: 'loadPronunciationQuestion',

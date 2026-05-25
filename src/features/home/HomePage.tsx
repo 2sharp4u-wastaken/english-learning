@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useState, type ReactNode } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { ArrowLeft, BookOpen, Flame, Lock, Medal, Play, Settings, Star, Trophy, User } from 'lucide-react'
+import { useEffect, useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
+import { Lock, Play } from 'lucide-react'
 import { getContinueTarget, getGameCatalog, takePendingUnlocks } from '@/bridge/games'
 import { NewlyUnlockedModal } from './components/NewlyUnlockedModal'
 import { useAuthSession } from '@/hooks/useAuthSession'
@@ -26,6 +26,8 @@ const GAME_ORDER: GameCardMeta[] = [
   { id: 'true-or-not', tier: 'practice', fallbackIcon: '✅', fallbackName: 'נכון או לא?', description: 'בודקים אם התמונה והמילה באמת תואמות.' },
   { id: 'memory', tier: 'practice', fallbackIcon: '🧠', fallbackName: 'משחק זיכרון', description: 'מחזקים אוצר מילים דרך זוגות וזיכרון חזותי.' },
   { id: 'grammar-beginner', tier: 'practice', fallbackIcon: '📐', fallbackName: 'דקדוק למתחילים', description: 'תרגול דקדוק בסיסי עם משוב מיידי.' },
+  { id: 'articles', tier: 'practice', fallbackIcon: '📝', fallbackName: 'a / an / the', description: 'מתי אומרים a, מתי an ומתי the — עם תמונות.' },
+  { id: 'progressive', tier: 'practice', fallbackIcon: '🏃', fallbackName: 'זמן מתמשך', description: 'פעולות שקורות עכשיו ובעבר (is/was + ing).' },
   { id: 'reading', tier: 'challenge', fallbackIcon: '📖', fallbackName: 'משחק קריאה', description: 'עוברים מזיהוי מילים לקריאה עצמאית.' },
   { id: 'pronunciation', tier: 'challenge', fallbackIcon: '🎤', fallbackName: 'משחק הגייה', description: 'משפרים הגייה וביטחון בדיבור.' },
   { id: 'story-time', tier: 'challenge', fallbackIcon: '📚', fallbackName: 'זמן סיפור', description: 'קוראים סיפורים קצרים ומבינים הקשר.' },
@@ -35,16 +37,16 @@ const GAME_ORDER: GameCardMeta[] = [
   { id: 'vocabulary', tier: 'test', fallbackIcon: '📝', fallbackName: 'מבחן מילים', description: 'בודקים כמה מהמילים כבר יושבות חזק.' },
 ]
 
-const TIER_META: Record<TierId, { title: string; badge: string; accent: string }> = {
-  learn: { title: 'למידה', badge: 'תמיד פתוח', accent: 'text-learn' },
-  practice: { title: 'תרגול', badge: 'נפתח בהתקדמות', accent: 'text-practice' },
-  challenge: { title: 'אתגר', badge: 'למתקדמים', accent: 'text-challenge' },
-  test: { title: 'מבחן', badge: 'בדיקת ידע', accent: 'text-test' },
+const TIER_META: Record<TierId, { title: string; emoji: string; badge: string; accent: string }> = {
+  learn: { title: 'מתחילים ללמוד', emoji: '🌱', badge: 'תמיד פתוח', accent: 'text-learn' },
+  practice: { title: 'מתרגלים יחד', emoji: '🎯', badge: 'נפתח תוך כדי משחק', accent: 'text-practice' },
+  challenge: { title: 'אתגרים מגניבים', emoji: '🚀', badge: 'למי שכבר התקדם', accent: 'text-challenge' },
+  test: { title: 'בודקים מה ידעתי', emoji: '🏆', badge: 'מבחן ידע', accent: 'text-test' },
 }
 
 export function HomePage() {
   const navigate = useNavigate()
-  const { displayName, initial } = useAuthSession()
+  const { displayName } = useAuthSession()
   const summary = useUserProgress()
   const unlocks = useGameUnlocks()
 
@@ -64,11 +66,6 @@ export function HomePage() {
 
   const nextUnlock = useMemo(
     () => catalog.find((game) => unlocks[game.id]?.unlocked === false) ?? null,
-    [catalog, unlocks],
-  )
-
-  const availableGames = useMemo(
-    () => catalog.filter((game) => unlocks[game.id]?.unlocked !== false).length,
     [catalog, unlocks],
   )
 
@@ -99,165 +96,121 @@ export function HomePage() {
     [unlockedIds, catalog],
   )
 
-  const greetingName = displayName ?? 'לומד'
+  const greetingName = displayName ?? 'חבר'
   const continueGameId = continueTarget?.gameId ?? 'word-journey'
   const continueLabel = continueTarget?.label ?? 'מסע המילים'
   const continueIcon = continueTarget?.icon ?? '🗺️'
 
   return (
-    <div className="space-y-6 pb-6">
-      <section data-testid="home-hero" className="overflow-hidden rounded-2xl border border-white/10 bg-surface shadow-panel">
-        <div className="grid gap-5 bg-[radial-gradient(circle_at_top_right,rgba(99,230,198,0.18),transparent_28%),linear-gradient(135deg,rgba(255,255,255,0.04),rgba(255,255,255,0.02))] p-5 sm:grid-cols-[1.5fr_1fr] sm:p-6">
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 font-display text-lg font-semibold text-text">
-                  {initial ?? greetingName.slice(0, 1)}
-                </div>
-                <div>
-                  <p className="text-sm text-muted">שלום {greetingName}</p>
-                  <h1 className="font-display text-3xl font-semibold text-text sm:text-4xl">
-                    ממשיכים ללמוד בלי לאבד את ההתקדמות
-                  </h1>
-                </div>
-              </div>
-              <p className="max-w-2xl text-sm leading-6 text-muted sm:text-base">
-                כל הנתונים כאן נמשכים מהמערכת הקיימת: רצף, מטבעות, מילים שנלמדו ונעילות משחקים.
-              </p>
+    <div className="space-y-6 pb-8">
+      {/* ── Welcome hero: mascot + one big "let's go" action ────────────────── */}
+      <section
+        data-testid="home-hero"
+        className="overflow-hidden rounded-3xl border border-white/10 bg-surface shadow-panel"
+      >
+        <div className="relative bg-[radial-gradient(circle_at_top_left,rgba(99,230,198,0.22),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.18),transparent_40%)] p-6 sm:p-8">
+          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:text-right">
+            <div
+              className="flex size-20 shrink-0 items-center justify-center rounded-full bg-white/10 text-5xl shadow-glow sm:size-24 sm:text-6xl"
+              aria-hidden
+            >
+              🦉
             </div>
-
-            <div className="flex flex-wrap gap-3">
-              <button
-                type="button"
-                onClick={() => navigate(`/game/${continueGameId}`)}
-                className="inline-flex items-center gap-2 rounded-xl bg-learn px-4 py-3 font-medium text-slate-950 transition-transform hover:scale-[1.01]"
-              >
-                <span className="text-lg">{continueIcon}</span>
-                המשך עם {continueLabel}
-                <Play size={16} className="fill-current" />
-              </button>
-              <Link
-                to="/courses"
-                className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-4 py-3 font-medium text-text transition-colors hover:bg-white/10"
-              >
-                <BookOpen size={16} />
-                הקורסים שלי
-              </Link>
+            <div className="space-y-1.5">
+              <h1 className="font-display text-3xl font-bold text-text sm:text-4xl">
+                שלום {greetingName}! 👋
+              </h1>
+              <p className="text-base text-muted sm:text-lg">
+                מוכנים לשחק וללמוד אנגלית? בואו נמשיך מאיפה שעצרנו.
+              </p>
             </div>
           </div>
 
-          <div className="grid gap-3 sm:content-start">
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs text-muted">המשחק הבא שנפתח</p>
-              {nextUnlock ? (
-                <div className="mt-2 space-y-1">
-                  <div className="flex items-center gap-2 text-lg font-semibold text-text">
-                    <span>{nextUnlock.icon}</span>
-                    <span>{nextUnlock.name}</span>
-                  </div>
-                  <p className="text-sm text-muted">
-                    {unlocks[nextUnlock.id]?.requirement ?? 'המשך לשחק כדי לפתוח'}
-                  </p>
-                </div>
-              ) : (
-                <p className="mt-2 text-sm text-muted">כל המשחקים הפתוחים כבר זמינים עבורך.</p>
-              )}
-            </div>
-            <div className="rounded-2xl border border-white/10 bg-white/5 p-4">
-              <p className="text-xs text-muted">זמינות כללית</p>
-              <p className="mt-2 font-display text-3xl font-semibold text-text">
-                {availableGames}/{catalog.length}
-              </p>
-              <p className="text-sm text-muted">משחקים זמינים כרגע מתוך כל הקטלוג.</p>
-            </div>
+          {/* Glanceable progress chips */}
+          <div className="mt-5 flex flex-wrap justify-center gap-2 sm:justify-start">
+            <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" />
+            <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" />
+            <StatChip emoji="🪙" value={summary.coins} label="מטבעות" />
           </div>
+
+          {/* One big primary action */}
+          <button
+            type="button"
+            onClick={() => navigate(`/game/${continueGameId}`)}
+            data-testid="home-continue"
+            className="group mt-5 flex w-full items-center justify-center gap-3 rounded-2xl bg-learn px-6 py-4 text-lg font-bold text-slate-950 shadow-glow transition-transform hover:scale-[1.01] active:scale-[0.99] sm:text-xl"
+          >
+            <span className="text-2xl">{continueIcon}</span>
+            <span>בוא נשחק — {continueLabel}</span>
+            <Play size={20} className="fill-current transition-transform group-hover:translate-x-[-2px]" />
+          </button>
+
+          {nextUnlock ? (
+            <p className="mt-3 text-center text-sm text-muted sm:text-right">
+              🎁 עוד קצת ותפתח את <span className="font-semibold text-text">{nextUnlock.icon} {nextUnlock.name}</span>
+              {unlocks[nextUnlock.id]?.requirement ? ` · ${unlocks[nextUnlock.id]?.requirement}` : ''}
+            </p>
+          ) : null}
         </div>
       </section>
 
-      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <StatCard icon={<Flame size={18} className="text-learn" />} label="רצף נוכחי" value={`${summary.streakDays}`} detail="ימים ברצף" />
-        <StatCard icon={<Star size={18} className="text-practice" />} label="מילים שנלמדו" value={`${summary.wordsLearned}`} detail="מילים שהושלמו" />
-        <StatCard icon={<Trophy size={18} className="text-challenge" />} label="מטבעות" value={`${summary.coins}`} detail="זמינים בחשבון" />
-        <StatCard icon={<Medal size={18} className="text-test" />} label="ניקוד כולל" value={`${summary.totalScore}`} detail={`${summary.totalGamesPlayed} משחקים`} />
-      </section>
-
-      <section className="grid gap-3 md:grid-cols-3">
-        <QuickLink to="/profile" icon={<User size={18} />} title="פרופיל" description="תעודות, הישגים ופעילות אישית" />
-        <QuickLink to="/courses" icon={<BookOpen size={18} />} title="קורסים" description="מעקב אחר נושאים ויחידות" />
-        <QuickLink to="/settings" icon={<Settings size={18} />} title="הגדרות" description="צליל, פוניטיקה והעדפות מערכת" />
-      </section>
-
-      {gamesByTier.map(({ tier, meta, games }) => (
-        <section key={tier} data-testid={`home-tier-${tier}`} className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="space-y-1">
-              <h2 className={cn('font-display text-2xl font-semibold', meta.accent)}>{meta.title}</h2>
-              <p className="text-sm text-muted">{meta.badge}</p>
+      {/* ── Game tiers: kept as the guidance structure, lighter presentation ── */}
+      {gamesByTier.map(({ tier, meta, games }) => {
+        const openCount = games.filter((game) => unlocks[game.id]?.unlocked !== false).length
+        return (
+          <section key={tier} data-testid={`home-tier-${tier}`} className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h2 className={cn('flex items-center gap-2 font-display text-xl font-bold sm:text-2xl', meta.accent)}>
+                <span aria-hidden>{meta.emoji}</span>
+                {meta.title}
+              </h2>
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted">
+                {openCount}/{games.length} פתוחים
+              </span>
             </div>
-            <div className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs text-muted">
-              {games.filter((game) => unlocks[game.id]?.unlocked !== false).length}/{games.length} פתוחים
-            </div>
-          </div>
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {games.map((game) => {
-              const unlock = unlocks[game.id]
-              const isLocked = unlock?.unlocked === false
-
-              return (
-                <button
-                  key={game.id}
-                  type="button"
-                  onClick={() => {
-                    if (!isLocked) navigate(`/game/${game.id}`)
-                  }}
-                  className={cn(
-                    'group relative overflow-hidden rounded-2xl border p-4 text-right shadow-panel transition-transform',
-                    isLocked
-                      ? 'cursor-not-allowed border-white/10 bg-surface-2/80'
-                      : 'border-white/12 bg-surface hover:-translate-y-0.5 hover:border-white/20 hover:bg-surface-2',
-                  )}
-                >
-                  <div className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,transparent,rgba(255,255,255,0.35),transparent)] opacity-40" />
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-lg font-semibold text-text">
-                        <span className="text-2xl">{game.icon}</span>
-                        <span>{game.name}</span>
-                      </div>
-                      <p className="text-sm leading-6 text-muted">{game.description}</p>
-                    </div>
-                    <div
-                      className={cn(
-                        'rounded-full border px-2.5 py-1 text-xs font-medium',
-                        isLocked
-                          ? 'border-white/10 bg-white/5 text-muted'
-                          : 'border-white/10 bg-white/10 text-text',
-                      )}
-                    >
-                      {isLocked ? 'נעול' : 'פתוח'}
-                    </div>
-                  </div>
-
-                  <div className="mt-4 flex items-center justify-between text-sm">
-                    {isLocked ? (
-                      <div className="flex items-center gap-2 text-muted">
-                        <Lock size={14} />
-                        <span>{unlock?.requirement ?? 'נדרש עוד תרגול'}</span>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-text">
-                        <span>לפתיחה במשחק הקיים</span>
-                        <ArrowLeft size={14} />
-                      </div>
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
+              {games.map((game) => {
+                const isLocked = unlocks[game.id]?.unlocked === false
+                return (
+                  <button
+                    key={game.id}
+                    type="button"
+                    disabled={isLocked}
+                    onClick={() => navigate(`/game/${game.id}`)}
+                    title={isLocked ? unlocks[game.id]?.requirement ?? undefined : game.description}
+                    className={cn(
+                      'group relative flex flex-col items-center gap-2 rounded-2xl border p-4 text-center shadow-panel transition-transform',
+                      isLocked
+                        ? 'cursor-not-allowed border-white/8 bg-surface-2/60'
+                        : 'border-white/12 bg-surface hover:-translate-y-0.5 hover:border-white/25 hover:bg-surface-2',
                     )}
-                  </div>
-                </button>
-              )
-            })}
-          </div>
-        </section>
-      ))}
+                  >
+                    <span
+                      className={cn(
+                        'text-4xl transition-transform sm:text-5xl',
+                        isLocked ? 'opacity-40 grayscale' : 'group-hover:scale-110',
+                      )}
+                      aria-hidden
+                    >
+                      {game.icon}
+                    </span>
+                    <span className={cn('text-sm font-semibold sm:text-base', isLocked ? 'text-muted' : 'text-text')}>
+                      {game.name}
+                    </span>
+                    {isLocked ? (
+                      <span className="flex items-center gap-1 text-[0.7rem] leading-tight text-muted">
+                        <Lock size={11} />
+                        {unlocks[game.id]?.requirement ?? 'נפתח בקרוב'}
+                      </span>
+                    ) : null}
+                  </button>
+                )
+              })}
+            </div>
+          </section>
+        )
+      })}
 
       {unlockedMeta.length > 0 ? (
         <NewlyUnlockedModal games={unlockedMeta} onClose={() => setUnlockedIds([])} />
@@ -266,44 +219,18 @@ export function HomePage() {
   )
 }
 
-interface StatCardProps {
-  icon: ReactNode
+interface StatChipProps {
+  emoji: string
+  value: number | string
   label: string
-  value: string
-  detail: string
 }
 
-function StatCard({ icon, label, value, detail }: StatCardProps) {
+function StatChip({ emoji, value, label }: StatChipProps) {
   return (
-    <div className="rounded-2xl border border-white/10 bg-surface/90 p-4 shadow-panel">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted">{label}</p>
-        {icon}
-      </div>
-      <p className="mt-3 font-display text-3xl font-semibold text-text">{value}</p>
-      <p className="mt-1 text-sm text-muted">{detail}</p>
+    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5">
+      <span className="text-lg" aria-hidden>{emoji}</span>
+      <span className="font-display text-lg font-bold text-text">{value}</span>
+      <span className="text-xs text-muted">{label}</span>
     </div>
-  )
-}
-
-interface QuickLinkProps {
-  to: string
-  icon: ReactNode
-  title: string
-  description: string
-}
-
-function QuickLink({ to, icon, title, description }: QuickLinkProps) {
-  return (
-    <Link
-      to={to}
-      className="rounded-2xl border border-white/10 bg-surface/90 p-4 shadow-panel transition-colors hover:bg-surface-2"
-    >
-      <div className="flex items-center gap-2 text-text">
-        {icon}
-        <span className="font-medium">{title}</span>
-      </div>
-      <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
-    </Link>
   )
 }

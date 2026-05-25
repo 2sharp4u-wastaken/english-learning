@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { ChevronRight, Coins, Trophy } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/cn'
@@ -14,6 +15,8 @@ export interface GameHeaderProps {
   title: string
   subtitle?: string
   icon?: string
+  /** Forwarded by GameScreenShell to <GameHero aside>; not rendered here. */
+  heroAside?: ReactNode
   score?: number
   coins?: number
   onBack?: () => void

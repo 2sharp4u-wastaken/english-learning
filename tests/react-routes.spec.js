@@ -1956,6 +1956,61 @@ test.describe('Slice 3.10: Grammar Game (React)', () => {
   });
 });
 
+// ─── Focused grammar-practice games: Articles + Progressive (React) ─────────
+
+for (const game of [
+  { id: 'articles', label: 'Articles (a/an/the)' },
+  { id: 'progressive', label: 'Progressive tenses' },
+]) {
+  test.describe(`Grammar-practice: ${game.label}`, () => {
+    test('happy path: emoji + sentence + options render and progress advances on correct answer', async ({ page }) => {
+      const errors = captureErrors(page);
+      await seedUser(page);
+      await gotoHash(page, `/game/${game.id}`);
+      await page.waitForTimeout(900);
+
+      await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+      await expect(page.locator(`[data-testid="${game.id}-sentence"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${game.id}-play"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${game.id}-blank"]`)).toHaveAttribute('data-state', 'empty');
+      await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+
+      const opts = page.locator('[data-testid="answer-option"]');
+      await expect(opts.first()).toBeVisible();
+
+      const correctText = await page.evaluate(() => {
+        const m = window.gameManager;
+        const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
+        return q ? q.options[q.correct] : null;
+      });
+      expect(correctText).toBeTruthy();
+
+      const optCount = await opts.count();
+      let clickedCorrect = false;
+      for (let i = 0; i < optCount; i++) {
+        const text = (await opts.nth(i).locator('span > span').first().textContent())?.trim().toLowerCase();
+        if (text === correctText.toLowerCase()) {
+          await opts.nth(i).click();
+          clickedCorrect = true;
+          break;
+        }
+      }
+      expect(clickedCorrect).toBe(true);
+
+      await expect(page.locator(`[data-testid="${game.id}-next"]`)).toBeVisible();
+      await expect(page.locator(`[data-testid="${game.id}-blank"]`)).toHaveAttribute('data-state', 'correct');
+
+      await page.locator(`[data-testid="${game.id}-next"]`).click();
+      await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
+        timeout: 4000,
+      }).toBe('2');
+
+      const critical = filterCritical(errors);
+      expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+    });
+  });
+}
+
 // ─── Slice 3.12: Story Time Game (React) ────────────────────────────────────
 
 test.describe('Slice 3.12: Story Time Game (React)', () => {

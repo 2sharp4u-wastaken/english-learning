@@ -21,6 +21,10 @@ import {
 // Import grammar questions and categories
 import { grammarQuestions, grammarCategories } from './grammarQuestions.js?t=1779000000';
 
+// Import focused grammar-practice banks (React blank-fill engine)
+import { articlesQuestions } from './articlesData.js';
+import { progressiveQuestions } from './progressiveData.js';
+
 // Import grammar beginner data (audio-visual grammar for non-readers)
 import { subjects, predicates, generateGrammarBeginnerQuestions } from './grammarBeginnerData.js';
 
@@ -106,6 +110,10 @@ for (const q of grammarQuestions) {
     if (q.hebrewSentence)    q.hebrewSentence    = nikudMap[q.hebrewSentence]    || q.hebrewSentence;
     if (q.hebrewExplanation) q.hebrewExplanation = nikudMap[q.hebrewExplanation] || q.hebrewExplanation;
 }
+for (const q of [...articlesQuestions, ...progressiveQuestions]) {
+    if (q.hebrewSentence)    q.hebrewSentence    = nikudMap[q.hebrewSentence]    || q.hebrewSentence;
+    if (q.hebrewExplanation) q.hebrewExplanation = nikudMap[q.hebrewExplanation] || q.hebrewExplanation;
+}
 
 // Initialize phonetic distractor system BEFORE converting listening data
 console.log('🎯 Loading phonetic distractor system...');
@@ -140,6 +148,8 @@ const grammarBeginnerQuestions = generateGrammarBeginnerQuestions(15);
 const gameData = {
     vocabulary: convertedVocabulary,
     grammar: grammarQuestions,
+    articles: articlesQuestions,
+    progressive: progressiveQuestions,
     'grammar-beginner': grammarBeginnerQuestions,
     pronunciation: convertedPronunciation,
     listening: convertedListening,

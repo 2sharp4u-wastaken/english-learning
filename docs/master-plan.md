@@ -1495,6 +1495,46 @@ Common acceptance criteria:
 - renders inside GameScreenShell
 - uses shared feedback/reward components
 
+### Post-Wave additions (2026-05-25)
+
+Driven by play-feedback. All shipped on `v3-react-migration`, verified via Playwright.
+
+1. **Listening auto-play on resume.** Listening was the only game that suppressed
+   its entry auto-play when resuming a mid-session save (`autoPlayedRef` set true
+   on restore), so re-entry felt inconsistent vs Grammar Beginner / Word Journey.
+   Fix: it now always voices the word on entry; on resume it skips the budget /
+   reveal-gate counters (via `resumedRef`) so `audioPlaysLeft` stays correct.
+   `ListeningGamePage.tsx`. (Grammar Beginner uses a flat 300ms timer with no
+   readiness check and skips auto-play for `sounds-right`; Word Journey drives
+   audio per-stage — documented for future parity questions.)
+
+2. **Word Journey stage bar relocated** into the hero, left of the "מסע מילים"
+   banner, via the new optional `GameHero` `heroAside` slot (forwarded through
+   `GameScreenShell`/`GameHeader` props). Title invariant preserved.
+
+3. **Shared blank-fill engine** (`shared/BlankFillGamePage.tsx` + `bridge/grammarLike.ts`)
+   — one parameterised page + generic bridge for focused fill-in-the-sentence
+   grammar games. First two games on it:
+   - **Articles (`articles`)** — a / an / the, picture-prompted, vowel/consonant
+     rule + "the" for specific things. Data: `data/articlesData.js`.
+   - **Progressive tenses (`progressive`)** — present + past progressive
+     (is/are/was/were + -ing), action-emoji prompts. Data: `data/progressiveData.js`.
+   Both always-unlocked (supplementary practice), registered everywhere a React
+   game must be. To add more (plurals, prepositions, …) follow the recipe in
+   CLAUDE.md "Shared game primitives" — do NOT clone the grammar page.
+
+4. **Homepage redesign.** Replaced the developer-dashboard layout (dev-facing
+   copy, 4 stat cards + 3 quick links + verbose tier grid) with a kid-facing
+   home: mascot greeting, one big "let's play" CTA (continue target), glanceable
+   stat chips, and lighter icon-forward tiles. Kept the four `home-tier-*`
+   sections (the learn→practice→challenge→test guidance structure) + `home-hero`
+   testid. `HomePage.tsx`.
+
+   Curriculum gaps still open (suggested, not built): numbers/colors/shapes,
+   opposites, question-words game, dedicated plurals + prepositions games. The
+   general `grammar` game still carries only ~2 article + 4 present-continuous
+   questions — the new dedicated games supersede those for practice.
+
 ## Phase 4: Cleanup and Consolidation
 
 Objective: remove dead legacy code and shrink maintenance burden.

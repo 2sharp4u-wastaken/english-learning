@@ -33,7 +33,12 @@ export function GameScreenShell({
     >
       <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-3 px-4 pt-4 pb-6 sm:px-6">
         <GameHeader {...header} />
-        <GameHero title={header.title} subtitle={header.subtitle} icon={header.icon} />
+        <GameHero
+          title={header.title}
+          subtitle={header.subtitle}
+          icon={header.icon}
+          aside={header.heroAside}
+        />
         {progress ? <QuestionProgress {...progress} /> : null}
         <main className={cn('flex flex-1 flex-col', className)}>{children}</main>
         {footer ? <div className="pt-2">{footer}</div> : null}

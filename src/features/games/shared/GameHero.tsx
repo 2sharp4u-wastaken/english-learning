@@ -1,9 +1,17 @@
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 
 export interface GameHeroProps {
   title: string
   subtitle?: string
   icon?: string
+  /**
+   * Optional content rendered to the physical LEFT of the centered title,
+   * inside the same hero container. Used by Word Journey to sit its 5-stage
+   * tracker beside the "מסע מילים" banner. Stacks below the title on narrow
+   * screens so it never overlaps.
+   */
+  aside?: ReactNode
   className?: string
 }
 
@@ -19,16 +27,21 @@ export interface GameHeroProps {
  * a section heading directly above the progress bar, and the question card
  * follows.
  */
-export function GameHero({ title, subtitle, icon, className }: GameHeroProps) {
+export function GameHero({ title, subtitle, icon, aside, className }: GameHeroProps) {
   if (!title && !icon) return null
   return (
     <div
       data-testid="game-hero"
       className={cn(
-        'flex flex-col items-center gap-1 pt-1 pb-2 text-center',
+        'relative flex flex-col items-center gap-1 pt-1 pb-2 text-center',
         className,
       )}
     >
+      {aside ? (
+        <div className="order-2 mt-1 sm:absolute sm:left-0 sm:top-1/2 sm:order-none sm:mt-0 sm:-translate-y-1/2">
+          {aside}
+        </div>
+      ) : null}
       <div className="flex items-center justify-center gap-2.5">
         {icon ? (
           <span className="text-3xl leading-none" aria-hidden>

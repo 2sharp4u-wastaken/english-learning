@@ -10,6 +10,8 @@ import { FillBlanksGamePage } from './fill-blanks/FillBlanksGamePage'
 import { SentenceScrambleGamePage } from './sentence-scramble/SentenceScrambleGamePage'
 import { GrammarBeginnerGamePage } from './grammar-beginner/GrammarBeginnerGamePage'
 import { GrammarGamePage } from './grammar/GrammarGamePage'
+import { ArticlesGamePage } from './articles/ArticlesGamePage'
+import { ProgressiveGamePage } from './progressive/ProgressiveGamePage'
 import { PronunciationGamePage } from './pronunciation/PronunciationGamePage'
 import { StoryTimeGamePage } from './story-time/StoryTimeGamePage'
 import { WordJourneyGamePage } from './word-journey/WordJourneyGamePage'
@@ -25,6 +27,8 @@ const REACT_GAMES: Record<string, ComponentType> = {
   scramble: SentenceScrambleGamePage,
   'grammar-beginner': GrammarBeginnerGamePage,
   grammar: GrammarGamePage,
+  articles: ArticlesGamePage,
+  progressive: ProgressiveGamePage,
   pronunciation: PronunciationGamePage,
   'story-time': StoryTimeGamePage,
   'word-journey': WordJourneyGamePage,

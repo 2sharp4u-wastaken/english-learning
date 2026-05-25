@@ -1464,6 +1464,8 @@ class AppManager {
                 "abc":              { unlocked: true,  unlockedDate: null },
                 "memory":           { unlocked: true,  unlockedDate: null },
                 "grammar-beginner": { unlocked: true,  unlockedDate: null },
+                "articles":         { unlocked: true,  unlockedDate: null },
+                "progressive":      { unlocked: true,  unlockedDate: null },
                 "listening":        { unlocked: false, requirement: "5 מילים שנלמדו",          requiredCount: 5 },
                 "picture-match":    { unlocked: false, requirement: "5 מילים שנלמדו",          requiredCount: 5 },
                 "reading":          { unlocked: false, requirement: "10 מילים + ABC 60%",       requiredCount: 10, requiredAbcMastery: 0.6 },
