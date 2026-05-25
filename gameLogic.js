@@ -383,6 +383,19 @@ class GameManager {
             }
         });
 
+        // Phonics — React-only (no module). Multi-letter sounds (digraphs +
+        // vowel teams); its own data generator + `<sound>_phonics` mastery.
+        registry.register('phonics', {
+            displayName: 'Phonics Sounds',
+            displayNameHebrew: 'משחק צלילים',
+            icon: '🔡',
+            config: {
+                questionsPerGame: 15,
+                pointsPerCorrect: 10,
+                categories: ['language', 'phonics']
+            }
+        });
+
         registry.register('memory', {
             displayName: 'Memory / Matching',
             displayNameHebrew: 'משחק זיכרון',

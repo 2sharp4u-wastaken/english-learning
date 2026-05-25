@@ -1620,6 +1620,33 @@ Driven by play-feedback. All shipped on `v3-react-migration`, verified via Playw
    general `grammar` game still carries only ~2 article + 4 present-continuous
    questions — the new dedicated games supersede those for practice.
 
+### Phonics game (2026-05-26)
+
+Status: shipped on `v3-react-migration`, verified via Playwright (5 tests, non-mic
+subtypes). Driven by a request to teach multi-letter sounds (sh/ch/th, ee/oo, …)
+that the ABC game can't — ABC teaches letter *names* (ay/bee/see) + case/order,
+none of which apply to a digraph. **New dedicated game, not an ABC extension.**
+
+- **`משחק צלילים` (`phonics`, icon 🔡)** — covers consonant digraphs (sh, ch, th,
+  ph, wh, ck, ng) + vowel teams (ee, oo, ai, oa, ea, ay). Always-unlocked, "learn"
+  tier beside ABC. Mastery is per-sound under `<sound>_phonics` (e.g. `sh_phonics`),
+  exactly mirroring ABC's `<letter>_abc` model: generator filters sounds at mastery
+  ≥ 0.8 and returns `[]` once all are mastered → congratulations screen.
+- **Three subtypes in one page** (ABC multi-subtype model): `hear-pick-word`
+  (hear an example → tap the matching picture; media AnswerGrid, audio-gated),
+  `see-pick-sound` (see a picture + hear it → choose the sound; text AnswerGrid
+  with Hebrew gloss sublabels, audio-gated), `say-sound` (mic, lenient transcript
+  match — **no Playwright coverage**, same `webkitSpeechRecognition` stub gap as
+  ABC say-letter / Pronunciation / Practice).
+- Files: `data/phonicsData.js` (sound bank + `generatePhonicsQuestions` +
+  mastery helpers), `src/bridge/phonics.ts` (clone of `abc.ts`;
+  `resetPhonicsMastery` wipes `*_phonics` keys directly since there's no legacy
+  gameManager reset — game is React-only), `src/features/games/phonics/`. Wired in
+  `reactGames.ts`, `GameHostPage.tsx`, `gameLogic.js` (no-module register, like
+  articles), `app.js` (gameUnlocks + gameTypeStats defaults + UNGATED_GAMES),
+  `HomePage.tsx` GAME_ORDER. No `data/_loader.js` entry needed (bridge imports the
+  generator directly, like ABC — not the blank-fill `window.gameData` path).
+
 ## Phase 4: Cleanup and Consolidation
 
 Objective: remove dead legacy code and shrink maintenance burden.

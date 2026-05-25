@@ -53,6 +53,12 @@ endGame(gameType)  [not word-journey, not abc]
 
 **Does NOT trigger:** word graduation, game unlocks, learning progress bar
 
+> **Phonics** (`phonics`) uses this generic chain — it is "not abc", so unlike ABC
+> its mastery does NOT feed `checkAndUnlockGames` (no game gates on phonics).
+> `<sound>_phonics` mastery keys (sh_phonics, ee_phonics, …) flow through the
+> normal `recordWordAttempt` chain below exactly like `<letter>_abc`, and only
+> drive the phonics generator's own "all sounds mastered" filter.
+
 ## Word Attempt During Gameplay
 
 ```

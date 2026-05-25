@@ -2369,6 +2369,164 @@ test.describe('Slice 3.15: ABC Game (React)', () => {
   });
 });
 
+// ─── Phonics Game (React) ───────────────────────────────────────────────────
+
+/**
+ * Inject a deterministic Phonics saved-game state so the bridge takes the resume
+ * path (instead of mastery-driven random generation). Uses only the two non-mic
+ * subtypes (hear-pick-word, see-pick-sound) — say-sound needs a speech stub we
+ * don't have yet, same as ABC's say-letter. Matches the `savedGame_<userId>_phonics`
+ * schema written by legacy `saveGameState`.
+ */
+async function seedPhonicsSaved(page, { currentQuestionIndex = 0, score = 0 } = {}) {
+  await page.evaluate(({ idx, score }) => {
+    const userId = localStorage.getItem('currentUser');
+    const shuffledQuestions = [
+      {
+        type: 'hear-pick-word', questionType: 'phonics', sound: 'sh', display: 'sh',
+        hebrewSound: 'הצליל שְׁ', sayWord: 'ship', emoji: '🚢',
+        options: [
+          { word: 'ship', emoji: '🚢' }, { word: 'goat', emoji: '🐐' },
+          { word: 'bee', emoji: '🐝' }, { word: 'duck', emoji: '🦆' },
+        ],
+        correct: 0, category: 'phonics', word: 'sh',
+        instruction: 'הקשב — איזו תמונה מתחילה בצליל הזה?',
+        instructionEn: 'Listen — which picture has this sound?',
+      },
+      {
+        type: 'see-pick-sound', questionType: 'phonics', sound: 'ch', display: 'ch',
+        hebrewSound: 'הצליל צ׳', sayWord: 'cheese', promptWord: 'cheese', emoji: '🧀',
+        options: [
+          { label: 'ch', sublabel: 'הצליל צ׳' }, { label: 'sh', sublabel: 'הצליל שְׁ' },
+          { label: 'th', sublabel: 'הצליל ת׳' },
+        ],
+        correct: 0, category: 'phonics', word: 'ch',
+        instruction: 'הקשב — איזה צליל יש במילה?',
+        instructionEn: 'Listen — which sound is in the word?',
+      },
+      {
+        type: 'hear-pick-word', questionType: 'phonics', sound: 'ee', display: 'ee',
+        hebrewSound: 'הצליל אִי הארוך', sayWord: 'bee', emoji: '🐝',
+        options: [
+          { word: 'bee', emoji: '🐝' }, { word: 'ship', emoji: '🚢' },
+          { word: 'goat', emoji: '🐐' }, { word: 'duck', emoji: '🦆' },
+        ],
+        correct: 0, category: 'phonics', word: 'ee',
+        instruction: 'הקשב — איזו תמונה מתחילה בצליל הזה?',
+        instructionEn: 'Listen — which picture has this sound?',
+      },
+    ];
+    localStorage.setItem(
+      `savedGame_${userId}_phonics`,
+      JSON.stringify({
+        gameType: 'phonics',
+        currentQuestionIndex: idx,
+        score,
+        totalQuestions: shuffledQuestions.length,
+        timestamp: Date.now(),
+        shuffledQuestions,
+        gameElapsedMs: 0,
+        selectedCategories: [],
+      }),
+    );
+  }, { idx: currentQuestionIndex, score });
+}
+
+test.describe('Phonics Game (React)', () => {
+  test('happy path: audio-gated picture options reveal, then a correct answer advances', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await seedPhonicsSaved(page);
+    await gotoHash(page, '/game/phonics');
+    await page.waitForTimeout(900);
+
+    // The big digraph prompt renders.
+    await expect(page.locator('[data-testid="phonics-sound-display"]')).toHaveText('sh');
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('3');
+
+    // Options are audio-gated until the prompt word auto-plays, then interactive.
+    const grid = page.locator('[data-testid="answer-grid"]');
+    await expect(grid).toHaveAttribute('data-variant', 'media');
+    await expect(grid).not.toHaveClass(/pointer-events-none/, { timeout: 4000 });
+
+    await page.locator('[data-testid="answer-option"][data-index="0"]').click();
+
+    await expect
+      .poll(() => page.evaluate(() => window.gameManager?.currentQuestionIndex), { timeout: 3000 })
+      .toBe(1);
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2', { timeout: 3000 });
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('incorrect answer reveals the correct option and surfaces a Next button', async ({ page }) => {
+    await seedUser(page);
+    await seedPhonicsSaved(page);
+    await gotoHash(page, '/game/phonics');
+    await page.waitForTimeout(900);
+
+    const grid = page.locator('[data-testid="answer-grid"]');
+    await expect(grid).not.toHaveClass(/pointer-events-none/, { timeout: 4000 });
+
+    // Click a wrong option (index 1).
+    await page.locator('[data-testid="answer-option"][data-index="1"]').click();
+
+    await expect(page.locator('[data-testid="feedback-banner"]')).toBeVisible();
+    await expect(
+      page.locator('[data-testid="answer-option"][data-index="0"]'),
+    ).toHaveAttribute('data-state', 'correct');
+    const next = page.locator('[data-testid="phonics-next"]');
+    await expect(next).toBeVisible();
+
+    await next.click();
+    // Q2 is a see-pick-sound: text options with the sound labels.
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2');
+    await expect(page.locator('[data-testid="answer-grid"]')).toHaveAttribute('data-variant', 'text');
+  });
+
+  test('resume picks up mid-session save and continues from the correct question', async ({ page }) => {
+    await seedUser(page);
+    await seedPhonicsSaved(page, { currentQuestionIndex: 2, score: 20 });
+    await gotoHash(page, '/game/phonics');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('3');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('3');
+    await expect(page.locator('[data-testid="game-header-score"]')).toContainText('20');
+  });
+
+  test('all sounds mastered shows the congratulations screen', async ({ page }) => {
+    await seedUser(page);
+    await page.evaluate(() => {
+      const wm = (window.app.userProgress.wordMastery ||= {});
+      for (const s of ['sh', 'ch', 'th', 'ph', 'wh', 'ck', 'ng', 'ee', 'oo', 'ai', 'oa', 'ea', 'ay']) {
+        wm[`${s}_phonics`] = { masteryLevel: 1, attempts: 10, correct: 10 };
+      }
+    });
+    await gotoHash(page, '/game/phonics');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="phonics-all-mastered"]')).toBeVisible();
+    await expect(page.locator('[data-testid="answer-grid"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="phonics-back-home"]')).toBeVisible();
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedPhonicsSaved(page);
+    await gotoHash(page, '/game/phonics');
+    await page.waitForTimeout(900);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Slice 3.16: Practice Game (React) ──────────────────────────────────────
 // Practice reuses the Pronunciation mechanic (mic → compare), so — like Slice
 // 3.11 — the record/score path needs a `webkitSpeechRecognition` stub we don't

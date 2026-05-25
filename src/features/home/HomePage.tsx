@@ -21,6 +21,7 @@ interface GameCardMeta {
 const GAME_ORDER: GameCardMeta[] = [
   { id: 'word-journey', tier: 'learn', fallbackIcon: '🗺️', fallbackName: 'מסע המילים', description: 'לומדים מילים חדשות בהתקדמות רציפה.' },
   { id: 'abc', tier: 'learn', fallbackIcon: '🔤', fallbackName: 'ABC אותיות', description: 'מתרגלים אותיות, צלילים וזיהוי בסיסי.' },
+  { id: 'phonics', tier: 'learn', fallbackIcon: '🔡', fallbackName: 'משחק צלילים', description: 'צלילים של כמה אותיות יחד: sh, ch, th וגם ee, oo.' },
   { id: 'listening', tier: 'practice', fallbackIcon: '👂', fallbackName: 'משחק הקשבה', description: 'שומעים מילה ובוחרים את התשובה הנכונה.' },
   { id: 'picture-match', tier: 'practice', fallbackIcon: '🖼️', fallbackName: 'מילה לתמונה', description: 'מתאימים בין מילה לתמונה במהירות.' },
   { id: 'true-or-not', tier: 'practice', fallbackIcon: '✅', fallbackName: 'נכון או לא?', description: 'בודקים אם התמונה והמילה באמת תואמות.' },

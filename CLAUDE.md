@@ -88,7 +88,7 @@ Initialized after auth in `app.js → AppManager.setupWithAuth()`.
 Accessed from React only via `src/bridge/` modules.
 
 ### Game types
-`vocabulary`, `grammar`, `grammar-beginner`, `pronunciation`, `listening`, `reading`, `practice`, `abc`, `memory`, `scramble`, `fill-blanks`, `word-journey`, `story-time`, `picture-match`, `true-or-not`
+`vocabulary`, `grammar`, `grammar-beginner`, `pronunciation`, `listening`, `reading`, `practice`, `abc`, `phonics`, `memory`, `scramble`, `fill-blanks`, `word-journey`, `story-time`, `picture-match`, `true-or-not`
 
 ### React games registry
 - `src/features/games/reactGames.ts` — `REACT_GAME_IDS` set; the source of truth for which games run in React vs legacy. Adding an ID here triggers `react-shell-active` to stay on during that game route so the legacy DOM is suppressed.

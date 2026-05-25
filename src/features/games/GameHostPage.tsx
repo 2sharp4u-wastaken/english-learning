@@ -18,6 +18,7 @@ import { StoryTimeGamePage } from './story-time/StoryTimeGamePage'
 import { WordJourneyGamePage } from './word-journey/WordJourneyGamePage'
 import { MemoryGamePage } from './memory/MemoryGamePage'
 import { ABCGamePage } from './abc/ABCGamePage'
+import { PhonicsGamePage } from './phonics/PhonicsGamePage'
 import { isReactGame } from './reactGames'
 
 const REACT_GAMES: Record<string, ComponentType> = {
@@ -38,6 +39,7 @@ const REACT_GAMES: Record<string, ComponentType> = {
   'word-journey': WordJourneyGamePage,
   memory: MemoryGamePage,
   abc: ABCGamePage,
+  phonics: PhonicsGamePage,
 }
 
 // Retired games → bookmark-safe redirects. Slice 3.7.1 folded word-builder

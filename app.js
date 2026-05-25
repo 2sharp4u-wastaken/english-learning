@@ -1425,6 +1425,7 @@ class AppManager {
                 listening: 0,
                 reading: 0,
                 abc: 0,
+                phonics: 0,
                 memory: 0,
                 'picture-match': 0,
                 scramble: 0,
@@ -1462,6 +1463,7 @@ class AppManager {
             gameUnlocks: {     // Per-game unlock state
                 "word-journey":     { unlocked: true,  unlockedDate: null },
                 "abc":              { unlocked: true,  unlockedDate: null },
+                "phonics":          { unlocked: true,  unlockedDate: null },
                 "memory":           { unlocked: true,  unlockedDate: null },
                 "grammar-beginner": { unlocked: true,  unlockedDate: null },
                 "articles":         { unlocked: true,  unlockedDate: null },
@@ -1554,7 +1556,7 @@ class AppManager {
      */
     getFilteredWordsForGame(gameType) {
         // Games that always get the full vocabulary
-        const UNGATED_GAMES = new Set(['word-journey', 'abc', 'grammar-beginner', 'practice']);
+        const UNGATED_GAMES = new Set(['word-journey', 'abc', 'phonics', 'grammar-beginner', 'practice']);
         if (UNGATED_GAMES.has(gameType)) {
             return window.vocabularyBank || [];
         }
