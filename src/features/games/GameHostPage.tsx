@@ -13,6 +13,7 @@ import { GrammarGamePage } from './grammar/GrammarGamePage'
 import { ArticlesGamePage } from './articles/ArticlesGamePage'
 import { ProgressiveGamePage } from './progressive/ProgressiveGamePage'
 import { PronunciationGamePage } from './pronunciation/PronunciationGamePage'
+import { PracticeGamePage } from './practice/PracticeGamePage'
 import { StoryTimeGamePage } from './story-time/StoryTimeGamePage'
 import { WordJourneyGamePage } from './word-journey/WordJourneyGamePage'
 import { MemoryGamePage } from './memory/MemoryGamePage'
@@ -32,6 +33,7 @@ const REACT_GAMES: Record<string, ComponentType> = {
   articles: ArticlesGamePage,
   progressive: ProgressiveGamePage,
   pronunciation: PronunciationGamePage,
+  practice: PracticeGamePage,
   'story-time': StoryTimeGamePage,
   'word-journey': WordJourneyGamePage,
   memory: MemoryGamePage,

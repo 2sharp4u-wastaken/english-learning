@@ -1530,8 +1530,34 @@ question→answer Slice 3.1 template. Differences / decisions vs legacy:
   exit dialog). Tests inject deterministic `match-case` saved state to dodge the random
   `say-letter`/mic path.
 - `docs/wiring-map.md` — "ABC Game (React — Slice 3.15)" cause/effect chain.
-**Slice 3.16: Practice** — weak-word review, meta-game. ~289 lines. Becomes the dedicated
-review surface for **Due** words under the redesign.
+**Slice 3.16: Practice** — weak-word review, meta-game. ✅ **Shipped (React, 2026-05-25).**
+The dedicated **Due/weak-word review** surface under the redesign, and the **last game type
+to migrate — Phase 3 game migration is now complete** (every catalog game runs in React).
+~289 legacy lines (`games/practice-game.js`) → `src/bridge/practice.ts` + `PracticeGamePage`
++ `components/PracticeEmpty`. Reuses the **Pronunciation Slice 3.11 mechanic** (mic → compare),
+so the page is a near-clone; what differs is the *pool* and *persistence*:
+- **Pool = Due-first Learned set** (redesign §5/§6): `progressManager.getDueWords()` front-loaded,
+  then `getWordsByStatus('learned')` minus the Due ones, each `{word,category}` mapped to a full
+  question via `gameData.pronunciation` (same convert shape). Capped at `questionsPerGame` (10).
+  Divergence from legacy, which drew *struggling* words (mastery < 0.5). `gameUnlockOverride`
+  practices the whole bank.
+- **No resume** — practice is never persisted (legacy `saveGameState`/`loadGameState`
+  special-case `practice`); `beginPracticeSession()` is always fresh, no save on each attempt.
+- **Scored + banked** — `finishPracticeSession()` is self-contained (updateProgress +
+  `saveGameScoreToHistory('practice')` + totalPoints delta + `checkAndUnlockGames` +
+  saveUserProgress), and **never calls the legacy DOM `endGame`** (its practice branch assumes
+  `#practice-game` markup). This is a deliberate divergence: legacy practice was "session-based,
+  no scoring"; the React version scores it for parity with every other game's RewardModal.
+- 0 Learned words → `kind:'learn-first'` → `<PracticeEmpty>` ("nothing to review yet" → Word Journey).
+- Speech helpers (`startPronunciationRecording` etc.) are GAME_TYPE-agnostic, re-exported from
+  `bridge/pronunciation` rather than duplicated.
+- Files: `src/bridge/practice.ts`, `src/features/games/practice/PracticeGamePage.tsx` +
+  `components/PracticeEmpty.tsx`; registered in `reactGames.ts` + `GameHostPage.tsx`; added to
+  HomePage `GAME_ORDER` (practice tier — was missing); already in `app.js` UNGATED_GAMES +
+  `gameLogic.js` registry.
+- `tests/react-routes.spec.js` — Slice 3.16 block (3 tests: empty state, Due-pool capped render,
+  exit dialog). Mic path uncovered (Slice 3.11 `webkitSpeechRecognition` stub gap).
+- `docs/wiring-map.md` — "Practice Game (React — Slice 3.16)" cause/effect chain.
 
 ### Per-game migration template
 

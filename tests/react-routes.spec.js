@@ -2369,6 +2369,60 @@ test.describe('Slice 3.15: ABC Game (React)', () => {
   });
 });
 
+// ─── Slice 3.16: Practice Game (React) ──────────────────────────────────────
+// Practice reuses the Pronunciation mechanic (mic → compare), so — like Slice
+// 3.11 — the record/score path needs a `webkitSpeechRecognition` stub we don't
+// have yet. These cover the non-mic surface: the empty state, the Due-first pool
+// render, and the exit dialog. (Grandfathered learnedWords seeded with an old
+// `lastPracticed` land well past the 30-day max review interval, so they're Due.)
+
+test.describe('Slice 3.16: Practice Game (React)', () => {
+  test('no learned words shows the "nothing to review yet" empty state', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await gotoHash(page, '/game/practice');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="practice-empty"]')).toBeVisible();
+    await expect(page.locator('[data-testid="practice-empty-cta"]')).toBeVisible();
+    await expect(page.locator('[data-testid="practice-record"]')).toHaveCount(0);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('Due/learned words produce a capped review session', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await seedLearnedFromBank(page, 6);
+    await gotoHash(page, '/game/practice');
+    await page.waitForTimeout(900);
+
+    // Ready state: mic button + prompt render, no empty state.
+    await expect(page.locator('[data-testid="practice-empty"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="practice-record"]')).toBeVisible();
+    // Pool = 6 Due words, under the questionsPerGame cap (10) → total 6.
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+    await expect(page.locator('[data-testid="qp-total"]')).toHaveText('6');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 6);
+    await gotoHash(page, '/game/practice');
+    await page.waitForTimeout(900);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {

@@ -329,7 +329,7 @@ port; the port then rides on the new model.
 5. ✅ **Repoint pools + prioritize Due** — consolidation bridges (story-time, fill-blanks,
    sentence-scramble) + learned-count displays now read derived counts (closed the
    stamp regression); `smartQuestionSelection` has a top-priority `due` bucket. Practice
-   (Slice 3.16) gets its Due wiring when migrated; review games are covered now.
+   (Slice 3.16) is now migrated with its Due wiring (Due-first Learned pool, `src/bridge/practice.ts`).
 6. ✅ **App-wide "newly unlocked games" modal** — `queuePendingUnlocks`/`takePendingUnlocks`
    (sessionStorage) fed by `finishWordJourney` + a generalized post-completion unlock
    re-check in `gameLogic.endGame`; `NewlyUnlockedModal` pops on the next Home mount.

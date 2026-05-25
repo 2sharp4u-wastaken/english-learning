@@ -562,6 +562,54 @@ learn-tier game, always unlocked. Six subtypes live in one page (Grammar Beginne
 model). The `say-letter` mic path has no Playwright coverage (Slice 3.11 stub gap); tests
 inject deterministic `match-case` saved state.
 
+## Practice Game (React — Slice 3.16)
+
+```
+React route /#/game/practice
+  └─ GameHostPage.tsx → REACT_GAMES['practice'] → PracticeGamePage.tsx
+      ├─ beginPracticeSession()  (src/bridge/practice.ts)
+      │   ├─ setGameContext('practice'); deleteGameState('practice')
+      │   ├─ NO resume — practice is never persisted (legacy parity:
+      │   │   gameLogic.js saveGameState/loadGameState special-case 'practice').
+      │   ├─ pool = Due-first Learned set (redesign §5/§6):
+      │   │   ├─ progressManager.getDueWords(cats)          → front of list
+      │   │   ├─ progressManager.getWordsByStatus('learned',cats), minus the
+      │   │   │   Due ones (Due is an overlay on Learned) → rest of list
+      │   │   ├─ each {word,category} mapped to a full question object via
+      │   │   │   gameData.pronunciation keyed by `word_category` (same convert
+      │   │   │   shape as Pronunciation: word/phonetic/hebrew/picture/imageUrl)
+      │   │   └─ gameUnlockOverride (parent bypass) → practice the whole bank
+      │   ├─ 0 words → kind:'learn-first' → <PracticeEmpty/> ("nothing to review
+      │   │   yet", CTA → /game/word-journey)
+      │   └─ else → cap to settings.questionsPerGame (default 10); stash on
+      │       gameManager (shuffledQuestions/totalQuestions/resetScore('practice')/
+      │       coinHistoryStartIndex)
+      ├─ Per question (identical mechanic to Pronunciation Slice 3.11):
+      │   ├─ MediaPromptCard picture + word (caseMode) + Hebrew (showNikud)
+      │   ├─ auto-play target word via speakWord(word.toLowerCase(),'practice')
+      │   ├─ tap mic → startPronunciationRecording() (re-exported from
+      │   │   bridge/pronunciation — GAME_TYPE-agnostic speech helpers)
+      │   ├─ parallel MediaRecorder → "שמע את עצמך" playback (same as Slice 3.11)
+      │   └─ result → recordPracticeAttempt(q,{transcript}):
+      │       comparePronunciation → accuracy ≥ 0.7 correct; pts = round(acc*10)
+      │       on correct; recordWordAttempt(word,cat,correct,0,'practice') +
+      │       addPoints + currentQuestionIndex++  (NO saveGameState — ephemeral)
+      ├─ correct → praise audio + confetti + auto-advance 1.5s
+      ├─ incorrect → praise audio + 400 ms + replay target + practice-next button
+      └─ Final question → finishPracticeSession() → RewardModal
+          (self-contained: updateProgress + saveGameScoreToHistory('practice') +
+           totalPoints delta + checkAndUnlockGames + saveUserProgress; NEVER the
+           legacy DOM endGame, whose practice branch assumes #practice-game markup)
+```
+
+Practice is the dedicated **Due/weak-word review** surface under the learning-flow redesign.
+It is the **last game type to migrate — Phase 3 game migration is now complete** (every entry
+in the catalog renders in React). Divergences from legacy `games/practice-game.js`: pool is
+Due-first Learned (legacy used struggling words at mastery < 0.5); the session is **scored and
+banked to history/totalPoints** (legacy was "session-based, no scoring") for parity with every
+other React game's RewardModal. Mic path has no Playwright coverage (Slice 3.11 stub gap); tests
+cover the empty state, the Due-pool render, and exit.
+
 ## Hero title (canonical placement, adopted 2026-05-23 — applies to ALL React games)
 
 ```

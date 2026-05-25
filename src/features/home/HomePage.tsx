@@ -28,6 +28,7 @@ const GAME_ORDER: GameCardMeta[] = [
   { id: 'grammar-beginner', tier: 'practice', fallbackIcon: '📐', fallbackName: 'דקדוק למתחילים', description: 'תרגול דקדוק בסיסי עם משוב מיידי.' },
   { id: 'articles', tier: 'practice', fallbackIcon: '📝', fallbackName: 'a / an / the', description: 'מתי אומרים a, מתי an ומתי the — עם תמונות.' },
   { id: 'progressive', tier: 'practice', fallbackIcon: '🏃', fallbackName: 'זמן מתמשך', description: 'פעולות שקורות עכשיו ובעבר (is/was + ing).' },
+  { id: 'practice', tier: 'practice', fallbackIcon: '🎯', fallbackName: 'מצב תרגול', description: 'חוזרים על מילים שכבר למדת כדי לחזק אותן.' },
   { id: 'reading', tier: 'challenge', fallbackIcon: '📖', fallbackName: 'משחק קריאה', description: 'עוברים מזיהוי מילים לקריאה עצמאית.' },
   { id: 'pronunciation', tier: 'challenge', fallbackIcon: '🎤', fallbackName: 'משחק הגייה', description: 'משפרים הגייה וביטחון בדיבור.' },
   { id: 'story-time', tier: 'challenge', fallbackIcon: '📚', fallbackName: 'זמן סיפור', description: 'קוראים סיפורים קצרים ומבינים הקשר.' },
