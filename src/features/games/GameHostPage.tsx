@@ -15,6 +15,7 @@ import { ProgressiveGamePage } from './progressive/ProgressiveGamePage'
 import { PronunciationGamePage } from './pronunciation/PronunciationGamePage'
 import { StoryTimeGamePage } from './story-time/StoryTimeGamePage'
 import { WordJourneyGamePage } from './word-journey/WordJourneyGamePage'
+import { MemoryGamePage } from './memory/MemoryGamePage'
 import { isReactGame } from './reactGames'
 
 const REACT_GAMES: Record<string, ComponentType> = {
@@ -32,6 +33,7 @@ const REACT_GAMES: Record<string, ComponentType> = {
   pronunciation: PronunciationGamePage,
   'story-time': StoryTimeGamePage,
   'word-journey': WordJourneyGamePage,
+  memory: MemoryGamePage,
 }
 
 // Retired games → bookmark-safe redirects. Slice 3.7.1 folded word-builder

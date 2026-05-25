@@ -2121,6 +2121,108 @@ test.describe('Slice 3.12: Story Time Game (React)', () => {
   });
 });
 
+// ─── Slice 3.14: Memory Game (React) ────────────────────────────────────────
+
+/**
+ * Read every card's pairId and return arrays of the two card indices that
+ * share each pair, so a test can flip matching pairs deterministically.
+ */
+async function memoryPairs(page) {
+  return await page.$$eval('[data-testid="memory-card"]', (els) => {
+    const map = {};
+    for (const el of els) {
+      const pair = el.getAttribute('data-pair');
+      (map[pair] ||= []).push(Number(el.getAttribute('data-index')));
+    }
+    return Object.values(map);
+  });
+}
+
+/** Flip every matching pair of the current level, one pair at a time. */
+async function completeMemoryLevel(page) {
+  const pairs = await memoryPairs(page);
+  for (const [a, b] of pairs) {
+    await page.locator(`[data-testid="memory-card"][data-index="${a}"]`).click();
+    await page.waitForTimeout(180);
+    await page.locator(`[data-testid="memory-card"][data-index="${b}"]`).click();
+    await page.waitForTimeout(1000); // > MATCH_CHECK_MS (700) + resolve
+  }
+}
+
+test.describe('Slice 3.14: Memory Game (React)', () => {
+  test('gates with a learn-first prompt when too few introduced words', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 3); // below the 6-word minimum
+    await gotoHash(page, '/game/memory');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="memory-learn-first"]')).toBeVisible();
+    await expect(page.locator('[data-testid="memory-board"]')).toHaveCount(0);
+  });
+
+  test('renders the level-1 board and a single match advances the pairs counter + score', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    await seedLearnedFromBank(page, 12);
+    await gotoHash(page, '/game/memory');
+    await page.waitForTimeout(900);
+
+    const board = page.locator('[data-testid="memory-board"]');
+    await expect(board).toBeVisible();
+    // Level 1 = 6 pairs → 12 cards.
+    await expect(page.locator('[data-testid="memory-card"]')).toHaveCount(12);
+    await expect(page.locator('[data-testid="memory-pairs"]')).toHaveText('0/6');
+
+    const pairs = await memoryPairs(page);
+    const [a, b] = pairs[0];
+    await page.locator(`[data-testid="memory-card"][data-index="${a}"]`).click();
+    await page.waitForTimeout(180);
+    await page.locator(`[data-testid="memory-card"][data-index="${b}"]`).click();
+
+    await expect
+      .poll(() => page.locator('[data-testid="memory-pairs"]').textContent(), { timeout: 4000 })
+      .toBe('1/6');
+    // Both matched cards stay face-up in the matched state.
+    await expect(
+      page.locator(`[data-testid="memory-card"][data-index="${a}"]`),
+    ).toHaveAttribute('data-state', 'matched');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('completing level 1 shows the level summary with stars and a next-level button', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 12);
+    await gotoHash(page, '/game/memory');
+    await page.waitForTimeout(900);
+
+    await completeMemoryLevel(page);
+
+    await expect(page.locator('[data-testid="memory-summary"]')).toBeVisible({ timeout: 4000 });
+    await expect(page.locator('[data-testid="memory-stars"]')).toBeVisible();
+    await expect(page.locator('[data-testid="memory-next-level"]')).toBeVisible();
+
+    // Advancing builds the level-2 board (9 pairs → 18 cards).
+    await page.locator('[data-testid="memory-next-level"]').click();
+    await expect.poll(() => page.locator('[data-testid="memory-card"]').count(), { timeout: 4000 })
+      .toBe(18);
+  });
+
+  test('header back button opens the exit-confirm dialog', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 12);
+    await gotoHash(page, '/game/memory');
+    await page.waitForTimeout(900);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+
+    await page.locator('[data-testid="exit-dialog-cancel"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+});
+
 // ─── Cross-route navigation ─────────────────────────────────────────────────
 
 test.describe('Navigation sanity', () => {

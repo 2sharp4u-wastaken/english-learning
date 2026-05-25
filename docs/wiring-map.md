@@ -485,6 +485,43 @@ React route /#/game/word-journey
 
 Per-word graduation is emergent: WJ records real per-word attempts each stage, so a word the child nails climbs toward Learned on its own while a fumbled word stays Learning — there is no batch ≥60% rule. `newlyUnlocked` from `finishWordJourney` will feed the app-wide unlock modal (step 6).
 
+## Memory Game (React — Slice 3.14)
+
+```
+React route /#/game/memory
+  └─ GameHostPage.tsx → REACT_GAMES['memory'] → MemoryGamePage.tsx
+      ├─ beginMemory()  (src/bridge/memory.ts)
+      │   ├─ setGameContext('memory') + deleteGameState (no resume)
+      │   ├─ pool = vocabularyBank ∩ selectedCategories, then ∩ _getLearnedWordSet()
+      │   │   (INTRODUCED keys) unless settings.gameUnlockOverride
+      │   ├─ pool < 6 → kind:'learn-first' (prompt links to word-journey)
+      │   └─ Stash on gameManager: shuffledQuestions=3 level configs, totalQuestions=3,
+      │       resetScore('memory'), coinHistoryStartIndex
+      ├─ 3 fixed levels (6/9/12 pairs, 4/6/8 cols). buildLevelCards(pool, idx):
+      │   daily-seeded pair selection (parity) → word card + translation card per pair,
+      │   shuffled. Cards expose data-pair/data-index/data-state.
+      ├─ Flip mechanics in MemoryGamePage (refs, not state, for the timed callbacks):
+      │   ├─ click → voice English word (allowOverlap); 2nd flip locks processingRef,
+      │   │   moves++, resolvePair after 700ms.
+      │   ├─ match (same pairId): combo++/maxCombo, points = 10 + (combo≥2?5×combo:0)
+      │   │   + (firstTry?10:0); recordMemoryMatch (recordWordAttempt 'memory', correct);
+      │   │   "<hebrew> is <english>" celebration (speechGen ref cancels on nav);
+      │   │   playAnswerSfx('correct'); popup chip.
+      │   └─ mismatch: combo=0, recordMemoryMismatch (both word-cards incorrect),
+      │       playAnswerSfx('incorrect'), flip back after 1000ms.
+      ├─ all pairs matched → finishMemoryLevel(idx, moves, time, levelScore, maxCombo):
+      │   stars (mistakes thresholds + 4th speed star), coins (coinManager.awardCoins),
+      │   scoreManager.addPoints(levelScore) → cumulative; personal best →
+      │   memoryBest_<userId> (same shape stats reads). → MemoryLevelSummary.
+      ├─ level < 3 → next-level button → setupLevel(idx+1). level 3 →
+      │   finishMemoryGame(): updateProgress + saveGameScoreToHistory + totalPoints
+      │   reconcile + checkAndUnlockGames(NEW counts) + queuePendingUnlocks + persist.
+      │   **Never calls legacy endGame** (like Word Journey).
+      └─ Exit/reset/unmount → abortMemory() + clearTimers + cancelSpeech.
+```
+
+Memory's React port intentionally gates on *introduced* words (legacy used the full bank, ungated) and drops mid-run resume — React owns the DOM, so the legacy phantom-flip guards (stale listeners, ghost-click lock, board generation) are not reimplemented.
+
 ## Hero title (canonical placement, adopted 2026-05-23 — applies to ALL React games)
 
 ```

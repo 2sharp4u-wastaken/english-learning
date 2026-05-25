@@ -1468,8 +1468,34 @@ per-journey summary (word + picture + audio + status). Say-word reuses the pronu
 bridge's mic; full E2E is limited by the speech-recognition stub gap (see Slice 3.11), so
 `tests/wj-step1.spec.js` covers render/stage-map/Discover-budget/advance. Honors
 `docs/word-journey-flow.md` structure (5 fixed stages, `learningPace`-only batch size).
-**Slice 3.14: Memory** — card-flip grid, timer-based. ~1,589 lines. Word-mode pool gates
-on *introduced* word count.
+**Slice 3.14: Memory** — card-flip grid, timer-based. ✅ **Shipped (React, 2026-05-25).**
+~1,589 legacy lines → `src/bridge/memory.ts` + `MemoryGamePage` + 3 components
+(`MemoryCard`, `MemoryBoard`, `MemoryLevelSummary`). Did NOT follow the Slice 3.1
+question→answer template — Memory is a self-contained 3-level run (6/9/12 pairs), like
+Word Journey. The bridge does its own per-level finish (stars/coins/personal-best) and
+final-run finish (history/totalPoints/unlock-recheck), never calls legacy `endGame`.
+Differences / decisions vs legacy `memory-game.js`:
+- **Pool = *introduced* words** (`_getLearnedWordSet()` ∩ selected categories), gated at
+  `< 6` with a learn-first prompt → divergence from legacy (full bank, no gate); aligns
+  Memory with the learning-flow redesign. `gameUnlockOverride` skips the introduced filter.
+- **No mid-run resume** (each entry starts at level 1), following the Word Journey
+  precedent — avoids the legacy phantom-flip resume bugs entirely (React owns the DOM, so
+  the stale-listener / ghost-click / board-generation guards are unneeded).
+- Daily-seeded pair selection kept (parity: scores comparable across kids per day).
+- Scoring parity: 10 base + (combo≥2 → 5×combo) + first-try 10; stars from mistakes (+4th
+  speed star); coins `level*5 + pairs*2 + star-bonus (+combo≥3)`. Per-level personal best
+  written to `memoryBest_<userId>` in the **same shape the stats page reads** (`MemoryRecord`).
+- Card click voices the English word (`allowOverlap`); a match plays the "<hebrew> is
+  <english>" celebration via a `speechGen` ref so navigating away cancels it.
+- Files: `src/bridge/memory.ts`, `src/features/games/memory/MemoryGamePage.tsx` +
+  `components/{MemoryCard,MemoryBoard,MemoryLevelSummary}.tsx`; registered in
+  `reactGames.ts` + `GameHostPage.tsx` (memory was already in `app.js` unlocks, HomePage
+  `GAME_ORDER`, and `gameLogic.js`).
+- `tests/react-routes.spec.js` — Slice 3.14 block (4 tests: learn-first gate under 6 words,
+  level-1 board + single match advances pairs/score, complete level 1 → summary + advance to
+  level 2, exit dialog). Cards expose `data-pair`/`data-index`/`data-state` for deterministic
+  pair-matching in tests.
+- `docs/wiring-map.md` — "Memory Game (React — Slice 3.14)" cause/effect chain.
 **Slice 3.15: ABC** — alphabet learning, custom layout. ~778 lines.
 **Slice 3.16: Practice** — weak-word review, meta-game. ~289 lines. Becomes the dedicated
 review surface for **Due** words under the redesign.
