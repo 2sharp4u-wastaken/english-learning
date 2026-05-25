@@ -54,7 +54,7 @@ export const phonicsSounds = [
     // ── Vowel teams ──────────────────────────────────────────────────────────
     { sound: 'ee', type: 'vowel-team', hebrewSound: 'הצליל אִי הארוך', words: [
         { word: 'bee', emoji: '🐝' }, { word: 'tree', emoji: '🌳' },
-        { word: 'feet', emoji: '🦶' }, { word: 'queen', emoji: '👸' },
+        { word: 'feet', emoji: '👣' }, { word: 'queen', emoji: '👸' },
         { word: 'green', emoji: '🟢' },
     ] },
     { sound: 'oo', type: 'vowel-team', hebrewSound: 'הצליל אוּ', words: [
@@ -77,7 +77,7 @@ export const phonicsSounds = [
         { word: 'beach', emoji: '🏖️' },
     ] },
     { sound: 'ay', type: 'vowel-team', hebrewSound: 'הצליל אֵיי (בסוף מילה)', words: [
-        { word: 'day', emoji: '☀️' }, { word: 'hay', emoji: '🌾' },
+        { word: 'day', emoji: '☀️' }, { word: 'subway', emoji: '🚇' },
         { word: 'tray', emoji: '🍽️' }, { word: 'crayon', emoji: '🖍️' },
     ] },
 ];

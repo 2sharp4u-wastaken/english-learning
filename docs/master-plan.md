@@ -1633,7 +1633,10 @@ none of which apply to a digraph. **New dedicated game, not an ABC extension.**
   exactly mirroring ABC's `<letter>_abc` model: generator filters sounds at mastery
   ≥ 0.8 and returns `[]` once all are mastered → congratulations screen.
 - **Three subtypes in one page** (ABC multi-subtype model): `hear-pick-word`
-  (hear an example → tap the matching picture; media AnswerGrid, audio-gated),
+  (hear an example → tap the matching picture; media AnswerGrid, audio-gated;
+  picture options show **NO word text** — a visible word lets the child eye-scan
+  the spelling for the target digraph instead of listening, so every emoji in
+  the bank must be unique + recognisable on its own, e.g. feet 👣 vs foot 🦶),
   `see-pick-sound` (see a picture + hear it → choose the sound; text AnswerGrid
   with Hebrew gloss sublabels, audio-gated), `say-sound` (mic, lenient transcript
   match — **no Playwright coverage**, same `webkitSpeechRecognition` stub gap as

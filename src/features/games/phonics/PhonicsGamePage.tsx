@@ -391,16 +391,14 @@ export function PhonicsGamePage() {
     current?.options?.map((o, i) =>
       currentType === 'hear-pick-word'
         ? {
+            // Picture only — no word text. Showing the word would let the child
+            // eye-scan the spelling for the target digraph instead of matching
+            // by ear, defeating the listen-for-the-sound goal.
             key: i,
             ariaLabel: o.word,
             media: (
-              <span className="flex flex-col items-center gap-1">
-                <span className="text-5xl" role="img" aria-label={o.word}>
-                  {o.emoji}
-                </span>
-                <span dir="ltr" className="text-sm font-semibold lowercase">
-                  {o.word}
-                </span>
+              <span className="text-5xl sm:text-6xl" role="img" aria-label={o.word}>
+                {o.emoji}
               </span>
             ),
           }
