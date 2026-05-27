@@ -1,14 +1,21 @@
 import { useState, useMemo } from 'react'
+import { useNavigate } from 'react-router-dom'
 import {
   ChevronDown,
   Clock,
   GraduationCap,
   Lock,
   CheckCircle2,
+  Play,
 } from 'lucide-react'
 import { useCourses, type CourseSnapshot } from '@/hooks/useCourses'
 import { getCourseUnlockText, type Course, type CourseUnit, type CourseTopic } from '@/bridge/courses'
+import { startTopicActivity } from '@/bridge/courseSession'
 import { cn } from '@/lib/cn'
+
+// React games that scope cleanly to a topic's words via getScopedQuestionPool — only
+// these activity badges are launchable from a topic (Slice C1 MVP). Others stay static.
+const LAUNCHABLE_ACTIVITIES = new Set(['vocabulary', 'listening', 'picture-match'])
 
 // ─── Activity label map ─────────────────────────────────────────────────────
 
@@ -138,6 +145,8 @@ function CourseCard({ course, snap }: { course: Course; snap: CourseSnapshot }) 
       {/* Card header (clickable if unlocked) */}
       <button
         type="button"
+        data-testid="course-card-header"
+        data-course={course.id}
         onClick={() => unlocked && setExpanded((prev) => !prev)}
         className={cn(
           'w-full text-right transition-colors',
@@ -273,11 +282,17 @@ function TopicCard({
   topic: CourseTopic
   snap: CourseSnapshot
 }) {
+  const navigate = useNavigate()
   const unlocked = snap.topicUnlocked[topic.id] ?? false
   const completed = snap.topicCompleted[topic.id] ?? false
   const mastery = snap.topicMastery[topic.id] ?? 0
   const tp = snap.topicProgress[topic.id]
   const completedActivities = tp?.completedActivities ?? []
+
+  const launchActivity = (activityType: string) => {
+    startTopicActivity({ topicId: topic.id, activityType, topicWords: topic.words ?? [] })
+    navigate(`/game/${activityType}`)
+  }
 
   return (
     <div
@@ -316,10 +331,35 @@ function TopicCard({
             )}
           </div>
 
-          {/* Activity badges */}
+          {/* Activity badges — launchable ones (unlocked + scopable game) become buttons */}
           <div className="flex flex-wrap gap-1.5">
             {(topic.activities ?? []).map((act) => {
               const done = completedActivities.includes(act)
+              const label = ACTIVITY_LABELS[act] ?? act
+              const launchable = unlocked && LAUNCHABLE_ACTIVITIES.has(act)
+
+              if (launchable) {
+                return (
+                  <button
+                    key={act}
+                    type="button"
+                    data-testid="topic-activity-launch"
+                    data-activity={act}
+                    data-topic={topic.id}
+                    onClick={() => launchActivity(act)}
+                    className={cn(
+                      'inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium transition-colors',
+                      done
+                        ? 'bg-learn/15 text-learn hover:bg-learn/25'
+                        : 'bg-practice/15 text-practice hover:bg-practice/25',
+                    )}
+                  >
+                    <Play size={10} className="shrink-0 fill-current" />
+                    {label}
+                  </button>
+                )
+              }
+
               return (
                 <span
                   key={act}
@@ -332,7 +372,7 @@ function TopicCard({
                         : 'bg-white/4 text-muted/50',
                   )}
                 >
-                  {ACTIVITY_LABELS[act] ?? act}
+                  {label}
                 </span>
               )
             })}

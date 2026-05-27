@@ -1,5 +1,6 @@
 import { setGameContext, cancelSpeech } from './audio'
 import { getSettings } from './settings'
+import { isCourseMode } from './courseSession'
 
 export interface VocabularyQuestion {
   word: string
@@ -83,8 +84,12 @@ export function beginVocabularySession(opts: BeginOptions = {}): VocabularySessi
 
   setGameContext('vocabulary')
 
-  // Attempt resume — only when caller didn't ask for a fresh session.
-  if (!opts.fresh) {
+  // Course mode (launched from /courses): scope to the topic's words. Topic words are
+  // usually not yet "learned", so skip the learned-word filter AND the mid-game resume.
+  const courseMode = isCourseMode('vocabulary')
+
+  // Attempt resume — only when caller didn't ask for a fresh session and not in course mode.
+  if (!opts.fresh && !courseMode) {
     const saved = mgr.loadGameState?.('vocabulary')
     if (
       saved &&
@@ -148,7 +153,7 @@ export function beginVocabularySession(opts: BeginOptions = {}): VocabularySessi
 
   // V2 gating (mirrors gameLogic.js:2244–2257).
   let pool = mgr.getScopedQuestionPool('vocabulary') ?? []
-  if (!mgr.settings?.gameUnlockOverride) {
+  if (!mgr.settings?.gameUnlockOverride && !courseMode) {
     const learned = mgr._getLearnedWordSet()
     pool = pool.filter((w) =>
       learned.has(`${w.word?.toLowerCase()}_${w.category}`),

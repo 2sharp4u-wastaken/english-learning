@@ -1,5 +1,6 @@
 import { setGameContext, cancelSpeech } from './audio'
 import { getSettings } from './settings'
+import { isCourseMode } from './courseSession'
 
 export interface ListeningQuestion {
   word: string
@@ -81,7 +82,11 @@ export function beginListeningSession(opts: BeginOptions = {}): ListeningSession
 
   setGameContext('listening')
 
-  if (!opts.fresh) {
+  // Course mode (launched from /courses): scope to the topic's words. Skip the
+  // learned-word filter AND mid-game resume (topic words aren't learned yet).
+  const courseMode = isCourseMode('listening')
+
+  if (!opts.fresh && !courseMode) {
     const saved = mgr.loadGameState?.('listening')
     if (
       saved &&
@@ -135,7 +140,7 @@ export function beginListeningSession(opts: BeginOptions = {}): ListeningSession
     (window as any).app?.userProgress?.coinHistory?.length ?? 0
 
   let pool = mgr.getScopedQuestionPool('listening') ?? []
-  if (!mgr.settings?.gameUnlockOverride) {
+  if (!mgr.settings?.gameUnlockOverride && !courseMode) {
     const learned = mgr._getLearnedWordSet()
     pool = pool.filter((w) =>
       learned.has(`${w.word?.toLowerCase()}_${w.category}`),

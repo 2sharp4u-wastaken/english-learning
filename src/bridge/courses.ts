@@ -60,7 +60,12 @@ interface LegacyCourseManager {
 }
 
 function getCourseManager(): LegacyCourseManager | null {
-  return (window as any).appManager?.courseManager ?? null
+  // The legacy CourseManager is exposed as `window.courseManager` (gameLogic) and
+  // `window.app.courseManager` (app.js). There is NO `window.appManager` global —
+  // an earlier reference to it silently returned null, leaving this page on its
+  // empty state. Always resolve via the real globals.
+  const w = window as any
+  return w.courseManager ?? w.app?.courseManager ?? null
 }
 
 // ─── Public bridge API ──────────────────────────────────────────────────────

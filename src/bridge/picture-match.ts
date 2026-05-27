@@ -1,5 +1,6 @@
 import { setGameContext, cancelSpeech } from './audio'
 import { getSettings } from './settings'
+import { isCourseMode } from './courseSession'
 
 export interface PictureMatchOption {
   word: string
@@ -87,7 +88,11 @@ export function beginPictureMatchSession(opts: BeginOptions = {}): PictureMatchS
 
   setGameContext(GAME_TYPE)
 
-  if (!opts.fresh) {
+  // Course mode (launched from /courses): scope to the topic's words. Skip the
+  // learned-word filter AND mid-game resume (topic words aren't learned yet).
+  const courseMode = isCourseMode(GAME_TYPE)
+
+  if (!opts.fresh && !courseMode) {
     const saved = mgr.loadGameState?.(GAME_TYPE)
     if (
       saved &&
@@ -141,7 +146,7 @@ export function beginPictureMatchSession(opts: BeginOptions = {}): PictureMatchS
     (window as any).app?.userProgress?.coinHistory?.length ?? 0
 
   let pool = mgr.getScopedQuestionPool(GAME_TYPE) ?? []
-  if (!mgr.settings?.gameUnlockOverride) {
+  if (!mgr.settings?.gameUnlockOverride && !courseMode) {
     const learned = mgr._getLearnedWordSet()
     pool = pool.filter((w) =>
       learned.has(`${w.word?.toLowerCase()}_${w.category}`),

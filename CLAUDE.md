@@ -32,7 +32,7 @@ Read every file you plan to change before touching it. Do not suggest changes to
 When changing any setting, game mechanic, or learning flow — update the relevant file in `docs/` in the same session.
 
 ### Bridge is the only gateway to legacy
-React components must never access `window.*` globals or `localStorage` directly. All legacy data access goes through `src/bridge/*.ts` modules. React hooks in `src/hooks/` consume bridge modules. Existing bridges: `auth`, `audio`, `categories`, `courses`, `feedback`, `games`, `progress`, `settings`, `stats`, `storage`, `textPrefs`, `vocabulary`. Add new ones as needed; never bypass.
+React components must never access `window.*` globals or `localStorage` directly. All legacy data access goes through `src/bridge/*.ts` modules. React hooks in `src/hooks/` consume bridge modules. Existing bridges: `auth`, `audio`, `categories`, `courses`, `courseSession`, `feedback`, `games`, `progress`, `settings`, `stats`, `storage`, `textPrefs`, `vocabulary`. Add new ones as needed; never bypass. `courseSession` is the only gateway for launching a topic's activity from `/courses` (sets the legacy course context so the game pool scopes to the topic words). Note: the CourseManager global is `window.courseManager` / `window.app.courseManager` — there is **no** `window.appManager`.
 
 ### CSS containment
 - Tailwind Preflight is **disabled** — legacy `styles.css` provides its own resets

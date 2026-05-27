@@ -629,6 +629,34 @@ src/features/games/shared/GameScreenShell.tsx
 
 Pages still declare a single `headerProps = { title, icon, score, onBack }` and the shell forwards the title/icon/subtitle to `<GameHero>`. `<GameHeader>` accepts those fields on the props for forwarding but no longer renders them — its center area is gone, so the back button and toggle/score pills aren't visually crowded by the title. The hero sits between the controls row and the progress strip so it reads as a section heading for the question card. Slices 3.1–3.9 inherit this for free; no per-page change.
 
+## Launchable Course Activity Chain (Slice C1)
+
+```
+CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|picture-match)
+  └─ bridge/courseSession.startTopicActivity({topicId, activityType, topicWords})
+       ├─ courseManager.startTopic(topicId)                 ──→ topicProgress[id].started
+       ├─ gameManager.deleteGameState(activityType)         ──→ no stale resume
+       └─ gameManager.setCourseActivityContext(...)         ──→ currentTopicId/Activity/Words set
+  └─ navigate('/game/<activityType>')
+       └─ begin<Game>Session(): isCourseMode()===true
+            ├─ skip mid-game resume + skip learned-word filter
+            └─ getScopedQuestionPool() returns ONLY topic words (gameLogic.js:1886)
+  └─ finish: finish<Game>Session() → gameManager.endGame()
+       └─ (gameLogic.js:3404) app.updateProgress(%, getProgressUpdateContext())
+            └─ (app.js:1641) _trackCourseActivityFromGame
+                 └─ courseManager.completeGameActivity({topicId})  ──→ topic credited,
+                    coins/cert awarded, next topic/course unlocked  (NO extra bridge call)
+  └─ exit (RewardModal exit OR ExitConfirm): goExit()
+       ├─ getActiveCourseSession() !== null → clearCourseSession() + navigate('/courses')
+       └─ else navigate('/home')
+```
+
+> **Invariants:** never route through legacy `performGameSwitch` (it clears the context on a
+> game-type mismatch, gameLogic.js:1733); clear the context ONLY on user-triggered exit, never
+> at finish (endGame is async + reads context late → early clear races the credit). The
+> CourseManager global is `window.courseManager`/`window.app.courseManager` — `window.appManager`
+> does not exist (its accidental use left CoursesPage rendering empty).
+
 ## Critical File Locations
 
 | Function | File | Line |

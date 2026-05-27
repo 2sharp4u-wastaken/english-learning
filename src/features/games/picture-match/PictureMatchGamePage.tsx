@@ -6,6 +6,7 @@ import { AnswerGrid } from '@/features/games/shared/AnswerGrid'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
+import { getActiveCourseSession, clearCourseSession } from '@/bridge/courseSession'
 import { PictureMatchLearnFirst } from './components/PictureMatchLearnFirst'
 import {
   abortPictureMatchSession,
@@ -298,14 +299,26 @@ export function PictureMatchGamePage() {
 
   const requestExit = useCallback(() => setExitOpen(true), [])
 
+  // Route back to /courses (clearing the legacy course context) when launched from the
+  // Courses page; otherwise home. Read at call time to avoid a stale closure.
+  const goExit = useCallback(() => {
+    const cs = getActiveCourseSession()
+    if (cs) {
+      clearCourseSession()
+      navigate(cs.returnTo)
+    } else {
+      navigate('/home')
+    }
+  }, [navigate])
+
   const confirmExit = useCallback(() => {
     setExitOpen(false)
     if (isActiveRef.current) {
       abortPictureMatchSession()
       isActiveRef.current = false
     }
-    navigate('/home')
-  }, [navigate])
+    goExit()
+  }, [goExit])
 
   const cancelExit = useCallback(() => setExitOpen(false), [])
 
@@ -436,7 +449,7 @@ export function PictureMatchGamePage() {
         total={total}
         correct={correct}
         onPlayAgain={() => start({ fresh: true })}
-        onExit={() => navigate('/home')}
+        onExit={goExit}
       />
     </>
   )

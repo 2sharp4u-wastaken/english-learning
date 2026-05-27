@@ -209,10 +209,103 @@ test.describe('Slice 1.4: Courses', () => {
     await gotoHash(page, '/courses');
 
     expect(await hasText(page, 'קורסים')).toBe(true);
+    // Assert a real course card renders — guards against the manager-getter regression
+    // that left the page on its empty state (the 'קורסים' text alone is in that copy too).
+    await expect(page.locator('[data-testid="course-card-header"]').first()).toBeVisible();
     await page.screenshot({ path: 'test-results/courses.png', fullPage: true });
 
     const critical = filterCritical(errors);
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+});
+
+// ─── Slice C1: Launchable Courses ─────────────────────────────────────────────
+
+test.describe('Slice C1: Launchable Courses', () => {
+  /** Unlock the first course (auto-unlocks its first topic) and return its info. */
+  async function unlockFirstTopic(page) {
+    return await page.evaluate(() => {
+      const cm = window.appManager?.courseManager || window.courseManager;
+      const course = cm.getAllCourses()[0];
+      cm.unlockCourse(course.id);
+      const topic = course.units[0].topics[0];
+      return {
+        courseId: course.id,
+        topicId: topic.id,
+        activities: topic.activities || [],
+        words: topic.words || [],
+      };
+    });
+  }
+
+  const LAUNCHABLE = ['vocabulary', 'listening', 'picture-match'];
+
+  async function launchFirstTopicActivity(page, info, activity) {
+    await gotoHash(page, '/courses');
+    await page.locator(`[data-testid="course-card-header"][data-course="${info.courseId}"]`).click();
+    await page
+      .locator(`[data-testid="topic-activity-launch"][data-topic="${info.topicId}"][data-activity="${activity}"]`)
+      .first()
+      .click();
+    await expect
+      .poll(() => page.evaluate(() => window.location.hash), { timeout: 4000 })
+      .toContain(`/game/${activity}`);
+    await page.waitForTimeout(800);
+  }
+
+  test('launching a topic activity scopes the game to topic words and skips the learn-first gate', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page); // deliberately ZERO learned words
+    const info = await unlockFirstTopic(page);
+    const activity = LAUNCHABLE.find((a) => info.activities.includes(a));
+    expect(activity, `first topic should expose a launchable activity; got ${JSON.stringify(info.activities)}`).toBeTruthy();
+
+    await launchFirstTopicActivity(page, info, activity);
+
+    // Course context is set on the legacy gameManager.
+    const ctx = await page.evaluate(() => ({
+      id: window.gameManager?.currentTopicId,
+      act: window.gameManager?.currentTopicActivity,
+    }));
+    expect(ctx.id).toBe(info.topicId);
+    expect(ctx.act).toBe(activity);
+
+    // The game is live (shell rendered) even though no words are learned — the
+    // learn-first gate is skipped in course mode.
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+
+    // Scoping: every question word is one of the topic's words, and there is at
+    // least one (an empty pool would have returned the learn-first gate).
+    const scopedOk = await page.evaluate((topicWords) => {
+      const set = new Set(topicWords.map((w) => String(w).toLowerCase()));
+      const qs = window.gameManager?.shuffledQuestions || [];
+      return qs.length > 0 && qs.every((q) => set.has(String(q.word).toLowerCase()));
+    }, info.words);
+    expect(scopedOk).toBe(true);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('exiting a course game clears the course context and returns to /courses', async ({ page }) => {
+    await seedUser(page);
+    const info = await unlockFirstTopic(page);
+    const activity = LAUNCHABLE.find((a) => info.activities.includes(a));
+    expect(activity).toBeTruthy();
+
+    await launchFirstTopicActivity(page, info, activity);
+
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toBeVisible();
+    await page.locator('[data-testid="exit-dialog-confirm"]').click();
+
+    await expect
+      .poll(() => page.evaluate(() => window.location.hash), { timeout: 4000 })
+      .toContain('/courses');
+
+    // Context cleared so a later free-play session is not wrongly scoped.
+    const cleared = await page.evaluate(() => window.gameManager?.currentTopicId);
+    expect(cleared).toBeFalsy();
   });
 });
 

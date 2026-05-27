@@ -1725,7 +1725,41 @@ A cross-cutting play-test pass (no new games). WHY each change:
 
 ## Planned feature slices (backlog)
 
-### Slice C1: Launchable Courses page — PLANNED (spec ready 2026-05-27)
+### Slice C1: Launchable Courses page — SHIPPED (3-game MVP, 2026-05-27)
+
+**Status: SHIPPED.** Vocabulary, Listening, Picture-Match launch from `/courses`, scope to
+the topic's words, credit the topic on finish, and return to `/courses`. Covered by two
+Playwright tests (`react-routes.spec.js` → "Slice C1: Launchable Courses"). What actually
+landed vs. the spec below:
+
+- **Prereq bug fixed:** `bridge/courses.ts` resolved its manager via `window.appManager`,
+  which **does not exist** — the real globals are `window.courseManager` /
+  `window.app.courseManager`. So `getAllCourses()` always returned `[]` and the React
+  Courses page silently rendered its empty state. Both `courses.ts` and `courseSession.ts`
+  now resolve `window.courseManager ?? window.app?.courseManager`. The old Slice 1.4 test
+  missed this because it only asserts the word "קורסים", present in the empty-state copy too.
+- **Crediting is automatic** — no new finish bridge call. React finish → `endGame` →
+  (`gameLogic.js:3404`) `app.updateProgress(…, getProgressUpdateContext())` →
+  (`app.js:1641`) `_trackCourseActivityFromGame` → `courseManager.completeGameActivity({topicId})`.
+  `getProgressUpdateContext` reads `currentTopicId`/`currentTopicActivity`, so a set context
+  at finish is sufficient.
+- **MVP = 3 games**, NOT 4. `true-or-not` builds its pool from learned words via
+  `legacy.buildQuestions` (not `getScopedQuestionPool`) and its `learnedPool.length >= 4 ?
+  learnedPool : allWords` fallback silently un-scopes a topic with <4 learned words —
+  deferred as a fast-follow needing a manual topic-word filter before `buildQuestions`.
+- **Two invariants** baked into the bridge + pages (see `project_launchable_courses_c1`
+  memory): (1) never route through legacy `performGameSwitch` — `gameLogic.js:1733` clears
+  the course context on a game-type mismatch; set context directly. (2) Clear the context
+  only on USER-triggered exit (RewardModal exit / abort), never synchronously at finish —
+  `endGame` is async and reads the context late, so an early clear would race the credit.
+  `abort<Game>Session` does NOT clear course context, so the abort path clears it explicitly.
+- **Course mode** in the 3 bridges (`isCourseMode(gameType)` = `currentTopicId` set AND
+  `currentTopicActivity === gameType`) skips both the mid-game resume and the learned-word
+  filter (topic words usually aren't learned yet — that's the point).
+
+**Original spec (for reference):**
+
+#### Slice C1 spec (planned 2026-05-27)
 
 **Goal:** make the Courses page actionable. Today `CoursesPage.tsx` is a read-only
 progress dashboard (Course → Unit → Topic → Activities, mastery %, lock state). Make
