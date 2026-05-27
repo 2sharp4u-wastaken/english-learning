@@ -34,7 +34,7 @@ export interface MemoryLevelConfig {
 export const MEMORY_LEVELS: MemoryLevelConfig[] = [
   { level: 1, pairs: 6, columns: 4, speedThresholdSeconds: 45 },
   { level: 2, pairs: 9, columns: 6, speedThresholdSeconds: 75 },
-  { level: 3, pairs: 12, columns: 8, speedThresholdSeconds: 110 },
+  { level: 3, pairs: 12, columns: 6, speedThresholdSeconds: 110 }, // 24 cards → 6×4 (bigger than width-bound 8×3)
 ]
 
 /** Minimum introduced words to play level 1 (needs 6 pairs). */

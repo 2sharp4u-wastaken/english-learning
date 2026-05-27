@@ -25,7 +25,7 @@ import {
   type MemoryWord,
 } from '@/bridge/memory'
 
-type Phase = 'playing' | 'level-summary' | 'finished'
+type Phase = 'playing' | 'finished'
 
 const FLIP_BACK_MS = 1000
 const MATCH_CHECK_MS = 700
@@ -45,6 +45,9 @@ export function MemoryGamePage() {
   const [cumulativeScore, setCumulativeScore] = useState(0)
   const [phase, setPhase] = useState<Phase>('playing')
   const [metrics, setMetrics] = useState<MemoryLevelMetrics | null>(null)
+  // Level finished but NOT auto-advanced: board stays up (cards tappable to hear
+  // the word) until the child taps "next level" / "finish game".
+  const [levelComplete, setLevelComplete] = useState(false)
   const [bests, setBests] = useState<Record<string, MemoryPersonalBest>>({})
   const [popup, setPopup] = useState<{ id: number; text: string } | null>(null)
   const [exitOpen, setExitOpen] = useState(false)
@@ -91,6 +94,7 @@ export function MemoryGamePage() {
     startTimeRef.current = Date.now()
     setPopup(null)
     setMetrics(null)
+    setLevelComplete(false)
     setPhase('playing')
   }, [clearTimers])
 
@@ -161,7 +165,10 @@ export function MemoryGamePage() {
 
   // ── Level / game completion ───────────────────────────────────────────────────
 
-  const finishLevel = useCallback(() => {
+  // Level cleared: record metrics + bank score, but DON'T auto-advance. Stay on
+  // the board (cards stay flipped, tappable to replay each word) and let the
+  // child tap "next level" / "finish game" when ready.
+  const completeLevel = useCallback(() => {
     const timeSeconds = Math.max(0, Math.floor((Date.now() - startTimeRef.current) / 1000))
     const result = finishMemoryLevel(
       levelIndex,
@@ -173,20 +180,17 @@ export function MemoryGamePage() {
     setCumulativeScore((c) => c + levelScoreRef.current)
     setMetrics(result)
     setBests(loadMemoryBests())
-
-    const isLast = levelIndex >= MEMORY_LEVELS.length - 1
-    if (isLast) {
-      if (isActiveRef.current) {
-        finishMemoryGame()
-        isActiveRef.current = false
-      }
-      setPhase('finished')
-    } else {
-      setPhase('level-summary')
-    }
-
+    setLevelComplete(true)
     if (result.stars >= 3 && getShowConfetti()) triggerConfetti()
   }, [levelIndex])
+
+  const finishGame = useCallback(() => {
+    if (isActiveRef.current) {
+      finishMemoryGame()
+      isActiveRef.current = false
+    }
+    setPhase('finished')
+  }, [])
 
   // ── Pair resolution ───────────────────────────────────────────────────────────
 
@@ -236,12 +240,13 @@ export function MemoryGamePage() {
         )
 
         if (matchedRef.current.size >= cards.length) {
-          timersRef.current.push(window.setTimeout(finishLevel, LEVEL_FINISH_MS))
+          timersRef.current.push(window.setTimeout(completeLevel, LEVEL_FINISH_MS))
         }
       } else {
         comboRef.current = 0
         recordMemoryMismatch(c1, c2)
-        playAnswerSfx('incorrect')
+        // No "wrong" sound on a mismatch — a non-match in memory isn't a mistake
+        // to scold; the cards just flip back.
         timersRef.current.push(
           window.setTimeout(() => {
             setFlipped([])
@@ -250,7 +255,7 @@ export function MemoryGamePage() {
         )
       }
     },
-    [cards, finishLevel, playAnswerSfx, playMatchedPairAudio],
+    [cards, completeLevel, playAnswerSfx, playMatchedPairAudio],
   )
 
   const handleCardClick = useCallback(
@@ -375,7 +380,7 @@ export function MemoryGamePage() {
     )
   }
 
-  if (phase === 'level-summary' || phase === 'finished') {
+  if (phase === 'finished') {
     return (
       <>
         <GameScreenShell header={headerProps} progress={progressProps}>
@@ -398,9 +403,22 @@ export function MemoryGamePage() {
     )
   }
 
+  const isLastLevel = levelIndex >= MEMORY_LEVELS.length - 1
+  const completionFooter =
+    levelComplete ? (
+      <button
+        type="button"
+        onClick={isLastLevel ? finishGame : handleNextLevel}
+        data-testid="memory-advance"
+        className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
+      >
+        {isLastLevel ? '🏁 סיים משחק' : '⏭️ רמה הבאה'}
+      </button>
+    ) : null
+
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps}>
+      <GameScreenShell header={headerProps} progress={progressProps} footer={completionFooter}>
         <div className="relative flex flex-1 flex-col gap-3">
           <div
             dir="rtl"
@@ -419,6 +437,23 @@ export function MemoryGamePage() {
               מהלכים <strong className="text-white">{moves}</strong>
             </span>
           </div>
+
+          {levelComplete && metrics ? (
+            <div
+              dir="rtl"
+              data-testid="memory-level-complete"
+              className="mx-auto flex flex-col items-center gap-0.5 rounded-2xl border border-[color:var(--mint-400)]/30 bg-[color:var(--mint-400)]/10 px-5 py-2 text-center"
+            >
+              <div className="text-xl" aria-hidden>
+                {'⭐'.repeat(metrics.stars)}
+                {'☆'.repeat(Math.max(0, 3 - metrics.stars))}
+              </div>
+              <p className="text-sm font-bold text-white">כל הזוגות נמצאו! 🎉</p>
+              <p className="text-xs text-[color:var(--slate-300)]">
+                לחצו על קלף כדי לשמוע שוב — וכשמוכנים, המשיכו
+              </p>
+            </div>
+          ) : null}
 
           <MemoryBoard
             cards={cards}

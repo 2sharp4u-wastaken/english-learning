@@ -33,14 +33,23 @@ export function MemoryBoard({
   // Each track is capped to the width-fit so it never overflows on narrow
   // screens. `--mem-card` (the resolved track size) is exposed so the card can
   // scale its picture/word to match.
-  const AREA_REM2 = 486
+  // Doubled card size (linear ~2× → area ×4 vs the original 486).
+  const AREA_REM2 = 1944
   const side = Math.sqrt(AREA_REM2 / Math.max(cards.length, 1))
   const GAP_REM = 0.625 // matches sm:gap-2.5; safe upper bound for gap-2 too
-  // Track = area-based card size, capped to the width-fit so it never overflows.
-  // NOTE: kept inline to the grid only — the `100%` here means container WIDTH;
-  // the card scales its picture/word with container-query units instead.
-  const track = (cols: number) =>
-    `min(${side.toFixed(2)}rem, calc((100% - ${((cols - 1) * GAP_REM).toFixed(2)}rem) / ${cols}))`
+  // Reserve for the game chrome (header + title + progress + stats pill + footer)
+  // so the board always fits one screen — no scroll on any level/device. Cards
+  // shrink to fit when a level has more rows, rather than overflowing.
+  const CHROME_REM = 19
+  // Track = min(area-based size, width-fit, height-fit). NOTE: `100%` is the grid
+  // container WIDTH and `100dvh` the viewport height — both are length caps on
+  // different axes. The card scales its picture/word with container-query units.
+  const track = (cols: number) => {
+    const rows = Math.ceil(cards.length / cols)
+    const widthCap = `calc((100% - ${((cols - 1) * GAP_REM).toFixed(2)}rem) / ${cols})`
+    const heightCap = `calc((100dvh - ${CHROME_REM}rem) / ${rows})`
+    return `min(${side.toFixed(2)}rem, ${widthCap}, ${heightCap})`
+  }
 
   return (
     <div
