@@ -53,6 +53,7 @@ export function MemoryCard({
       aria-label={faceUp || matched ? display : 'קלף הפוך'}
       disabled={disabled && !matched}
       onClick={() => onClick(index)}
+      style={{ containerType: 'inline-size' }}
       className={cn(
         'group relative aspect-square select-none rounded-xl outline-none',
         '[perspective:800px] focus-visible:ring-2 focus-visible:ring-[color:var(--blue-400)]',
@@ -85,17 +86,17 @@ export function MemoryCard({
           }
         >
           {card.word.visual ? (
-            <span className="text-2xl leading-none sm:text-3xl" aria-hidden>
+            <span className="leading-none" style={{ fontSize: '44cqw' }} aria-hidden>
               {card.word.visual}
             </span>
           ) : null}
           <span
             dir={isWord ? 'ltr' : 'rtl'}
             lang={isWord ? 'en' : 'he'}
+            style={{ fontSize: `clamp(0.5rem, ${display.length > 9 ? 13 : 16}cqw, 1rem)` }}
             className={cn(
               'font-bold leading-tight',
               matched ? 'text-white' : isWord ? 'text-[color:var(--mint-200)]' : 'text-white',
-              display.length > 9 ? 'text-xs sm:text-sm' : 'text-sm sm:text-base',
             )}
           >
             {display}

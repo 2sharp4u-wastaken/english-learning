@@ -22,7 +22,6 @@ import { WhoSaysItView } from './components/WhoSaysItView'
 import { CompleteSoundView } from './components/CompleteSoundView'
 import { SoundsRightView } from './components/SoundsRightView'
 import { MatchPictureView } from './components/MatchPictureView'
-import { TranslationFlash } from './components/TranslationFlash'
 import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
@@ -43,7 +42,6 @@ export function GrammarBeginnerGamePage() {
   const [phase, setPhase] = useState<Phase>('idle')
   const [selected, setSelected] = useState<string | null>(null)
   const [feedback, setFeedback] = useState<FeedbackState | null>(null)
-  const [translationVisible, setTranslationVisible] = useState(false)
   const [exitOpen, setExitOpen] = useState(false)
 
   const isActiveRef = useRef(false)
@@ -62,7 +60,6 @@ export function GrammarBeginnerGamePage() {
     const result = beginGrammarBeginnerSession(opts ?? {})
     setSession(result)
     setFeedback(null)
-    setTranslationVisible(false)
     setSelected(null)
     setIndex(result.resumeIndex)
     setScore(result.resumeScore)
@@ -120,7 +117,6 @@ export function GrammarBeginnerGamePage() {
     if (!current || phase !== 'awaiting') return
     setSelected(null)
     setFeedback(null)
-    setTranslationVisible(false)
     clearAutoPlayTimer()
     autoPlayTimerRef.current = window.setTimeout(() => autoPlay(current), 300)
     return () => clearAutoPlayTimer()
@@ -171,8 +167,8 @@ export function GrammarBeginnerGamePage() {
         if (getShowConfetti()) triggerConfetti()
       }
 
-      // Flash translation + play correct sentence (legacy: both paths do this).
-      setTranslationVisible(true)
+      // Play the correct sentence (the Hebrew reveal is rendered inside each
+      // view's card, gated on `locked`).
       const correctSentence =
         current.type === 'complete-sound'
           ? current.fullSentence
@@ -186,7 +182,6 @@ export function GrammarBeginnerGamePage() {
     clearAutoPlayTimer()
     cancelSpeech()
     setFeedback(null)
-    setTranslationVisible(false)
     setSelected(null)
     setIndex((prev) => {
       const next = prev + 1
@@ -317,10 +312,6 @@ export function GrammarBeginnerGamePage() {
                 onSelect={handleSelect}
               />
             )}
-            <TranslationFlash
-              hebrew={current.hebrewSentence}
-              visible={translationVisible}
-            />
           </div>
         ) : null}
       </GameScreenShell>

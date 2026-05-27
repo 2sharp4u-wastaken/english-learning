@@ -14,6 +14,8 @@ export interface StoryHighlight {
 
 export interface StoryQuizQuestion {
   question: string
+  /** English phrasing of the question, spoken aloud as the child reads the Hebrew. */
+  questionEn?: string
   options: string[]
   correctIndex: number
 }

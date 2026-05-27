@@ -6,12 +6,12 @@ import { useUserProgress } from '@/hooks/useUserProgress'
 import { cn } from '@/lib/cn'
 import { NikudToggle } from './NikudToggle'
 
+// פרופיל + הגדרות intentionally live only in the user-avatar dropdown (below),
+// so they're not duplicated here in the top bar.
 const navItems = [
   { to: '/home', label: 'בית', icon: Home },
   { to: '/courses', label: 'קורסים', icon: BookOpen },
   { to: '/stats', label: 'סטטיסטיקות', icon: BarChart3 },
-  { to: '/profile', label: 'פרופיל', icon: User },
-  { to: '/settings', label: 'הגדרות', icon: Settings },
 ] as const
 
 export function TopNav() {
@@ -52,8 +52,8 @@ export function TopNav() {
           לומדים אנגלית
         </Link>
 
-        {/* Center: nav links */}
-        <nav className="flex items-center gap-1">
+        {/* Center: nav links — spread across the available width */}
+        <nav className="mx-4 flex flex-1 items-center justify-evenly">
           {navItems.map(({ to, label, icon: Icon }) => {
             const isActive = pathname === to
             return (

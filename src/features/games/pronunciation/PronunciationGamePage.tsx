@@ -41,8 +41,6 @@ interface ComparisonState {
   recordingUrl: string | null
 }
 
-const ADVANCE_DELAY_MS = 1500
-
 function PromptPicture({ question }: { question: PronunciationQuestion }) {
   const overrides =
     ((window as any).wordImageOverrides as Record<string, string> | undefined) ?? {}
@@ -375,11 +373,8 @@ export function PronunciationGamePage() {
           /* ignore */
         }
       })()
-      if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
-      advanceTimer.current = window.setTimeout(() => {
-        advanceTimer.current = null
-        advance()
-      }, ADVANCE_DELAY_MS)
+      // No auto-advance on correct: leave the result up so the child can
+      // replay the word / hear themselves and tap "next" when ready.
     } else {
       ;(async () => {
         try {
@@ -392,7 +387,6 @@ export function PronunciationGamePage() {
       })()
     }
   }, [
-    advance,
     current,
     phase,
     recognitionSupported,
@@ -484,7 +478,7 @@ export function PronunciationGamePage() {
     : !recognitionSupported
 
   const footer =
-    phase === 'answered' && feedback?.variant === 'incorrect' ? (
+    phase === 'answered' ? (
       <button
         type="button"
         onClick={handleNextAfterIncorrect}
@@ -511,6 +505,7 @@ export function PronunciationGamePage() {
               audioIconOnly
             />
 
+            {phase === 'answered' && comparison ? null : (
             <div className="flex flex-col items-center gap-3">
               <button
                 type="button"
@@ -556,11 +551,12 @@ export function PronunciationGamePage() {
                 </p>
               ) : null}
             </div>
+            )}
 
-            {comparison ? (
+            {phase === 'answered' && comparison ? (
               <section
                 data-testid="pronunciation-comparison"
-                className="mx-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-white/10 bg-[color:var(--ink-900)]/70 p-4 backdrop-blur"
+                className="mx-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-white/10 bg-[color:var(--ink-900)] p-4 shadow-lg"
               >
                 <div className="flex items-center justify-between text-sm text-[color:var(--slate-300)]">
                   <span>{showNikud ? 'צָרִיךְ לוֹמַר' : 'צריך לומר'}</span>

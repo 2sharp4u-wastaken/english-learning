@@ -1650,6 +1650,44 @@ none of which apply to a digraph. **New dedicated game, not an ABC extension.**
   `HomePage.tsx` GAME_ORDER. No `data/_loader.js` entry needed (bridge imports the
   generator directly, like ABC — not the blank-fill `window.gameData` path).
 
+### UX polish pass (2026-05-27)
+
+A cross-cutting play-test pass (no new games). WHY each change:
+
+- **One-screen games (no silent scroll).** `GameScreenShell` gained `fitViewport`
+  (now **default `true`**): the shell is `100dvh`, header/title/progress/footer are
+  pinned, and only `<main>` scrolls if content overflows — so the "next" button is
+  never pushed below the fold. Any game can opt out with `fitViewport={false}`.
+- **nikud number-drop fix.** `utils/nikudDOM.js` Case D overwrote a parent's whole
+  `textContent` when it had no child *elements*, wiping React's adjacent text nodes
+  (`סיפור {n} מתוך {m}` → "ספור"). Now it only does so for a lone text node; else it
+  wraps. See memory `project_nikud_dom_clobbers_react_numbers`.
+- **Mic games (Pronunciation + Practice).** Removed auto-advance on a *correct*
+  answer (regression) — the result/replay stays up and "next" shows for both
+  outcomes. The results card now **replaces** the mic button when answered (opaque),
+  killing the stacked-scroll.
+- **Story Time.** Bigger Hebrew title/subtext; a "▶️ הקרא את כל הסיפור" button that
+  reads every sentence and highlights the active *sentence* (not its play button);
+  English question audio — added `questionEn` to every `data/stories.js` template
+  (slot-resolved in `buildStoryFromTemplate`, `StoryQuizQuestion.questionEn`), spoken
+  when each quiz question appears.
+- **Grammar games.** Grammar-beginner translation moved *inside* the prompt card
+  (was a floating pill). Standalone Grammar: the Hebrew sentence blank + option
+  glosses now stay hidden until answered (they previously gave the answer away).
+- **Memory.** Hebrew-only audio on a match; **equal total card area across levels**
+  (`side = √(AREA/cardCount)`, capped to width); picture/word scale with `cqw`
+  (the card is a container-query context) — reusing the grid-track `var()` for
+  `font-size` was the regression that hid the pictures (`100%` means width vs.
+  font-size depending on context).
+- **Home.** Reactive owl mascot (framer-motion idle float + tap cheer + sparkle +
+  spoken encouragement); tappable greeting (speaks "שלום {name}") and stat pills
+  (distinct SFX via `playEffect` in `bridge/feedback`); "בוא נשחק" now **rotates**
+  among unlocked review games (`getContinueTarget`, `REVIEW_ROTATION`) instead of
+  always Listening. Top-bar nav links spread full-width; profile/settings live only
+  in the avatar dropdown.
+- **Confetti hiccup.** `warmUpConfetti()` (bridge/feedback, called once from
+  `App.tsx`) pre-inits canvas-confetti so the first celebration doesn't stutter.
+
 ## Phase 4: Cleanup and Consolidation
 
 Objective: remove dead legacy code and shrink maintenance burden.

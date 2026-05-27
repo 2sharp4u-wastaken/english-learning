@@ -276,6 +276,9 @@ export function GrammarGamePage() {
   // Map shuffled options back to their original index so we can pull the
   // matching Hebrew gloss from `hebrewOptions` (which is keyed to the
   // original option order, not the shuffled one).
+  // Reveal the Hebrew gloss under each option only AFTER answering. Before
+  // that it leaks the answer (the gloss matches the Hebrew prompt's subject).
+  const revealGlosses = phase === 'answered'
   const options = shuffled.order.map((opt, i) => {
     const originalIndex = current ? current.options.indexOf(opt) : -1
     const hebrewGloss =
@@ -285,7 +288,7 @@ export function GrammarGamePage() {
     return {
       key: `${index}-${i}-${opt}`,
       label: renderWord(opt),
-      sublabel: hebrewGloss ? renderHebrew(hebrewGloss) : undefined,
+      sublabel: revealGlosses && hebrewGloss ? renderHebrew(hebrewGloss) : undefined,
     }
   })
 
@@ -293,11 +296,17 @@ export function GrammarGamePage() {
   const correctAnswer = current?.options[current.correct] ?? ''
   const correctHebrewGloss =
     current?.hebrewOptions?.[current.correct] ?? undefined
-  // Fill the Hebrew sentence blank with the gloss of the correct answer so
-  // kids see the full meaning (e.g. "אנחנו לא יכול לשחק בחוץ בגשם").
+  // Keep the Hebrew sentence blank EMPTY until answered — filling it with the
+  // correct gloss up front gave the answer away. After answering, fill it in
+  // so kids see the full meaning (e.g. "אנחנו לא יכול לשחק בחוץ בגשם").
   const hebrewSentenceDisplay = current?.hebrewSentence
-    ? correctHebrewGloss && current.hebrewSentence.includes('___')
-      ? renderHebrew(current.hebrewSentence.replace('___', correctHebrewGloss))
+    ? current.hebrewSentence.includes('___')
+      ? renderHebrew(
+          current.hebrewSentence.replace(
+            '___',
+            phase === 'answered' && correctHebrewGloss ? correctHebrewGloss : '______',
+          ),
+        )
       : renderHebrew(current.hebrewSentence)
     : ''
   const filled = phase === 'answered' && selectedIndex != null

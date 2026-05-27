@@ -35,6 +35,30 @@ export function getShowConfetti(): boolean {
 interface AudioEffects {
   playCorrect(): Promise<void>
   playWrong(): Promise<void>
+  playLevelUp(): Promise<void>
+  playVictory(): Promise<void>
+  playClick(): Promise<void>
+}
+
+/** Named UI sound effects (legacy `window.audioEffects`), e.g. for tappable
+ *  home-screen chips. No-op if the legacy effects manager isn't loaded. */
+export type SoundEffect = 'correct' | 'wrong' | 'levelUp' | 'victory' | 'click'
+
+export function playEffect(effect: SoundEffect): void {
+  const fx = (window as any).audioEffects as AudioEffects | undefined
+  if (!fx) return
+  const map: Record<SoundEffect, (() => Promise<void>) | undefined> = {
+    correct: fx.playCorrect,
+    wrong: fx.playWrong,
+    levelUp: fx.playLevelUp,
+    victory: fx.playVictory,
+    click: fx.playClick,
+  }
+  try {
+    map[effect]?.call(fx)?.catch?.(() => {})
+  } catch {
+    /* swallow — audio is a nice-to-have */
+  }
 }
 
 /**
@@ -66,5 +90,24 @@ export function triggerConfetti(): void {
     })
   } catch {
     /* swallow — visual nice-to-have */
+  }
+}
+
+/**
+ * Pre-initialise canvas-confetti once. Its first invocation lazily creates a
+ * full-screen canvas (and a worker), which is the visible "hiccup" on the first
+ * celebration of a page load. Firing one invisible, instantly-gone particle on
+ * app startup pays that cost up front so every real burst animates smoothly.
+ */
+let warmedUp = false
+export function warmUpConfetti(): void {
+  if (warmedUp) return
+  const confetti = (window as any).confetti as ConfettiFn | undefined
+  if (typeof confetti !== 'function') return
+  warmedUp = true
+  try {
+    confetti({ particleCount: 1, startVelocity: 0, ticks: 1, origin: { x: -1, y: -1 } })
+  } catch {
+    /* swallow */
   }
 }

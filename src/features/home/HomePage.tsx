@@ -2,7 +2,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Lock, Play } from 'lucide-react'
 import { getContinueTarget, getGameCatalog, takePendingUnlocks } from '@/bridge/games'
+import { playEffect, type SoundEffect } from '@/bridge/feedback'
+import { speakHebrew } from '@/bridge/audio'
 import { NewlyUnlockedModal } from './components/NewlyUnlockedModal'
+import { HomeMascot } from './components/HomeMascot'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useGameUnlocks } from '@/hooks/useGameUnlocks'
 import { useUserProgress } from '@/hooks/useUserProgress'
@@ -112,15 +115,21 @@ export function HomePage() {
       >
         <div className="relative bg-[radial-gradient(circle_at_top_left,rgba(99,230,198,0.22),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.18),transparent_40%)] p-6 sm:p-8">
           <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:text-right">
-            <div
-              className="flex size-20 shrink-0 items-center justify-center rounded-full bg-white/10 text-5xl shadow-glow sm:size-24 sm:text-6xl"
-              aria-hidden
-            >
-              🦉
-            </div>
+            <HomeMascot streakDays={summary.streakDays} wordsLearned={summary.wordsLearned} />
             <div className="space-y-1.5">
               <h1 className="font-display text-3xl font-bold text-text sm:text-4xl">
-                שלום {greetingName}! 👋
+                <button
+                  type="button"
+                  onClick={() => void speakHebrew(`שלום ${greetingName}`).catch(() => {})}
+                  data-testid="home-greeting"
+                  aria-label={`השמע שלום ${greetingName}`}
+                  className="rounded-lg transition-transform hover:scale-[1.03] active:scale-95"
+                >
+                  שלום {greetingName}!{' '}
+                  <span className="inline-block transition-transform hover:rotate-12" aria-hidden>
+                    👋
+                  </span>
+                </button>
               </h1>
               <p className="text-base text-muted sm:text-lg">
                 מוכנים לשחק וללמוד אנגלית? בואו נמשיך מאיפה שעצרנו.
@@ -130,9 +139,9 @@ export function HomePage() {
 
           {/* Glanceable progress chips */}
           <div className="mt-5 flex flex-wrap justify-center gap-2 sm:justify-start">
-            <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" />
-            <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" />
-            <StatChip emoji="🪙" value={summary.coins} label="מטבעות" />
+            <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" effect="levelUp" />
+            <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" effect="correct" />
+            <StatChip emoji="🪙" value={summary.coins} label="מטבעות" effect="victory" />
           </div>
 
           {/* One big primary action */}
@@ -225,14 +234,21 @@ interface StatChipProps {
   emoji: string
   value: number | string
   label: string
+  /** Sound effect played when the chip is tapped. */
+  effect: SoundEffect
 }
 
-function StatChip({ emoji, value, label }: StatChipProps) {
+function StatChip({ emoji, value, label, effect }: StatChipProps) {
   return (
-    <div className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5">
+    <button
+      type="button"
+      onClick={() => playEffect(effect)}
+      aria-label={`${label}: ${value}`}
+      className="flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3.5 py-1.5 transition-transform hover:scale-105 active:scale-95"
+    >
       <span className="text-lg" aria-hidden>{emoji}</span>
       <span className="font-display text-lg font-bold text-text">{value}</span>
       <span className="text-xs text-muted">{label}</span>
-    </div>
+    </button>
   )
 }

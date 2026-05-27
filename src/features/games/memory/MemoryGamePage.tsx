@@ -4,7 +4,7 @@ import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
 import { MemoryBoard } from './components/MemoryBoard'
 import { MemoryLevelSummary } from './components/MemoryLevelSummary'
-import { cancelSpeech, hardResetSpeech, speak, speakHebrew, speakWord } from '@/bridge/audio'
+import { cancelSpeech, hardResetSpeech, speakHebrew, speakWord } from '@/bridge/audio'
 import { getShowConfetti, playAnswerSfx, triggerConfetti } from '@/bridge/feedback'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import {
@@ -145,7 +145,7 @@ export function MemoryGamePage() {
     void speakWord(word.word.toLowerCase(), 'memory', { allowOverlap: true })
   }, [])
 
-  /** "<hebrew> is <english>" celebration after a match (parity with legacy). */
+  /** Hebrew-only celebration after a match (was "<hebrew> is <english>"). */
   const playMatchedPairAudio = useCallback((word: MemoryWord) => {
     const gen = speechGenRef.current
     void (async () => {
@@ -153,10 +153,6 @@ export function MemoryGamePage() {
         await new Promise((r) => setTimeout(r, 400))
         if (gen !== speechGenRef.current) return
         if (word.hebrew) await speakHebrew(word.hebrew)
-        if (gen !== speechGenRef.current) return
-        await speak('is')
-        if (gen !== speechGenRef.current) return
-        await speak(word.word.toLowerCase())
       } catch {
         /* ignore */
       }

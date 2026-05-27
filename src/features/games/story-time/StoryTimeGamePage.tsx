@@ -104,6 +104,15 @@ export function StoryTimeGamePage() {
   const currentStory: Story | null = stories[storyIndex] ?? null
   const currentQuestion = currentStory?.questions[quizIndex] ?? null
 
+  // Speak the English question aloud as the child reads the Hebrew one.
+  useEffect(() => {
+    if (phase !== 'quiz' || !currentQuestion?.questionEn) return
+    const id = window.setTimeout(() => {
+      void speak(currentQuestion.questionEn as string).catch(() => {})
+    }, 300)
+    return () => window.clearTimeout(id)
+  }, [phase, currentQuestion])
+
   const handleReadyForQuiz = useCallback(() => {
     cancelSpeech()
     setPhase('quiz')

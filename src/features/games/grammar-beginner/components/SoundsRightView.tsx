@@ -2,6 +2,7 @@ import { Volume2, Check } from 'lucide-react'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import { cn } from '@/lib/cn'
 import type { SentenceOption, SoundsRightQuestion } from '@/bridge/grammar-beginner'
+import { TranslationFlash } from './TranslationFlash'
 
 interface Props {
   question: SoundsRightQuestion
@@ -32,19 +33,22 @@ export function SoundsRightView({
         מה נשמע נכון?
       </p>
 
-      <div className="mx-auto flex w-full max-w-lg items-center justify-around gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-5xl">{question.subjectImage}</span>
-          <span dir="rtl" className="text-sm font-bold text-white">
-            {subjHe}
-          </span>
+      <div className="mx-auto flex w-full max-w-lg flex-col rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
+        <div className="flex items-center justify-around gap-2">
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-5xl">{question.subjectImage}</span>
+            <span dir="rtl" className="text-sm font-bold text-white">
+              {subjHe}
+            </span>
+          </div>
+          <div className="flex flex-col items-center gap-1">
+            <span className="text-5xl">{question.predicateImage}</span>
+            <span dir="rtl" className="text-sm font-bold text-white">
+              {predHe}
+            </span>
+          </div>
         </div>
-        <div className="flex flex-col items-center gap-1">
-          <span className="text-5xl">{question.predicateImage}</span>
-          <span dir="rtl" className="text-sm font-bold text-white">
-            {predHe}
-          </span>
-        </div>
+        <TranslationFlash hebrew={question.hebrewSentence} visible={locked} />
       </div>
 
       <div

@@ -1,7 +1,7 @@
-import { useCallback, useMemo, useState } from 'react'
-import { BookOpen, Volume2 } from 'lucide-react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { BookOpen, Pause, Play, Volume2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { speak, speakWord } from '@/bridge/audio'
+import { cancelSpeech, speak, speakWord } from '@/bridge/audio'
 import type { Story, StoryHighlight } from '@/bridge/story-time'
 
 export interface StoryReadPhaseProps {
@@ -28,6 +28,48 @@ export function StoryReadPhase({
   const [activeTooltip, setActiveTooltip] = useState<ActiveTooltip | null>(null)
   const [pulseKey, setPulseKey] = useState<string | null>(null)
   const [playingSentence, setPlayingSentence] = useState<number | null>(null)
+  const [narrating, setNarrating] = useState(false)
+  // Bumped to invalidate an in-flight narration loop (toggle off, single-tap, unmount).
+  const narrateGenRef = useRef(0)
+
+  // Stop any running narration when the read phase unmounts.
+  useEffect(() => () => { narrateGenRef.current++ }, [])
+
+  const stopNarration = useCallback(() => {
+    narrateGenRef.current++
+    cancelSpeech()
+    setNarrating(false)
+  }, [])
+
+  /** Read the whole story aloud, sentence by sentence, highlighting each. */
+  const playWholeStory = useCallback(() => {
+    if (narrating) {
+      stopNarration()
+      setPlayingSentence(null)
+      return
+    }
+    const gen = ++narrateGenRef.current
+    cancelSpeech()
+    setNarrating(true)
+    void (async () => {
+      try {
+        for (let i = 0; i < story.sentences.length; i++) {
+          if (gen !== narrateGenRef.current) return
+          setPlayingSentence(i)
+          await speak(story.sentences[i])
+          if (gen !== narrateGenRef.current) return
+          await new Promise((r) => window.setTimeout(r, 250))
+        }
+      } catch {
+        /* ignore */
+      } finally {
+        if (gen === narrateGenRef.current) {
+          setNarrating(false)
+          setPlayingSentence(null)
+        }
+      }
+    })()
+  }, [narrating, stopNarration, story.sentences])
 
   const highlightMap = useMemo(() => {
     const m = new Map<string, StoryHighlight>()
@@ -39,6 +81,7 @@ export function StoryReadPhase({
 
   const onHighlightTap = useCallback(
     (h: StoryHighlight, sentenceIdx: number, tokenIdx: number) => {
+      stopNarration()
       const key = `${sentenceIdx}:${tokenIdx}`
       tappedKeyRef.current = key
       setPulseKey(key)
@@ -53,38 +96,59 @@ export function StoryReadPhase({
       }, 1500)
       void speakWord(h.word.toLowerCase(), 'story-time').catch(() => {})
     },
-    [tappedKeyRef],
+    [stopNarration, tappedKeyRef],
   )
 
-  const onSpeakSentence = useCallback((sentence: string, idx: number) => {
-    setPlayingSentence(idx)
-    window.setTimeout(() => {
-      setPlayingSentence((current) => (current === idx ? null : current))
-    }, 1000)
-    void speak(sentence).catch(() => {})
-  }, [])
+  const onSpeakSentence = useCallback(
+    (sentence: string, idx: number) => {
+      stopNarration()
+      setPlayingSentence(idx)
+      window.setTimeout(() => {
+        setPlayingSentence((current) => (current === idx ? null : current))
+      }, 1000)
+      void speak(sentence).catch(() => {})
+    },
+    [stopNarration],
+  )
 
   return (
     <section
       data-testid="story-time-read"
       className="flex flex-1 flex-col gap-4 rounded-3xl border border-white/10 bg-[color:var(--ink-900)]/70 p-5 backdrop-blur sm:p-6"
     >
-      <header className="flex flex-col items-center gap-2 text-center">
+      <header className="flex flex-col items-center gap-3 text-center">
         <h2
           dir="rtl"
           data-testid="story-time-title"
-          className="flex items-center gap-2 text-2xl font-bold text-white sm:text-3xl"
+          className="flex items-center gap-3 text-4xl font-bold text-white sm:text-5xl"
         >
-          <BookOpen className="size-6 text-[color:var(--blue-400)]" aria-hidden />
+          <BookOpen className="size-9 text-[color:var(--blue-400)]" aria-hidden />
           {story.title}
         </h2>
-        <p dir="rtl" className="text-sm text-[color:var(--slate-300)]">
+        <p dir="rtl" className="text-lg text-[color:var(--slate-300)] sm:text-xl">
           סיפור {storyNumber} מתוך {storyCount}
         </p>
+
+        <button
+          type="button"
+          onClick={playWholeStory}
+          data-testid="story-time-play-all"
+          aria-pressed={narrating}
+          className={cn(
+            'inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-base font-bold shadow-md transition',
+            narrating
+              ? 'bg-[color:var(--amber-400)] text-[color:var(--ink-950)] hover:brightness-110'
+              : 'bg-gradient-to-r from-[color:var(--blue-400)] to-[color:var(--mint-400)] text-[color:var(--ink-950)] hover:brightness-110',
+          )}
+        >
+          {narrating ? <Pause className="size-5" aria-hidden /> : <Play className="size-5" aria-hidden />}
+          <span dir="rtl">{narrating ? 'עצור' : 'הקרא את כל הסיפור'}</span>
+        </button>
+
         <p
           dir="rtl"
           data-testid="story-time-hint"
-          className="text-sm text-[color:var(--amber-400)] sm:text-base"
+          className="text-base text-[color:var(--amber-400)] sm:text-lg"
         >
           👆 לחץ על מילים מודגשות כדי לשמוע אותן
         </p>
@@ -101,7 +165,12 @@ export function StoryReadPhase({
             <p
               key={sIdx}
               data-testid="story-sentence"
-              className="flex flex-wrap items-baseline gap-x-1"
+              data-active={playingSentence === sIdx ? 'true' : 'false'}
+              className={cn(
+                '-mx-2 flex flex-wrap items-baseline gap-x-1 rounded-lg px-2 py-1.5 transition-colors',
+                playingSentence === sIdx &&
+                  'bg-[color:var(--amber-400)]/20 ring-1 ring-[color:var(--amber-400)]/40',
+              )}
             >
               <button
                 type="button"
@@ -109,10 +178,7 @@ export function StoryReadPhase({
                 data-testid="story-sentence-play"
                 data-sentence-idx={sIdx}
                 aria-label="השמע משפט"
-                className={cn(
-                  'me-2 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[color:var(--blue-400)] to-[color:var(--mint-400)] text-[color:var(--ink-950)] shadow-sm transition hover:brightness-110',
-                  playingSentence === sIdx && 'animate-pulse',
-                )}
+                className="me-2 inline-flex size-8 shrink-0 items-center justify-center rounded-full bg-gradient-to-r from-[color:var(--blue-400)] to-[color:var(--mint-400)] text-[color:var(--ink-950)] shadow-sm transition hover:brightness-110"
               >
                 <Volume2 className="size-4" aria-hidden />
               </button>

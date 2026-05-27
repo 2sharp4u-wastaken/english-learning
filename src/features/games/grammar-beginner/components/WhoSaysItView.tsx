@@ -3,6 +3,7 @@ import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import { cn } from '@/lib/cn'
 import type { SubjectOption, WhoSaysItQuestion } from '@/bridge/grammar-beginner'
 import { getPredicateHebrew } from '@/bridge/grammar-beginner'
+import { TranslationFlash } from './TranslationFlash'
 
 interface Props {
   question: WhoSaysItQuestion
@@ -45,6 +46,7 @@ export function WhoSaysItView({ question, selectedKey, locked, onPlay, onSelect 
           <Volume2 size={16} />
           <span>השמע שוב</span>
         </button>
+        <TranslationFlash hebrew={question.hebrewSentence} visible={locked} />
       </div>
 
       <div className="flex items-center justify-center gap-3 rounded-2xl border border-white/10 bg-white/5 px-5 py-3">

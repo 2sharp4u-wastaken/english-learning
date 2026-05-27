@@ -3,6 +3,7 @@ import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import { cn } from '@/lib/cn'
 import type { CompleteSoundQuestion, VerbOption } from '@/bridge/grammar-beginner'
 import { getPredicateHebrew } from '@/bridge/grammar-beginner'
+import { TranslationFlash } from './TranslationFlash'
 
 interface Props {
   question: CompleteSoundQuestion
@@ -43,6 +44,7 @@ export function CompleteSoundView({
         >
           {enSentence}
         </p>
+        <TranslationFlash hebrew={question.hebrewSentence} visible={locked} />
       </div>
 
       <div className="mx-auto flex w-full max-w-lg items-center justify-around gap-2 rounded-2xl border border-white/10 bg-white/5 px-4 py-4">

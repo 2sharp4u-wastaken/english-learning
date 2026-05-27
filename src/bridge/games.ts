@@ -69,6 +69,12 @@ export function getAllGameUnlocks(): Record<string, GameUnlockEntry> {
   return progress?.gameUnlocks ?? {}
 }
 
+// Non-mic recognition/recall review games we rotate through for Due-word
+// review, so the daily "review" nudge isn't always the same passive task.
+const REVIEW_ROTATION = ['listening', 'picture-match', 'true-or-not', 'reading']
+// Remember the last pick (per session) so we avoid immediate repeats.
+let lastReviewPick: string | null = null
+
 /**
  * Determine the "continue" target — the most logical next game to play.
  * Returns null if no suggestion can be made.
@@ -80,16 +86,23 @@ export function getContinueTarget(): ContinueTarget | null {
   const progress = getUserProgress()
   if (!progress) return null
 
-  // V3 (redesign §8) recommendation order: review words that are slipping
-  // (Due) → otherwise introduce/strengthen via Word Journey. (Learning words
-  // are already surfaced inside the review games, so they need no separate nudge.)
+  // V3 (redesign §8): review words that are slipping (Due) → otherwise
+  // introduce/strengthen via Word Journey. (Learning words are already surfaced
+  // inside the review games, so they need no separate nudge.) When reviewing,
+  // rotate among the unlocked review games rather than always opening Listening.
   const pm = (window as any).app?.progressManager
   const dueCount: number = pm?.getLifecycleCounts ? pm.getLifecycleCounts().due : 0
   if (dueCount > 0) {
     const unlocks = progress.gameUnlocks ?? {}
-    const reviewOrder = ['listening', 'picture-match', 'true-or-not', 'pronunciation', 'reading', 'vocabulary']
-    const open = reviewOrder.find((id) => (unlocks as any)[id]?.unlocked)
-    if (open) return { gameId: open, label: 'תרגול מילים שצריך לחזק', icon: '🔁' }
+    const open = REVIEW_ROTATION.filter((id) => (unlocks as any)[id]?.unlocked)
+    if (open.length > 0) {
+      // Prefer a game other than last time so consecutive visits vary.
+      const choices = open.length > 1 ? open.filter((id) => id !== lastReviewPick) : open
+      const pool = choices.length > 0 ? choices : open
+      const pick = pool[Math.floor(Math.random() * pool.length)]
+      lastReviewPick = pick
+      return { gameId: pick, label: 'תרגול מילים שצריך לחזק', icon: '🔁' }
+    }
   }
 
   return { gameId: 'word-journey', label: 'מסע המילים', icon: '🗺️' }

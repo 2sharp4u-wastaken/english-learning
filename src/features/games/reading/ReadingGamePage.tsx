@@ -61,12 +61,12 @@ function ReadingPicture({ question }: { question: ReadingQuestion }) {
       <img
         src={effective}
         alt=""
-        className="word-image max-h-40 rounded-2xl object-contain"
+        className="word-image max-h-24 rounded-2xl object-contain sm:max-h-28"
       />
     )
   }
   return (
-    <span className="text-6xl" role="img" aria-label="">
+    <span className="text-5xl" role="img" aria-label="">
       {question.picture || '🔤'}
     </span>
   )
@@ -442,7 +442,7 @@ export function ReadingGamePage() {
     <>
       <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
         {current ? (
-          <div className="flex flex-1 flex-col gap-4">
+          <div className="flex flex-1 flex-col justify-center gap-3">
             <MediaPromptCard
               prompt={showNikud ? 'הַרְכִּיבוּ אֶת הַמִּלָּה' : 'הרכיבו את המילה'}
               media={<ReadingPicture question={current} />}

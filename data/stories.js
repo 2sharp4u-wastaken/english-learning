@@ -8,7 +8,8 @@
 // - sentences: array of sentence strings with {slotN} placeholders
 // - slots: object mapping slot names to { category, fallback }
 // - questions: comprehension questions with {slotN} placeholders
-//   each question has: question (Hebrew), options (English), correctIndex
+//   each question has: question (Hebrew), questionEn (English, spoken aloud),
+//   options (English), correctIndex
 
 export const storyTemplates = [
     // ===== BEGINNER STORIES =====
@@ -27,12 +28,14 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'מה יש לי?',
+                questionEn: 'What do I have?',
                 optionTemplate: ['{slot1}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'animals' }
             },
             {
                 question: 'מה אני מרגיש כלפי ה{slot1_he}?',
+                questionEn: 'How do I feel about my {slot1}?',
                 optionTemplate: ['love', 'sad', 'angry'],
                 correctIndex: 0
             }
@@ -53,12 +56,14 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'מה אני אוהב?',
+                questionEn: 'What do I like?',
                 optionTemplate: ['{slot1}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'food' }
             },
             {
                 question: 'מתי אני אוכל את זה?',
+                questionEn: 'When do I eat it?',
                 optionTemplate: ['every day', 'never', 'on Monday'],
                 correctIndex: 0
             }
@@ -79,12 +84,14 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'מי זה?',
+                questionEn: 'Who is this?',
                 optionTemplate: ['{slot1}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'family' }
             },
             {
                 question: 'איך הוא/היא?',
+                questionEn: 'What is my family like?',
                 optionTemplate: ['nice', 'sad', 'angry'],
                 correctIndex: 0
             }
@@ -106,12 +113,14 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'מה הצבע האהוב עליי?',
+                questionEn: 'What is my favorite color?',
                 optionTemplate: ['{slot1}', '{slot2}', '{wrong1}'],
                 correctIndex: 0,
                 wrongPool: { category: 'colors' }
             },
             {
                 question: 'איזה צבע אני גם אוהב?',
+                questionEn: 'Which color do I also like?',
                 optionTemplate: ['{slot2}', '{slot1}', '{wrong1}'],
                 correctIndex: 0,
                 wrongPool: { category: 'colors' }
@@ -133,11 +142,13 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'לאן אני הולך?',
+                questionEn: 'Where do I go?',
                 optionTemplate: ['school', 'home', 'park'],
                 correctIndex: 0
             },
             {
                 question: 'מה יש לי?',
+                questionEn: 'What do I have?',
                 optionTemplate: ['{slot1}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'school' }
@@ -160,12 +171,14 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'איזו חיה אני אוהב?',
+                questionEn: 'Which animal do I like?',
                 optionTemplate: ['{slot1}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'animals' }
             },
             {
                 question: 'איזו חיה אני גם אוהב?',
+                questionEn: 'Which animal do I also like?',
                 optionTemplate: ['{slot2}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'animals' }
@@ -190,12 +203,14 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'מה אני אוכל בבוקר?',
+                questionEn: 'What do I eat in the morning?',
                 optionTemplate: ['{slot1}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'food' }
             },
             {
                 question: 'את מי אני רואה בבית הספר?',
+                questionEn: 'Who do I see at school?',
                 optionTemplate: ['{slot2}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'family' }
@@ -219,17 +234,20 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'איפה אנחנו משחקים?',
+                questionEn: 'Where do we play?',
                 optionTemplate: ['park', 'school', 'home'],
                 correctIndex: 0
             },
             {
                 question: 'מה אני נותן לחיית המחמד?',
+                questionEn: 'What do I give my pet?',
                 optionTemplate: ['{slot2}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'food' }
             },
             {
                 question: 'מי רץ מהר?',
+                questionEn: 'Who runs fast?',
                 optionTemplate: ['{slot1}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'animals' }
@@ -255,12 +273,14 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'כמה {slot2_he} אני רואה?',
+                questionEn: 'How many {slot2} do I see?',
                 optionTemplate: ['{slot1}', '{slot3}', '{wrong1}'],
                 correctIndex: 0,
                 wrongPool: { category: 'numbers' }
             },
             {
                 question: 'כמה {slot4_he} אני רואה?',
+                questionEn: 'How many {slot4} do I see?',
                 optionTemplate: ['{slot3}', '{slot1}', '{wrong1}'],
                 correctIndex: 0,
                 wrongPool: { category: 'numbers' }
@@ -285,17 +305,20 @@ export const storyTemplates = [
         questions: [
             {
                 question: 'איך מזג האוויר היום?',
+                questionEn: 'How is the weather today?',
                 optionTemplate: ['rainy', 'sunny', 'cold'],
                 correctIndex: 0
             },
             {
                 question: 'עם מי אני משחק?',
+                questionEn: 'Who do I play with?',
                 optionTemplate: ['{slot1}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'family' }
             },
             {
                 question: 'מה אני אוכל?',
+                questionEn: 'What do I eat?',
                 optionTemplate: ['{slot2}', '{wrong1}', '{wrong2}'],
                 correctIndex: 0,
                 wrongPool: { category: 'food' }
@@ -355,10 +378,13 @@ export function buildStoryFromTemplate(template, learnedWords, allWords) {
     // Build comprehension questions
     const filledQuestions = template.questions.map(q => {
         let questionText = q.question;
+        // English question (spoken aloud) — only has {slotN} placeholders.
+        let questionEnText = q.questionEn || '';
         // Replace slot references in question text
         for (const [slotName, wordObj] of Object.entries(filledSlots)) {
             questionText = questionText.replace(`{${slotName}}`, wordObj.word);
             questionText = questionText.replace(`{${slotName}_he}`, wordObj.translation);
+            questionEnText = questionEnText.split(`{${slotName}}`).join(wordObj.word);
         }
 
         // Build options
@@ -398,6 +424,7 @@ export function buildStoryFromTemplate(template, learnedWords, allWords) {
 
         return {
             question: questionText,
+            questionEn: questionEnText,
             options: uniqueOptions,
             correctIndex: q.correctIndex
         };

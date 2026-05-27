@@ -136,15 +136,20 @@ function processTextNode(node, map) {
     const enriched = enrichString(raw, map);
     if (!enriched) return;
 
-    const hasChildElements = [...parent.childNodes].some(n => n.nodeType === Node.ELEMENT_NODE);
+    // Only treat the parent as a simple leaf when this text node is its ONLY
+    // child. If there are siblings — element nodes (e.g. "<span>6</span>") OR
+    // other text nodes (React renders `סיפור {n} מתוך {m}` as several adjacent
+    // text nodes) — overwriting parent.textContent would wipe the siblings and
+    // drop interpolated numbers. In that case wrap just this node instead.
+    const isLoneTextNode = parent.childNodes.length === 1;
 
-    if (!hasChildElements) {
+    if (isLoneTextNode) {
         // Case D — leaf parent (button label, span, div with only text)
         parent.dataset.hebrewSource = enriched;
         parent.textContent = window._showNikud !== false ? enriched : stripNikud(enriched);
     } else {
-        // Case E — mixed-content parent (e.g. "השמעות נותרו: <span>6</span>")
-        // Wrap just this text node in a span to preserve sibling elements.
+        // Case E — mixed-content parent (sibling elements and/or text nodes).
+        // Wrap just this text node in a span to preserve every sibling.
         const span = document.createElement('span');
         span.dataset.hebrewSource = enriched;
         span.textContent = window._showNikud !== false ? enriched : stripNikud(enriched);
