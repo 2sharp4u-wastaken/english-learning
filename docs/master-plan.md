@@ -1675,11 +1675,15 @@ A cross-cutting play-test pass (no new games). WHY each change:
 - **Grammar games.** Grammar-beginner translation moved *inside* the prompt card
   (was a floating pill). Standalone Grammar: the Hebrew sentence blank + option
   glosses now stay hidden until answered (they previously gave the answer away).
-- **Memory.** Hebrew-only audio on a match; **equal total card area across levels**
-  (`side = √(AREA/cardCount)`, capped to width); picture/word scale with `cqw`
-  (the card is a container-query context) — reusing the grid-track `var()` for
-  `font-size` was the regression that hid the pictures (`100%` means width vs.
-  font-size depending on context).
+- **Memory.** Hebrew-only audio on a match; **no wrong-pair SFX** (a non-match isn't a
+  mistake). Card sizing: `side = √(AREA/cardCount)` (AREA bumped to 1944 ≈ 2×), capped by
+  **both** width-fit AND a viewport **height-fit** (`(100dvh − CHROME)/rows`) so the board
+  fits one screen with no scroll on any level; picture/word scale with `cqw` (the card is a
+  container-query context — reusing the grid-track `var()` for `font-size` was the
+  regression that hid the pictures, since `100%` means width vs. font-size by context).
+  **Level 3 is 6 columns / 4 rows** (8×3 was width-bound → smaller cards). **No auto-advance
+  on level clear:** the board stays up (matched cards tappable to replay the word) with a
+  stars banner + a pinned "רמה הבאה" / "סיים משחק" button; only that tap advances/finishes.
 - **Home.** Reactive owl mascot (framer-motion idle float + tap cheer + sparkle +
   spoken encouragement); tappable greeting (speaks "שלום {name}") and stat pills
   (distinct SFX via `playEffect` in `bridge/feedback`); "בוא נשחק" now **rotates**
