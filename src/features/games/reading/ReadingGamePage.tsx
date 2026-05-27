@@ -61,12 +61,12 @@ function ReadingPicture({ question }: { question: ReadingQuestion }) {
       <img
         src={effective}
         alt=""
-        className="word-image max-h-24 rounded-2xl object-contain sm:max-h-28"
+        className="word-image max-h-20 rounded-2xl object-contain sm:max-h-24"
       />
     )
   }
   return (
-    <span className="text-5xl" role="img" aria-label="">
+    <span className="text-4xl sm:text-5xl" role="img" aria-label="">
       {question.picture || '🔤'}
     </span>
   )
@@ -405,7 +405,10 @@ export function ReadingGamePage() {
   const canCheck = phase === 'awaiting' && built.length > 0
   const canClear = phase === 'awaiting' && built.length > 0
 
-  const footer =
+  // Rendered inline under the letter bank (not a pinned footer) so the whole
+  // game reads as one compact, top-aligned cluster — no big gap before a
+  // bottom-pinned bar. Content fits one screen, so pinning isn't needed.
+  const actions =
     phase === 'awaiting' ? (
       <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-3">
         <button
@@ -440,9 +443,9 @@ export function ReadingGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
+      <GameScreenShell header={headerProps} progress={progressProps}>
         {current ? (
-          <div className="flex flex-1 flex-col justify-center gap-3">
+          <div className="flex flex-1 flex-col items-center gap-4 pt-1">
             <MediaPromptCard
               prompt={showNikud ? 'הַרְכִּיבוּ אֶת הַמִּלָּה' : 'הרכיבו את המילה'}
               media={<ReadingPicture question={current} />}
@@ -453,6 +456,7 @@ export function ReadingGamePage() {
               audioLabel="השמע מילה"
               audioIconOnly
               audioHint={audioHint}
+              className="mx-auto w-full max-w-md gap-2 p-4"
             />
 
             {phase === 'answered' && feedback?.variant === 'incorrect' ? (
@@ -474,6 +478,8 @@ export function ReadingGamePage() {
                 onPlaceLetter={(l) => void speak(l.toLowerCase())}
               />
             )}
+
+            {actions}
           </div>
         ) : null}
       </GameScreenShell>

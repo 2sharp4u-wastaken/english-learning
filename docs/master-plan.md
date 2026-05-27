@@ -1693,6 +1693,22 @@ A cross-cutting play-test pass (no new games). WHY each change:
 - **Confetti hiccup.** `warmUpConfetti()` (bridge/feedback, called once from
   `App.tsx`) pre-inits canvas-confetti so the first celebration doesn't stutter.
 
+### Density / polish follow-ups (2026-05-28)
+
+- **Reading density.** The game fits one screen, so its actions (נקה / בדוק /
+  השאלה הבאה) render **inline** under the letter bank instead of the pinned
+  `GameScreenShell` footer, and the content is **top-aligned** (not vertically
+  centered) — one compact cluster, no big gap before a bottom-pinned bar. Prompt
+  card compacted (smaller picture, `max-w-md`, tighter padding). Pattern worth
+  reusing for the Word Journey spell stage.
+- **Memory polish.** Matched pair does a brief scale "pop" (`memoryMatchPop`
+  keyframe — a CSS gradient can't tween from the solid face color, so motion is
+  the cue); tapping a matched card replays **the language it shows** (Hebrew card
+  → Hebrew, English card → English).
+- **Home mascot bubble (RTL).** The encouragement bubble uses `start-0` (right
+  edge in RTL) so it grows inward/left and never clips the page edge — `end-0`
+  resolves to `left:0` in RTL and grew off-screen.
+
 ## Planned feature slices (backlog)
 
 ### Slice C1: Launchable Courses page — PLANNED (spec ready 2026-05-27)

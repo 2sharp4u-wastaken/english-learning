@@ -57,7 +57,7 @@ export function MemoryCard({
       className={cn(
         'group relative aspect-square select-none rounded-xl outline-none',
         '[perspective:800px] focus-visible:ring-2 focus-visible:ring-[color:var(--blue-400)]',
-        matched && 'opacity-90',
+        matched && 'animate-[memoryMatchPop_0.4s_ease-out] opacity-90',
       )}
     >
       <div

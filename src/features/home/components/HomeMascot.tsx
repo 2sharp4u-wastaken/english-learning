@@ -134,7 +134,7 @@ export function HomeMascot({ streakDays, wordsLearned }: HomeMascotProps) {
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, scale: 0.92 }}
             transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-            className="absolute end-0 top-full z-10 mt-2 w-max max-w-[min(15rem,75vw)] rounded-2xl border border-white/10 bg-surface px-4 py-2 text-center text-sm font-semibold text-text shadow-panel"
+            className="absolute start-0 top-full z-10 mt-2 w-max max-w-[min(15rem,75vw)] rounded-2xl border border-white/10 bg-surface px-4 py-2 text-center text-sm font-semibold text-text shadow-panel"
           >
             {message}
           </motion.div>

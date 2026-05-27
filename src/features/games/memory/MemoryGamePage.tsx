@@ -264,7 +264,13 @@ export function MemoryGamePage() {
       const card = cards[index]
       if (!card) return
       if (matchedRef.current.has(index)) {
-        playWordAudio(card.word) // replay pronunciation on a matched card
+        // Replay "the word it shows": the Hebrew (translation) card speaks Hebrew,
+        // the English (word) card speaks English.
+        if (card.type === 'translation' && card.word.hebrew) {
+          void speakHebrew(card.word.hebrew)
+        } else {
+          playWordAudio(card.word)
+        }
         return
       }
       if (flipped.includes(index)) return

@@ -142,3 +142,17 @@ body.react-shell-active .app-layout {
     transform: scale(1);
   }
 }
+
+/* Memory: a brief "pop" when a pair is matched (the gradient can't tween from a
+ * solid color, so motion is the celebration cue). Runs once when `matched` flips on. */
+@keyframes memoryMatchPop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.07);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
