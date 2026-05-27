@@ -1422,8 +1422,9 @@ Files added:
 > **Status (2026-05-25): IMPLEMENTED — steps 1–7 shipped** (commits up to `2f42e06` on
 > `v3-react-migration`). The stamp regression is closed. **Remaining before merge:** a
 > certificate-recalibration product decision + a human play-test of the Word Journey
-> stages/unlock modal. Authoritative status + loose ends: `docs/learning-flow-redesign.md`
-> §10 + §12. The build-order list below is kept for historical context.
+> stages/unlock modal. Lifecycle model + open loose ends: `docs/learning-path.md`
+> ("Word Lifecycle Model" + "Open loose ends"). The build-order list below is kept for
+> historical context.
 
 Planning the Word Journey port surfaced two design leaks in the progression model:
 graduation is batch-average (a weak word rides its batchmates into "learned"), and the
@@ -1434,8 +1435,8 @@ two-step promotion (Word Journey introduces → review games promote), light spa
 tiered unlocks (review games gate on *introduced* count, consolidation games on *Learned*
 count). Existing users are grandfathered — no game/word access regression.
 
-**Full spec:** [`docs/learning-flow-redesign.md`](learning-flow-redesign.md). This lands
-*before* the Word Journey React port and reshapes it. Build order:
+**Model + mechanics:** [`docs/learning-path.md`](learning-path.md) ("Word Lifecycle
+Model"). This landed *before* the Word Journey React port and reshaped it. Build order:
 
 1. Progress-model refactor in `managers/ProgressManager.js` (derived status helpers,
    spacing interval, grandfather migration).
@@ -1467,7 +1468,7 @@ Discover keeps the Slice 3.0 per-word listen budget; celebration is the animated
 per-journey summary (word + picture + audio + status). Say-word reuses the pronunciation
 bridge's mic; full E2E is limited by the speech-recognition stub gap (see Slice 3.11), so
 `tests/wj-step1.spec.js` covers render/stage-map/Discover-budget/advance. Honors
-`docs/word-journey-flow.md` structure (5 fixed stages, `learningPace`-only batch size).
+`docs/learning-path.md` "Word Journey mechanics" (5 fixed stages, `learningPace`-only batch size).
 **Slice 3.14: Memory** — card-flip grid, timer-based. ✅ **Shipped (React, 2026-05-25).**
 ~1,589 legacy lines → `src/bridge/memory.ts` + `MemoryGamePage` + 3 components
 (`MemoryCard`, `MemoryBoard`, `MemoryLevelSummary`). Did NOT follow the Slice 3.1
@@ -1687,6 +1688,42 @@ A cross-cutting play-test pass (no new games). WHY each change:
   in the avatar dropdown.
 - **Confetti hiccup.** `warmUpConfetti()` (bridge/feedback, called once from
   `App.tsx`) pre-inits canvas-confetti so the first celebration doesn't stutter.
+
+## Planned feature slices (backlog)
+
+### Slice C1: Launchable Courses page — PLANNED (spec ready 2026-05-27)
+
+**Goal:** make the Courses page actionable. Today `CoursesPage.tsx` is a read-only
+progress dashboard (Course → Unit → Topic → Activities, mastery %, lock state). Make
+each unlocked topic's activity launch the matching game **scoped to that topic's
+words**, then on finish credit the topic and return to `/courses`.
+
+**The mechanism already exists — confirmed:**
+- Legacy `gameManager.setCourseActivityContext({ topicId, activityType, topicWords })`
+  (`gameLogic.js:658`) sets `currentTopicId` / `currentTopicActivity` / `currentTopicWords`.
+- `gameManager.getScopedQuestionPool(gameType)` (`gameLogic.js:1886`) **already returns the
+  topic-scoped pool** when those are set and `currentTopicActivity === gameType`. Any React
+  bridge that builds its pool via `getScopedQuestionPool` (e.g. `bridge/vocabulary.ts:150`)
+  inherits scoping for free.
+- `CourseManager` auto-detects topic coverage from a finished session's words (`CourseManager.js`
+  ~455–490: ≥3 matched words AND ≥60% coverage → best-match topic), and advances/unlocks the
+  next topic. Legacy parity entry point: `app.js:497 startTopicActivity()`.
+
+**Work to do:**
+1. **Bridge** — new `src/bridge/courseSession.ts` (or extend `courses.ts`): `startTopicActivity({topicId, activityType, topicWords})` → `courseManager.startTopic(topicId)` + `gameManager.setCourseActivityContext(...)`; `getActiveCourseSession()` → `{topicId, activityType, returnTo:'/courses'} | null`; `clearCourseSession()` (clear the legacy context — verify the clear path in `gameLogic.js`). Never touch `window.*` outside the bridge.
+2. **CoursesPage** — make a topic's activity badges (or a per-topic ▶️) clickable when the topic is unlocked → `startTopicActivity()` → `navigate('/game/'+activityType)`. MVP to React games that scope cleanly via `getScopedQuestionPool`: **vocabulary, listening, picture-match, true-or-not** first; expand later. Mirror the legacy activity-picker UX (`app.js:478`).
+3. **Course-mode adaptations in the game bridges/pages:** when a course session is active, (a) **skip the learn-first gate**, and (b) **skip the "learned-only" pool filter** (topic words are usually NOT yet learned — that's the point), e.g. gate `bridge/vocabulary.ts:152` behind `!courseMode`. On finish: run the normal finish (feeds CourseManager coverage → auto-credits the topic), then `clearCourseSession()` and route to `getActiveCourseSession()?.returnTo` (`/courses`) instead of `/home` (RewardModal `onExit` + ExitConfirm). Verify the React finish path actually feeds CourseManager's coverage recorder; if not, add a bridge call passing the session word list on finish.
+4. **Test:** Playwright — seed user, open `/courses`, expand an unlocked course, tap a topic activity, assert route `/game/<activity>` with the scoped words, complete it, assert return to `/courses` + topic mastery/progress advanced.
+
+**Risks:** not every activity supports scoped pools — memory/story/abc/phonics build their own pools and would need explicit topic-word support; keep them out of the MVP launcher. Audit the learn-first/learned-filter gating per activity bridge.
+
+### Slice INFRA1: Network / public / app access — SPIKE (investigate, no commit)
+
+Investigate exposing the app beyond `localhost` and pick a path:
+- **LAN access:** Vite `--host` (or `server.host` in `vite.config`) so other devices hit `http://<lan-ip>:3002`; bind `server.py` to `0.0.0.0`. **Gotcha:** the mic games (Pronunciation, Practice) and TTS need a **secure context** — `getUserMedia` + Web Speech only work on `https://` or `localhost`, so LAN needs the `server.crt`/`server.key` HTTPS path (already referenced in `CLAUDE.md` dev setup) + firewall allowance.
+- **Public access:** `npm run build` → static `dist/`; decide the fate of the Python `/api/*` backend (host it, or make endpoints optional — progress is in `localStorage`, per-device, so the SPA mostly stands alone). Quick-share via a tunnel (cloudflared/ngrok); durable via static host (Netlify/Vercel/GH Pages) + API host or stub.
+- **As an app:** **PWA** (manifest + service worker — installable + offline) is the lowest-friction fit for a static SPA → recommend first; Capacitor/Tauri/Electron only if app-store distribution is needed.
+- **Deliverable:** a recommendation + concrete steps for the chosen path, with the HTTPS/secure-context requirement called out as the main blocker for mic games off-localhost.
 
 ## Phase 4: Cleanup and Consolidation
 

@@ -35,10 +35,9 @@ Then open **`http://localhost:3002`**. (HTTPS is served automatically if `server
 ## How learning works (in brief)
 
 Word Journey introduces new words; the other games reinforce them; accumulated progress
-unlocks more games. The full model — and the in-progress redesign toward a mastery-driven
-word lifecycle (New → Learning → Learned → Due, with light spacing) — is documented in
-[`docs/learning-path.md`](docs/learning-path.md) (current) and
-[`docs/learning-flow-redesign.md`](docs/learning-flow-redesign.md) (target).
+unlocks more games. The full model — the mastery-driven word lifecycle (New → Learning →
+Learned → Due, with light spacing), Word Journey mechanics, and open loose ends — is
+documented in [`docs/learning-path.md`](docs/learning-path.md).
 
 ## Architecture
 
@@ -89,9 +88,7 @@ server.py           # Python dev server: static files, /api write endpoints, HTT
 |-----|----------------|
 | [`docs/master-plan.md`](docs/master-plan.md) | Migration phases & slices — source of truth |
 | [`docs/wiring-map.md`](docs/wiring-map.md) | Cause/effect chains across the app |
-| [`docs/learning-path.md`](docs/learning-path.md) | Current learning/unlock model |
-| [`docs/learning-flow-redesign.md`](docs/learning-flow-redesign.md) | Approved mastery-driven redesign |
-| [`docs/word-journey-flow.md`](docs/word-journey-flow.md) | Word Journey structure & product direction |
+| [`docs/learning-path.md`](docs/learning-path.md) | Learning/unlock model, word lifecycle, Word Journey mechanics, open loose ends |
 | [`docs/score-system.md`](docs/score-system.md) | Scoring, persistence, and coin economy |
 | [`docs/dev-setup.md`](docs/dev-setup.md) | Servers, HTTPS/mic certs, known limitations |
 | `CLAUDE.md` | Behavioral rules for Claude Code in this repo |

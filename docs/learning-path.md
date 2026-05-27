@@ -1,9 +1,10 @@
 # Learning Path — How the App Guides a Child Through English
 
-> **Note (2026-05-24):** Updated to the **V3 mastery-driven model** (per-word
-> graduation, two-step promotion via review, light spacing, tiered unlocks). Full
-> design + remaining loose ends: `docs/learning-flow-redesign.md`. The legacy Memory,
-> ABC, and Practice games are not yet migrated to React, but the model below applies.
+> **Consolidated 2026-05-27.** This is the single living doc for the learning flow.
+> It absorbed `word-journey-flow.md` (Word Journey structure) and
+> `learning-flow-redesign.md` (the mastery-driven model + open loose ends), which were
+> deleted. The model is **V3 mastery-driven**: per-word graduation, two-step promotion
+> via review, light spacing, tiered unlocks — defined in **"Word Lifecycle Model"** below.
 
 ## Overview
 
@@ -30,10 +31,10 @@ Every child starts here. Word Journey is a 5-stage structured lesson for a batch
 | 5. Recall | See the image, pick the correct English word | Yes |
 
 - **Batch size** is controlled by the Learning Pace setting (3 / 5 / 8 words)
-- **(V3 — mastery-driven, see `learning-flow-redesign.md`)** Word Journey no longer
-  graduates a whole batch at ≥60%. Each stage records that word's real performance,
-  so a word the child nails reaches **Learned** while a fumbled one stays **Learning**.
-  Word Journey is the *first encounter*; the review games promote Learning → Learned.
+- **(V3 — mastery-driven)** Word Journey no longer graduates a whole batch at ≥60%.
+  Each stage records that word's real performance, so a word the child nails reaches
+  **Learned** while a fumbled one stays **Learning**. Word Journey is the *first
+  encounter*; the review games promote Learning → Learned. (See "Word Lifecycle Model".)
 
 ### Step 2: Games Unlock Progressively
 
@@ -76,6 +77,60 @@ The child earns rewards throughout:
 - **Certificates** — awarded at milestones (1st word, 10, 25, 50, 100 words learned + special ones like ABC Hero, Perfect Listener)
 - **Word Collection** — a sticker-book view of all graduated words
 - **Learning Level** — progresses through 6 levels: מתחיל → חוקר → לומד מיומן → מומחה → אלוף → אגדה
+
+---
+
+## Word Lifecycle Model (mastery-driven)
+
+Status is **derived** from each word's `wordMastery` entry — never stored as a separate
+flag. Computed in `managers/ProgressManager.js` (`getWordStatus` / `getLifecycleCounts`
+/ `getWordsByStatus` / `getDueWords`):
+
+```
+New      → no wordMastery entry (or 0 attempts)
+Learning → introduced, masteryLevel < 0.8 (or not yet stable)
+Learned  → masteryLevel ≥ 0.8 AND totalAttempts ≥ 3 AND consecutiveCorrect ≥ 2
+Due      → Learned AND (today − lastSeen) ≥ the word's review interval
+```
+
+(`0.8 / 3 / 2` reuse the existing `mastered / minAttempts / consecutiveForMastery`
+thresholds.) Gate counters: **introducedCount** = words with ≥1 attempt; **learnedCount**
+= words whose derived status is Learned (both exclude `category:'abc'` letter entries).
+
+- **Two-step promotion.** Word Journey usually lands a word in **Learning**; the review
+  games (listening, picture-match, true-or-not, vocabulary, pronunciation, reading) draw
+  from **Learning ∪ Due** and are the path that promotes Learning → Learned.
+  Consolidation games (story-time, fill-blanks, scramble, grammar) draw from **Learned**.
+- **Light spacing.** A Learned word gets a growing review interval **3 → 7 → 14 → 30 days**
+  (per-word `reviewStage`); past the interval it's **Due** and prioritized in review + the
+  Practice game.
+- **Gentle decay (2-miss hysteresis).** Missed reviews lower mastery, but a Learned word
+  demotes to Learning only after **two consecutive misses** (a correct answer forgives). A
+  word never falls back to **New** — introduced is forever. Grandfathered words (pre-V3
+  `learnedWords`) are sticky-Learned and never demote.
+- **UI mapping.** Profile "words learned" = introduced count; "words mastered" = Learned
+  count. Continue-recommendation order: **Due review → promote Learning → Word Journey →
+  newly unlocked game** (review target rotates among unlocked review games).
+
+## Word Journey mechanics (binding)
+
+Fixed product rules the React port honors:
+
+- **5 fixed stages** — `discover`, `listen-match`, `spell-tiles`, `say-word`, `recall`.
+  `discover` is instructional (unscored); the other four are scored and each calls
+  `recordWordAttempt` per word.
+- **`learningPace` is the only batch-size knob** — slow 3 / normal 5 / fast 8 words. The
+  global `questionsPerGame` does **not** affect Word Journey.
+- Header shows stage progress (`שלב X מתוך 5`) + batch size (`N מילים במסע`); header chrome
+  stays visually secondary to the learning card.
+- **Selection** — free-play picks a mastery-aware batch from active categories (weak/
+  unlearned preferred; words learned today deprioritized). Topic-scoped uses the topic word
+  list with the same pace.
+- **Banking** — points bank only on completion; leaving mid-run clears without banking. No
+  mid-journey resume (per-word mastery is already saved for each stage played).
+- **Completion guidance** — free-play biases toward more learning / a newly unlocked game;
+  topic-scoped biases back to the next topic activity (don't show two buttons that both
+  restart Word Journey).
 
 ---
 
@@ -210,3 +265,23 @@ This ensures the child is always nudged toward learning new words first, but can
 4. **Reward everything** — coins, certificates, levels, word stickers, streaks, confetti
 5. **Parent control without friction** — settings are password-protected but the child's experience is self-guided
 6. **Adjustable intensity** — parents can tune learning pace, difficulty, categories, and even bypass gates entirely
+
+---
+
+## Open loose ends (not yet built)
+
+Carried over from the mastery-redesign handoff — pending, not blocking:
+
+- **🟡 Certificate / level recalibration (product decision).** Split milestone certificates
+  into "words met" vs "words mastered" tracks and decide thresholds. Also: milestone certs
+  do **not** fire on React Word Journey completion (`finishWordJourney` doesn't call
+  `checkMilestoneCertificates`) — wire after the threshold decision.
+- **`wordJourneyProgress`** — retire vs surface read-only in Stats → Words (currently
+  written but unread; harmless either way).
+- **Long words skip spelling** — they need a lighter spelling interaction instead of being
+  omitted from the spell stage.
+- **Recommendation explicitness** — make the engine clearer about vocab-growth path vs
+  course/topic path.
+- **Human-verification gaps** — Word Journey recall 3D flip, slot interaction, say-word
+  recording, and celebration animation/audio have no E2E (need a `webkitSpeechRecognition`
+  stub); confirm in-app.
