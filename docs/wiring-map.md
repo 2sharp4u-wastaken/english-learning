@@ -632,7 +632,7 @@ Pages still declare a single `headerProps = { title, icon, score, onBack }` and 
 ## Launchable Course Activity Chain (Slice C1)
 
 ```
-CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|picture-match)
+CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|picture-match|true-or-not)
   └─ bridge/courseSession.startTopicActivity({topicId, activityType, topicWords})
        ├─ courseManager.startTopic(topicId)                 ──→ topicProgress[id].started
        ├─ gameManager.deleteGameState(activityType)         ──→ no stale resume
@@ -640,7 +640,10 @@ CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|pictu
   └─ navigate('/game/<activityType>')
        └─ begin<Game>Session(): isCourseMode()===true
             ├─ skip mid-game resume + skip learned-word filter
-            └─ getScopedQuestionPool() returns ONLY topic words (gameLogic.js:1886)
+            └─ pool = ONLY topic words. vocab/listening/picture-match via
+               getScopedQuestionPool() (gameLogic.js:1886); true-or-not builds from
+               getActiveTopicWords() directly (bypasses getScopedQuestionPool and must
+               NOT fall back to allWords — that would un-scope a sparse topic)
   └─ finish: finish<Game>Session() → gameManager.endGame()
        └─ (gameLogic.js:3404) app.updateProgress(%, getProgressUpdateContext())
             └─ (app.js:1641) _trackCourseActivityFromGame
