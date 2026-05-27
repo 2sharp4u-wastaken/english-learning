@@ -13,9 +13,11 @@ import { getCourseUnlockText, type Course, type CourseUnit, type CourseTopic } f
 import { startTopicActivity } from '@/bridge/courseSession'
 import { cn } from '@/lib/cn'
 
-// React games that scope cleanly to a topic's words via getScopedQuestionPool — only
-// these activity badges are launchable from a topic (Slice C1 MVP). Others stay static.
-const LAUNCHABLE_ACTIVITIES = new Set(['vocabulary', 'listening', 'picture-match'])
+// React games that scope cleanly to a topic's words — only these activity badges are
+// launchable from a topic. vocabulary/listening/picture-match scope via
+// getScopedQuestionPool; true-or-not scopes via getActiveTopicWords in its bridge
+// (fast-follow). Others (memory/story/abc/phonics) build their own pools — stay static.
+const LAUNCHABLE_ACTIVITIES = new Set(['vocabulary', 'listening', 'picture-match', 'true-or-not'])
 
 // ─── Activity label map ─────────────────────────────────────────────────────
 

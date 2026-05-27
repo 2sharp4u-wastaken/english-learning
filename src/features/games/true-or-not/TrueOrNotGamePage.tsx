@@ -26,6 +26,7 @@ import {
 } from '@/bridge/feedback'
 import { getSettings } from '@/bridge/settings'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { getActiveCourseSession, clearCourseSession } from '@/bridge/courseSession'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
 
@@ -287,14 +288,26 @@ export function TrueOrNotGamePage() {
 
   const requestExit = useCallback(() => setExitOpen(true), [])
 
+  // Route back to /courses (clearing the legacy course context) when launched from the
+  // Courses page; otherwise home. Read at call time to avoid a stale closure.
+  const goExit = useCallback(() => {
+    const cs = getActiveCourseSession()
+    if (cs) {
+      clearCourseSession()
+      navigate(cs.returnTo)
+    } else {
+      navigate('/home')
+    }
+  }, [navigate])
+
   const confirmExit = useCallback(() => {
     setExitOpen(false)
     if (isActiveRef.current) {
       abortTrueOrNotSession()
       isActiveRef.current = false
     }
-    navigate('/home')
-  }, [navigate])
+    goExit()
+  }, [goExit])
 
   const cancelExit = useCallback(() => setExitOpen(false), [])
 
@@ -412,7 +425,7 @@ export function TrueOrNotGamePage() {
         total={total}
         correct={correct}
         onPlayAgain={() => start({ fresh: true })}
-        onExit={() => navigate('/home')}
+        onExit={goExit}
       />
     </>
   )

@@ -1743,10 +1743,17 @@ landed vs. the spec below:
   (`app.js:1641`) `_trackCourseActivityFromGame` → `courseManager.completeGameActivity({topicId})`.
   `getProgressUpdateContext` reads `currentTopicId`/`currentTopicActivity`, so a set context
   at finish is sufficient.
-- **MVP = 3 games**, NOT 4. `true-or-not` builds its pool from learned words via
-  `legacy.buildQuestions` (not `getScopedQuestionPool`) and its `learnedPool.length >= 4 ?
-  learnedPool : allWords` fallback silently un-scopes a topic with <4 learned words —
-  deferred as a fast-follow needing a manual topic-word filter before `buildQuestions`.
+- **MVP = 3 games**, then `true-or-not` landed as a **fast-follow (2026-05-28)** — now 4.
+  `true-or-not` builds its pool from learned words via `legacy.buildQuestions` (not
+  `getScopedQuestionPool`), and its `learnedPool.length >= 4 ? learnedPool : allWords`
+  fallback silently un-scopes a sparse topic. Fix: in course mode the bridge builds the
+  pool from `gameManager.getActiveTopicWords()` (the topic word objects) — **never falling
+  back to `allWords`** — and skips the ≥5-learned gate + mid-game resume, mirroring the
+  other three. Page routes back to `/courses` on exit via `getActiveCourseSession`. Added
+  `'true-or-not'` to `LAUNCHABLE_ACTIVITIES` (CoursesPage) and a dedicated Playwright test
+  (sets the course context directly, since no course topic lists `true-or-not` as an
+  activity yet). NB: like `picture-match`/`listening`, this is forward-looking — the badge
+  only becomes clickable if a topic's `activities` array includes the game.
 - **Two invariants** baked into the bridge + pages (see `project_launchable_courses_c1`
   memory): (1) never route through legacy `performGameSwitch` — `gameLogic.js:1733` clears
   the course context on a game-type mismatch; set context directly. (2) Clear the context

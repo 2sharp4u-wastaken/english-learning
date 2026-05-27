@@ -1,5 +1,6 @@
 import { setGameContext, cancelSpeech } from './audio'
 import { getSettings } from './settings'
+import { isCourseMode } from './courseSession'
 
 export interface TrueOrNotQuestion {
   word: string
@@ -61,6 +62,14 @@ interface LegacyGameManager {
   gameCoinHistoryStartIndex?: number
   lastPersistedScores?: Record<string, number>
   _getLearnedWordSet(): Set<string>
+  /** Topic word objects for the active course session (empty when not in course mode). */
+  getActiveTopicWords(): Array<{
+    word: string
+    translation?: string
+    category: string
+    image?: string
+    imageUrl?: string
+  }>
   recordWordAttempt(word: string, category: string, isCorrect: boolean, responseTime: number, gameType: string): void
   saveGameState(): boolean
   endGame(gameType: string): Promise<void> | void
@@ -131,7 +140,11 @@ export function beginTrueOrNotSession(opts: BeginOptions = {}): TrueOrNotSession
 
   setGameContext(GAME_TYPE)
 
-  if (!opts.fresh) {
+  // Course mode (launched from /courses): scope to the topic's words. Skip the
+  // learned-word gate/pool AND mid-game resume (topic words aren't learned yet).
+  const courseMode = isCourseMode(GAME_TYPE)
+
+  if (!opts.fresh && !courseMode) {
     const saved = mgr.loadGameState?.(GAME_TYPE)
     if (
       saved &&
@@ -185,15 +198,17 @@ export function beginTrueOrNotSession(opts: BeginOptions = {}): TrueOrNotSession
     (window as any).app?.userProgress?.coinHistory?.length ?? 0
 
   // V2 gating: True-or-Not needs ≥5 learned words (mirrors gameLogic.js:2163-2172).
-  if (!mgr.settings?.gameUnlockOverride) {
+  // Skip in course mode — the topic's words drive the pool, not the learned set.
+  if (!mgr.settings?.gameUnlockOverride && !courseMode) {
     if (getLearnedCount() < MIN_LEARNED_WORDS) {
       mgr.isGameActive = false
       return { kind: 'learn-first', learnedCount: getLearnedCount() }
     }
   }
 
-  // Build the question pool from learned words (legacy: gameLogic.js:2173-2188).
-  const learnedKeys = mgr._getLearnedWordSet()
+  // Build the question pool. In course mode, scope strictly to the topic's words
+  // (getActiveTopicWords) — never fall back to allWords, which would un-scope a
+  // sparse topic. Free play: learned words, falling back to all (legacy: gameLogic.js:2173-2188).
   const allWords = ((window as any).vocabularyBank as Array<{
     word: string
     translation?: string
@@ -201,10 +216,16 @@ export function beginTrueOrNotSession(opts: BeginOptions = {}): TrueOrNotSession
     image?: string
     imageUrl?: string
   }>) ?? []
-  const learnedPool = allWords.filter((w) =>
-    learnedKeys.has(`${w.word?.toLowerCase()}_${w.category}`),
-  )
-  const pool = learnedPool.length >= 4 ? learnedPool : allWords
+  let pool: typeof allWords
+  if (courseMode) {
+    pool = mgr.getActiveTopicWords?.() ?? []
+  } else {
+    const learnedKeys = mgr._getLearnedWordSet()
+    const learnedPool = allWords.filter((w) =>
+      learnedKeys.has(`${w.word?.toLowerCase()}_${w.category}`),
+    )
+    pool = learnedPool.length >= 4 ? learnedPool : allWords
+  }
   if (pool.length < 4) {
     mgr.isGameActive = false
     return { kind: 'learn-first', learnedCount: getLearnedCount() }

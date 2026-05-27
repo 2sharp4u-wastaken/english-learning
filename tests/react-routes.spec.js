@@ -307,6 +307,43 @@ test.describe('Slice C1: Launchable Courses', () => {
     const cleared = await page.evaluate(() => window.gameManager?.currentTopicId);
     expect(cleared).toBeFalsy();
   });
+
+  // true-or-not (fast-follow) scopes via getActiveTopicWords, not getScopedQuestionPool,
+  // so it gets its own check. No course topic lists it as an activity yet, so we set the
+  // legacy course context directly — exactly what startTopicActivity() does — then load.
+  test('true-or-not in course mode scopes to topic words and skips the learn-first gate', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page); // deliberately ZERO learned words → free play would gate
+    const info = await unlockFirstTopic(page);
+
+    await page.evaluate(({ topicId, words }) => {
+      window.gameManager.deleteGameState('true-or-not');
+      window.gameManager.isResuming = false;
+      window.gameManager.setCourseActivityContext({
+        topicId,
+        activityType: 'true-or-not',
+        topicWords: words,
+      });
+    }, { topicId: info.topicId, words: info.words });
+
+    await gotoHash(page, '/game/true-or-not');
+    await page.waitForTimeout(800);
+
+    // Live despite zero learned words — the ≥5-learned gate is skipped in course mode.
+    await expect(page.locator('[data-testid="game-screen-shell"]')).toBeVisible();
+
+    // Every question's word is one of the topic's words (mismatch rounds keep the topic
+    // word and only swap the displayed image, so this holds for both match and mismatch).
+    const scopedOk = await page.evaluate((topicWords) => {
+      const set = new Set(topicWords.map((w) => String(w).toLowerCase()));
+      const qs = window.gameManager?.shuffledQuestions || [];
+      return qs.length > 0 && qs.every((q) => set.has(String(q.word).toLowerCase()));
+    }, info.words);
+    expect(scopedOk).toBe(true);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
 });
 
 // ─── Slice 1.5: Stats ───────────────────────────────────────────────────────
