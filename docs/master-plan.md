@@ -1709,6 +1709,20 @@ A cross-cutting play-test pass (no new games). WHY each change:
   edge in RTL) so it grows inward/left and never clips the page edge — `end-0`
   resolves to `left:0` in RTL and grew off-screen.
 
+**Deferred / optional (discussed, not applied — pick up anytime):**
+
+- **Pronunciation right-pair Hebrew delay** — shrink the ~400ms pre-Hebrew delay
+  to ~200ms so the celebration lands right after the "ding" (reduces the stray-tap
+  window). Constant in `PronunciationGamePage` `playMatchedPairAudio`-equivalent.
+- **Memory timing tweaks** — `FLIP_BACK_MS` 1000→~800 for a snappier wrong-pair
+  flip-back; consider `allowOverlap:false` on tap audio for crisper sound.
+- **Reuse Reading's compact layout** (inline actions + top-aligned cluster) for the
+  **Word Journey spell stage** for consistency.
+- **Coin stat-pill sound** — currently the "victory" fanfare (no dedicated coin SFX
+  exists); options: synthesize a coin "cha-ching" or have the pill speak its value.
+- **Memory sizing knobs** — `AREA_REM2`, `CHROME_REM`, and per-level `columns`
+  (`bridge/memory.ts`) are the levers if cards feel too big/small on any level.
+
 ## Planned feature slices (backlog)
 
 ### Slice C1: Launchable Courses page — PLANNED (spec ready 2026-05-27)
