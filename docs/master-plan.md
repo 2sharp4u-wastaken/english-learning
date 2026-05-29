@@ -1826,11 +1826,24 @@ Vite's post-build warning had been flagging the main bundle as oversize (~1.32 M
 - ✅ Games no longer eager-loaded; main chunk down ~52% (1.32 MB → 632 KB).
 - ⏳ Main chunk <500 KB minified — **deferred to Phase 4.4** (gated on deleting the eager legacy bootstrap, not on React code).
 
-### Slice 4.1: Retire Legacy Home Markup/CSS
+### Slice 4.1: Retire Legacy Home Markup/CSS — SHIPPED (2026-05-30)
 
-- remove legacy home sections from `index.html`
-- delete related CSS from `styles.css`
-- remove `hub-animations.js`
+- ✅ removed legacy welcome/home sections + their inline JS handlers from `index.html` (welcome-screen, tier-sections, continue-hero, game-cards, `updateHomeCardStates`, hash-nav handler). The post-login welcome-chime listener is kept; React Router owns routing and React owns the home screen.
+- ✅ deleted related CSS from `styles.css` (~650 lines: `.welcome-*`, `.tier-*`, `.continue-hero*`, `.game-card*` home variants, `.home-compact/-streak/-words*`)
+- ✅ removed `hub-animations.js` (and its now-dangling `purgecss.config.js` content+safelist entries: `home-compact`, `game-card-featured`, `tier-badge-`, `tier-section`, `continue-hero`, `welcome-`)
+- ✅ tests repointed: the `Game Gating` block in `tests/smoke.spec.js` (4 tests) targeted the now-deleted legacy `.game-card[data-game]` + `.locked` class — repointed to the React `[data-testid="home-game-card"]` + `data-locked` attribute. The `slice-3.7.1` "word-builder not on home" test was repointed off `.game-card` (it had become vacuously true).
+
+**Gotcha uncovered (see `project_react_home_gating_persisted` memory):** the React home computes lock state from **persisted** `gameUnlocks` via the bridge, and treats an *absent* entry as **unlocked** (`unlocks[id]?.unlocked === false`). A fresh user's default gameUnlocks live only in `window.app.userProgress` (in-memory) until the first `saveUserProgress()` — `loadUserProgress()` returns defaults but never persists them. The deleted legacy welcome screen masked this by reading the in-memory object directly. Net: a brand-new user with no saved progress currently sees *all* games unlocked on the React home (pre-existing since Phase 1; not introduced here). The fresh-user gating test now flushes defaults via `window.app.saveUserProgress()` before asserting.
+
+**Carry-forward for Slices 4.2–4.4:** retiring legacy DOM will keep stranding tests that assert against the *hidden* legacy tree (visible-or-not, Playwright matches the class attribute). When deleting legacy markup, grep specs for the removed selectors and repoint to the React `data-testid`/`data-*` equivalents — and check the repointed assertion isn't vacuously true (count 0 because the element class no longer exists anywhere).
+
+### Follow-up FU-4.1: Fresh user sees all games unlocked on the React home
+
+Surfaced (not introduced) by Slice 4.1. **Bug:** a brand-new user with no persisted progress sees *every* game unlocked on `/#/home`. The React home gates on **persisted** `gameUnlocks` (`useGameUnlocks` → `bridge/games.getAllGameUnlocks`, absent entry = unlocked), but `app.js loadUserProgress()` returns the locked defaults **in-memory only** and never saves them — first persist is the first `saveUserProgress()` (after a game). The retired legacy welcome screen masked this by reading in-memory `window.app.userProgress`.
+
+Severity: low-moderate (a child could open e.g. Grammar/Reading with zero learned words; they'd just hit the empty/learn-first prompt). Pre-existing since Phase 1.
+
+Fix options (pick when scheduled): (a) persist seeded defaults at user-create/login in `app.js`; or (b) have `bridge/games.getAllGameUnlocks` fall back to the default unlock map when the persisted map is empty/absent. Prefer keeping gating *computation* in legacy ProgressManager until Phase 4.4; do not re-derive gating inside the React home. Add a Playwright case asserting a fresh user (no `saveUserProgress()`) shows `data-locked="true"` on gated cards. See `project_react_home_gating_persisted` memory.
 
 ### Slice 4.2: Retire Header Legacy System
 

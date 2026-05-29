@@ -6,7 +6,6 @@ module.exports = {
     'settings.html',
     'words.html',
     '*.js',
-    'hub-animations.js',
     'managers/*.js',
     'components/*.js',
     'data/*.js',
@@ -37,11 +36,8 @@ module.exports = {
       'gb-flash', 'wb-filled',
 
       // Layout modes
-      'home-compact', 'lowercase-mode', 'stab-protected',
+      'lowercase-mode', 'stab-protected',
       'has-words', 'wim-has-override', 'wim-btn-dimmed',
-
-      // Welcome screen overhaul (our new classes added by JS)
-      'game-card-featured',
 
       // JS-injected structural classes
       'header-mode',
@@ -50,11 +46,9 @@ module.exports = {
     // Dynamic patterns (e.g. mastery-level-0, mastery-level-1, user-tab-active)
     greedy: [
       /^mastery-level-/,
-      /^tier-badge-/,
       /^game-card/,
       /^game-complete/,
       /^game-header/,
-      /^tier-section/,
       /^hub-tab/,
       /^hub-panel/,
       /^auth-/,
@@ -66,8 +60,6 @@ module.exports = {
       /^header-/,
       /^sidebar-/,
       /^user-/,           // user-btn, user-selector, user-info, user-avatar, user-name, user-meta…
-      /^continue-hero/,
-      /^welcome-/,
       /^word-/,
       /^fill-/,
       /^wj-/,             // Word Journey (short prefix)

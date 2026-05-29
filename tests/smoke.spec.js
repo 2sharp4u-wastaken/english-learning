@@ -82,6 +82,16 @@ async function gotoReactRoute(page, hash) {
     await page.waitForTimeout(800);
 }
 
+/**
+ * Locator for a React home game card by game id. The legacy `.game-card`
+ * welcome markup was retired in Slice 4.1; the React home renders cards with
+ * `data-testid="home-game-card"` and a `data-locked` attribute (the legacy
+ * `.locked` class is gone). Note React treats an *absent* gameUnlocks entry as
+ * unlocked, so tests assert lock state by injecting explicit `unlocked` flags.
+ */
+const homeCard = (page, gameId) =>
+    page.locator(`[data-testid="home-game-card"][data-game="${gameId}"]`);
+
 /** Build a learnedWords object with N fake graduated words */
 function makeLearnedWords(count) {
     const words = {};
@@ -126,46 +136,46 @@ function makeAbcMastery(masteryLevel, letterCount = 26) {
 test.describe('Game Gating', () => {
     test('fresh user: only ungated games are accessible', async ({ page }) => {
         await setupFreshUser(page);
+        // A fresh user's default gameUnlocks live only in app.js memory until the
+        // first save; the React home reads *persisted* progress via the bridge.
+        // Flush the seeded defaults so the home renders the real gating map.
+        await page.evaluate(() => window.app?.saveUserProgress?.());
+        await gotoReactRoute(page, '/home');
 
-        // Ungated games should NOT have .locked class
-        const wordJourney = page.locator('.game-card[data-game="word-journey"]');
-        const abc = page.locator('.game-card[data-game="abc"]');
-        const memory = page.locator('.game-card[data-game="memory"]');
+        // Ungated games are unlocked (app.js seeds these as unlocked:true)
+        await expect(homeCard(page, 'word-journey')).toHaveAttribute('data-locked', 'false');
+        await expect(homeCard(page, 'abc')).toHaveAttribute('data-locked', 'false');
+        await expect(homeCard(page, 'memory')).toHaveAttribute('data-locked', 'false');
 
-        await expect(wordJourney).not.toHaveClass(/locked/);
-        await expect(abc).not.toHaveClass(/locked/);
-        await expect(memory).not.toHaveClass(/locked/);
-
-        // Gated games SHOULD have .locked class
-        const listening = page.locator('.game-card[data-game="listening"]');
-        const reading = page.locator('.game-card[data-game="reading"]');
-        const grammar = page.locator('.game-card[data-game="grammar"]');
-        const vocabulary = page.locator('.game-card[data-game="vocabulary"]');
-
-        await expect(listening).toHaveClass(/locked/);
-        await expect(reading).toHaveClass(/locked/);
-        await expect(grammar).toHaveClass(/locked/);
-        await expect(vocabulary).toHaveClass(/locked/);
+        // Gated games are locked (seeded unlocked:false until requirements are met)
+        await expect(homeCard(page, 'listening')).toHaveAttribute('data-locked', 'true');
+        await expect(homeCard(page, 'reading')).toHaveAttribute('data-locked', 'true');
+        await expect(homeCard(page, 'grammar')).toHaveAttribute('data-locked', 'true');
+        await expect(homeCard(page, 'vocabulary')).toHaveAttribute('data-locked', 'true');
     });
 
     test('5 learned words: unlocks Practice tier games', async ({ page }) => {
         await setupFreshUser(page);
 
         const learnedWords = makeLearnedWords(5);
+        // injectProgress replaces the whole gameUnlocks map, and React treats an
+        // absent entry as unlocked — so list the still-locked games explicitly.
         const gameUnlocks = {
             'listening': { unlocked: true, unlockedDate: '2026-03-20' },
             'picture-match': { unlocked: true, unlockedDate: '2026-03-20' },
             'true-or-not': { unlocked: true, unlockedDate: '2026-03-20' },
+            'reading': { unlocked: false }, 'grammar': { unlocked: false },
         };
         await injectProgress(page, { learnedWords, gameUnlocks });
+        await gotoReactRoute(page, '/home');
 
-        await expect(page.locator('.game-card[data-game="listening"]')).not.toHaveClass(/locked/);
-        await expect(page.locator('.game-card[data-game="picture-match"]')).not.toHaveClass(/locked/);
-        await expect(page.locator('.game-card[data-game="true-or-not"]')).not.toHaveClass(/locked/);
+        await expect(homeCard(page, 'listening')).toHaveAttribute('data-locked', 'false');
+        await expect(homeCard(page, 'picture-match')).toHaveAttribute('data-locked', 'false');
+        await expect(homeCard(page, 'true-or-not')).toHaveAttribute('data-locked', 'false');
 
         // Still locked
-        await expect(page.locator('.game-card[data-game="reading"]')).toHaveClass(/locked/);
-        await expect(page.locator('.game-card[data-game="grammar"]')).toHaveClass(/locked/);
+        await expect(homeCard(page, 'reading')).toHaveAttribute('data-locked', 'true');
+        await expect(homeCard(page, 'grammar')).toHaveAttribute('data-locked', 'true');
     });
 
     test('10 learned words + ABC mastery: unlocks Reading', async ({ page }) => {
@@ -182,10 +192,11 @@ test.describe('Game Gating', () => {
             'vocabulary': { unlocked: true, unlockedDate: '2026-03-20' },
         };
         await injectProgress(page, { learnedWords, wordMastery, gameUnlocks });
+        await gotoReactRoute(page, '/home');
 
-        await expect(page.locator('.game-card[data-game="reading"]')).not.toHaveClass(/locked/);
-        await expect(page.locator('.game-card[data-game="pronunciation"]')).not.toHaveClass(/locked/);
-        await expect(page.locator('.game-card[data-game="vocabulary"]')).not.toHaveClass(/locked/);
+        await expect(homeCard(page, 'reading')).toHaveAttribute('data-locked', 'false');
+        await expect(homeCard(page, 'pronunciation')).toHaveAttribute('data-locked', 'false');
+        await expect(homeCard(page, 'vocabulary')).toHaveAttribute('data-locked', 'false');
     });
 
     test('50 learned words + 3 topics: unlocks Grammar', async ({ page }) => {
@@ -201,8 +212,9 @@ test.describe('Game Gating', () => {
             'grammar': { unlocked: true, unlockedDate: '2026-03-20' },
         };
         await injectProgress(page, { learnedWords, gameUnlocks });
+        await gotoReactRoute(page, '/home');
 
-        await expect(page.locator('.game-card[data-game="grammar"]')).not.toHaveClass(/locked/);
+        await expect(homeCard(page, 'grammar')).toHaveAttribute('data-locked', 'false');
     });
 });
 

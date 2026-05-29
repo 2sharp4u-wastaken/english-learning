@@ -98,13 +98,20 @@ settings.js saveSettings()
 
 ## Home Screen Refresh
 
+The legacy welcome-screen DOM + its `updateHomeCardStates`/`updateHeroCard`/hash-nav
+handlers were retired in **Slice 4.1**. React owns the home now:
+
 ```
-showWelcomeScreen()
-  ├─ updateHomeCardStates() ──→ reads gameUnlocks, applies .locked class
-  ├─ updateHeroCard() ──→ reads recommendation logic
-  ├─ updateWordsLearnedCount() ──→ reads learnedWords
-  └─ renderProfileScreen() ──→ refreshes all profile sections
+HomePage.tsx (React, route /#/home)
+  ├─ useGameUnlocks() ──→ polls localStorage gameUnlocks every 500ms; locks card
+  │                       when unlocks[id].unlocked === false (ABSENT = unlocked)
+  ├─ getContinueTarget() (bridge/games) ──→ continue-hero recommendation
+  ├─ useUserProgress() ──→ words-learned / streak
+  └─ Profile is its own React route (/#/profile)
 ```
+Caveat: gating reads *persisted* progress — a fresh user with no saved
+`gameUnlocks` shows everything unlocked (see master-plan Slice 4.1 gotcha).
+`gameManager.showWelcomeScreen()` (gameLogic.js) now just routes to `#/home`.
 
 ## Word Selection per Game
 
@@ -670,7 +677,7 @@ CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|pictu
 | `getWordJourneyWords()` | gameLogic.js | 3403 |
 | `endGame()` | gameLogic.js | ~2920 |
 | `showLearnFirstPrompt()` | gameLogic.js | ~2321 |
-| `updateHomeCardStates()` | index.html | ~1154 |
+| `useGameUnlocks()` (React; replaced legacy `updateHomeCardStates`) | src/hooks/useGameUnlocks.ts | — |
 | `checkMilestoneCertificates()` | app.js | ~924 |
 | `checkGameMilestoneCertificates()` | app.js | ~964 |
 | `getRecommendation()` | app.js | ~662 |

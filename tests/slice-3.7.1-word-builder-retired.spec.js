@@ -72,7 +72,12 @@ test.describe('Slice 3.7.1 — Word Builder retirement', () => {
 
     test('word-builder card is not present on home', async ({ page }) => {
         await setupAuthedUser(page);
-        const card = page.locator('.game-card[data-game="word-builder"]');
+        // Legacy `.game-card` welcome markup was retired in Slice 4.1; assert against
+        // the React home card so this stays meaningful (not vacuously true).
+        await page.evaluate(() => { window.location.hash = '#/home'; });
+        await page.waitForTimeout(800);
+        await expect(page.locator('[data-testid="home-game-card"]').first()).toBeVisible();
+        const card = page.locator('[data-testid="home-game-card"][data-game="word-builder"]');
         await expect(card).toHaveCount(0);
     });
 
