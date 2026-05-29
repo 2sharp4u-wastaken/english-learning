@@ -172,7 +172,7 @@ export function ProfilePage() {
               </h1>
               <div className="flex items-center gap-2 text-sm text-muted">
                 <span className="text-lg">{level.icon}</span>
-                <span>{level.name}</span>
+                <span data-testid="profile-level">{level.name}</span>
               </div>
             </div>
           </div>

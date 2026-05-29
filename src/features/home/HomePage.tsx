@@ -187,6 +187,9 @@ export function HomePage() {
                   <button
                     key={game.id}
                     type="button"
+                    data-testid="home-game-card"
+                    data-game={game.id}
+                    data-locked={isLocked ? 'true' : 'false'}
                     disabled={isLocked}
                     onClick={() => navigate(`/game/${game.id}`)}
                     title={isLocked ? unlocks[game.id]?.requirement ?? undefined : game.description}
@@ -210,7 +213,10 @@ export function HomePage() {
                       {game.name}
                     </span>
                     {isLocked ? (
-                      <span className="flex items-center gap-1 text-[0.7rem] leading-tight text-muted">
+                      <span
+                        data-testid="home-game-lock"
+                        className="flex items-center gap-1 text-[0.7rem] leading-tight text-muted"
+                      >
                         <Lock size={11} />
                         {unlocks[game.id]?.requirement ?? 'נפתח בקרוב'}
                       </span>
