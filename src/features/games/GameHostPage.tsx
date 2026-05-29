@@ -1,45 +1,73 @@
-import { useEffect, type ComponentType } from 'react'
-import { Navigate, useParams } from 'react-router-dom'
+import { lazy, Suspense, useEffect, type ComponentType } from 'react'
+import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { launchGame } from '@/bridge/games'
-import { VocabularyGamePage } from './vocabulary/VocabularyGamePage'
-import { ListeningGamePage } from './listening/ListeningGamePage'
-import { PictureMatchGamePage } from './picture-match/PictureMatchGamePage'
-import { TrueOrNotGamePage } from './true-or-not/TrueOrNotGamePage'
-import { ReadingGamePage } from './reading/ReadingGamePage'
-import { FillBlanksGamePage } from './fill-blanks/FillBlanksGamePage'
-import { SentenceScrambleGamePage } from './sentence-scramble/SentenceScrambleGamePage'
-import { GrammarBeginnerGamePage } from './grammar-beginner/GrammarBeginnerGamePage'
-import { GrammarGamePage } from './grammar/GrammarGamePage'
-import { ArticlesGamePage } from './articles/ArticlesGamePage'
-import { ProgressiveGamePage } from './progressive/ProgressiveGamePage'
-import { PronunciationGamePage } from './pronunciation/PronunciationGamePage'
-import { PracticeGamePage } from './practice/PracticeGamePage'
-import { StoryTimeGamePage } from './story-time/StoryTimeGamePage'
-import { WordJourneyGamePage } from './word-journey/WordJourneyGamePage'
-import { MemoryGamePage } from './memory/MemoryGamePage'
-import { ABCGamePage } from './abc/ABCGamePage'
-import { PhonicsGamePage } from './phonics/PhonicsGamePage'
+import { GameScreenShell } from './shared/GameScreenShell'
 import { isReactGame } from './reactGames'
 
+// Each game is its own lazy chunk so a first-visit user only downloads the one
+// game they open (Slice 4.0). Pages are named exports, so map them to `default`
+// for React.lazy. Keep this record in sync with REACT_GAME_IDS in reactGames.ts.
 const REACT_GAMES: Record<string, ComponentType> = {
-  vocabulary: VocabularyGamePage,
-  listening: ListeningGamePage,
-  'picture-match': PictureMatchGamePage,
-  'true-or-not': TrueOrNotGamePage,
-  reading: ReadingGamePage,
-  'fill-blanks': FillBlanksGamePage,
-  scramble: SentenceScrambleGamePage,
-  'grammar-beginner': GrammarBeginnerGamePage,
-  grammar: GrammarGamePage,
-  articles: ArticlesGamePage,
-  progressive: ProgressiveGamePage,
-  pronunciation: PronunciationGamePage,
-  practice: PracticeGamePage,
-  'story-time': StoryTimeGamePage,
-  'word-journey': WordJourneyGamePage,
-  memory: MemoryGamePage,
-  abc: ABCGamePage,
-  phonics: PhonicsGamePage,
+  vocabulary: lazy(() =>
+    import('./vocabulary/VocabularyGamePage').then((m) => ({ default: m.VocabularyGamePage })),
+  ),
+  listening: lazy(() =>
+    import('./listening/ListeningGamePage').then((m) => ({ default: m.ListeningGamePage })),
+  ),
+  'picture-match': lazy(() =>
+    import('./picture-match/PictureMatchGamePage').then((m) => ({
+      default: m.PictureMatchGamePage,
+    })),
+  ),
+  'true-or-not': lazy(() =>
+    import('./true-or-not/TrueOrNotGamePage').then((m) => ({ default: m.TrueOrNotGamePage })),
+  ),
+  reading: lazy(() =>
+    import('./reading/ReadingGamePage').then((m) => ({ default: m.ReadingGamePage })),
+  ),
+  'fill-blanks': lazy(() =>
+    import('./fill-blanks/FillBlanksGamePage').then((m) => ({ default: m.FillBlanksGamePage })),
+  ),
+  scramble: lazy(() =>
+    import('./sentence-scramble/SentenceScrambleGamePage').then((m) => ({
+      default: m.SentenceScrambleGamePage,
+    })),
+  ),
+  'grammar-beginner': lazy(() =>
+    import('./grammar-beginner/GrammarBeginnerGamePage').then((m) => ({
+      default: m.GrammarBeginnerGamePage,
+    })),
+  ),
+  grammar: lazy(() =>
+    import('./grammar/GrammarGamePage').then((m) => ({ default: m.GrammarGamePage })),
+  ),
+  articles: lazy(() =>
+    import('./articles/ArticlesGamePage').then((m) => ({ default: m.ArticlesGamePage })),
+  ),
+  progressive: lazy(() =>
+    import('./progressive/ProgressiveGamePage').then((m) => ({ default: m.ProgressiveGamePage })),
+  ),
+  pronunciation: lazy(() =>
+    import('./pronunciation/PronunciationGamePage').then((m) => ({
+      default: m.PronunciationGamePage,
+    })),
+  ),
+  practice: lazy(() =>
+    import('./practice/PracticeGamePage').then((m) => ({ default: m.PracticeGamePage })),
+  ),
+  'story-time': lazy(() =>
+    import('./story-time/StoryTimeGamePage').then((m) => ({ default: m.StoryTimeGamePage })),
+  ),
+  'word-journey': lazy(() =>
+    import('./word-journey/WordJourneyGamePage').then((m) => ({ default: m.WordJourneyGamePage })),
+  ),
+  memory: lazy(() =>
+    import('./memory/MemoryGamePage').then((m) => ({ default: m.MemoryGamePage })),
+  ),
+  abc: lazy(() => import('./abc/ABCGamePage').then((m) => ({ default: m.ABCGamePage }))),
+  phonics: lazy(() =>
+    import('./phonics/PhonicsGamePage').then((m) => ({ default: m.PhonicsGamePage })),
+  ),
 }
 
 // Retired games → bookmark-safe redirects. Slice 3.7.1 folded word-builder
@@ -50,6 +78,7 @@ const RETIRED_GAMES: Record<string, string> = {
 
 export function GameHostPage() {
   const { gameId } = useParams<{ gameId: string }>()
+  const navigate = useNavigate()
   const redirectTo = gameId ? RETIRED_GAMES[gameId] : undefined
   const ReactGame =
     gameId && !redirectTo && isReactGame(gameId) ? REACT_GAMES[gameId] : undefined
@@ -62,6 +91,20 @@ export function GameHostPage() {
   }, [gameId, ReactGame, redirectTo])
 
   if (redirectTo) return <Navigate to={`/game/${redirectTo}`} replace />
-  if (ReactGame) return <ReactGame />
+  if (ReactGame) {
+    return (
+      <Suspense
+        fallback={
+          <GameScreenShell
+            header={{ title: 'טוען…', icon: '⏳', score: 0, onBack: () => navigate('/home') }}
+          >
+            טוען…
+          </GameScreenShell>
+        }
+      >
+        <ReactGame />
+      </Suspense>
+    )
+  }
   return null
 }

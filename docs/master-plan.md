@@ -1804,25 +1804,27 @@ Investigate exposing the app beyond `localhost` and pick a path:
 
 Objective: remove dead legacy code and shrink maintenance burden.
 
-### Slice 4.0: Code-split React game pages — PLANNED
+### Slice 4.0: Code-split React game pages — SHIPPED (2026-05-29, with a caveat)
 
-Vite's post-build warning has been flagging the main bundle as oversize (~1 MB minified / 256 KB gzipped) since the Wave 1 game migrations started landing. Every first-visit user downloads, parses, and executes all React games before anything interactive renders — wasteful since most users open one game per session. Each new Wave 2/3/4 slice grows the monolith.
+Vite's post-build warning had been flagging the main bundle as oversize (~1.32 MB minified / 341 KB gzipped) since the Wave 1 game migrations started landing. Every first-visit user downloaded, parsed, and executed all React games before anything interactive rendered.
 
-Approach:
+**What shipped:**
 
-- Replace each static import in `src/features/games/GameHostPage.tsx` with `React.lazy(() => import('./<game>/GameScreenPage'))`.
-- Wrap the resolved `<ReactGame />` in `<Suspense fallback={<GameScreenShell header={{ title: '…', icon: '⏳', score: 0, onBack: () => navigate('/home') }}>טוען…</GameScreenShell>}>` so the back button still works during chunk fetch.
-- Sanity: confirm `RETIRED_GAMES` redirect still wins over the lazy import (it renders `<Navigate>` before `<ReactGame />` is resolved).
-- Optional vendor split via `build.rollupOptions.output.manualChunks`: group React/Router/Lucide into a `vendor` chunk so per-game chunks stay tiny and the vendor chunk caches across deploys.
+- Every static game-page import in `src/features/games/GameHostPage.tsx` is now `React.lazy(() => import('./<game>/<Page>').then(m => ({ default: m.<Page> })))` — the `.then` maps our named exports to the default that `React.lazy` requires. The resolved `<ReactGame />` is wrapped in `<Suspense>` with a `GameScreenShell` fallback whose back button still works during chunk fetch.
+- `RETIRED_GAMES` redirect still wins: `GameHostPage` returns `<Navigate>` **before** the `<Suspense>` branch, so `/#/game/word-builder` redirects with no flash.
+- `vite.config.ts` `manualChunks`: `vendor` (React/Router/Lucide + small utils) and `motion` (framer-motion + motion-dom — only `HomeMascot` uses it) split out of the app chunk.
+- Result: **22 per-game chunks** (each 0.3–26 KB), `vendor` 336 KB, `motion` 125 KB, and the main `index` chunk down from 1.32 MB → **632 KB minified / 149 KB gzipped**. A first-visit user no longer downloads any game code until they open a game. **This is the real win and it is done.**
 
-Acceptance:
+**Caveat — the "<500 KB main chunk" acceptance bar is NOT met, and can't be until Phase 4.4:** `index.html` loads the legacy vanilla-JS graph (`consoleLogger.js`, `data/_loader.js`, `gameLogic.js`, `app.js`) as eager `<script type="module">` tags. **Vite fuses sibling module-script entries into the SAME entry chunk as `src/main.tsx`** (the built `index.html` has a single `<script>` tag). Entry modules can't be reassigned by `manualChunks`, so this legacy bootstrap can't be split out. Measured composition of the 632 KB index: ~894 KB-original of legacy (≈500 KB minified — `gameLogic` 163 KB, `app.js` 73 KB, managers, and the eagerly-imported legacy game modules) + ~259 KB-original of React (≈145 KB minified). So legacy alone is ~500 KB minified — the bar is unreachable while that legacy is eager. It shrinks when **Phase 4.4** deletes the legacy game files (the plan already noted 4.4 owns "the legacy game files that share the bundle"). De-booting legacy via a dynamic import was rejected: it introduces a React-vs-legacy boot-order race for a cosmetic metric.
 
-- `npm run build` reports the main app chunk below 500 KB minified.
-- Each React game becomes its own chunk in `dist/assets/`.
-- Playwright route tests still pass (chunks load on demand without breaking navigation).
-- The retired-games redirect still fires for `/#/game/word-builder` (no `<Suspense>` flash).
+**Verified:** `npm run build` clean (tsc + vite); 27 Playwright route tests green across vocabulary, courses-launch, true-or-not, the word-builder retired-redirect spec, reading (shared `LetterSlots`/`SpellingComparison` chunk), and memory (self-contained run) — lazy chunks load on demand without breaking navigation.
 
-Carries no UX-visible behavior change — purely a perf/loading slice. Should land before Phase 4.4 since 4.4 deletes the legacy game files that share the bundle; doing 4.0 first lets us measure the win cleanly.
+**Revised acceptance:**
+
+- ✅ Each React game is its own chunk in `dist/assets/`.
+- ✅ Playwright route tests pass; retired-games redirect still fires with no Suspense flash.
+- ✅ Games no longer eager-loaded; main chunk down ~52% (1.32 MB → 632 KB).
+- ⏳ Main chunk <500 KB minified — **deferred to Phase 4.4** (gated on deleting the eager legacy bootstrap, not on React code).
 
 ### Slice 4.1: Retire Legacy Home Markup/CSS
 
@@ -1847,6 +1849,7 @@ Carries no UX-visible behavior change — purely a perf/loading slice. Should la
 - remove `games/*.js` files (logic has been reimplemented in React)
 - remove `gameLogic.js` if fully replaced
 - remove `app.js` orchestration (replaced by React app)
+- **Inherits the Slice 4.0 <500 KB main-chunk bar.** These eager `<script type="module">` files fuse into the React `index` chunk (~500 KB minified of legacy today). Deleting them is what finally drops the main chunk below 500 KB; re-measure `npm run build` after this slice to confirm the 4.0 acceptance is met.
 - remove `auth.js` global script — `src/bridge/auth.ts` transitions from adapter to standalone auth owner (see Auth End-State section)
 - port login + password-entry screens to React (LoginPage / PasswordEntryPage) consuming `useAuthSession`; legacy modal markup in `index.html` is deleted alongside `auth.js`. (Interim: 2026-05 restyled the legacy modal CSS to match the React palette — `.auth-modal*` / `.user-select-*` / `.login-*` / `.password-*` / `.auth-btn` blocks in `styles.css` — so visuals stay consistent until the port lands.)
 
