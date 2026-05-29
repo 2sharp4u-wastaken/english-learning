@@ -2321,7 +2321,12 @@ test.describe('Slice 3.14: Memory Game (React)', () => {
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
   });
 
-  test('completing level 1 shows the level summary with stars and a next-level button', async ({ page }) => {
+  test('completing level 1 shows the inline complete strip + advance button, and advancing builds level 2', async ({ page }) => {
+    // Per project_slice314_memory: the full MemoryLevelSummary only renders at
+    // game-end (phase === 'finished'). After a level the board stays up with a
+    // small `memory-level-complete` strip (stars + "כל הזוגות נמצאו") and a
+    // `memory-advance` button. The previous version of this test asserted the
+    // pre-redesign per-level summary DOM that no longer exists.
     await seedUser(page);
     await seedLearnedFromBank(page, 12);
     await gotoHash(page, '/game/memory');
@@ -2329,12 +2334,12 @@ test.describe('Slice 3.14: Memory Game (React)', () => {
 
     await completeMemoryLevel(page);
 
-    await expect(page.locator('[data-testid="memory-summary"]')).toBeVisible({ timeout: 4000 });
-    await expect(page.locator('[data-testid="memory-stars"]')).toBeVisible();
-    await expect(page.locator('[data-testid="memory-next-level"]')).toBeVisible();
+    await expect(page.locator('[data-testid="memory-level-complete"]')).toBeVisible({ timeout: 4000 });
+    await expect(page.locator('[data-testid="memory-level-stars"]')).toBeVisible();
+    await expect(page.locator('[data-testid="memory-advance"]')).toBeVisible();
 
     // Advancing builds the level-2 board (9 pairs → 18 cards).
-    await page.locator('[data-testid="memory-next-level"]').click();
+    await page.locator('[data-testid="memory-advance"]').click();
     await expect.poll(() => page.locator('[data-testid="memory-card"]').count(), { timeout: 4000 })
       .toBe(18);
   });

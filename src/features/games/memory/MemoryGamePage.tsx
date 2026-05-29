@@ -450,7 +450,12 @@ export function MemoryGamePage() {
               data-testid="memory-level-complete"
               className="mx-auto flex flex-col items-center gap-0.5 rounded-2xl border border-[color:var(--mint-400)]/30 bg-[color:var(--mint-400)]/10 px-5 py-2 text-center"
             >
-              <div className="text-xl" aria-hidden>
+              <div
+                data-testid="memory-level-stars"
+                data-stars={metrics.stars}
+                className="text-xl"
+                aria-hidden
+              >
                 {'⭐'.repeat(metrics.stars)}
                 {'☆'.repeat(Math.max(0, 3 - metrics.stars))}
               </div>
