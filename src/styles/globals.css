@@ -6,11 +6,9 @@
 @tailwind utilities;
 
 /* Legacy DOM suppression while React shell owns a hub route.
- * Class is toggled by AppShell. Uses !important because legacy
- * top-header.js re-applies inline styles via style.cssText after auth
- * events, which would otherwise clobber a JS-set display:none. */
-body.react-shell-active #top-header,
-body.react-shell-active #welcome-screen,
+ * Class is toggled by AppShell. Uses !important to beat legacy inline styles.
+ * #top-header (Slice 4.2) and #welcome-screen (Slice 4.1) are no longer present
+ * in index.html, so only the remaining legacy containers need suppressing. */
 body.react-shell-active #user-hub-screen,
 body.react-shell-active .app-layout {
   display: none !important;

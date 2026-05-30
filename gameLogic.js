@@ -1297,11 +1297,8 @@ class GameManager {
         if (window.gamificationManager?.streak) {
             window.gamificationManager.streak.updateStreakDisplay();
         }
-
-        // Switch header back to hub mode
-        if (window.setHeaderMode) {
-            window.setHeaderMode('hub');
-        }
+        // Header mode is owned by React now (Slice 4.2 retired the legacy top-header
+        // from the React shell); no legacy header to switch back to hub mode.
     }
 
     getGameName(gameType) {
@@ -1788,10 +1785,8 @@ class GameManager {
             btn.classList.add('active');
         });
 
-        // Show game name + back button in header
-        if (window.showGameInHeader) {
-            window.showGameInHeader(gameType);
-        }
+        // Game name + back button live in the React GameHeader now (Slice 4.2
+        // retired the legacy top-header from the React shell).
 
         // Hide all game contents (including welcome screen)
         document.querySelectorAll('.game-content').forEach(content => {

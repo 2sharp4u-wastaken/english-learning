@@ -1845,17 +1845,24 @@ Severity: low-moderate (a child could open e.g. Grammar/Reading with zero learne
 
 Fix options (pick when scheduled): (a) persist seeded defaults at user-create/login in `app.js`; or (b) have `bridge/games.getAllGameUnlocks` fall back to the default unlock map when the persisted map is empty/absent. Prefer keeping gating *computation* in legacy ProgressManager until Phase 4.4; do not re-derive gating inside the React home. Add a Playwright case asserting a fresh user (no `saveUserProgress()`) shows `data-locked="true"` on gated cards. See `project_react_home_gating_persisted` memory.
 
-### Slice 4.2: Retire Header Legacy System
+### Slice 4.2: Retire Header Legacy System — PARTIAL (2026-05-30, React shell de-wired)
 
-- remove `components/top-header.js`
-- remove `components/header-score.js`
-- remove related CSS
+**Dependency discovered:** `components/top-header.js`, `components/header-score.js`, and the header CSS (`.top-header`/`.header-*`/`.case-toggle-btn`/`.nikud-toggle-btn`) are **shared** with the legacy `stats.html`/`settings.html`/`words.html` pages, which can't be deleted until 4.3 — and 4.3 is itself gated on porting Custom Words + Word Images to React (see line ~885). So the files + CSS **cannot be deleted in 4.2 without breaking the legacy pages**. They are moved to **Slice 4.3** (delete alongside the pages that import them).
+
+What 4.2 **did** ship (non-breaking; the legacy `#top-header` was already permanently hidden by `body.react-shell-active !important`, since Phase 3 made every route React-driven):
+- ✅ `index.html`: removed the `initTopHeader({activePage:'home'})` bootstrap + the `window.showGameInHeader`/`window.setHeaderMode` exposes. React owns the header (`TopNav`/`MobileTopBar` on hub routes, `GameHeader` in games). The case/nikud init the legacy header did is redundant: React `textPrefs` uses the same `globalLetterCase` key + `lowercase-mode` class, and `window._showNikud` is set at module load by `data/_loader.js → utils/nikud.js`.
+- ✅ `gameLogic.js`: removed the two guarded `window.setHeaderMode('hub')` / `window.showGameInHeader(gameType)` calls (they were already no-ops once the globals were gone).
+- ✅ `src/styles/globals.css`: dropped `#top-header` (4.2) and the already-dead `#welcome-screen` (4.1) from the `react-shell-active` suppression rule; kept `#user-hub-screen` + `.app-layout`.
+
+**Moved to Slice 4.3 (do together with deleting the legacy pages):** delete `components/top-header.js`, `components/header-score.js`, and the header CSS blocks in `styles.css`.
 
 ### Slice 4.3: Retire Legacy Pages
 
 - delete `settings.html`, `stats.html`, `words.html`
 - delete `settings.js`, `stats.js`
-- remove related CSS and inline styles
+- delete `components/top-header.js` + `components/header-score.js` (moved here from 4.2 — only the legacy pages still import them)
+- remove related CSS and inline styles (including the header CSS in `styles.css`: `.top-header`, `.header-*`, `.case-toggle-btn`, `.nikud-toggle-btn`)
+- **Prerequisite:** Custom Words + Word Images must be ported to React first (settings.html is still the "Advanced Tools" escape hatch for them — see line ~885)
 
 ### Slice 4.4: Retire Legacy Game UI Code
 

@@ -18,8 +18,6 @@
     <div class="app-layout">
         <!-- Main Content Area -->
         <div class="main-content">
-            <!-- Top Navigation Header is injected by components/top-header.js -->
-
             <main class="game-area">
             <!-- Vocabulary Game -->
             <div id="vocabulary-game" class="game-content">
@@ -888,13 +886,12 @@
     <script src="feedback.js"></script>
     <script src="audio-effects.js"></script>
     <script src="gamification.js"></script>
-    <script type="module">
-        import { initTopHeader, showGameInHeader, setHeaderMode } from './components/top-header.js?t=1776400001';
-        initTopHeader({ activePage: 'home' });
-        // Expose to gameLogic.js (separate module scope)
-        window.showGameInHeader = showGameInHeader;
-        window.setHeaderMode = setHeaderMode;
-    </script>
+    <!-- Slice 4.2: the legacy top-header was retired from the React shell. React
+         owns the header (TopNav / GameHeader); the legacy #top-header was already
+         permanently hidden by body.react-shell-active. case/nikud init that the
+         header used to do is covered by React textPrefs + data/_loader.js→nikud.js.
+         components/top-header.js itself stays until the legacy *.html pages that
+         import it are deleted in Slice 4.3. -->
     <script type="module" src="gameLogic.js?t=1776400001"></script>
     <script type="module" src="app.js?t=1776400001"></script>
 
