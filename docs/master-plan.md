@@ -1871,6 +1871,10 @@ Sequenced sub-slices (full design: approved plan / `project_custom_content_bridg
 
 ### Slice 4.4: Retire Legacy Game UI Code
 
+**Before starting — two blockers this is NOT just "delete files":**
+1. **The React bridges call directly into the legacy globals.** ~13 `src/bridge/*` modules invoke `window.gameManager` / `scoreManager` / `progressManager` / `speechManager` (provided by `gameLogic.js` / `app.js` / `managers/*`). Deleting `gameLogic.js`/`app.js` requires either reimplementing that logic in React/bridges or keeping `managers/*` alive. Scope this first — it's the bulk of the slice, not the file deletion.
+2. **Deleting `games/*.js` kills image-override hydration.** `utils/imageRenderer.js` (which hydrates `window.wordImageOverrides` at boot, read synchronously by 8 game pages) is only loaded via the `games/*.js` import chain. When `games/*.js` go, add bridge-based boot hydration of `window.wordImageOverrides` (folds into **FU-4.3-idb**) or word images silently stop loading. See `project_custom_content_bridge` memory.
+
 - remove `games/*.js` files (logic has been reimplemented in React)
 - remove `gameLogic.js` if fully replaced
 - remove `app.js` orchestration (replaced by React app)
