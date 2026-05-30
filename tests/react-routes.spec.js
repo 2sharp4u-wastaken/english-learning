@@ -491,24 +491,76 @@ test.describe('Slice 1.6: Settings', () => {
     expect(legacy?.selectedCategories?.length).toBe(10);
   });
 
-  test('advanced-tools tab links to legacy settings.html for both flows', async ({ page }) => {
+  // Slice 4.3.b: Custom Words ported to React (no longer links to settings.html).
+  // Word Images is still the one remaining legacy escape hatch until Slice 4.3.c.
+  async function openAdvancedTools(page) {
     await page.setViewportSize({ width: 1280, height: 800 });
     await seedUser(page);
     await gotoHash(page, '/settings');
-
-    // Unlock with admin password by clicking advanced-tools (protected)
     await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
     await expect(page.locator('#parent-password')).toBeVisible();
     await page.locator('#parent-password').fill('mac7395eRa1n1!');
     await page.locator('#parent-password').press('Enter');
     await expect(page.locator('#parent-password')).not.toBeVisible();
+  }
 
-    // Both escape-hatch links should be rendered and point at settings.html
+  test('advanced-tools: Custom Words is a React panel; only Word Images links to settings.html', async ({ page }) => {
+    await openAdvancedTools(page);
+
+    // Custom Words panel renders natively (its API-key field is present).
+    await expect(page.locator('#react-root textarea')).toBeVisible();
+
+    // Exactly one legacy escape hatch remains (Word Images).
     const hrefs = await page.locator('#react-root a[href="settings.html"]').evaluateAll(
       (els) => els.map((e) => e.getAttribute('href')),
     );
-    expect(hrefs.length).toBeGreaterThanOrEqual(2);
-    for (const h of hrefs) expect(h).toBe('settings.html');
+    expect(hrefs).toEqual(['settings.html']);
+  });
+
+  test('advanced-tools: Custom Words panel lists a seeded word and deletes it', async ({ page }) => {
+    await openAdvancedTools(page);
+
+    // Seed a custom word, then re-open the tab so the panel reads it on mount.
+    await page.evaluate(() => {
+      localStorage.setItem('customWords_global', JSON.stringify([
+        { word: 'dragon', translation: 'דרקון', category: 'animals', image: '🐉' },
+      ]));
+    });
+    await page.locator('[data-tab-id="game"]:visible').first().click();
+    await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
+
+    const list = page.locator('[data-testid="custom-words-list"]');
+    await expect(list).toContainText('dragon');
+
+    await page.locator('[aria-label="מחק dragon"]').click();
+    await expect(page.locator('[data-testid="custom-words-list"]')).toHaveCount(0);
+    const remaining = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('customWords_global') || '[]'),
+    );
+    expect(remaining).toHaveLength(0);
+  });
+
+  test('advanced-tools: Custom Words import restores a backup bundle', async ({ page }) => {
+    await openAdvancedTools(page);
+
+    const bundle = {
+      version: 1,
+      exportedAt: '2026-05-30T00:00:00.000Z',
+      customWords: [{ word: 'whale', translation: 'לוויתן', category: 'animals', image: '🐋' }],
+      imageOverrides: {},
+      translationOverrides: {},
+    };
+    await page.locator('#react-root input[type="file"]').setInputFiles({
+      name: 'backup.json',
+      mimeType: 'application/json',
+      buffer: Buffer.from(JSON.stringify(bundle)),
+    });
+
+    await expect(page.locator('[data-testid="custom-words-list"]')).toContainText('whale');
+    const saved = await page.evaluate(() =>
+      JSON.parse(localStorage.getItem('customWords_global') || '[]'),
+    );
+    expect(saved.some((w) => w.word === 'whale')).toBe(true);
   });
 });
 

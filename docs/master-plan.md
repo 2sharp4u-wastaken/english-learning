@@ -1856,13 +1856,16 @@ What 4.2 **did** ship (non-breaking; the legacy `#top-header` was already perman
 
 **Moved to Slice 4.3 (do together with deleting the legacy pages):** delete `components/top-header.js`, `components/header-score.js`, and the header CSS blocks in `styles.css`.
 
-### Slice 4.3: Retire Legacy Pages
+### Slice 4.3: Retire Legacy Pages — IN PROGRESS (Python-free, mobile-ready)
 
-- delete `settings.html`, `stats.html`, `words.html`
-- delete `settings.js`, `stats.js`
-- delete `components/top-header.js` + `components/header-score.js` (moved here from 4.2 — only the legacy pages still import them)
-- remove related CSS and inline styles (including the header CSS in `styles.css`: `.top-header`, `.header-*`, `.case-toggle-btn`, `.nikud-toggle-btn`)
-- **Prerequisite:** Custom Words + Word Images must be ported to React first (settings.html is still the "Advanced Tools" escape hatch for them — see line ~885)
+Sequenced sub-slices (full design: approved plan / `project_custom_content_bridge` memory). The runtime was already Python-free; `server.py` only backed optional save-to-source + a nikud CORS proxy.
+
+- ✅ **4.3.a (2026-05-30)** — `src/bridge/customContent.ts`: async storage seam for custom words + image/translation overrides + Export/Import. Promise-based **on purpose** so a future Capacitor mobile port swaps the backend (localStorage → IndexedDB → Capacitor Preferences) in one file. Backed by localStorage today, reusing the existing keys (`customWords_global`, `wordImageOverrides`, `wordTranslationOverrides`) so the legacy boot path keeps working. **Image blobs stay in localStorage, NOT IndexedDB** — 8 game pages + `utils/imageRenderer.js` read `window.wordImageOverrides` *synchronously*; the bridge keeps that window object hydrated. IndexedDB-for-blobs is a tracked follow-up (FU-4.3-idb) to do when the ~5 MB quota actually bites.
+- ✅ **4.3.b (2026-05-30)** — Custom Words ported to React: `src/bridge/wordImport.ts` (ported `utils/wordImporter.js`; browser-direct Anthropic call) + `CustomWordsPanel.tsx` in `AdvancedToolsTab` (key entry, paste-import + live log, list+delete, JSON Export/Import). Replaced the `settings.html` link. `/api/write-text` save-to-source dropped. Tests: 3 new in `react-routes.spec.js` Settings block; full suite 120 green.
+- ⏳ **4.3.c** — Port Word Images & Translations to React (`WordImagesPanel.tsx`); localStorage-backed via `customContent`; drop `/api/write-image|fetch-image|write-text` (store remote URL directly; upload→base64). Last `settings.html` escape hatch.
+- ⏳ **4.3.d** — Nikud: `utils/nikud.js` try Dicta API directly + graceful no-nikud fallback + storage cache (no `/api/enrich-nikud`).
+- ⏳ **4.3.e** — Delete `settings.html`/`stats.html`/`words.html`, `settings.js`/`stats.js`, `components/top-header.js`+`header-score.js` (parked from 4.2), `utils/fileSystemWriter.js`; remove header + page CSS from `styles.css`; purgecss safelist; repoint/retire tests (no vacuous assertions).
+- ⏳ **4.3.f** — Remove `error-tracker.js` `/api/log-error`; confirm no runtime `/api/*`; `server.py` → optional dev-only (Nakdan authoring); update `CLAUDE.md` Dev Setup + `customWords_global` key nit.
 
 ### Slice 4.4: Retire Legacy Game UI Code
 

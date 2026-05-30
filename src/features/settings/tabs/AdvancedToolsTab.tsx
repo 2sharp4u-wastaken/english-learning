@@ -1,27 +1,27 @@
-import { ExternalLink, ImageIcon, Sparkles } from 'lucide-react'
+import { ExternalLink, ImageIcon } from 'lucide-react'
 import { SectionCard } from '../components/SectionCard'
+import { CustomWordsPanel } from './components/CustomWordsPanel'
 
 export function AdvancedToolsTab() {
   return (
     <div className="space-y-4">
       <SectionCard
-        title="כלי הורה מתקדמים"
-        description="הכלים המתקדמים — ייבוא מילים דרך Claude וניהול תמונות/תרגומים — עדיין חיים בדף ההגדרות הישן. הם ימוזגו ל-React בסבב מאוחר יותר."
+        title="הוספת מילים מותאמות"
+        description="ייבוא מילים באנגלית ותרגום אוטומטי לעברית עם Claude. המילים נשמרות בדפדפן ומופיעות מיד במשחקים."
       >
-        <div className="grid gap-3 sm:grid-cols-2">
-          <ToolLink
-            href="settings.html"
-            icon={<Sparkles size={20} />}
-            title="הוספת מילים מותאמות"
-            body="ייבוא מילים באנגלית ותרגום אוטומטי לעברית עם Claude. פותח בדף ההגדרות הישן."
-          />
-          <ToolLink
-            href="settings.html"
-            icon={<ImageIcon size={20} />}
-            title="תמונות ותרגומים"
-            body="החלפת תמונות ותרגומים למילים קיימות. פותח בדף ההגדרות הישן."
-          />
-        </div>
+        <CustomWordsPanel />
+      </SectionCard>
+
+      <SectionCard
+        title="תמונות ותרגומים"
+        description="החלפת תמונות ותרגומים למילים קיימות — עדיין חי בדף ההגדרות הישן, ימוזג ל-React בהמשך."
+      >
+        <ToolLink
+          href="settings.html"
+          icon={<ImageIcon size={20} />}
+          title="תמונות ותרגומים"
+          body="החלפת תמונות ותרגומים למילים קיימות. פותח בדף ההגדרות הישן."
+        />
       </SectionCard>
     </div>
   )
