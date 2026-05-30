@@ -491,8 +491,8 @@ test.describe('Slice 1.6: Settings', () => {
     expect(legacy?.selectedCategories?.length).toBe(10);
   });
 
-  // Slice 4.3.b: Custom Words ported to React (no longer links to settings.html).
-  // Word Images is still the one remaining legacy escape hatch until Slice 4.3.c.
+  // Slice 4.3.b/c: Custom Words + Word Images both ported to React — the
+  // advanced-tools tab no longer links to legacy settings.html at all.
   async function openAdvancedTools(page) {
     await page.setViewportSize({ width: 1280, height: 800 });
     await seedUser(page);
@@ -504,17 +504,15 @@ test.describe('Slice 1.6: Settings', () => {
     await expect(page.locator('#parent-password')).not.toBeVisible();
   }
 
-  test('advanced-tools: Custom Words is a React panel; only Word Images links to settings.html', async ({ page }) => {
+  test('advanced-tools: both tools render natively with no settings.html escape hatch', async ({ page }) => {
     await openAdvancedTools(page);
 
-    // Custom Words panel renders natively (its API-key field is present).
+    // Custom Words panel (textarea) + Word Images panel (list) both render.
     await expect(page.locator('#react-root textarea')).toBeVisible();
+    await expect(page.locator('[data-testid="word-images-list"]')).toBeVisible();
 
-    // Exactly one legacy escape hatch remains (Word Images).
-    const hrefs = await page.locator('#react-root a[href="settings.html"]').evaluateAll(
-      (els) => els.map((e) => e.getAttribute('href')),
-    );
-    expect(hrefs).toEqual(['settings.html']);
+    // No legacy escape hatch links remain.
+    await expect(page.locator('#react-root a[href="settings.html"]')).toHaveCount(0);
   });
 
   test('advanced-tools: Custom Words panel lists a seeded word and deletes it', async ({ page }) => {
@@ -550,7 +548,8 @@ test.describe('Slice 1.6: Settings', () => {
       imageOverrides: {},
       translationOverrides: {},
     };
-    await page.locator('#react-root input[type="file"]').setInputFiles({
+    // Scope to the JSON import input — Word Images adds many image/* file inputs.
+    await page.locator('#react-root input[type="file"][accept="application/json"]').setInputFiles({
       name: 'backup.json',
       mimeType: 'application/json',
       buffer: Buffer.from(JSON.stringify(bundle)),
@@ -561,6 +560,45 @@ test.describe('Slice 1.6: Settings', () => {
       JSON.parse(localStorage.getItem('customWords_global') || '[]'),
     );
     expect(saved.some((w) => w.word === 'whale')).toBe(true);
+  });
+
+  test('advanced-tools: Word Images sets and resets an image override (live)', async ({ page }) => {
+    await openAdvancedTools(page);
+    await expect(page.locator('[data-testid="word-images-list"]')).toBeVisible();
+
+    // First card — word-independent (avoids assuming a specific base word).
+    const card = page.locator('[data-testid="word-images-list"] li').first();
+    await expect(card).toBeVisible();
+
+    const url = 'https://example.com/override.png';
+    await card.locator('input[type="url"]').fill(url);
+    await card.locator('[data-testid="wim-save"]').click();
+
+    // Override persisted AND live on window.wordImageOverrides (sync render path).
+    await expect.poll(() => page.evaluate((u) =>
+      Object.values(window.wordImageOverrides || {}).includes(u), url,
+    )).toBe(true);
+
+    await card.locator('[data-testid="wim-reset"]').click();
+    await expect.poll(() => page.evaluate((u) =>
+      Object.values(window.wordImageOverrides || {}).includes(u), url,
+    )).toBe(false);
+  });
+
+  test('advanced-tools: Word Images saves a translation override to localStorage', async ({ page }) => {
+    await openAdvancedTools(page);
+    await expect(page.locator('[data-testid="word-images-list"]')).toBeVisible();
+
+    const card = page.locator('[data-testid="word-images-list"] li').first();
+    await card.locator('[data-testid="wim-trans-edit"]').click();
+    const editor = card.locator('[data-testid="wim-trans-input"]');
+    await editor.fill('בדיקה-תרגום');
+    await editor.press('Enter');
+
+    await expect.poll(() => page.evaluate(() => {
+      const m = JSON.parse(localStorage.getItem('wordTranslationOverrides') || '{}');
+      return Object.values(m).includes('בדיקה-תרגום');
+    })).toBe(true);
   });
 });
 

@@ -48,6 +48,34 @@ function getCustomWordsFallback(): WordLike[] {
   }
 }
 
+export interface CatalogWord {
+  word: string
+  translation: string
+  category: string
+  image?: string
+  imageUrl?: string
+}
+
+/**
+ * The full word catalog (base bank + injected custom words), as used by the
+ * parent Word Images tool. Reads the live `vocabularyBank` (which already
+ * includes custom words injected at boot); falls back to the persisted custom
+ * words alone if the bank has not loaded.
+ */
+export function getAllWords(): CatalogWord[] {
+  const bank = getVocabularyBank() as CatalogWord[]
+  const source = bank.length > 0 ? bank : (getCustomWordsFallback() as CatalogWord[])
+  return source
+    .filter((w) => w.word && w.category)
+    .map((w) => ({
+      word: w.word,
+      translation: w.translation ?? '',
+      category: w.category,
+      image: w.image,
+      imageUrl: w.imageUrl,
+    }))
+}
+
 /**
  * Get the full category list with live word counts from the vocabularyBank.
  * Falls back to static counts if the bank has not loaded. Adds any unknown

@@ -83,6 +83,21 @@ try {
     console.warn('Failed to inject custom words:', e);
 }
 
+// Apply parent translation overrides from localStorage (Slice 4.3 — replaces the
+// legacy Python save-to-source path; applied live at boot, BEFORE nikud
+// enrichment + gameData build, so games pick up the overridden Hebrew).
+try {
+    const transOverrides = JSON.parse(localStorage.getItem('wordTranslationOverrides') || '{}');
+    let applied = 0;
+    for (const w of vocabularyBank) {
+        const t = transOverrides[`${w.category}:${w.word}`];
+        if (t) { w.translation = t; applied++; }
+    }
+    if (applied > 0) console.log(`Applied ${applied} translation override(s) from localStorage`);
+} catch (e) {
+    console.warn('Failed to apply translation overrides:', e);
+}
+
 // Make vocabulary accessible for phonetics BEFORE initialization
 window.vocabularyBank = vocabularyBank;
 

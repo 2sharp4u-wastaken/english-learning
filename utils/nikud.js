@@ -44,27 +44,43 @@ window.setHebrew = setHebrew;
 
 // ── Nikud persistence helpers ────────────────────────────────────────────────
 
-/** Load data/nikud-map.json; returns {} on failure. */
+// Slice 4.3: nikud works with NO Python server. The base vocabulary nikud ships
+// static in data/nikud-map.json; nikud fetched at runtime for new custom words
+// is cached in localStorage (NIKUD_CACHE_KEY) instead of written to source.
+const NIKUD_CACHE_KEY = 'nikudCache';
+
+function loadNikudCache() {
+    try { return JSON.parse(localStorage.getItem(NIKUD_CACHE_KEY) || '{}'); }
+    catch (_) { return {}; }
+}
+
+/**
+ * Load the runtime nikud map: the static data/nikud-map.json merged with the
+ * localStorage cache (cached custom-word entries win). Returns {} on failure.
+ */
 export async function loadNikudMap() {
+    const cache = loadNikudCache();
     try {
         const r = await fetch('/data/nikud-map.json');
         if (!r.ok) throw new Error(r.status);
-        return await r.json();
+        const base = await r.json();
+        return { ...base, ...cache };
     } catch (e) {
         console.warn('[nikud] Could not load nikud-map.json:', e.message);
-        return {};
+        return cache;
     }
 }
 
 /**
- * Fetch nikud from the Nakdan API for an array of plain Hebrew translations.
+ * Fetch nikud from the Dicta Nakdan API for an array of plain Hebrew
+ * translations. Called **directly** from the browser (no Python proxy); on a
+ * CORS/network failure it returns {} and callers fall back to un-niqqud Hebrew.
  * Returns { translation: nikudVersion, ... } for each successful result.
  */
 export async function fetchNikudFromAPI(translations) {
     if (!translations.length) return {};
     try {
-        // Proxy via local server to avoid browser CORS restrictions on the external Nakdan API
-        const r = await fetch('/api/enrich-nikud', {
+        const r = await fetch('https://nakdan-u1-0.loadbalancer.dicta.org.il/api', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ task: 'nakdan', genre: 'modern', data: translations.join('\n') })
@@ -97,20 +113,17 @@ export async function fetchNikudFromAPI(translations) {
     }
 }
 
-/** Merge newEntries into existingMap and write to data/nikud-map.json via server. */
+/**
+ * Merge newEntries into existingMap and cache them in localStorage (no Python
+ * save-to-source). The cache is re-merged into the static map on next load.
+ */
 export async function persistNikudEntries(existingMap, newEntries) {
     const updated = { ...existingMap, ...newEntries };
     try {
-        await fetch('/api/write-text', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                path: 'data/nikud-map.json',
-                content: JSON.stringify(updated, null, 2)
-            })
-        });
+        const cache = { ...loadNikudCache(), ...newEntries };
+        localStorage.setItem(NIKUD_CACHE_KEY, JSON.stringify(cache));
     } catch (e) {
-        console.warn('[nikud] Could not persist nikud map:', e.message);
+        console.warn('[nikud] Could not cache nikud entries:', e.message);
     }
     return updated;
 }
