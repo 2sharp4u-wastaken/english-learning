@@ -880,18 +880,14 @@
     <script type="module" src="utils/consoleLogger.js?t=1768159313"></script>
 
     <script src="auth.js?t=1762332862"></script>
-    <script src="settings.js?t=1774216737"></script>
     <script type="module" src="data/_loader.js?t=1773784000"></script>
     <script src="speechSynthesis.js?t=1742300000"></script>
     <script src="feedback.js"></script>
     <script src="audio-effects.js"></script>
     <script src="gamification.js"></script>
-    <!-- Slice 4.2: the legacy top-header was retired from the React shell. React
-         owns the header (TopNav / GameHeader); the legacy #top-header was already
-         permanently hidden by body.react-shell-active. case/nikud init that the
-         header used to do is covered by React textPrefs + data/_loader.js→nikud.js.
-         components/top-header.js itself stays until the legacy *.html pages that
-         import it are deleted in Slice 4.3. -->
+    <!-- Slice 4.2/4.3: legacy top-header + settings.js retired. React owns the
+         header (TopNav / GameHeader) and the settings/stats UI. case/nikud init
+         is covered by React textPrefs + data/_loader.js→nikud.js. -->
     <script type="module" src="gameLogic.js?t=1776400001"></script>
     <script type="module" src="app.js?t=1776400001"></script>
 

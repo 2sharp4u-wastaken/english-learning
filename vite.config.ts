@@ -13,15 +13,9 @@ export default defineConfig({
   },
   server: {
     port: 3002,
-    proxy: {
-      // server.py runs HTTP unless server.crt/server.key exist at the project
-      // root (they don't by default). Keep this aligned with server.py reality.
-      // Use 127.0.0.1 explicitly: Node prefers IPv6 (::1) for "localhost", but
-      // Python's http.server binds IPv4-only by default → ECONNRESET on proxy.
-      '/api': {
-        target: 'http://127.0.0.1:3000',
-      },
-    },
+    // Slice 4.3 made the app fully Python-free — no `/api/*` calls remain, so the
+    // dev proxy to server.py was removed. `npm run dev` runs standalone. (mic on
+    // localhost is a secure context over HTTP; for LAN testing add `https` here.)
   },
   build: {
     outDir: 'dist',

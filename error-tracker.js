@@ -74,23 +74,9 @@ class ErrorTracker {
         console.groupEnd();
     }
 
-    sendToServer(errorData) {
-        // Disabled - server endpoint not available in this environment
-        // If you need server-side logging, uncomment and configure the endpoint
-        /*
-        fetch('/api/log-error', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                ...errorData,
-                browser: navigator.userAgent
-            })
-        }).catch(() => {
-            // Silently fail if server endpoint not available
-        });
-        */
+    sendToServer(_errorData) {
+        // No-op: errors are tracked in-memory only. The app is a static client
+        // with no backend (Slice 4.3 retired server.py as a required dependency).
     }
 
     getReport() {

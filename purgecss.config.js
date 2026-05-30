@@ -2,9 +2,6 @@
 module.exports = {
   content: [
     'index.html',
-    'stats.html',
-    'settings.html',
-    'words.html',
     '*.js',
     'managers/*.js',
     'components/*.js',
@@ -37,10 +34,7 @@ module.exports = {
 
       // Layout modes
       'lowercase-mode', 'stab-protected',
-      'has-words', 'wim-has-override', 'wim-btn-dimmed',
-
-      // JS-injected structural classes
-      'header-mode',
+      'has-words',
     ],
 
     // Dynamic patterns (e.g. mastery-level-0, mastery-level-1, user-tab-active)

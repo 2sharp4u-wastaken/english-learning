@@ -181,6 +181,33 @@ React route /#/game/picture-match
 
 Legacy `games/picture-match-game.js` and `#picture-match-game` DOM are no longer reached for this route. They remain in the tree until Slice 4.4.
 
+## Parent Custom Content (Slice 4.3 — Python-free)
+
+The parent "Advanced Tools" (settings `/#/settings` → כלי הורה) run entirely in
+React via `src/bridge/customContent.ts` (async seam) — no `server.py`.
+
+```
+CustomWordsPanel  → wordImport.importCustomWords() → api.anthropic.com (browser-direct)
+  → customContent.saveCustomWords() → localStorage.customWords_global
+    → window.refreshCustomWords()  (data/_loader.js) → live vocabularyBank + gameData
+
+WordImagesPanel image → customContent.setImageOverride()
+  → localStorage.wordImageOverrides + window.wordImageOverrides (live, sync)
+    → games read window.wordImageOverrides → real image OR emoji fallback
+WordImagesPanel translation → customContent.setTranslationOverride()
+  → localStorage.wordTranslationOverrides
+    → applied at BOOT in data/_loader.js (before nikud + gameData build)  ⟹ reload to see it
+
+Export/Import JSON → customContent.exportAll()/importAll()  (backup, replaces save-to-source)
+
+Nikud: utils/nikud.js loadNikudMap() = static data/nikud-map.json ⊕ localStorage.nikudCache;
+  missing words → Dicta API direct (CORS-fail → raw Hebrew) → persistNikudEntries() caches.
+```
+
+Boot hydration of `window.wordImageOverrides` currently comes from `utils/imageRenderer.js`
+(loaded via the legacy `games/*.js` import chain). When Slice 4.4 deletes those, hydrate it
+from the `customContent` bridge at React boot (see FU-4.3-idb).
+
 ## True or Not Game (React — Slice 3.4)
 
 ```

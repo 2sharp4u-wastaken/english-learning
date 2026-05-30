@@ -1,42 +1,35 @@
 # Dev Setup
 
-## Starting the servers
+## Running the app
 
-This project (`english-learning-v3`, the active React-migration repo) runs **two**
-servers side by side during development:
+As of **Slice 4.3** the app is **fully Python-free** — one process:
 
 | Port | Process | Role |
 |------|---------|------|
-| 3000 | `python3 server.py` | Python API/static server — handles `/api/*`, HTTPS, image writes |
-| 3002 | `npm run dev` | Vite dev server — serves the React app, proxies `/api/*` → :3000 |
+| 3002 | `npm run dev` | Vite dev server — serves the React app. No backend. |
 
-Open the app at **`http://localhost:3002`**. Both servers must be running for full
-functionality (the Python server can be skipped for pure frontend work — `/api/*` calls
-just fail silently).
+Open the app at **`http://localhost:3002`**. That's all you need.
 
-> Historical note: earlier sibling projects (`english-learning` v1 on :3000,
-> `english-learning-redesign` v2 on :3001) used the same `server.py` pattern; the
-> `start-servers.sh` helper below can still launch them by directory + port.
+### `server.py` is optional (maintainer tool)
 
-Launch all three at once:
-
-```bash
-~/Documents/projects/start-servers.sh
-```
-
-Or individually:
+`server.py` (port 3000) is **not required** by the running app. Keep it only for
+occasional authoring tasks:
+- `/api/enrich-nikud` — Dicta Nakdan CORS proxy to regenerate the static
+  `data/nikud-map.json` when new **base** vocabulary is added.
+- `/api/write-*` / `/api/fetch-image` — bake authored content into repo source.
+  (The in-app parent tools persist to the browser via `src/bridge/customContent.ts`
+  instead — no server needed.)
 
 ```bash
-python3 server.py        # port 3000 (default)
-python3 server.py 3001
-python3 server.py 3002
+python3 server.py        # optional, port 3000
 ```
 
-## HTTPS (required for microphone)
+## Microphone
 
-`getUserMedia` (microphone access) is blocked by browsers on plain HTTP from LAN IP addresses. The server auto-detects `server.crt` / `server.key` in the project root and serves HTTPS when both exist.
-
-Access via `https://192.168.1.111:<port>` — not `http://`.
+`localhost` is a secure context even over HTTP, so the mic games work with just
+`npm run dev`. For testing on a **LAN IP** (`https://192.168.1.111:3002`), enable
+HTTPS in `vite.config.ts` (`server.https` with a cert), or run the optional
+`server.py` with `server.crt` / `server.key` present (it auto-serves HTTPS).
 
 ### Generating certificates (mkcert)
 

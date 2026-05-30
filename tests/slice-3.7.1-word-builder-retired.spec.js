@@ -90,7 +90,8 @@ test.describe('Slice 3.7.1 — Word Builder retirement', () => {
         });
         page.on('pageerror', err => errors.push(err.message));
 
-        await page.goto('/stats.html');
+        // Slice 4.3.e retired legacy stats.html — assert on the React stats route.
+        await page.evaluate(() => { window.location.hash = '#/stats'; });
         await page.waitForTimeout(1500);
 
         const wordBuilderErrors = errors.filter(e => e.toLowerCase().includes('word-builder') || e.toLowerCase().includes('wordbuilder'));

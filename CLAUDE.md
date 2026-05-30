@@ -9,10 +9,9 @@ Behavioral rules for Claude Code in this project. These override defaults.
 - **Master plan:** `docs/master-plan.md` — the source of truth for migration phases and decisions
 
 ## Dev Setup
-- **Start Python API server:** `python3 server.py` (port 3000, handles `/api/*` endpoints)
-- **Start Vite dev server:** `npm run dev` (port 3002, proxies `/api/*` to Python)
-- **Open app:** `http://localhost:3002` (HTTPS only works if `server.crt`/`server.key` exist at the project root; without them both servers fall back to HTTP)
-- Both servers must be running during development
+- **Run the app:** `npm run dev` (Vite, port 3002) — that's all. As of Slice 4.3 the app is **fully Python-free** (no `/api/*` calls). Open `http://localhost:3002`.
+- **`server.py` is OPTIONAL** (port 3000) — a maintainer-only tool for regenerating the static `data/nikud-map.json` (Dicta Nakdan CORS proxy) and baking authored content to source. Nothing the running app does requires it.
+- **Microphone:** `localhost` is a secure context over HTTP, so mic games work with just `npm run dev`. For LAN-IP testing add `server.https` in `vite.config.ts` (or use the optional `server.py` with `server.crt`/`server.key`).
 
 ## Rules
 
@@ -79,7 +78,7 @@ Hash-based routing via React Router (`createHashRouter`):
 - `v2_userProgress_<userId>` — progress, wordMastery, streak, certificates
 - `v2_englishLearningSettings` — app settings
 - `v2_authUsers` — all user accounts
-- `v2_customWords_global` — parent-added custom words
+- `customWords_global` — parent-added custom words (note: **no** `v2_` prefix; read at boot by `data/_loader.js` and via `src/bridge/customContent.ts`). Related parent-content keys (also unprefixed): `wordImageOverrides`, `wordTranslationOverrides`, `nikudCache`.
 - All keys use `v2_` prefix (set in `app.js`)
 
 ### Managers (legacy, in `managers/`)

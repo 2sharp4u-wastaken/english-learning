@@ -360,51 +360,9 @@ test.describe('Home Screen', () => {
     });
 });
 
-test.describe('Settings Bridge', () => {
-    test('settings page loads without errors', async ({ page }) => {
-        await setupFreshUser(page);
-
-        // Listen for console errors
-        const errors = [];
-        page.on('console', msg => {
-            if (msg.type() === 'error') errors.push(msg.text());
-        });
-
-        await page.goto('/settings.html');
-        await page.waitForTimeout(1000);
-
-        // Filter out expected/harmless errors
-        const criticalErrors = errors.filter(e =>
-            !e.includes('favicon') &&
-            !e.includes('net::ERR') &&
-            !e.includes('404')
-        );
-
-        expect(criticalErrors.length, `Console errors: ${criticalErrors.join(', ')}`).toBe(0);
-    });
-});
-
-test.describe('Stats Page', () => {
-    test('stats page renders without errors', async ({ page }) => {
-        await setupFreshUser(page);
-
-        const errors = [];
-        page.on('console', msg => {
-            if (msg.type() === 'error') errors.push(msg.text());
-        });
-
-        await page.goto('/stats.html');
-        await page.waitForTimeout(1000);
-
-        const criticalErrors = errors.filter(e =>
-            !e.includes('favicon') &&
-            !e.includes('net::ERR') &&
-            !e.includes('404')
-        );
-
-        expect(criticalErrors.length, `Console errors: ${criticalErrors.join(', ')}`).toBe(0);
-    });
-});
+// Slice 4.3.e: the legacy settings.html / stats.html smoke tests were removed
+// with the pages themselves — the React /settings and /stats routes are covered
+// in react-routes.spec.js (Slice 1.6 Settings + Stats describes).
 
 test.describe('Memory Game Hybrid Selection', () => {
     test('with <12 learned words, memory uses full bank', async ({ page }) => {

@@ -1,9 +1,17 @@
 #!/usr/bin/env python3
-"""Dev server with no-cache headers and a local-only write API.
+"""OPTIONAL dev-authoring server. The app does NOT require it.
 
-Serves HTTPS automatically when server.crt / server.key exist alongside
-this file (generated once with: openssl req -x509 ...).  HTTPS is required
-for getUserMedia (microphone) to work from LAN IP addresses.
+As of Slice 4.3 the app is fully Python-free: run it with `npm run dev` (Vite,
+port 3002) alone. This script is kept only as an optional maintainer tool:
+  - /api/enrich-nikud : Dicta Nakdan CORS proxy for regenerating the static
+                        data/nikud-map.json when new *base* vocabulary is added
+  - /api/write-text / /api/write-image / /api/fetch-image : bake authored
+                        content into repo source (the in-app tools persist to
+                        the browser via the customContent bridge instead)
+  - static serving with no-cache + optional HTTPS (server.crt/server.key) for
+    testing the legacy build over a LAN IP
+
+Nothing the running app does depends on these endpoints.
 
 Extra endpoints (only served from this machine's own IPs for safety):
   POST /api/write-text   { path, content }           – write a UTF-8 text file
