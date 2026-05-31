@@ -49,9 +49,10 @@ Design and implement RTL first. Use Tailwind logical properties (`ps-*`, `pe-*`,
 ```
 /                    ← project root
   index.html         ← Vite entrypoint (has both #react-root and legacy markup)
-  app.js             ← legacy orchestration (kept until Phase 4)
-  games/             ← legacy game modules
-  managers/          ← legacy managers (ScoreManager, ProgressManager, etc.)
+  app.js             ← legacy orchestration / AppManager engine (kept until Slice 4.4.b)
+  gameLogic.js       ← legacy GameManager engine — still the live backend the React bridges drive (kept until Slice 4.4.b)
+  games/             ← EMPTY: legacy game-UI files deleted in Slice 4.4.a (React renders every game)
+  managers/          ← legacy managers (ScoreManager, ProgressManager, etc.) — still driven by bridges
   data/              ← shared data (used by both legacy and React)
   src/               ← React app (Vite + TypeScript + Tailwind)
     bridge/          ← typed adapters to legacy globals and localStorage
@@ -91,7 +92,7 @@ Accessed from React only via `src/bridge/` modules.
 
 ### React games registry
 - `src/features/games/reactGames.ts` — `REACT_GAME_IDS` set; the source of truth for which games run in React vs legacy. Adding an ID here triggers `react-shell-active` to stay on during that game route so the legacy DOM is suppressed.
-- `src/features/games/GameHostPage.tsx` — `REACT_GAMES` record maps ID → component. Anything not in the record falls through to legacy `launchGame()`.
+- `src/features/games/GameHostPage.tsx` — `REACT_GAMES` record maps ID → component. Every catalog game is in the record; as of Slice 4.4.a the legacy game-UI layer is deleted, so `bridge/games.launchGame()` is just a `console.warn` for an unknown gameId (no legacy fallthrough left).
 
 ### Shared game primitives (Phase 3 reuse, do not duplicate)
 - `src/features/games/shared/GameScreenShell.tsx` — hero + header + progress + main + footer slots. Forwards `header.title/icon/subtitle` to `<GameHero>` and the rest of `header` to `<GameHeader>`. **`fitViewport` defaults `true`** (since the 2026-05-27 UX pass): the shell is one screen (`100dvh`), header/title/progress/footer stay pinned, and only `<main>` scrolls if it overflows — so a footer "next" button is never pushed below the fold. New games get this free; pass `fitViewport={false}` only if a game genuinely needs page scroll.

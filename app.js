@@ -11,13 +11,8 @@ import { CoinManager } from './managers/CoinManager.js';
 // Import Course Data
 import { allCourses } from './data/courses/index.js';
 
-// Import Game Classes
-import { MemoryGame } from './games/memory-game.js?t=1776220001';
-import { SentenceScrambleGame } from './games/sentence-scramble-game.js';
-import { FillBlanksGame } from './games/fill-blanks-game.js';
-import { WordJourneyGame } from './games/word-journey-game.js?t=1776320001';
-import { TrueOrNotGame } from './games/true-or-not-game.js?t=1776400001';
-import { StoryTimeGame } from './games/story-time-game.js?t=1776400001';
+// Legacy game classes (games/*.js) were deleted in Slice 4.4 — React renders every
+// game now. The instantiations below were removed with them.
 
 // ── V2 storage isolation ──────────────────────────────────────────────────────
 // All v2 localStorage keys carry this prefix to avoid colliding with v1 keys.
@@ -43,9 +38,7 @@ class AppManager {
     }
 
     initializeApp() {
-        // MUST be first: create game instances before auth check so that
-        // initializeManagers() (called inside setupWithAuth) can safely inject managers.
-        this.initializeGameInstances();
+        // (Slice 4.4) Legacy game instances removed — React renders every game now.
 
         // Check if authService is ready
         if (typeof authService !== 'undefined') {
@@ -101,27 +94,6 @@ class AppManager {
         this.initializeManagers();
     }
 
-    initializeGameInstances() {
-        // Create game instances — they act as UI renderers, state is owned by GameManager
-        this.memoryGame = new MemoryGame();
-        this.scrambleGame = new SentenceScrambleGame();
-        this.fillBlanksGame = new FillBlanksGame();
-
-        window.memoryGame = this.memoryGame;
-        window.scrambleGame = this.scrambleGame;
-        window.fillBlanksGame = this.fillBlanksGame;
-
-        this.wordJourneyGame = new WordJourneyGame();
-        window.wordJourneyGame = this.wordJourneyGame;
-
-        this.trueOrNotGame = new TrueOrNotGame();
-        window.trueOrNotGame = this.trueOrNotGame;
-
-        this.storyTimeGame = new StoryTimeGame();
-        window.storyTimeGame = this.storyTimeGame;
-
-        console.log('[AppManager] Game instances created');
-    }
 
     // ============================================================
     // PHASE 3 - Screen Navigation

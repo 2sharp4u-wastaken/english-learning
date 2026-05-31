@@ -132,7 +132,6 @@ export function TrueOrNotGamePage() {
       const w = window as any
       const ready =
         !!w.gameManager &&
-        !!w.trueOrNotGame &&
         !!w.app &&
         !!w.app.userProgress &&
         typeof w.app.userProgress.learnedWords === 'object'

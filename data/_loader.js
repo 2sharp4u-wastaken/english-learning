@@ -98,6 +98,16 @@ try {
     console.warn('Failed to apply translation overrides:', e);
 }
 
+// Hydrate parent image overrides from localStorage (Slice 4.4 — moved here from the
+// deleted utils/imageRenderer.js). 8 React game pages read window.wordImageOverrides
+// SYNCHRONOUSLY at render, so it must be populated at boot, before /src/main.tsx.
+// The guard keeps the runtime setter in src/bridge/customContent.ts as the owner of
+// live updates (Settings → Word Images tab).
+if (!window.wordImageOverrides) {
+    try { window.wordImageOverrides = JSON.parse(localStorage.getItem('wordImageOverrides') || '{}'); }
+    catch (e) { window.wordImageOverrides = {}; }
+}
+
 // Make vocabulary accessible for phonetics BEFORE initialization
 window.vocabularyBank = vocabularyBank;
 

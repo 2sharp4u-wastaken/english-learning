@@ -109,26 +109,16 @@ export function getContinueTarget(): ContinueTarget | null {
 }
 
 /**
- * Launch a legacy game by type ID.
+ * Fallback for an unrecognized game route. As of Slice 4.4 every catalog game
+ * renders in React (see REACT_GAME_IDS) and the legacy game-UI layer (games/*.js +
+ * gameLogic's DOM launch/render path) is gone, so this only fires for an unknown
+ * gameId. There is nothing to launch — warn and let GameHostPage show its shell.
  */
 export function launchGame(gameId: string): void {
-  const mgr = getGameManager()
-  if (!mgr) return
-  // switchGame activates the legacy #${gameId}-game container, manages the
-  // header, then invokes startGame internally. Calling startGame directly
-  // leaves the legacy game DOM display:none so nothing renders.
-  // Note: legacy performGameSwitch overwrites window.location.hash with
-  // `#${gameId}` (its old hub-style routing). Restore the React Router
-  // path so reloads / back-forward keep working.
-  const reactHash = window.location.hash
-  if (typeof mgr.switchGame === 'function') {
-    mgr.switchGame(gameId)
-  } else {
-    mgr.startGame(gameId)
-  }
-  if (window.location.hash !== reactHash) {
-    history.replaceState(null, '', reactHash)
-  }
+  console.warn(
+    `[bridge/games] launchGame('${gameId}') — no React game registered for this id; ` +
+      `the legacy launch path was removed in Slice 4.4.`,
+  )
 }
 
 /**

@@ -8,16 +8,9 @@ const debugLog = (...args) => { if (DEBUG) console.log(...args); };
 // Sentence themes that overlap with word categories — used to filter scramble/fill-blanks
 const SENTENCE_THEMES = new Set(['animals', 'colors', 'daily', 'family', 'food', 'greetings', 'numbers', 'school']);
 
-// Import game modules
-import * as VocabularyGame from './games/vocabulary-game.js?t=1776003000';
-import * as GrammarGame from './games/grammar-game.js?t=1774903002';
-import * as GrammarBeginnerGame from './games/grammar-beginner-game.js?t=1742041200';
-import * as ListeningGame from './games/listening-game.js?t=1776200001';
-import * as PronunciationGame from './games/pronunciation-game.js?t=1771785500';
-import * as ReadingGame from './games/reading-game.js?t=1776006000';
-import * as PracticeGame from './games/practice-game.js';
-import * as ABCGame from './games/abc-game.js';
-import * as PictureMatchGame from './games/picture-match-game.js?t=1776320001';
+// Legacy game-UI modules (games/*.js) were deleted in Slice 4.4 — React owns all
+// game rendering now. The engine below (question selection, scoring, persistence,
+// course/mastery rules) is still driven by the React bridges via window.gameManager.
 import { generateABCQuestions, areAllLettersMastered, getUnmasteredLetterCount } from './data/abcData.js';
 import { generateGrammarBeginnerQuestions } from './data/grammarBeginnerData.js';
 import { getRandomSentences } from './data/sentences.js';
@@ -104,47 +97,10 @@ class GameManager {
 
         // nikud-changed is handled centrally by utils/nikudDOM.js
 
-        // Bind game module methods to this instance
-        this.loadVocabularyQuestion = VocabularyGame.loadVocabularyQuestion.bind(this);
-        this.onVocabularyManualAudio = VocabularyGame.onVocabularyManualAudio.bind(this);
-        this.checkVocabularyAnswer = VocabularyGame.checkVocabularyAnswer.bind(this);
-        this.loadGrammarQuestion = GrammarGame.loadGrammarQuestion.bind(this);
-        this.checkGrammarAnswer = GrammarGame.checkGrammarAnswer.bind(this);
-        this.loadGrammarBeginnerQuestion = GrammarBeginnerGame.loadGrammarBeginnerQuestion.bind(this);
-        this.checkGrammarBeginnerAnswer = GrammarBeginnerGame.checkGrammarBeginnerAnswer.bind(this);
-        this.loadListeningQuestion = ListeningGame.loadListeningQuestion.bind(this);
-        this.showListeningHebrew = ListeningGame.showListeningHebrew.bind(this);
-        this.onListeningAudioComplete = ListeningGame.onListeningAudioComplete.bind(this);
-        this.checkListeningAnswer = ListeningGame.checkListeningAnswer.bind(this);
-        this.loadPronunciationQuestion = PronunciationGame.loadPronunciationQuestion.bind(this);
-        this.toggleRecording = PronunciationGame.toggleRecording.bind(this);
-        this.processPronunciationResult = PronunciationGame.processPronunciationResult.bind(this);
-        this.loadReadingQuestion = ReadingGame.loadReadingQuestion.bind(this);
-        this.createLetterBank = ReadingGame.createLetterBank.bind(this);
-        this.addLetterToWord = ReadingGame.addLetterToWord.bind(this);
-        this.clearBuiltWord = ReadingGame.clearBuiltWord.bind(this);
-        this.checkBuiltWord = ReadingGame.checkBuiltWord.bind(this);
-        this.loadPracticeQuestion = PracticeGame.loadPracticeQuestion.bind(this);
-        this.togglePracticeRecording = PracticeGame.togglePracticeRecording.bind(this);
-        this.processPracticeResult = PracticeGame.processPracticeResult.bind(this);
-        this.playNativePronunciation = PracticeGame.playNativePronunciation.bind(this);
-        this.loadABCQuestion = ABCGame.loadABCQuestion.bind(this);
-        this.checkABCAnswer = ABCGame.checkABCAnswer.bind(this);
-        this.loadMatchCaseQuestion = ABCGame.loadMatchCaseQuestion.bind(this);
-        this.loadLetterSoundQuestion = ABCGame.loadLetterSoundQuestion.bind(this);
-        this.loadIdentifyCaseQuestion = ABCGame.loadIdentifyCaseQuestion.bind(this);
-        this.loadSayLetterQuestion = ABCGame.loadSayLetterQuestion.bind(this);
-        this.loadAlphabetOrderQuestion = ABCGame.loadAlphabetOrderQuestion.bind(this);
-        this.toggleABCRecording = ABCGame.toggleABCRecording.bind(this);
-        this.processABCSpeechResult = ABCGame.processABCSpeechResult.bind(this);
-        this.createABCOptions = ABCGame.createABCOptions.bind(this);
-        this.playABCLetterAudio = ABCGame.playABCLetterAudio.bind(this);
-        this.loadWordPictureQuestion = ABCGame.loadWordPictureQuestion.bind(this);
-        this.resetABCMastery = ABCGame.resetABCMastery.bind(this);
-        this.loadPictureMatchQuestion = PictureMatchGame.loadPictureMatchQuestion.bind(this);
-        this.checkPictureMatchAnswer = PictureMatchGame.checkPictureMatchAnswer.bind(this);
+        // (Slice 4.4) Legacy game-UI method bindings removed with games/*.js — React
+        // renders every game now and drives the engine below through the bridges.
 
-        // Initialize the game after all bindings are set up
+        // Initialize the game
         this.initializeGame();
 
         // Initialize manager references (after window.managers are set up by app.js)

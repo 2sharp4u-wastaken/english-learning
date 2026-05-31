@@ -1002,7 +1002,7 @@ What landed:
 - Routing: `src/app/router.tsx` registers `dev/game-shell` ahead of `game/:gameId`
 - Playwright: `tests/react-routes.spec.js` "Slice 2.1: GameScreenShell" — asserts shell + header + score + progress render, increment-on-click works, and the back button routes to `/#/home`. Both tests green.
 
-Carry-forward: when Phase 3 migrates Vocabulary first, the per-game `.progress-container` in `index.html` for that game's container becomes dead markup. Either delete those blocks per-game during migration, or sweep them all in Slice 4.4. Plan still calls Slice 4.4.
+Carry-forward: when Phase 3 migrates Vocabulary first, the per-game `.progress-container` in `index.html` for that game's container becomes dead markup. The `#<game>-game` legacy containers are still present after Slice 4.4.a (the game *UI files* were deleted; the host markup + engine remain) — they get swept in Slice 4.4.b / 4.5.
 
 Files added:
 
@@ -1824,7 +1824,7 @@ Vite's post-build warning had been flagging the main bundle as oversize (~1.32 M
 - ✅ Each React game is its own chunk in `dist/assets/`.
 - ✅ Playwright route tests pass; retired-games redirect still fires with no Suspense flash.
 - ✅ Games no longer eager-loaded; main chunk down ~52% (1.32 MB → 632 KB).
-- ⏳ Main chunk <500 KB minified — **deferred to Phase 4.4** (gated on deleting the eager legacy bootstrap, not on React code).
+- ✅ Main chunk <500 KB minified — **MET by Slice 4.4.a (2026-05-30)**: deleting the 15 eager `games/*.js` modules dropped the `index` chunk to **495.01 KB** minified (121 KB gzipped). The remaining legacy in the chunk is `gameLogic.js`/`app.js`/`managers/*` (the engine the React bridges still drive) — its removal is deferred to **Slice 4.4.b**.
 
 ### Slice 4.1: Retire Legacy Home Markup/CSS — SHIPPED (2026-05-30)
 
@@ -1869,18 +1869,34 @@ Sequenced sub-slices (full design: approved plan / `project_custom_content_bridg
 - ✅ **4.3.e (2026-05-30)** — Deleted `settings.html`/`stats.html`/`words.html`, `settings.js`/`stats.js`, `components/top-header.js`+`header-score.js` (parked from 4.2), `utils/wordImporter.js`+`fileSystemWriter.js`+`wordImageManager.js`. Removed `<script src="settings.js">` from `index.html`. Removed the dead header CSS from `styles.css` (the `.top-header`/`.header-*` section + the `.case-toggle-btn`/`.nikud-toggle-btn` block — ~290 lines; the legacy settings/stats/words page CSS was inline in those HTML files, deleted with them). Pruned `purgecss.config.js` (dropped the 3 HTML pages + dead `header-mode`/`wim-*` safelist). Removed the 2 legacy-page smoke describes; repointed the `slice-3.7.1` stats test to the React `/#/stats` route. NOTE: `utils/imageRenderer.js` (runtime `window.wordImageOverrides` hydrator) is **kept** — distinct from the deleted `wordImageManager.js` (settings editor).
 - ✅ **4.3.f (2026-05-30)** — Zero runtime `/api/*`: removed the (already-commented) `/api/log-error` from `error-tracker.js` and the now-unused Vite `/api`→:3000 proxy. `server.py` kept as an **optional** maintainer tool (docstring updated). Updated `CLAUDE.md` Dev Setup + `docs/dev-setup.md` (one process: `npm run dev`; mic works on localhost) + the `customWords_global` (no `v2_` prefix) key nit.
 
-### Slice 4.4: Retire Legacy Game UI Code
+### Slice 4.4: Retire Legacy Game Code
 
-**Before starting — two blockers this is NOT just "delete files":**
-1. **The React bridges call directly into the legacy globals.** ~13 `src/bridge/*` modules invoke `window.gameManager` / `scoreManager` / `progressManager` / `speechManager` (provided by `gameLogic.js` / `app.js` / `managers/*`). Deleting `gameLogic.js`/`app.js` requires either reimplementing that logic in React/bridges or keeping `managers/*` alive. Scope this first — it's the bulk of the slice, not the file deletion.
-2. **Deleting `games/*.js` kills image-override hydration.** `utils/imageRenderer.js` (which hydrates `window.wordImageOverrides` at boot, read synchronously by 8 game pages) is only loaded via the `games/*.js` import chain. When `games/*.js` go, add bridge-based boot hydration of `window.wordImageOverrides` (folds into **FU-4.3-idb**) or word images silently stop loading. See `project_custom_content_bridge` memory.
+Originally one slice, but investigation (2026-05-30) confirmed the two recorded blockers split it cleanly into **4.4.a (delete the game *UI* layer)** and **4.4.b (delete the *engine* + auth)**. 4.4.a is done; 4.4.b is deferred and large.
 
-- remove `games/*.js` files (logic has been reimplemented in React)
-- remove `gameLogic.js` if fully replaced
-- remove `app.js` orchestration (replaced by React app)
-- **Inherits the Slice 4.0 <500 KB main-chunk bar.** These eager `<script type="module">` files fuse into the React `index` chunk (~500 KB minified of legacy today). Deleting them is what finally drops the main chunk below 500 KB; re-measure `npm run build` after this slice to confirm the 4.0 acceptance is met.
-- remove `auth.js` global script — `src/bridge/auth.ts` transitions from adapter to standalone auth owner (see Auth End-State section)
-- port login + password-entry screens to React (LoginPage / PasswordEntryPage) consuming `useAuthSession`; legacy modal markup in `index.html` is deleted alongside `auth.js`. (Interim: 2026-05 restyled the legacy modal CSS to match the React palette — `.auth-modal*` / `.user-select-*` / `.login-*` / `.password-*` / `.auth-btn` blocks in `styles.css` — so visuals stay consistent until the port lands.)
+#### Slice 4.4.a: Retire Legacy Game UI Files — SHIPPED (2026-05-30)
+
+The 15 `games/*.js` files were **pure DOM-render methods** (`loadVocabularyQuestion`, `checkXAnswer`, …) bound onto the GameManager, reachable only through the legacy `loadQuestion`/`switchGame`/`startGame` render path — i.e. the `bridge/games.ts launchGame` fallthrough, which **no game hits** (all 18 are in `REACT_GAME_IDS`). React renders every game and drives the engine through the bridges, so this layer was dead and deletable.
+
+- ✅ deleted all 15 `games/*.js`.
+- ✅ **Blocker #2 resolved** — moved the `window.wordImageOverrides` boot-hydration out of the deleted `utils/imageRenderer.js` into `data/_loader.js` (eager, runs before `/src/main.tsx`, already the boot home for the sibling parent-content keys `customWords_global` / `wordTranslationOverrides`); deleted `utils/imageRenderer.js`. The runtime setter in `src/bridge/customContent.ts` stays the owner of live updates. See `project_custom_content_bridge` memory.
+- ✅ **One live exception ported** — `games/true-or-not-game.js`'s `buildQuestions` was a *pure question generator* the React bridge consumed via `window.trueOrNotGame`. Ported verbatim into `src/bridge/true-or-not.ts` as `buildTrueOrNotQuestions` (no DOM/`this`); dropped the `window.trueOrNotGame` readiness gate in `TrueOrNotGamePage.tsx`. **(All other 5 app.js-group bridges — word-journey/memory/story-time/scramble/fill-blanks — were already self-sufficient: they generate questions via engine methods (`getWordJourneyWords`) or data modules (`getStoriesForSession`/`getRandomSentences`) + self-built level arrays, NOT the legacy instances.)**
+- ✅ removed the 9 game-module imports + method bindings in `gameLogic.js` and the 6 game-class imports + `initializeGameInstances()` in `app.js`.
+- ✅ neutralized the now-unreachable `bridge/games.ts launchGame` fallthrough to a `console.warn` (fires only for an unknown gameId).
+- ✅ **Slice 4.0 <500 KB bar MET**: `index` chunk 632 KB → **495.01 KB** minified.
+- ✅ all 147 React Playwright tests green (incl. true-or-not, story-time, word-journey, memory, picture-match).
+
+**Deliberately left for 4.4.b (low-risk decision):** `gameLogic.js` still contains its legacy DOM launch/render path (`loadQuestion` switch, `nextQuestion`, `setup*EventListeners`, `startGame`'s render tail, and guarded `window.<game>Game` references in `endGame`/`saveGameState`/`loadGameState`). It is **formally unreachable** now (launchGame neutralized; no game falls through) and its guarded blocks safely skip (instances are `undefined`). Gutting it from a 168 KB file was judged not worth the regression risk once the bundle bar was already met — it goes away wholesale when 4.4.b removes the engine. **Behavior note:** story-time's `mgr.endGame` now takes the generic `else` percentage branch (real `scoreManager` score) instead of the legacy `window.storyTimeGame.quiz*` block (which React never populated → was effectively 0); verified by tests.
+
+#### Slice 4.4.b: Retire the Engine + Auth — DEFERRED (blocker #1)
+
+This is the genuinely hard, multi-session part. **Do not start without scoping the engine surface first.**
+
+1. **The React bridges drive the legacy engine as their live backend.** ~13 `src/bridge/*` modules invoke ~40 methods/properties on `window.gameManager` / `app` / `managers/*` — not glue, but the app's brain: `smartQuestionSelection` / `getScopedQuestionPool` / `_getLearnedWordSet` (spaced-repetition selection), `recordWordAttempt` / `endGame` / `saveGameState` / `loadGameState` (progress/resume/score persistence), and the whole course-unlock/mastery/certificate ruleset (`isCourseUnlocked`, `checkAndUnlockGames`, `getTopicMastery`, …). Deleting `gameLogic.js`/`app.js` requires faithfully reimplementing that learning logic in React/bridges (a silent bug — a word that never resurfaces, a course that won't unlock — degrades the kid's experience without throwing). Also `window.gameData` and `window.vocabularyBank` come from `data/_loader.js` (still needed regardless).
+- remove `gameLogic.js` (GameManager engine) once reimplemented
+- remove `app.js` orchestration (AppManager — also owns `userProgress` load/save, certificates, coin history)
+2. **Auth.** remove `auth.js` global script — `src/bridge/auth.ts` transitions from adapter to standalone auth owner (see Auth End-State section). Port login + password-entry + user-select screens to React (LoginPage / PasswordEntryPage) consuming `useAuthSession`; legacy modal markup in `index.html` is deleted alongside `auth.js`. (Interim: 2026-05 restyled the legacy modal CSS to match the React palette — `.auth-modal*` / `.user-select-*` / `.login-*` / `.password-*` / `.auth-btn` blocks in `styles.css` — so visuals stay consistent until the port lands.)
+3. **Boot order inversion** — today legacy boots, sets up managers after auth, then React reads them. Removing the engine means React owns startup; mind the gating race already flagged in FU-4.1 (`project_react_home_gating_persisted`).
+4. **Final cleanup** — delete the now-dead legacy DOM launch/render path left in `gameLogic.js` by 4.4.a, and the dead `#<game>-game` containers in `index.html` (overlaps Slice 4.5).
 
 ### Slice 4.5: CSS Rationalization
 

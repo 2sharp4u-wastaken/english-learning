@@ -84,22 +84,73 @@ interface LegacyGameManager {
   deleteGameState(gameType: string): void
 }
 
-interface LegacyTrueOrNotGame {
-  buildQuestions(words: Array<{
-    word: string
-    translation?: string
-    category: string
-    image?: string
-    imageUrl?: string
-  }>): LegacyTrueOrNotQuestion[]
+interface PoolWord {
+  word: string
+  translation?: string
+  category: string
+  image?: string
+  imageUrl?: string
 }
 
 function getMgr(): LegacyGameManager | null {
   return (window as any).gameManager ?? null
 }
 
-function getLegacyGame(): LegacyTrueOrNotGame | null {
-  return (window as any).trueOrNotGame ?? null
+// Ported from the deleted games/true-or-not-game.js (Slice 4.4). Pure question
+// generator (no DOM, no `this`): 5 correct matches + 5 mismatches where the shown
+// image is swapped for a different (preferably cross-category) word's image.
+function buildTrueOrNotQuestions(words: PoolWord[]): LegacyTrueOrNotQuestion[] {
+  if (words.length < 4) return []
+
+  const shuffled = [...words].sort(() => Math.random() - 0.5)
+  const questions: LegacyTrueOrNotQuestion[] = []
+
+  // 5 correct matches
+  const matchWords = shuffled.slice(0, Math.min(5, shuffled.length))
+  for (const w of matchWords) {
+    questions.push({
+      word: w.word,
+      translation: w.translation,
+      category: w.category,
+      image: w.image,
+      imageUrl: w.imageUrl,
+      displayImage: w.image,
+      displayImageUrl: w.imageUrl,
+      isMatch: true,
+    })
+  }
+
+  // 5 mismatches — swap the image with a different word (preferably different category)
+  const mismatchWords = shuffled.slice(Math.min(5, shuffled.length), Math.min(10, shuffled.length))
+  // If not enough unique words, reuse from the front of the shuffle
+  while (mismatchWords.length < 5 && shuffled.length >= 4) {
+    const extra = shuffled[Math.floor(Math.random() * shuffled.length)]
+    if (!mismatchWords.some((w) => w.word === extra.word)) {
+      mismatchWords.push(extra)
+    }
+    if (mismatchWords.length >= Math.min(5, shuffled.length)) break
+  }
+
+  for (const w of mismatchWords) {
+    const candidates = shuffled.filter((c) => c.word !== w.word && c.category !== w.category)
+    const pool = candidates.length > 0 ? candidates : shuffled.filter((c) => c.word !== w.word)
+    if (pool.length === 0) continue
+
+    const decoy = pool[Math.floor(Math.random() * pool.length)]
+    questions.push({
+      word: w.word,
+      translation: w.translation,
+      category: w.category,
+      image: w.image,
+      imageUrl: w.imageUrl,
+      displayImage: decoy.image,
+      displayImageUrl: decoy.imageUrl,
+      isMatch: false,
+    })
+  }
+
+  // Shuffle matches + mismatches together
+  return questions.sort(() => Math.random() - 0.5)
 }
 
 const LEGACY_GAME_CONTAINER_ID = 'true-or-not-container'
@@ -231,12 +282,7 @@ export function beginTrueOrNotSession(opts: BeginOptions = {}): TrueOrNotSession
     return { kind: 'learn-first', learnedCount: getLearnedCount() }
   }
 
-  const legacy = getLegacyGame()
-  if (!legacy?.buildQuestions) {
-    mgr.isGameActive = false
-    return { kind: 'learn-first', learnedCount: getLearnedCount() }
-  }
-  const questions = legacy.buildQuestions(pool)
+  const questions = buildTrueOrNotQuestions(pool)
   if (!questions || questions.length === 0) {
     mgr.isGameActive = false
     return { kind: 'learn-first', learnedCount: getLearnedCount() }
