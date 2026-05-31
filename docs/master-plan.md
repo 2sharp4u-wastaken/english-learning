@@ -1914,7 +1914,23 @@ The safety net. 17 new specs that dynamic-import the **real legacy modules** in-
 
 **b1 oracle plan:** keep the legacy modules in-tree (unreferenced by the app) as a parity oracle; add `tests/engine-parity.spec.js` running the same seeded scenario through legacy + new and asserting deep-equal; only delete legacy once parity is green.
 
-##### Slice 4.4.b1: Engine rewrite — NEXT
+##### Slice 4.4.b1: Engine rewrite — IN PROGRESS (2026-06-01)
+
+**Pattern (proven):** each legacy manager is reimplemented cleanly in TS under
+`src/engine/*`; the legacy module stays in-tree as a **parity oracle** while a
+`tests/engine-parity-<x>.spec.js` runs the same scenario through legacy + new and
+asserts deep-equal (volatile wall-clock fields normalized). Only after every
+module's parity is green do we rewire bridges + delete `gameLogic.js`/`app.js`/`managers/*`.
+
+**Modules shipped (parity green):**
+- ✅ `src/engine/score.ts` — ScoreManager (coins/percentage/rating/XP/score map).
+- ✅ `src/engine/coins.ts` — CoinManager (economy/streak/daily bonus); DOM dropped, `gameType` for history injected via provider, optional `onChange`/`save` host hooks.
+- ✅ `src/engine/progress.ts` — ProgressManager (the brain: mastery/lifecycle/spacing/unlocks/certificates); byte-faithful.
+
+**Remaining:**
+- ⬜ `src/engine/courses.ts` (CourseManager) + `src/engine/certificates.ts` (CertificateManager) + parity.
+- ⬜ `src/engine/gameManager.ts` + `src/engine/appState.ts` (GameManager + AppManager *data half* — `smartQuestionSelection`/pool scoping/audio limits/save·load·deleteGameState/`recordWordAttempt`/`endGame`/`saveGameScoreToHistory` + session state; `loadUserProgress`/`saveUserProgress`/`getDefaultProgress`/`migrateUserProgress`/`updateProgress`/`_trackCourseActivityFromGame`/`checkMilestoneCertificates`/`initializeManagers` wiring). Drop all DOM render methods. The biggest, highest-risk piece. Plus FU-4.4-nikud cure here (React owns nikud).
+- ⬜ Rewire ~13 bridges' `getMgr`/`getApp`/etc. to import `src/engine/*`; boot inversion (React owns startup; mind FU-4.1 gating race); then delete legacy + script tags; full suite green; bundle drops below 500 KB.
 
 1. **The React bridges drive the legacy engine as their live backend.** ~13 `src/bridge/*` modules invoke ~40 methods/properties on `window.gameManager` / `app` / `managers/*` — not glue, but the app's brain: `smartQuestionSelection` / `getScopedQuestionPool` / `_getLearnedWordSet` (spaced-repetition selection), `recordWordAttempt` / `endGame` / `saveGameState` / `loadGameState` (progress/resume/score persistence), and the whole course-unlock/mastery/certificate ruleset (`isCourseUnlocked`, `checkAndUnlockGames`, `getTopicMastery`, …). Deleting `gameLogic.js`/`app.js` requires faithfully reimplementing that learning logic in React/bridges (a silent bug — a word that never resurfaces, a course that won't unlock — degrades the kid's experience without throwing). Also `window.gameData` and `window.vocabularyBank` come from `data/_loader.js` (still needed regardless).
 - remove `gameLogic.js` (GameManager engine) once reimplemented
