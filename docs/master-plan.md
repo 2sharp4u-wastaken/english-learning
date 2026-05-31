@@ -1891,16 +1891,44 @@ The 15 `games/*.js` files were **pure DOM-render methods** (`loadVocabularyQuest
 
 Surfaced (not introduced) during 4.4.a verification. **Bug:** a parent-set image override renders in most picture games but **NOT in Reading or Word Journey** for the same word. Write side (`src/bridge/customContent.ts` `overrideKey`) stores `${category}:${word}` with the word's title-case as listed from `vocabularyBank` (e.g. `animals:Cat`). Read side is inconsistent: listening/picture-match/pronunciation/practice/true-or-not read `${category}:${word}` (matches), but `ReadingGamePage.tsx:57` and `word-journey/components/WordJourneyPicture.tsx:14` read `${category}:${word.toLowerCase()}` (`animals:cat` → no match). Fix: normalize both sides to one casing (lowercase is the safer canonical form — but check no existing localStorage `wordImageOverrides` keys would be orphaned, or migrate them on read). Severity: low (override silently ignored in 2 of ~7 picture games). Pre-existing, independent of the 4.4.a deletion.
 
-#### Slice 4.4.b: Retire the Engine + Auth — DEFERRED (blocker #1)
+#### Follow-up FU-4.4-nikud: nikud toggle mid-game crashes React game subtree (pre-existing)
+
+Surfaced during the 4.4.b0 manual baseline pass (independent of b0, which is test-only). **Repro:** in any React game (seen in Vocabulary), toggle the nikud control (`header-nikud-toggle`) mid-question → the word + answers vanish, the area shows `טוען…` (loading). Exiting and re-entering recovers it, with the toggle correctly applied.
+
+**Root cause — React ↔ nikudDOM shared-DOM-ownership conflict.** Data Hebrew is stored *plain* (`hebrew: 'אני'`, no nikud); nikud is injected at RUNTIME by `utils/nikudDOM.js`, which walks the **entire body including `#react-root`** and *structurally mutates* React-owned nodes — `processTextNode` Case E does `parent.replaceChild(span, node)` (utils/nikudDOM.js:156) and Case D overwrites `textContent`. On a toggle, `onNikudChanged` re-walks the body (`applyNikudToTree(document.body)`, line 203) at the same time `useTextPrefs`'s `nikud-changed` listener re-renders the game (`showNikud` state). React then reconciles against a DOM whose nodes nikudDOM moved/replaced → it throws → the game subtree unmounts/remounts → the mount effect re-runs `beginVocabularySession`, `session` is briefly null → the `!session` branch renders `טוען…` (which nikudDOM then enriches to `טוֹעֵן…`). Same boundary as the earlier [[project_nikud_dom_clobbers_react_numbers]] fix (Case D lone-text-node guard), but Case E's structural `replaceChild` was never guarded for React.
+
+**Decision (2026-06-01):** do NOT hot-patch mid-b0 (the easy "skip `#react-root`" fix would leave React Hebrew permanently un-nikud'd, since React depends on nikudDOM for injection). **Cure belongs in b1/b2:** move nikud ownership INTO React — a bridge pre-enriches Hebrew from `data/nikud-map.json` so React renders nikud'd text directly, then `#react-root` is excluded from `nikudDOM` entirely (the conflict disappears with the legacy engine). Severity: medium (recoverable; only on a mid-game toggle). **Note for a regression test:** the headless boot path currently fails managers-init for `/#/game/vocabulary` — a working repro needs that solved first (or assert at the nikudDOM unit level that it skips/▷ doesn't structurally mutate a `#react-root` subtree).
+
+#### Slice 4.4.b: Retire the Engine + Auth — IN PROGRESS (blocker #1)
 
 This is the genuinely hard, multi-session part. **Do not start without scoping the engine surface first.**
+
+**Strategy decided (2026-06-01):** *reimplement* the learning logic fresh in React/TS (not a verbatim port). The accepted risk is *silent* regressions, so the mitigation is mandatory: fully MAP the legacy behavior and PIN it with characterization tests against the real legacy modules **first**, then make the rewrite reproduce those captured outputs before deleting anything. Split into four shippable sub-slices, each landing with green tests: **b0** (characterization harness), **b1** (engine rewrite), **b2** (auth rewrite), **b3** (final DOM cleanup). Full scoping + responsibility map: plan file `dynamic-twirling-wren.md`.
+
+##### Slice 4.4.b0: Characterization harness — SHIPPED (2026-06-01)
+
+The safety net. 17 new specs that dynamic-import the **real legacy modules** in-browser (reusing the `learning-lifecycle.spec.js` / `difficulty-gate.spec.js` patterns) and pin shipping behavior so the b1 rewrite is verifiable, not a leap of faith. All predicted golden values matched the legacy engine on first run; full suite **164 passed** (147 prior + 17 new).
+- `tests/engine-pure-logic.spec.js` (10) — `ScoreManager` (calculateCoins/calculatePercentage/getPerformanceRating/calculateXP), `CoinManager` (award helpers/awardStreakBonus/updateStreak/checkDailyBonus), `ProgressManager.calculateMastery` exact numbers, `CourseManager` unlock-requirement gating. Managers are clean `export class` → constructed directly with plain objects.
+- `tests/engine-selection.spec.js` (4) — `GameManager.smartQuestionSelection` RNG-**independent** structural invariants (dedup, 50-cap, pool-subset, due-words-always-selected, session-rotation exclusion) + `improvedShuffle` permutation. GameManager isn't importable (attaches to window, side-effects in ctor) → drives the booted `window.gameManager` with a deterministic `progressManager` stub to isolate bucketing from ProgressManager's due/mastery rules. Exact shuffled order deliberately NOT pinned (won't survive a reimplementation that consumes randomness differently); b1 parity compares invariants + distribution.
+- `tests/engine-bridge-contract.spec.js` (3) — v4 `getDefaultProgress` schema (top-level keys the rewrite must keep so saves migrate) + vocabulary `begin → recordAnswer → saveState` contract (the real `src/bridge/vocabulary.ts` imported via Vite, snapshotting wordMastery mutation/score/resumable gameState).
+
+**b1 oracle plan:** keep the legacy modules in-tree (unreferenced by the app) as a parity oracle; add `tests/engine-parity.spec.js` running the same seeded scenario through legacy + new and asserting deep-equal; only delete legacy once parity is green.
+
+##### Slice 4.4.b1: Engine rewrite — NEXT
 
 1. **The React bridges drive the legacy engine as their live backend.** ~13 `src/bridge/*` modules invoke ~40 methods/properties on `window.gameManager` / `app` / `managers/*` — not glue, but the app's brain: `smartQuestionSelection` / `getScopedQuestionPool` / `_getLearnedWordSet` (spaced-repetition selection), `recordWordAttempt` / `endGame` / `saveGameState` / `loadGameState` (progress/resume/score persistence), and the whole course-unlock/mastery/certificate ruleset (`isCourseUnlocked`, `checkAndUnlockGames`, `getTopicMastery`, …). Deleting `gameLogic.js`/`app.js` requires faithfully reimplementing that learning logic in React/bridges (a silent bug — a word that never resurfaces, a course that won't unlock — degrades the kid's experience without throwing). Also `window.gameData` and `window.vocabularyBank` come from `data/_loader.js` (still needed regardless).
 - remove `gameLogic.js` (GameManager engine) once reimplemented
 - remove `app.js` orchestration (AppManager — also owns `userProgress` load/save, certificates, coin history)
-2. **Auth.** remove `auth.js` global script — `src/bridge/auth.ts` transitions from adapter to standalone auth owner (see Auth End-State section). Port login + password-entry + user-select screens to React (LoginPage / PasswordEntryPage) consuming `useAuthSession`; legacy modal markup in `index.html` is deleted alongside `auth.js`. (Interim: 2026-05 restyled the legacy modal CSS to match the React palette — `.auth-modal*` / `.user-select-*` / `.login-*` / `.password-*` / `.auth-btn` blocks in `styles.css` — so visuals stay consistent until the port lands.)
-3. **Boot order inversion** — today legacy boots, sets up managers after auth, then React reads them. Removing the engine means React owns startup; mind the gating race already flagged in FU-4.1 (`project_react_home_gating_persisted`).
-4. **Final cleanup** — delete the now-dead legacy DOM launch/render path left in `gameLogic.js` by 4.4.a, and the dead `#<game>-game` containers in `index.html` (overlaps Slice 4.5).
+
+##### Slice 4.4.b2: Auth rewrite
+
+- **Boot order inversion** (lands with b1) — today legacy boots, sets up managers after auth, then React reads them. Removing the engine means React owns startup; mind the gating race already flagged in FU-4.1 (`project_react_home_gating_persisted`).
+
+   **Auth.** remove `auth.js` global script — `src/bridge/auth.ts` transitions from adapter to standalone auth owner (see Auth End-State section). Port login + password-entry + user-select screens to React (LoginPage / PasswordEntryPage) consuming `useAuthSession`; legacy modal markup in `index.html` is deleted alongside `auth.js`. (Interim: 2026-05 restyled the legacy modal CSS to match the React palette — `.auth-modal*` / `.user-select-*` / `.login-*` / `.password-*` / `.auth-btn` blocks in `styles.css` — so visuals stay consistent until the port lands.)
+
+##### Slice 4.4.b3: Final cleanup
+
+Delete the now-dead legacy DOM launch/render path left in `gameLogic.js` by 4.4.a, and the dead `#<game>-game` containers in `index.html` (overlaps Slice 4.5).
 
 ### Slice 4.5: CSS Rationalization
 
