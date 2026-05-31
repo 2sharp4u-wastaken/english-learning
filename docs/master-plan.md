@@ -1887,6 +1887,10 @@ The 15 `games/*.js` files were **pure DOM-render methods** (`loadVocabularyQuest
 
 **Deliberately left for 4.4.b (low-risk decision):** `gameLogic.js` still contains its legacy DOM launch/render path (`loadQuestion` switch, `nextQuestion`, `setup*EventListeners`, `startGame`'s render tail, and guarded `window.<game>Game` references in `endGame`/`saveGameState`/`loadGameState`). It is **formally unreachable** now (launchGame neutralized; no game falls through) and its guarded blocks safely skip (instances are `undefined`). Gutting it from a 168 KB file was judged not worth the regression risk once the bundle bar was already met — it goes away wholesale when 4.4.b removes the engine. **Behavior note:** story-time's `mgr.endGame` now takes the generic `else` percentage branch (real `scoreManager` score) instead of the legacy `window.storyTimeGame.quiz*` block (which React never populated → was effectively 0); verified by tests.
 
+#### Follow-up FU-4.4-imgkey: image-override key casing mismatch (pre-existing)
+
+Surfaced (not introduced) during 4.4.a verification. **Bug:** a parent-set image override renders in most picture games but **NOT in Reading or Word Journey** for the same word. Write side (`src/bridge/customContent.ts` `overrideKey`) stores `${category}:${word}` with the word's title-case as listed from `vocabularyBank` (e.g. `animals:Cat`). Read side is inconsistent: listening/picture-match/pronunciation/practice/true-or-not read `${category}:${word}` (matches), but `ReadingGamePage.tsx:57` and `word-journey/components/WordJourneyPicture.tsx:14` read `${category}:${word.toLowerCase()}` (`animals:cat` → no match). Fix: normalize both sides to one casing (lowercase is the safer canonical form — but check no existing localStorage `wordImageOverrides` keys would be orphaned, or migrate them on read). Severity: low (override silently ignored in 2 of ~7 picture games). Pre-existing, independent of the 4.4.a deletion.
+
 #### Slice 4.4.b: Retire the Engine + Auth — DEFERRED (blocker #1)
 
 This is the genuinely hard, multi-session part. **Do not start without scoping the engine surface first.**
