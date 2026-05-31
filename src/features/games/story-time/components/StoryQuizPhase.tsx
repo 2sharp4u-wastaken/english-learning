@@ -4,8 +4,6 @@ import type { Story, StoryQuizQuestion } from '@/bridge/story-time'
 export interface StoryQuizPhaseProps {
   story: Story
   question: StoryQuizQuestion
-  questionNumber: number
-  questionCount: number
   selectedIndex: number | null
   revealed: boolean
   onSelect: (index: number) => void
@@ -14,8 +12,6 @@ export interface StoryQuizPhaseProps {
 export function StoryQuizPhase({
   story,
   question,
-  questionNumber,
-  questionCount,
   selectedIndex,
   revealed,
   onSelect,
@@ -32,13 +28,6 @@ export function StoryQuizPhase({
           className="text-sm font-medium text-[color:var(--slate-300)]"
         >
           📖 {story.title}
-        </p>
-        <p
-          dir="rtl"
-          data-testid="story-time-q-counter"
-          className="text-sm text-[color:var(--slate-300)]"
-        >
-          שאלה {questionNumber} מתוך {questionCount}
         </p>
         <h3
           dir="rtl"

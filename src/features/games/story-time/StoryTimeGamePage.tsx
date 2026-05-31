@@ -279,8 +279,6 @@ export function StoryTimeGamePage() {
             <StoryQuizPhase
               story={currentStory}
               question={currentQuestion}
-              questionNumber={quizIndex + 1}
-              questionCount={currentStory.questions.length}
               selectedIndex={selectedIndex}
               revealed={phase === 'answered'}
               onSelect={handleQuizSelect}
