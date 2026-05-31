@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { WordJourneyPicture } from './WordJourneyPicture'
 import { cancelSpeech, speakWord } from '@/bridge/audio'
-import { getShowConfetti, triggerConfetti } from '@/bridge/feedback'
+import { getShowConfetti, playAnswerSfx, triggerConfetti } from '@/bridge/feedback'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import { cn } from '@/lib/cn'
 import { POINTS, type WJWord } from '@/bridge/word-journey'
@@ -79,6 +79,10 @@ export function RecallStage({ words, onAnswer, onComplete }: Props) {
             return s
           })
           onAnswer(a.word, true, POINTS.recallPair)
+          // RecallStage never goes through getGameFeedback (no banner — cards just
+          // settle), so the success WAV won't fire on its own. Play it explicitly
+          // to match the feedback_play_answer_sfx invariant.
+          playAnswerSfx('correct')
           if (getShowConfetti()) triggerConfetti()
         }
         setFlipped([])
