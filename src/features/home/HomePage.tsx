@@ -113,11 +113,16 @@ export function HomePage() {
         data-testid="home-hero"
         className="overflow-hidden rounded-3xl border border-white/10 bg-surface shadow-panel"
       >
-        <div className="relative bg-[radial-gradient(circle_at_top_left,rgba(99,230,198,0.22),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.18),transparent_40%)] p-6 sm:p-8">
-          <div className="flex flex-col items-center gap-5 text-center sm:flex-row sm:items-center sm:text-right">
-            <HomeMascot streakDays={summary.streakDays} wordsLearned={summary.wordsLearned} />
-            <div className="space-y-1.5">
-              <h1 className="font-display text-3xl font-bold text-text sm:text-4xl">
+        {/* Compact single-band hero (2026-06 compaction): mascot + greeting on
+            one side, stat chips + the primary "continue" CTA on the other, all on
+            one centered row that wraps on mobile. The old subtitle + full-width
+            giant button were removed; the CTA stays prominent via bg-learn. */}
+        <div className="relative bg-[radial-gradient(circle_at_top_left,rgba(99,230,198,0.22),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.18),transparent_40%)] p-3 sm:p-4">
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 sm:justify-between">
+            {/* Greeting + mascot */}
+            <div className="flex items-center gap-2.5">
+              <HomeMascot streakDays={summary.streakDays} wordsLearned={summary.wordsLearned} size="sm" />
+              <h1 className="font-display text-xl font-bold text-text sm:text-2xl">
                 <button
                   type="button"
                   onClick={() => void speakHebrew(`שלום ${greetingName}`).catch(() => {})}
@@ -131,33 +136,29 @@ export function HomePage() {
                   </span>
                 </button>
               </h1>
-              <p className="text-base text-muted sm:text-lg">
-                מוכנים לשחק וללמוד אנגלית? בואו נמשיך מאיפה שעצרנו.
-              </p>
+            </div>
+
+            {/* Stat chips + primary continue action */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" effect="levelUp" />
+              <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" effect="correct" />
+              <StatChip emoji="🪙" value={summary.coins} label="מטבעות" effect="victory" />
+
+              <button
+                type="button"
+                onClick={() => navigate(`/game/${continueGameId}`)}
+                data-testid="home-continue"
+                className="group flex items-center gap-2 rounded-full bg-learn px-4 py-2 text-sm font-bold text-slate-950 shadow-glow transition-transform hover:scale-105 active:scale-95 sm:text-base"
+              >
+                <span className="text-lg" aria-hidden>{continueIcon}</span>
+                <span>בוא נשחק — {continueLabel}</span>
+                <Play size={16} className="fill-current transition-transform group-hover:translate-x-[-2px]" />
+              </button>
             </div>
           </div>
 
-          {/* Glanceable progress chips */}
-          <div className="mt-5 flex flex-wrap justify-center gap-2 sm:justify-start">
-            <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" effect="levelUp" />
-            <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" effect="correct" />
-            <StatChip emoji="🪙" value={summary.coins} label="מטבעות" effect="victory" />
-          </div>
-
-          {/* One big primary action */}
-          <button
-            type="button"
-            onClick={() => navigate(`/game/${continueGameId}`)}
-            data-testid="home-continue"
-            className="group mt-5 flex w-full items-center justify-center gap-3 rounded-2xl bg-learn px-6 py-4 text-lg font-bold text-slate-950 shadow-glow transition-transform hover:scale-[1.01] active:scale-[0.99] sm:text-xl"
-          >
-            <span className="text-2xl">{continueIcon}</span>
-            <span>בוא נשחק — {continueLabel}</span>
-            <Play size={20} className="fill-current transition-transform group-hover:translate-x-[-2px]" />
-          </button>
-
           {nextUnlock ? (
-            <p className="mt-3 text-center text-sm text-muted sm:text-right">
+            <p className="mt-3 text-center text-sm text-muted">
               🎁 עוד קצת ותפתח את <span className="font-semibold text-text">{nextUnlock.icon} {nextUnlock.name}</span>
               {unlocks[nextUnlock.id]?.requirement ? ` · ${unlocks[nextUnlock.id]?.requirement}` : ''}
             </p>

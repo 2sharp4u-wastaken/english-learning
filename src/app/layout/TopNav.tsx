@@ -6,10 +6,10 @@ import { useUserProgress } from '@/hooks/useUserProgress'
 import { cn } from '@/lib/cn'
 import { NikudToggle } from './NikudToggle'
 
-// פרופיל + הגדרות intentionally live only in the user-avatar dropdown (below),
-// so they're not duplicated here in the top bar.
+// Home is the logo itself (with a Home icon) — see the brand link below — so it's
+// intentionally NOT repeated as a nav item. פרופיל + הגדרות live only in the
+// user-avatar dropdown, so they're not duplicated in the top bar either.
 const navItems = [
-  { to: '/home', label: 'בית', icon: Home },
   { to: '/courses', label: 'קורסים', icon: BookOpen },
   { to: '/stats', label: 'סטטיסטיקות', icon: BarChart3 },
 ] as const
@@ -47,9 +47,17 @@ export function TopNav() {
   return (
     <header data-testid="react-topnav" className="sticky top-0 z-30 hidden border-b border-white/8 bg-surface/95 backdrop-blur-md sm:block">
       <div className="mx-auto flex h-14 max-w-5xl items-center justify-between px-4">
-        {/* Logo */}
-        <Link to="/home" className="font-display text-lg font-semibold text-text">
-          לומדים אנגלית
+        {/* Logo doubles as the Home link (no separate בית nav item) */}
+        <Link
+          to="/home"
+          aria-label="דף הבית"
+          className={cn(
+            'flex items-center gap-2 rounded-lg px-2 py-1 font-display text-lg font-semibold transition-colors',
+            pathname === '/home' ? 'bg-white/10 text-text' : 'text-text hover:bg-white/5',
+          )}
+        >
+          <Home size={18} aria-hidden />
+          <span>לומדים אנגלית</span>
         </Link>
 
         {/* Center: nav links — spread across the available width */}

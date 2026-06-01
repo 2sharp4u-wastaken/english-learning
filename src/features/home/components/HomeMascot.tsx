@@ -5,6 +5,8 @@ import { speakHebrew } from '@/bridge/audio'
 interface HomeMascotProps {
   streakDays: number
   wordsLearned: number
+  /** 'lg' (default) is the original hero size; 'sm' is the compact home-band size. */
+  size?: 'sm' | 'lg'
 }
 
 /** Pick a Hebrew encouragement based on the child's current progress. */
@@ -18,7 +20,10 @@ function buildMessage(streakDays: number, wordsLearned: number): string {
 // on purpose: `#react-root button { font: inherit }` outspecifies utility
 // classes, so a `text-*` class on the button would be ignored and the owl
 // would shrink to the inherited base size.
-const OWL_SIZE = 'clamp(3.5rem, 9vw, 5.25rem)'
+const OWL_SIZE = {
+  lg: 'clamp(3.5rem, 9vw, 5.25rem)',
+  sm: 'clamp(2.25rem, 6vw, 3rem)',
+} as const
 
 const IDLE = {
   y: [0, -6, 0],
@@ -61,7 +66,7 @@ function SparkleBurst() {
  * child's streak/words, and speaks it aloud — a reactive mascot, not a static
  * emoji.
  */
-export function HomeMascot({ streakDays, wordsLearned }: HomeMascotProps) {
+export function HomeMascot({ streakDays, wordsLearned, size = 'lg' }: HomeMascotProps) {
   const controls = useAnimationControls()
   const [bubbleVisible, setBubbleVisible] = useState(false)
   const [cheerKey, setCheerKey] = useState(0)
@@ -99,7 +104,11 @@ export function HomeMascot({ streakDays, wordsLearned }: HomeMascotProps) {
         onClick={handleTap}
         data-testid="home-mascot"
         aria-label="לחץ לעידוד מהינשוף"
-        className="relative flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-white/15 to-white/5 shadow-glow sm:size-28"
+        className={
+          size === 'sm'
+            ? 'relative flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-white/15 to-white/5 shadow-glow sm:size-16'
+            : 'relative flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-white/15 to-white/5 shadow-glow sm:size-28'
+        }
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.93 }}
       >
@@ -118,7 +127,7 @@ export function HomeMascot({ streakDays, wordsLearned }: HomeMascotProps) {
         <motion.span
           aria-hidden
           animate={controls}
-          style={{ fontSize: OWL_SIZE, lineHeight: 1, display: 'inline-block' }}
+          style={{ fontSize: OWL_SIZE[size], lineHeight: 1, display: 'inline-block' }}
         >
           🦉
         </motion.span>
