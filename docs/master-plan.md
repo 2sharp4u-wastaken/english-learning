@@ -1926,9 +1926,10 @@ module's parity is green do we rewire bridges + delete `gameLogic.js`/`app.js`/`
 - ✅ `src/engine/score.ts` — ScoreManager (coins/percentage/rating/XP/score map).
 - ✅ `src/engine/coins.ts` — CoinManager (economy/streak/daily bonus); DOM dropped, `gameType` for history injected via provider, optional `onChange`/`save` host hooks.
 - ✅ `src/engine/progress.ts` — ProgressManager (the brain: mastery/lifecycle/spacing/unlocks/certificates); byte-faithful.
+- ✅ `src/engine/certificates.ts` — CertificateManager **data half only** (award/dedup/lookup/stats); the legacy DOM/canvas/audio methods (showCertificateModal / downloadCertificate / generateGalleryHTML / playCelebration / createConfetti / playMelody) are dropped — React renders the certificate UI. `save` host hook replaces the window.app/localStorage fallback.
+- ✅ `src/engine/courses.ts` — CourseManager (register/unlock cascade/activity completion/topic inference/stats). Two legacy ambient deps injected so it's host-agnostic: `progressManager.calculateTopicMastery` (constructor, as before) and the vocabulary bank for `inferTopicForActivity` (was `window.vocabularyBank`, now the `vocabularyBank` provider option). `saveProgress()` → `save` host hook. Parity (`engine-parity-courses.spec.js`) stubs `calculateTopicMastery` (its own parity is covered by progress) to isolate course logic.
 
 **Remaining:**
-- ⬜ `src/engine/courses.ts` (CourseManager) + `src/engine/certificates.ts` (CertificateManager) + parity.
 - ⬜ `src/engine/gameManager.ts` + `src/engine/appState.ts` (GameManager + AppManager *data half* — `smartQuestionSelection`/pool scoping/audio limits/save·load·deleteGameState/`recordWordAttempt`/`endGame`/`saveGameScoreToHistory` + session state; `loadUserProgress`/`saveUserProgress`/`getDefaultProgress`/`migrateUserProgress`/`updateProgress`/`_trackCourseActivityFromGame`/`checkMilestoneCertificates`/`initializeManagers` wiring). Drop all DOM render methods. The biggest, highest-risk piece. Plus FU-4.4-nikud cure here (React owns nikud).
 - ⬜ Rewire ~13 bridges' `getMgr`/`getApp`/etc. to import `src/engine/*`; boot inversion (React owns startup; mind FU-4.1 gating race); then delete legacy + script tags; full suite green; bundle drops below 500 KB.
 
