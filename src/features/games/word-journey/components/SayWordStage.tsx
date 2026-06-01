@@ -12,6 +12,7 @@ import {
   startPronunciationRecording,
   stopPronunciationRecording,
 } from '@/bridge/pronunciation'
+import { useMicPlayback } from '@/features/games/shared/useMicPlayback'
 import { cn } from '@/lib/cn'
 import { POINTS, type WJWord } from '@/bridge/word-journey'
 
@@ -49,8 +50,11 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
   const [transcript, setTranscript] = useState<string | null>(null)
   const [isCorrect, setIsCorrect] = useState(false)
   const [feedback, setFeedback] = useState<{ variant: 'correct' | 'incorrect'; text: string } | null>(null)
+  // Object URL for the captured mic blob — kids tap "שמע את עצמך" to replay it.
+  const [recordingUrl, setRecordingUrl] = useState<string | null>(null)
   const supported = isSpeechRecognitionAvailable()
   const advanceTimer = useRef<number | null>(null)
+  const mic = useMicPlayback()
   const word = words[index]
 
   useEffect(() => {
@@ -58,6 +62,8 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
     setTranscript(null)
     setIsCorrect(false)
     setFeedback(null)
+    setRecordingUrl(null)
+    mic.release()
     // Deferred auto-play (StrictMode-safe — see DiscoverStage).
     const playId = window.setTimeout(() => {
       void speakWord(word.word.toLowerCase(), 'word-journey', { allowOverlap: true })
@@ -68,7 +74,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
       if (isCurrentlyRecording()) void stopPronunciationRecording()
       if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
     }
-  }, [word])
+  }, [word, mic])
 
   const advance = useCallback(() => {
     if (index + 1 < words.length) setIndex((i) => i + 1)
@@ -78,14 +84,21 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
   const record = async () => {
     if (!supported || phase !== 'awaiting') return
     cancelSpeech()
+    mic.release()
+    setRecordingUrl(null)
     setPhase('recording')
+    // Capture the mic in parallel with recognition so the child can replay their
+    // voice. Silent if unsupported/denied — recognition still drives scoring.
+    await mic.start()
     let result: { transcript: string }
     try {
       result = await startPronunciationRecording()
     } catch {
+      void mic.stop()
       setPhase('awaiting')
       return
     }
+    setRecordingUrl(await mic.stop())
     const said = (result.transcript || '').toLowerCase().trim()
     const expected = word.word.toLowerCase()
     const correct =
@@ -177,6 +190,34 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
             >
               {transcript}
             </span>
+          </div>
+          <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => void speakWord(word.word.toLowerCase(), 'word-journey')}
+              aria-label="השמע מילה שוב"
+              className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--blue-400)] to-[color:var(--mint-400)] px-4 py-2 text-sm font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
+            >
+              <Volume2 className="size-4" aria-hidden />
+              השמע שוב
+            </button>
+            {recordingUrl ? (
+              <button
+                type="button"
+                onClick={() => {
+                  if (!recordingUrl) return
+                  cancelSpeech()
+                  const audio = new Audio(recordingUrl)
+                  audio.play().catch(() => {})
+                }}
+                data-testid="wj-say-hear-self"
+                aria-label="שמע את עצמך"
+                className="flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:bg-white/15"
+              >
+                <Mic className="size-4" aria-hidden />
+                שמע את עצמך
+              </button>
+            ) : null}
           </div>
         </section>
       ) : null}

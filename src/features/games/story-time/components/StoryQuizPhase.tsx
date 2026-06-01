@@ -1,4 +1,5 @@
 import { AnswerGrid } from '@/features/games/shared/AnswerGrid'
+import { useTextPrefs } from '@/bridge/textPrefs'
 import type { Story, StoryQuizQuestion } from '@/bridge/story-time'
 
 export interface StoryQuizPhaseProps {
@@ -16,6 +17,12 @@ export function StoryQuizPhase({
   revealed,
   onSelect,
 }: StoryQuizPhaseProps) {
+  // Quiz options are English word-level answers (slot words + literal phrases),
+  // so they respect the abc/ABC case toggle like every other game's English
+  // text. The Hebrew question is left untouched.
+  const { caseMode } = useTextPrefs()
+  const applyCase = (s: string) =>
+    caseMode === 'lowercase' ? s.toLowerCase() : s.toUpperCase()
   return (
     <section
       data-testid="story-time-quiz"
@@ -39,7 +46,7 @@ export function StoryQuizPhase({
       </header>
 
       <AnswerGrid
-        options={question.options.map((opt) => ({ label: opt, ariaLabel: opt }))}
+        options={question.options.map((opt) => ({ label: applyCase(opt), ariaLabel: opt }))}
         onSelect={onSelect}
         selectedIndex={selectedIndex}
         correctIndex={question.correctIndex}

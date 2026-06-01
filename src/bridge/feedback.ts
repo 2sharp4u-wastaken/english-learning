@@ -9,6 +9,48 @@ interface ConfettiFn {
   (opts: Record<string, unknown>): void
 }
 
+interface ConfettiLib extends ConfettiFn {
+  /** canvas-confetti factory — binds a burst to our own persistent canvas. */
+  create?: (
+    canvas: HTMLCanvasElement,
+    opts: { resize?: boolean; useWorker?: boolean },
+  ) => ConfettiFn
+}
+
+// A single confetti instance bound to one full-screen canvas that lives for the
+// whole session. The default global `confetti()` lazily creates (and can tear
+// down) its canvas + Web Worker per use, so the FIRST burst in any game stutters
+// while that init happens — reported across both Word Journey (mic game) and
+// Phonics (no mic), confirming it's this shared path, not the recording flow.
+// Owning the canvas ourselves means the worker is created once and the canvas
+// never gets torn down, so every burst is smooth.
+let confettiInstance: ConfettiFn | null = null
+
+function getConfettiInstance(): ConfettiFn | null {
+  if (confettiInstance) return confettiInstance
+  const lib = (window as any).confetti as ConfettiLib | undefined
+  if (typeof lib !== 'function') return null
+  if (typeof lib.create !== 'function') {
+    // Older build without create() — fall back to the global (still better than
+    // nothing; just keeps the lazy-init behavior).
+    confettiInstance = lib
+    return confettiInstance
+  }
+  const canvas = document.createElement('canvas')
+  canvas.setAttribute('aria-hidden', 'true')
+  Object.assign(canvas.style, {
+    position: 'fixed',
+    inset: '0',
+    width: '100%',
+    height: '100%',
+    pointerEvents: 'none',
+    zIndex: '9999',
+  } as Partial<CSSStyleDeclaration>)
+  document.body.appendChild(canvas)
+  confettiInstance = lib.create(canvas, { resize: true, useWorker: true })
+  return confettiInstance
+}
+
 export function getGameFeedback(
   gameType: string,
   kind: 'correct' | 'incorrect',
@@ -79,8 +121,8 @@ export function playAnswerSfx(kind: 'correct' | 'incorrect'): void {
 }
 
 export function triggerConfetti(): void {
-  const confetti = (window as any).confetti as ConfettiFn | undefined
-  if (typeof confetti !== 'function') return
+  const confetti = getConfettiInstance()
+  if (!confetti) return
   try {
     confetti({
       particleCount: 100,
@@ -94,19 +136,26 @@ export function triggerConfetti(): void {
 }
 
 /**
- * Pre-initialise canvas-confetti once. Its first invocation lazily creates a
- * full-screen canvas (and a worker), which is the visible "hiccup" on the first
- * celebration of a page load. Firing one invisible, instantly-gone particle on
- * app startup pays that cost up front so every real burst animates smoothly.
+ * Pre-initialise canvas-confetti once. The first real burst lazily creates the
+ * persistent canvas + Web Worker (and transfers the canvas off-screen), which is
+ * the visible "hiccup" on the first celebration. We build the persistent
+ * instance and fire one off-screen, near-instant burst on startup to pay that
+ * cost up front so every in-game burst animates smoothly. Retries a few times in
+ * case the CDN <script> hasn't defined window.confetti yet.
  */
 let warmedUp = false
-export function warmUpConfetti(): void {
+export function warmUpConfetti(attempt = 0): void {
   if (warmedUp) return
-  const confetti = (window as any).confetti as ConfettiFn | undefined
-  if (typeof confetti !== 'function') return
+  const confetti = getConfettiInstance()
+  if (!confetti) {
+    if (attempt < 10) window.setTimeout(() => warmUpConfetti(attempt + 1), 300)
+    return
+  }
   warmedUp = true
   try {
-    confetti({ particleCount: 1, startVelocity: 0, ticks: 1, origin: { x: -1, y: -1 } })
+    // Real (not zero) particles + a couple of ticks so the worker/canvas
+    // actually initialise, but off-screen so nothing is visible.
+    confetti({ particleCount: 3, startVelocity: 1, ticks: 2, origin: { x: -1, y: -1 } })
   } catch {
     /* swallow */
   }

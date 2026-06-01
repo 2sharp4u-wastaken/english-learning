@@ -167,6 +167,13 @@ function getLearnedCount(): number {
 }
 
 function adapt(q: LegacyTrueOrNotQuestion): TrueOrNotQuestion {
+  // displayImage/displayImageUrl are a coherent PAIR from one source: the word
+  // itself on match rounds, the decoy on mismatch rounds (always set by
+  // buildTrueOrNotQuestions). Do NOT fall back to the prompt word's own
+  // image/imageUrl — on a mismatch round where the decoy has an emoji but no
+  // imageUrl, that fallback resurrects the PROMPT word's PNG (e.g. back.png next
+  // to "back"), making a mismatch round look like a match and marking the
+  // visually-correct "yes" wrong.
   return {
     word: q.word,
     translation: q.translation,
@@ -174,8 +181,8 @@ function adapt(q: LegacyTrueOrNotQuestion): TrueOrNotQuestion {
     category: q.category,
     picture: q.image,
     imageUrl: q.imageUrl,
-    displayPicture: q.displayImage ?? q.image,
-    displayImageUrl: q.displayImageUrl ?? q.imageUrl,
+    displayPicture: q.displayImage,
+    displayImageUrl: q.displayImageUrl,
     isMatch: q.isMatch,
     correct: q.isMatch ? 0 : 1,
   }

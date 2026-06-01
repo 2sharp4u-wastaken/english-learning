@@ -2274,8 +2274,10 @@ test.describe('Slice 3.12: Story Time Game (React)', () => {
     const optCount = await opts.count();
     let clicked = false;
     for (let i = 0; i < optCount; i++) {
+      // Options render in the active abc/ABC case, so compare case-insensitively
+      // against the bridge's raw option text.
       const text = (await opts.nth(i).textContent())?.trim();
-      if (text === correctText) {
+      if (text?.toLowerCase() === correctText?.toLowerCase()) {
         await opts.nth(i).click();
         clicked = true;
         break;
@@ -2314,8 +2316,9 @@ test.describe('Slice 3.12: Story Time Game (React)', () => {
     const optCount = await opts.count();
     let clicked = false;
     for (let i = 0; i < optCount; i++) {
+      // Options render in the active abc/ABC case (see happy-path note).
       const text = (await opts.nth(i).textContent())?.trim();
-      if (text === wrongText) {
+      if (text?.toLowerCase() === wrongText?.toLowerCase()) {
         await opts.nth(i).click();
         clicked = true;
         break;
