@@ -26,6 +26,10 @@ import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'recording' | 'answered' | 'finished'
 
+// Auto-advance delay after a correct answer — a beat for the confetti + praise
+// voice, while the "hear yourself"/replay buttons stay usable in the window.
+const ADVANCE_ON_CORRECT_MS = 1800
+
 interface FeedbackState {
   variant: 'correct' | 'incorrect'
   text: string
@@ -373,8 +377,13 @@ export function PronunciationGamePage() {
           /* ignore */
         }
       })()
-      // No auto-advance on correct: leave the result up so the child can
-      // replay the word / hear themselves and tap "next" when ready.
+      // Auto-advance on correct after a short beat. The "next" footer button
+      // still works (it clears this timer first, so it advances exactly once).
+      if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
+      advanceTimer.current = window.setTimeout(() => {
+        advanceTimer.current = null
+        advance()
+      }, ADVANCE_ON_CORRECT_MS)
     } else {
       ;(async () => {
         try {
@@ -387,6 +396,7 @@ export function PronunciationGamePage() {
       })()
     }
   }, [
+    advance,
     current,
     phase,
     recognitionSupported,

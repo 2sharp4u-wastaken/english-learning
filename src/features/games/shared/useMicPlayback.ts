@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 
 /**
  * Parallel mic capture for a "hear yourself" playback button.
@@ -102,5 +102,9 @@ export function useMicPlayback(): MicPlayback {
     }
   }, [release])
 
-  return { start, stop, release }
+  // Stable identity — start/stop/release are already useCallback-memoized, so
+  // this object never changes between renders. Consumers put `mic` in effect
+  // dependency arrays; an unstable object would re-run those effects every
+  // render (e.g. resetting the say-word stage's phase mid-answer).
+  return useMemo(() => ({ start, stop, release }), [start, stop, release])
 }
