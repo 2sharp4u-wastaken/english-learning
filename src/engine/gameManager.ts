@@ -130,6 +130,45 @@ export class GameManager {
   clickRepeatCount = GAME_CONFIG.WRONG_OPTIONS_COUNT
   showPictures = false
 
+  // ── Game-data load (category filter + difficulty gate) ─────────────────────
+
+  /**
+   * Build the per-game-type pools the bridges read via `getScopedQuestionPool` /
+   * `getPracticeWords`. Faithful to legacy `GameManager.loadGameData`
+   * (gameLogic.js:1522): category-filter the relevant banks by `selectedCategories`
+   * and apply the difficulty gate to vocabulary/listening/picture-match (grammar,
+   * reading, pronunciation, abc are NOT gated). Reads the live raw bank from the
+   * host (`gameDataProvider` → `window.gameData`) on every call, so re-running after
+   * `refreshCustomWords` (which mutates that bank in place) surfaces newly-added
+   * words. Must run AFTER `applySettings` so `selectedCategories` is current.
+   */
+  loadGameData(): void {
+    const raw = this.opts.gameDataProvider?.() ?? {}
+    if (!raw || !raw.vocabulary) {
+      console.error('gameData is not loaded yet')
+      return
+    }
+
+    const byCategory = (items: WordObj[] = []): WordObj[] =>
+      this.selectedCategories && this.selectedCategories.length > 0
+        ? items.filter((item) => this.selectedCategories.includes(item.category))
+        : items
+
+    const filteredVocabulary = this.applyDifficultyGate(byCategory(raw.vocabulary), 'vocabulary')
+    const filteredListening = this.applyDifficultyGate(byCategory(raw.listening), 'listening')
+    const filteredPictureMatch = this.applyDifficultyGate(byCategory(raw['picture-match'] || []), 'picture-match')
+
+    this.gameData = {
+      vocabulary: [...filteredVocabulary],
+      grammar: [...(raw.grammar || [])],
+      pronunciation: byCategory(raw.pronunciation),
+      listening: filteredListening,
+      reading: byCategory(raw.reading),
+      abc: raw.abc || [],
+      'picture-match': filteredPictureMatch,
+    }
+  }
+
   // ── Tier + audio gate ────────────────────────────────────────────────────
 
   getGameTier(gameType: string): 'learn' | 'practice' | 'challenge' {

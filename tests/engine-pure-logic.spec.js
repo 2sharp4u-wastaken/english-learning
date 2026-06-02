@@ -2,16 +2,16 @@
 import { test, expect } from '@playwright/test';
 
 /**
- * Slice 4.4.b0 — characterization specs for the legacy engine's PURE logic.
+ * Slice 4.4.b — unit specs for the engine's PURE logic.
  *
  * These pin the exact, deterministic outputs of the rules the React bridges
- * depend on (scoring, coin economy, mastery, course unlocking) so the Slice
- * 4.4.b rewrite can be verified byte-for-byte against shipping behavior.
+ * depend on (scoring, coin economy, mastery, course unlocking). Originally b0
+ * characterization specs against the legacy `managers/*`; Slice 4.4.b1 repointed
+ * them at the byte-faithful `src/engine/*` ports (the legacy modules were deleted)
+ * — they now serve as the engine's standing unit tests.
  *
- * Like tests/learning-lifecycle.spec.js, each spec dynamic-imports the REAL
- * legacy module in-browser and exercises it directly — no app state touched.
- * When the rewrite lands, these specs re-point at the new modules (or run via
- * the parity oracle) and must stay green.
+ * Each spec dynamic-imports the engine module in-browser and exercises it
+ * directly — no app state touched.
  */
 
 const DAY = 86400000;
@@ -35,7 +35,7 @@ test.beforeEach(async ({ page }) => {
 
 // ─── ScoreManager ────────────────────────────────────────────────────────────
 
-const SCORE = '/managers/ScoreManager.js';
+const SCORE = '/src/engine/score.ts';
 
 test('ScoreManager.calculateCoins — base rewards + perfect + streak bonuses', async ({ page }) => {
   const r = await run(page, SCORE, (ns) => {
@@ -122,7 +122,7 @@ test('ScoreManager.calculateXP — base*multiplier + perfect bonus', async ({ pa
 
 // ─── CoinManager ─────────────────────────────────────────────────────────────
 
-const COIN = '/managers/CoinManager.js';
+const COIN = '/src/engine/coins.ts';
 
 test('CoinManager award helpers return the documented amounts and update balance', async ({ page }) => {
   const r = await run(page, COIN, (ns) => {
@@ -202,7 +202,7 @@ test('CoinManager.checkDailyBonus — awards once per day and advances lastLogin
 
 // ─── ProgressManager.calculateMastery (exact numbers, not just status) ─────────
 
-const PROGRESS = '/managers/ProgressManager.js';
+const PROGRESS = '/src/engine/progress.ts';
 
 test('ProgressManager.calculateMastery — exact masteryLevel values', async ({ page }) => {
   const r = await run(page, PROGRESS, (ns) => {
@@ -231,7 +231,7 @@ test('ProgressManager.calculateMastery — exact masteryLevel values', async ({ 
 
 // ─── CourseManager unlock requirements ───────────────────────────────────────
 
-const COURSE = '/managers/CourseManager.js';
+const COURSE = '/src/engine/courses.ts';
 
 test('CourseManager — unlock requirement gating on prerequisite completion %', async ({ page }) => {
   const r = await run(page, COURSE, (ns) => {

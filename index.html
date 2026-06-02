@@ -888,8 +888,11 @@
     <!-- Slice 4.2/4.3: legacy top-header + settings.js retired. React owns the
          header (TopNav / GameHeader) and the settings/stats UI. case/nikud init
          is covered by React textPrefs + data/_loader.js→nikud.js. -->
-    <script type="module" src="gameLogic.js?t=1776400001"></script>
-    <script type="module" src="app.js?t=1776400001"></script>
+    <!-- Slice 4.4.b1: the legacy engine boot (gameLogic.js GameManager + app.js
+         AppManager) is retired. React now owns startup via src/engine/boot.ts
+         (useEngineBoot), which builds the src/engine/* instances once data + auth
+         are ready and republishes the same window.* globals the bridges read. -->
+
 
     <script>
         // Post-login welcome chime. React Router owns routing (index + catch-all

@@ -73,6 +73,10 @@ async function refreshLiveBank(): Promise<void> {
   if (typeof refresh === 'function') {
     try {
       await refresh()
+      // refreshCustomWords mutates the raw window.gameData bank in place; rebuild the
+      // engine's category-filtered/difficulty-gated pools so the new words surface in
+      // this session without a reload (the engine reads filtered copies, not the raw bank).
+      ;(window as any).gameManager?.loadGameData?.()
     } catch {
       /* best-effort live update; persisted either way */
     }

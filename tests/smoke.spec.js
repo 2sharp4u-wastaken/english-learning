@@ -271,22 +271,21 @@ test.describe('Profile Rendering', () => {
             lastLoginDate: new Date().toISOString().slice(0, 10), // today, so streak isn't reset
         });
 
-        // Trigger profile re-render (profile renders on welcome screen show)
-        await page.evaluate(() => {
-            window.app?.renderProfileScreen?.();
-        });
-        await page.waitForTimeout(500);
+        // Slice 4.4.b: the legacy welcome-screen profile (window.app.renderProfileScreen
+        // → #profile-* divs) was retired with the legacy engine; the React /profile route
+        // owns these stats now. Leading-int parse since the value pill includes a unit span.
+        await gotoReactRoute(page, '/profile');
+        const leadingInt = (s) => Number((s || '').trim().match(/\d+/)?.[0] ?? NaN);
 
-        // Check profile stat values
-        const wordsLearned = await page.locator('#profile-words-learned').textContent();
-        expect(Number(wordsLearned.trim())).toBe(12);
+        const wordsLearned = await page.locator('[data-testid="profile-stat-words"]').textContent();
+        expect(leadingInt(wordsLearned)).toBe(12);
 
         // Streak may be modified by CoinManager.checkDailyBonus on init — check it's at least 1
-        const streak = await page.locator('#profile-streak').textContent();
-        expect(Number(streak.trim())).toBeGreaterThanOrEqual(1);
+        const streak = await page.locator('[data-testid="profile-stat-streak"]').textContent();
+        expect(leadingInt(streak)).toBeGreaterThanOrEqual(1);
 
-        const certsCount = await page.locator('#profile-certs-count').textContent();
-        expect(Number(certsCount.trim())).toBe(2);
+        const certsCount = await page.locator('[data-testid="profile-stat-certs"]').textContent();
+        expect(leadingInt(certsCount)).toBe(2);
     });
 
     test('learning progress bar shows correct level', async ({ page }) => {

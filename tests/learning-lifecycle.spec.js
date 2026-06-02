@@ -5,12 +5,14 @@ import { test, expect } from '@playwright/test';
  * Unit-level tests for the V3 mastery-driven word lifecycle
  * (docs/learning-flow-redesign.md, step 2 — ProgressManager refactor).
  *
- * Drives the REAL `managers/ProgressManager.js` module inside the browser via a
- * fresh dynamic import, so we exercise shipping logic — not a re-implementation.
- * No app state is touched; each test builds its own ProgressManager instance.
+ * Drives the REAL `src/engine/progress.ts` ProgressManager inside the browser via
+ * a fresh dynamic import, so we exercise shipping logic — not a re-implementation.
+ * (Slice 4.4.b1 retired the legacy `managers/ProgressManager.js`; this engine port
+ * is byte-faithful and was the parity oracle's twin.) No app state is touched; each
+ * test builds its own ProgressManager instance.
  */
 
-const MOD = '/managers/ProgressManager.js';
+const MOD = '/src/engine/progress.ts';
 const DAY = 86400000;
 
 /** Run a scenario fn (string-serialized) against a fresh ProgressManager. */

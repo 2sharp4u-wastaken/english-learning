@@ -250,3 +250,12 @@ window.refreshCustomWords = async function () {
 };
 
 console.log('Global gameData and difficultyLevels set successfully');
+
+// ── Engine boot signal (Slice 4.4.b1) ───────────────────────────────────────
+// React owns engine startup now (src/engine/boot.ts). It must wait until this
+// module has populated window.gameData / vocabularyBank / nikudMap before
+// instantiating the engine. There was no ready signal before; add a flag + event
+// so the React boot can fire immediately if it loads after us, or on the event if
+// it loads first. (This module uses top-level await, so reaching here means done.)
+window.__gameDataReady = true;
+window.dispatchEvent(new CustomEvent('game-data-ready'));

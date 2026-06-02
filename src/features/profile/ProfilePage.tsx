@@ -197,11 +197,11 @@ export function ProfilePage() {
 
           {/* Stats row */}
           <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
-            <MiniStat icon={<Flame size={16} className="text-learn" />} label="רצף" value={`${summary.streakDays}`} unit="ימים" />
-            <MiniStat icon={<Star size={16} className="text-practice" />} label="נלמדו" value={`${summary.wordsLearned}`} unit="מילים" />
+            <MiniStat testid="profile-stat-streak" icon={<Flame size={16} className="text-learn" />} label="רצף" value={`${summary.streakDays}`} unit="ימים" />
+            <MiniStat testid="profile-stat-words" icon={<Star size={16} className="text-practice" />} label="נלמדו" value={`${summary.wordsLearned}`} unit="מילים" />
             <MiniStat icon={<Sparkles size={16} className="text-challenge" />} label="שליטה" value={`${wordsMastered}`} unit="מילים" />
             <MiniStat icon={<Medal size={16} className="text-test" />} label="מטבעות" value={`${summary.coins}`} />
-            <MiniStat icon={<Award size={16} className="text-learn" />} label="תעודות" value={`${certificates.length}`} />
+            <MiniStat testid="profile-stat-certs" icon={<Award size={16} className="text-learn" />} label="תעודות" value={`${certificates.length}`} />
           </div>
         </div>
       </section>
@@ -249,11 +249,13 @@ function MiniStat({
   label,
   value,
   unit,
+  testid,
 }: {
   icon: ReactNode
   label: string
   value: string
   unit?: string
+  testid?: string
 }) {
   return (
     <div className="rounded-xl border border-white/8 bg-white/5 px-3 py-2.5">
@@ -261,7 +263,7 @@ function MiniStat({
         {icon}
         <span className="text-xs text-muted">{label}</span>
       </div>
-      <p className="mt-1 font-display text-xl font-semibold text-text">
+      <p className="mt-1 font-display text-xl font-semibold text-text" data-testid={testid}>
         {value}
         {unit && <span className="ms-1 text-xs font-normal text-muted">{unit}</span>}
       </p>
