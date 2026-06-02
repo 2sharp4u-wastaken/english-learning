@@ -223,6 +223,95 @@ class AudioEffectsManager {
         osc.stop(now + 0.1);
     }
 
+    // ── Home stat-pill signatures (each chip gets its own character) ──────────
+
+    // 🪙 Coins — classic arcade "coin" blip: a short grace note into a bright,
+    // sustained ring (square wave, like a collectible pickup).
+    async playCoin() {
+        if (!this.enabled) return;
+        await this.resume();
+        const now = this.audioContext.currentTime;
+
+        const blip = (freq, start, dur, vol) => {
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+            osc.type = 'square';
+            osc.frequency.value = freq;
+            gain.gain.setValueAtTime(vol, start);
+            gain.gain.exponentialRampToValueAtTime(0.01, start + dur);
+            osc.start(start);
+            osc.stop(start + dur);
+        };
+
+        // B5 grace note → E6 ring (the Mario-coin interval).
+        blip(987.77, now, 0.07, this.volume * 0.6);
+        blip(1318.51, now + 0.07, 0.45, this.volume * 0.6);
+    }
+
+    // 🔥 Streak — a warm rising "power-up" whoosh: a pitch sweep with a sparkle
+    // layer on top, conveying momentum/heat building.
+    async playStreak() {
+        if (!this.enabled) return;
+        await this.resume();
+        const now = this.audioContext.currentTime;
+        const duration = 0.32;
+
+        // Body: confident upward sweep with a tiny overshoot.
+        const body = this.audioContext.createOscillator();
+        const bodyGain = this.audioContext.createGain();
+        body.connect(bodyGain);
+        bodyGain.connect(this.audioContext.destination);
+        body.type = 'sawtooth';
+        body.frequency.setValueAtTime(220, now);
+        body.frequency.exponentialRampToValueAtTime(880, now + duration * 0.8);
+        body.frequency.exponentialRampToValueAtTime(740, now + duration);
+        bodyGain.gain.setValueAtTime(this.volume * 0.35, now);
+        bodyGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        body.start(now);
+        body.stop(now + duration);
+
+        // Sparkle layer an octave up for "heat".
+        const top = this.audioContext.createOscillator();
+        const topGain = this.audioContext.createGain();
+        top.connect(topGain);
+        topGain.connect(this.audioContext.destination);
+        top.type = 'triangle';
+        top.frequency.setValueAtTime(660, now);
+        top.frequency.exponentialRampToValueAtTime(1760, now + duration);
+        topGain.gain.setValueAtTime(this.volume * 0.18, now + 0.04);
+        topGain.gain.exponentialRampToValueAtTime(0.01, now + duration);
+        top.start(now + 0.04);
+        top.stop(now + duration);
+    }
+
+    // ⭐ Words learned — a shimmering "magic sparkle": a fast descending chain of
+    // high bell tones (fairy-dust), distinct from the ascending correct/level-up.
+    async playSparkle() {
+        if (!this.enabled) return;
+        await this.resume();
+
+        // Descending high bells: C7 · A6 · F6 · C6.
+        const notes = [2093.0, 1760.0, 1396.91, 1046.5];
+        let time = this.audioContext.currentTime;
+
+        notes.forEach((freq, i) => {
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+            osc.type = 'sine';
+            osc.frequency.value = freq;
+            const dur = 0.22 - i * 0.02;
+            gain.gain.setValueAtTime(this.volume * 0.4, time);
+            gain.gain.exponentialRampToValueAtTime(0.01, time + dur);
+            osc.start(time);
+            osc.stop(time + dur);
+            time += 0.06;
+        });
+    }
+
     // Helper: play a sequence of notes one after another
     _playMelody(notes, startTime, gap = 0) {
         let t = startTime;

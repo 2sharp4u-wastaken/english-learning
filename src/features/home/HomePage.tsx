@@ -6,6 +6,7 @@ import { playEffect, type SoundEffect } from '@/bridge/feedback'
 import { speakHebrew } from '@/bridge/audio'
 import { NewlyUnlockedModal } from './components/NewlyUnlockedModal'
 import { HomeMascot } from './components/HomeMascot'
+import { HeroSparkles } from './components/HeroSparkles'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useGameUnlocks } from '@/hooks/useGameUnlocks'
 import { useUserProgress } from '@/hooks/useUserProgress'
@@ -109,16 +110,22 @@ export function HomePage() {
   return (
     <div className="space-y-6 pb-8">
       {/* ── Welcome hero: mascot + one big "let's go" action ────────────────── */}
+      {/* No `overflow-hidden` here on purpose: the mascot's tap bubble opens below
+          the short band and must escape it. The sparkle background self-clips (its
+          own rounded overflow-hidden wrapper) and the inner gradient div is rounded,
+          so the band corners stay clean without clipping the bubble. `relative z-10`
+          lifts the hero (and its overflowing bubble) above the sections below it. */}
       <section
         data-testid="home-hero"
-        className="overflow-hidden rounded-3xl border border-white/10 bg-surface shadow-panel"
+        className="relative z-10 rounded-3xl border border-white/10 bg-surface shadow-panel"
       >
         {/* Compact single-band hero (2026-06 compaction): mascot + greeting on
             one side, stat chips + the primary "continue" CTA on the other, all on
             one centered row that wraps on mobile. The old subtitle + full-width
             giant button were removed; the CTA stays prominent via bg-learn. */}
-        <div className="relative bg-[radial-gradient(circle_at_top_left,rgba(99,230,198,0.22),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.18),transparent_40%)] p-3 sm:p-4">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 sm:justify-between">
+        <div className="relative rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(99,230,198,0.22),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.18),transparent_40%)] p-3 sm:p-4">
+          <HeroSparkles />
+          <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 sm:justify-between">
             {/* Greeting + mascot */}
             <div className="flex items-center gap-2.5">
               <HomeMascot streakDays={summary.streakDays} wordsLearned={summary.wordsLearned} size="sm" />
@@ -140,9 +147,9 @@ export function HomePage() {
 
             {/* Stat chips + primary continue action */}
             <div className="flex flex-wrap items-center justify-center gap-2">
-              <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" effect="levelUp" />
-              <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" effect="correct" />
-              <StatChip emoji="🪙" value={summary.coins} label="מטבעות" effect="victory" />
+              <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" effect="streak" />
+              <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" effect="sparkle" />
+              <StatChip emoji="🪙" value={summary.coins} label="מטבעות" effect="coin" />
 
               <button
                 type="button"
@@ -158,7 +165,7 @@ export function HomePage() {
           </div>
 
           {nextUnlock ? (
-            <p className="mt-3 text-center text-sm text-muted">
+            <p className="relative z-10 mt-3 text-center text-sm text-muted">
               🎁 עוד קצת ותפתח את <span className="font-semibold text-text">{nextUnlock.icon} {nextUnlock.name}</span>
               {unlocks[nextUnlock.id]?.requirement ? ` · ${unlocks[nextUnlock.id]?.requirement}` : ''}
             </p>

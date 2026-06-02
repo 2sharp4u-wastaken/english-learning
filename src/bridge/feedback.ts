@@ -38,11 +38,23 @@ interface AudioEffects {
   playLevelUp(): Promise<void>
   playVictory(): Promise<void>
   playClick(): Promise<void>
+  playCoin(): Promise<void>
+  playStreak(): Promise<void>
+  playSparkle(): Promise<void>
 }
 
 /** Named UI sound effects (legacy `window.audioEffects`), e.g. for tappable
- *  home-screen chips. No-op if the legacy effects manager isn't loaded. */
-export type SoundEffect = 'correct' | 'wrong' | 'levelUp' | 'victory' | 'click'
+ *  home-screen chips. No-op if the legacy effects manager isn't loaded.
+ *  `coin`/`streak`/`sparkle` are the per-pill home signatures (audio-effects.js). */
+export type SoundEffect =
+  | 'correct'
+  | 'wrong'
+  | 'levelUp'
+  | 'victory'
+  | 'click'
+  | 'coin'
+  | 'streak'
+  | 'sparkle'
 
 export function playEffect(effect: SoundEffect): void {
   const fx = (window as any).audioEffects as AudioEffects | undefined
@@ -53,6 +65,9 @@ export function playEffect(effect: SoundEffect): void {
     levelUp: fx.playLevelUp,
     victory: fx.playVictory,
     click: fx.playClick,
+    coin: fx.playCoin,
+    streak: fx.playStreak,
+    sparkle: fx.playSparkle,
   }
   try {
     map[effect]?.call(fx)?.catch?.(() => {})
