@@ -1,5 +1,6 @@
 import { Volume2, Check } from 'lucide-react'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
 import type { SentenceOption, SoundsRightQuestion } from '@/bridge/grammar-beginner'
 import { TranslationFlash } from './TranslationFlash'
@@ -21,6 +22,7 @@ export function SoundsRightView({
   onSelect,
 }: Props) {
   const { showNikud } = useTextPrefs()
+  const nk = useNikud()
   const subjHe = showNikud ? question.subjectHebrew : stripNikud(question.subjectHebrew)
   const predHe = showNikud ? question.predicateHebrew : stripNikud(question.predicateHebrew)
 
@@ -30,7 +32,7 @@ export function SoundsRightView({
         dir="rtl"
         className="text-center text-base font-semibold text-[color:var(--slate-300)]"
       >
-        מה נשמע נכון?
+        {nk('מה נשמע נכון?')}
       </p>
 
       <div className="mx-auto flex w-full max-w-lg flex-col rounded-2xl border border-white/10 bg-white/5 px-4 py-4">
@@ -80,7 +82,7 @@ export function SoundsRightView({
               >
                 <Volume2 size={18} />
                 <span className="font-display text-base font-bold">
-                  אפשרות {idx + 1}
+                  {nk('אפשרות')} {idx + 1}
                 </span>
               </button>
               <button

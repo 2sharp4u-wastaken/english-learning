@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn'
+import { useNikud } from '@/bridge/nikud'
 import type { WJStageId } from '@/bridge/word-journey'
 
 const STAGES: { id: WJStageId; icon: string; label: string }[] = [
@@ -12,6 +13,7 @@ const STAGES: { id: WJStageId; icon: string; label: string }[] = [
 /** The five-stage journey map. Mirrors the legacy wj-stage-bar: each step is
  *  active / completed / upcoming. */
 export function WJStageBar({ activeStage }: { activeStage: WJStageId }) {
+  const nk = useNikud()
   const activeIndex = STAGES.findIndex((s) => s.id === activeStage)
   return (
     <div
@@ -45,7 +47,7 @@ export function WJStageBar({ activeStage }: { activeStage: WJStageId }) {
                   state === 'active' ? 'text-white' : 'text-[color:var(--slate-300)]',
                 )}
               >
-                {stage.label}
+                {nk(stage.label)}
               </span>
             </div>
             {i < STAGES.length - 1 ? (

@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
+import { useNikud } from '@/bridge/nikud'
 
 export interface GameHeroProps {
   title: string
@@ -28,6 +29,7 @@ export interface GameHeroProps {
  * follows.
  */
 export function GameHero({ title, subtitle, icon, aside, className }: GameHeroProps) {
+  const nk = useNikud()
   if (!title && !icon) return null
   return (
     <div
@@ -49,11 +51,11 @@ export function GameHero({ title, subtitle, icon, aside, className }: GameHeroPr
           </span>
         ) : null}
         <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
-          {title}
+          {nk(title)}
         </h1>
       </div>
       {subtitle ? (
-        <p className="text-sm text-[color:var(--slate-300)]">{subtitle}</p>
+        <p className="text-sm text-[color:var(--slate-300)]">{nk(subtitle)}</p>
       ) : null}
       <div
         aria-hidden

@@ -1,5 +1,6 @@
 import { Volume2 } from 'lucide-react'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
 import type { SubjectOption, WhoSaysItQuestion } from '@/bridge/grammar-beginner'
 import { getPredicateHebrew } from '@/bridge/grammar-beginner'
@@ -16,6 +17,7 @@ interface Props {
 /** Type 1: hear sentence, pick the subject picture. */
 export function WhoSaysItView({ question, selectedKey, locked, onPlay, onSelect }: Props) {
   const { showNikud, caseMode } = useTextPrefs()
+  const nk = useNikud()
   const predHe = getPredicateHebrew(
     question.predicate,
     // For "who-says-it" the correct subject is the answer key.
@@ -44,7 +46,7 @@ export function WhoSaysItView({ question, selectedKey, locked, onPlay, onSelect 
           className="mx-auto mt-3 inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-4 py-2 text-sm font-semibold text-white hover:bg-white/10"
         >
           <Volume2 size={16} />
-          <span>השמע שוב</span>
+          <span>{nk('השמע שוב')}</span>
         </button>
         <TranslationFlash hebrew={question.hebrewSentence} visible={locked} />
       </div>

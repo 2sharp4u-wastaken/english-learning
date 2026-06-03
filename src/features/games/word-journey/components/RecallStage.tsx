@@ -3,6 +3,7 @@ import { WordJourneyPicture } from './WordJourneyPicture'
 import { cancelSpeech, speakWord } from '@/bridge/audio'
 import { getShowConfetti, playAnswerSfx, triggerConfetti } from '@/bridge/feedback'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
 import { POINTS, type WJWord } from '@/bridge/word-journey'
 
@@ -32,6 +33,7 @@ interface Props {
 /** Stage 5 — match each word card with its translation card (memory-game shape). */
 export function RecallStage({ words, onAnswer, onComplete }: Props) {
   const { caseMode, showNikud } = useTextPrefs()
+  const nk = useNikud()
   const [cards] = useState<Card[]>(() => buildCards(words))
   const [flipped, setFlipped] = useState<string[]>([])
   const [matched, setMatched] = useState<Set<string>>(new Set())
@@ -99,10 +101,10 @@ export function RecallStage({ words, onAnswer, onComplete }: Props) {
         dir="rtl"
         className="flex items-center justify-center gap-3 text-sm font-medium text-[color:var(--slate-300)]"
       >
-        <span>מהלכים: {moves}</span>
+        <span>{nk('מהלכים')}: {moves}</span>
         <span className="opacity-40">|</span>
         <span>
-          זוגות: {matchedPairs} מתוך {totalPairs}
+          {nk('זוגות')}: {matchedPairs} {nk('מתוך')} {totalPairs}
         </span>
       </div>
       <div

@@ -23,6 +23,7 @@ import { CompleteSoundView } from './components/CompleteSoundView'
 import { SoundsRightView } from './components/SoundsRightView'
 import { MatchPictureView } from './components/MatchPictureView'
 import { cn } from '@/lib/cn'
+import { useNikud } from '@/bridge/nikud'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
 
@@ -243,11 +244,13 @@ export function GrammarBeginnerGamePage() {
     [handleReset, index, phase, total],
   )
 
+  const nk = useNikud()
+
   if (!session) {
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
-          טוען…
+          {nk('טוען…')}
         </div>
       </GameScreenShell>
     )
@@ -266,7 +269,7 @@ export function GrammarBeginnerGamePage() {
           'bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] hover:brightness-110',
         )}
       >
-        השאלה הבאה
+        {nk('השאלה הבאה')}
       </button>
     ) : null
 

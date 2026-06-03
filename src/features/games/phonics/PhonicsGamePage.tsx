@@ -24,6 +24,7 @@ import {
 } from '@/bridge/phonics'
 import { cancelSpeech, hardResetSpeech, speakWord } from '@/bridge/audio'
 import { getGameFeedback, getShowConfetti, triggerConfetti } from '@/bridge/feedback'
+import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'recording' | 'answered' | 'finished'
@@ -353,11 +354,13 @@ export function PhonicsGamePage() {
     [handleReset, index, phase, total],
   )
 
+  const nk = useNikud()
+
   if (!session) {
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
-          טוען…
+          {nk('טוען…')}
         </div>
       </GameScreenShell>
     )
@@ -382,7 +385,7 @@ export function PhonicsGamePage() {
       data-testid="phonics-next"
       className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
     >
-      השאלה הבאה
+      {nk('השאלה הבאה')}
     </button>
   ) : null
 
@@ -447,15 +450,17 @@ export function PhonicsGamePage() {
                   dir="rtl"
                   className="text-sm font-medium text-[color:var(--slate-300)] sm:text-base"
                 >
-                  {isRecording
-                    ? 'מקליט… לחץ שוב לעצירה'
-                    : phase === 'answered'
-                      ? speechTranscript
-                        ? `שמעתי: ${speechTranscript}`
-                        : 'התוצאה מוכנה'
-                      : recognitionSupported
-                        ? 'לחץ על המיקרופון ואמור את המילה'
-                        : 'הדפדפן אינו תומך בזיהוי דיבור'}
+                  {nk(
+                    isRecording
+                      ? 'מקליט… לחץ שוב לעצירה'
+                      : phase === 'answered'
+                        ? speechTranscript
+                          ? `שמעתי: ${speechTranscript}`
+                          : 'התוצאה מוכנה'
+                        : recognitionSupported
+                          ? 'לחץ על המיקרופון ואמור את המילה'
+                          : 'הדפדפן אינו תומך בזיהוי דיבור',
+                  )}
                 </p>
                 {recordError ? (
                   <p
@@ -463,7 +468,7 @@ export function PhonicsGamePage() {
                     dir="rtl"
                     className="max-w-md text-center text-sm font-medium text-rose-300"
                   >
-                    {recordError}
+                    {nk(recordError)}
                   </p>
                 ) : null}
                 {!recognitionSupported ? (
@@ -473,7 +478,7 @@ export function PhonicsGamePage() {
                     data-testid="phonics-skip"
                     className="rounded-full bg-white/10 px-6 py-2 text-sm font-bold text-white transition hover:bg-white/15"
                   >
-                    דלג
+                    {nk('דלג')}
                   </button>
                 ) : null}
               </div>

@@ -3,6 +3,7 @@ import { ChevronRight, Coins, Trophy } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { cn } from '@/lib/cn'
 import { useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 
 /**
  * `title`, `subtitle`, `icon` are still accepted for API compatibility but are
@@ -31,6 +32,7 @@ export function GameHeader({
 }: GameHeaderProps) {
   const navigate = useNavigate()
   const { caseMode, showNikud, toggleCase, toggleNikud } = useTextPrefs()
+  const nk = useNikud()
 
   const handleBack = () => {
     if (onBack) {
@@ -56,7 +58,7 @@ export function GameHeader({
         aria-label="חזרה"
       >
         <ChevronRight className="size-5" />
-        <span>חזרה</span>
+        <span>{nk('חזרה')}</span>
       </button>
 
       <div className="flex items-center gap-2">

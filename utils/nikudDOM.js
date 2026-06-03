@@ -24,6 +24,16 @@ const HEBREW_WORD = /[\u05D0-\u05EA]+/g;
 
 const SKIP_TAGS = new Set(['SCRIPT', 'STYLE', 'NOSCRIPT', 'INPUT', 'TEXTAREA', 'CODE', 'PRE']);
 
+// Subtrees marked `data-react-nikud-owned` are managed by React (see
+// src/bridge/nikud.ts + GameHostPage). nikudDOM must NOT walk or mutate them:
+// structurally editing React-owned nodes here crashed the game subtree on a
+// mid-game nikud toggle (FU-4.4-nikud). React renders nikud directly there.
+const REACT_NIKUD_OWNED = '[data-react-nikud-owned]';
+
+function isReactNikudOwned(el) {
+    return !!(el && el.closest && el.closest(REACT_NIKUD_OWNED));
+}
+
 // ---------------------------------------------------------------------------
 // Local helpers — self-contained for pages that don't load _loader.js
 // ---------------------------------------------------------------------------
@@ -81,6 +91,7 @@ function processTextNode(node, map) {
     const parent = node.parentElement;
     if (!parent) return;
     if (SKIP_TAGS.has(parent.tagName)) return;
+    if (isReactNikudOwned(parent)) return; // React owns nikud in this subtree
 
     // Case C — hint element (data-hebrew-hint set by game code)
     if (parent.dataset.hebrewHint !== undefined) {
@@ -181,6 +192,7 @@ function onNikudChanged() {
 
     // Update all data-hebrew-source elements; lazy-enrich if source is plain
     document.querySelectorAll('[data-hebrew-source]').forEach(el => {
+        if (isReactNikudOwned(el)) return;
         let src = el.dataset.hebrewSource;
         if (show && hasMap && !NIKUD_RE.test(src)) {
             const enriched = src.replace(HEBREW_WORD, w => map[w] || w);
@@ -191,6 +203,7 @@ function onNikudChanged() {
 
     // Update all data-hebrew-hint elements; lazy-enrich if hint is plain
     document.querySelectorAll('[data-hebrew-hint]').forEach(el => {
+        if (isReactNikudOwned(el)) return;
         let src = el.dataset.hebrewHint;
         if (show && hasMap && !NIKUD_RE.test(src)) {
             const enriched = src.replace(HEBREW_WORD, w => map[w] || w);

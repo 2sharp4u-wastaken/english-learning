@@ -2,6 +2,7 @@ import { useEffect } from 'react'
 import { Coins, RotateCcw, Sparkles, Trophy, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { speak } from '@/bridge/audio'
+import { useNikud } from '@/bridge/nikud'
 
 interface Tier {
   message: string
@@ -52,6 +53,7 @@ export function RewardModal({
   onClose,
   className,
 }: RewardModalProps) {
+  const nk = useNikud()
   const hasTally = typeof correct === 'number' && typeof total === 'number' && total > 0
   const pct = hasTally ? Math.round((correct! / total!) * 100) : null
   const tier = pct == null ? null : tierFor(pct)
@@ -122,7 +124,7 @@ export function RewardModal({
           {headline}
         </h2>
         {message ? (
-          <p className="mt-2 text-sm text-[color:var(--slate-200)]">{message}</p>
+          <p className="mt-2 text-sm text-[color:var(--slate-200)]">{nk(message)}</p>
         ) : null}
 
         <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -162,7 +164,7 @@ export function RewardModal({
               className="flex flex-1 items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-5 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
             >
               <RotateCcw className="size-4" />
-              שחק שוב
+              {nk('שחק שוב')}
             </button>
           ) : null}
           <button
@@ -171,7 +173,7 @@ export function RewardModal({
             data-testid="reward-modal-exit"
             className="flex-1 rounded-full border border-white/10 bg-white/5 px-5 py-3 text-base font-semibold text-white transition hover:bg-white/10"
           >
-            למסך הבית
+            {nk('למסך הבית')}
           </button>
         </div>
       </div>
@@ -194,6 +196,7 @@ function Stat({
   testId: string
   className?: string
 }) {
+  const nk = useNikud()
   const toneClass = {
     amber: 'text-[color:var(--amber-400)]',
     mint: 'text-[color:var(--mint-400)]',
@@ -209,7 +212,7 @@ function Stat({
     >
       <span className="flex items-center gap-1.5 text-xs font-medium text-[color:var(--slate-300)]">
         {icon}
-        {label}
+        {nk(label)}
       </span>
       <span dir="ltr" className={cn('text-lg font-bold', toneClass)}>{value}</span>
     </div>

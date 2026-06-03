@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react'
 import { Volume2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { useNikud } from '@/bridge/nikud'
 
 export interface MediaPromptCardProps {
   /** English word or phrase to display (omit for audio-only listening) */
@@ -36,6 +37,7 @@ export function MediaPromptCard({
   audioIconOnly = false,
   className,
 }: MediaPromptCardProps) {
+  const nk = useNikud()
   return (
     <section
       data-testid="media-prompt-card"
@@ -50,7 +52,7 @@ export function MediaPromptCard({
           dir="rtl"
           className="text-lg font-medium text-[color:var(--slate-300)] sm:text-xl"
         >
-          {prompt}
+          {nk(prompt)}
         </p>
       ) : null}
 
@@ -100,7 +102,7 @@ export function MediaPromptCard({
             )}
           >
             <Volume2 className={audioIconOnly ? 'size-5' : 'size-4'} aria-hidden />
-            {audioIconOnly ? null : audioLabel}
+            {audioIconOnly ? null : nk(audioLabel)}
           </button>
           {audioHint ? (
             <span
@@ -108,7 +110,7 @@ export function MediaPromptCard({
               dir="rtl"
               className="text-sm font-medium text-[color:var(--amber-400)] sm:text-base"
             >
-              {audioHint}
+              {nk(audioHint)}
             </span>
           ) : null}
         </div>

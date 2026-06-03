@@ -22,6 +22,7 @@ import {
 import { cancelSpeech, hardResetSpeech, speak, speakWord } from '@/bridge/audio'
 import { getShowConfetti, playAnswerSfx, triggerConfetti } from '@/bridge/feedback'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'recording' | 'answered' | 'finished'
@@ -65,6 +66,7 @@ function PromptPicture({ question }: { question: PracticeQuestion }) {
 export function PracticeGamePage() {
   const navigate = useNavigate()
   const { caseMode, showNikud } = useTextPrefs()
+  const nk = useNikud()
   const [session, setSession] = useState<PracticeSessionResult | null>(null)
   const [index, setIndex] = useState(0)
   const [score, setScore] = useState(0)
@@ -441,7 +443,7 @@ export function PracticeGamePage() {
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
-          טוען…
+          {nk('טוען…')}
         </div>
       </GameScreenShell>
     )
@@ -484,7 +486,7 @@ export function PracticeGamePage() {
         data-testid="practice-next"
         className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >
-        השאלה הבאה
+        {nk('השאלה הבאה')}
       </button>
     ) : null
 
@@ -532,13 +534,15 @@ export function PracticeGamePage() {
                 dir="rtl"
                 className="text-sm font-medium text-[color:var(--slate-300)] sm:text-base"
               >
-                {isRecordingPhase
-                  ? 'מקליט… לחץ שוב לעצירה'
-                  : phase === 'answered'
-                    ? 'התוצאות מוכנות'
-                    : recognitionSupported
-                      ? 'לחץ על המיקרופון והגד את המילה'
-                      : 'הדפדפן אינו תומך בזיהוי דיבור'}
+                {nk(
+                  isRecordingPhase
+                    ? 'מקליט… לחץ שוב לעצירה'
+                    : phase === 'answered'
+                      ? 'התוצאות מוכנות'
+                      : recognitionSupported
+                        ? 'לחץ על המיקרופון והגד את המילה'
+                        : 'הדפדפן אינו תומך בזיהוי דיבור',
+                )}
               </p>
               {recordError ? (
                 <p
@@ -546,7 +550,7 @@ export function PracticeGamePage() {
                   dir="rtl"
                   className="max-w-md text-center text-sm font-medium text-rose-300"
                 >
-                  {recordError}
+                  {nk(recordError)}
                 </p>
               ) : null}
             </div>
@@ -570,7 +574,7 @@ export function PracticeGamePage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-[color:var(--slate-300)]">
-                  <span>אמרת</span>
+                  <span>{nk('אמרת')}</span>
                   <span
                     dir="ltr"
                     data-testid="practice-transcript"
@@ -583,7 +587,7 @@ export function PracticeGamePage() {
                   </span>
                 </div>
                 <div className="flex items-center justify-between text-sm text-[color:var(--slate-300)]">
-                  <span>דיוק</span>
+                  <span>{nk('דיוק')}</span>
                   <span
                     data-testid="practice-accuracy"
                     dir="ltr"
@@ -602,7 +606,7 @@ export function PracticeGamePage() {
                       className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--blue-400)] to-[color:var(--mint-400)] px-4 py-2 text-sm font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
                     >
                       <Volume2 className="size-4" aria-hidden />
-                      השמע שוב
+                      {nk('השמע שוב')}
                     </button>
                     {comparison.recordingUrl ? (
                       <button
@@ -618,7 +622,7 @@ export function PracticeGamePage() {
                         className="flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:bg-white/15"
                       >
                         <Mic className="size-4" aria-hidden />
-                        שמע את עצמך
+                        {nk('שמע את עצמך')}
                       </button>
                     ) : null}
                   </div>

@@ -92,18 +92,27 @@ export function GameHostPage() {
 
   if (redirectTo) return <Navigate to={`/game/${redirectTo}`} replace />
   if (ReactGame) {
+    // `data-react-nikud-owned` marks this whole subtree as React-managed for
+    // nikud: `utils/nikudDOM.js` skips anything inside it, so React (via
+    // `useNikud`) is the sole owner of vowel points here. This removes the
+    // nikudDOM↔React shared-DOM conflict that crashed the game on a mid-game
+    // toggle (FU-4.4-nikud). `display:contents` keeps the wrapper layout-inert.
+    // The marker covers every game uniformly (custom shells + LearnFirst/
+    // AllMastered sub-screens included), not just GameScreenShell.
     return (
-      <Suspense
-        fallback={
-          <GameScreenShell
-            header={{ title: 'טוען…', icon: '⏳', score: 0, onBack: () => navigate('/home') }}
-          >
-            טוען…
-          </GameScreenShell>
-        }
-      >
-        <ReactGame />
-      </Suspense>
+      <div data-react-nikud-owned="true" style={{ display: 'contents' }}>
+        <Suspense
+          fallback={
+            <GameScreenShell
+              header={{ title: 'טוען…', icon: '⏳', score: 0, onBack: () => navigate('/home') }}
+            >
+              טוען…
+            </GameScreenShell>
+          }
+        >
+          <ReactGame />
+        </Suspense>
+      </div>
     )
   }
   return null

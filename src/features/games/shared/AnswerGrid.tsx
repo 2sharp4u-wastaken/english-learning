@@ -1,6 +1,7 @@
 import { useEffect, useRef, type KeyboardEvent, type ReactNode } from 'react'
 import { Check, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { useNikud } from '@/bridge/nikud'
 
 export interface AnswerOption {
   key?: string | number
@@ -51,6 +52,7 @@ export function AnswerGrid({
   className,
 }: AnswerGridProps) {
   const containerRef = useRef<HTMLDivElement>(null)
+  const nk = useNikud()
   const cols = columns ?? (options.length === 2 ? 2 : options.length >= 4 ? 4 : 3)
 
   useEffect(() => {
@@ -131,13 +133,13 @@ export function AnswerGrid({
                   option.sublabel ? 'gap-0.5' : '',
                 )}
               >
-                {option.label ? <span className="truncate">{option.label}</span> : null}
+                {option.label ? <span className="truncate">{nk(option.label)}</span> : null}
                 {option.sublabel ? (
                   <span
                     dir="rtl"
                     className="truncate text-xs font-medium text-[color:var(--slate-300)]"
                   >
-                    {option.sublabel}
+                    {nk(option.sublabel)}
                   </span>
                 ) : null}
               </span>

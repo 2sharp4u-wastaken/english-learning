@@ -1,4 +1,5 @@
 import { RotateCcw, Home } from 'lucide-react'
+import { useNikud } from '@/bridge/nikud'
 
 interface PhonicsAllMasteredProps {
   /** Wipe `*_phonics` mastery then begin a fresh run. */
@@ -11,6 +12,7 @@ interface PhonicsAllMasteredProps {
  * ≥ 0.8. Mirrors the ABC all-mastered panel with its two actions: reset / home.
  */
 export function PhonicsAllMastered({ onStartOver, onExit }: PhonicsAllMasteredProps) {
+  const nk = useNikud()
   return (
     <div
       data-testid="phonics-all-mastered"
@@ -20,12 +22,12 @@ export function PhonicsAllMastered({ onStartOver, onExit }: PhonicsAllMasteredPr
       <div className="text-6xl" aria-hidden>
         🎧
       </div>
-      <h2 className="font-display text-3xl font-bold text-white">!כל הכבוד</h2>
+      <h2 className="font-display text-3xl font-bold text-white">{nk('!כל הכבוד')}</h2>
       <h3 className="text-xl font-semibold text-[color:var(--amber-400)]">
-        !הכרת את כל הצלילים
+        {nk('!הכרת את כל הצלילים')}
       </h3>
       <p className="text-base text-[color:var(--slate-300)]">
-        את/ה מזהה עכשיו צלילים מורכבים כמו sh, ch, th וגם צלילי תנועה כמו ee ו-oo.
+        {nk('את/ה מזהה עכשיו צלילים מורכבים כמו sh, ch, th וגם צלילי תנועה כמו ee ו-oo.')}
       </p>
       <div className="mt-2 flex flex-wrap items-center justify-center gap-3">
         <button
@@ -35,7 +37,7 @@ export function PhonicsAllMastered({ onStartOver, onExit }: PhonicsAllMasteredPr
           className="flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-6 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
         >
           <RotateCcw className="size-5" aria-hidden />
-          התחל מחדש
+          {nk('התחל מחדש')}
         </button>
         <button
           type="button"
@@ -44,7 +46,7 @@ export function PhonicsAllMastered({ onStartOver, onExit }: PhonicsAllMasteredPr
           className="flex items-center gap-2 rounded-full bg-white/10 px-6 py-3 text-base font-bold text-white shadow-md transition hover:bg-white/15"
         >
           <Home className="size-5" aria-hidden />
-          חזור לדף הבית
+          {nk('חזור לדף הבית')}
         </button>
       </div>
     </div>

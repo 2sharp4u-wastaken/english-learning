@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { WordJourneyPicture } from './WordJourneyPicture'
 import { cancelSpeech, speakWord } from '@/bridge/audio'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
 import type { WJStatus, WJSummaryEntry } from '@/bridge/word-journey'
 
@@ -25,6 +26,7 @@ interface Props {
  *  and is spoken aloud, tagged with the word's new status. */
 export function WJCelebration({ summary, hasLearnedWords, onPlayAgain, onPractice, onHome }: Props) {
   const { caseMode, showNikud } = useTextPrefs()
+  const nk = useNikud()
   const [revealed, setRevealed] = useState(0)
 
   useEffect(() => {
@@ -49,9 +51,9 @@ export function WJCelebration({ summary, hasLearnedWords, onPlayAgain, onPractic
     <div dir="rtl" className="flex flex-1 flex-col items-center gap-5 py-2">
       <div className="text-center">
         <div className="text-5xl">🎉</div>
-        <h2 className="mt-2 font-display text-2xl font-extrabold text-white">מסע הושלם!</h2>
+        <h2 className="mt-2 font-display text-2xl font-extrabold text-white">{nk('מסע הושלם!')}</h2>
         <p className="mt-1 text-sm text-[color:var(--slate-300)]">
-          תרגלת {summary.length} מילים{learnedCount > 0 ? ` · ${learnedCount} נלמדו` : ''}
+          {nk(`תרגלת ${summary.length} מילים${learnedCount > 0 ? ` · ${learnedCount} נלמדו` : ''}`)}
         </p>
       </div>
 
@@ -78,7 +80,7 @@ export function WJCelebration({ summary, hasLearnedWords, onPlayAgain, onPractic
                 {english}
               </span>
               <span className="text-base text-[color:var(--slate-300)]">{hebrew}</span>
-              <span className={cn('whitespace-nowrap text-sm font-bold', meta.cls)}>{meta.label}</span>
+              <span className={cn('whitespace-nowrap text-sm font-bold', meta.cls)}>{nk(meta.label)}</span>
             </div>
           )
         })}
@@ -91,7 +93,7 @@ export function WJCelebration({ summary, hasLearnedWords, onPlayAgain, onPractic
           data-testid="wj-play-again"
           className="rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
         >
-          ← התחילו מסע מילים נוסף
+          ← {nk('התחילו מסע מילים נוסף')}
         </button>
         {hasLearnedWords ? (
           <button
@@ -100,7 +102,7 @@ export function WJCelebration({ summary, hasLearnedWords, onPlayAgain, onPractic
             data-testid="wj-practice"
             className="rounded-full border border-white/20 bg-white/5 px-8 py-3 text-base font-bold text-white transition hover:bg-white/10"
           >
-            🔁 תרגול מילים שנלמדו
+            🔁 {nk('תרגול מילים שנלמדו')}
           </button>
         ) : null}
         <button
@@ -109,7 +111,7 @@ export function WJCelebration({ summary, hasLearnedWords, onPlayAgain, onPractic
           data-testid="wj-home"
           className="rounded-full border border-white/20 bg-white/5 px-8 py-3 text-base font-bold text-white transition hover:bg-white/10"
         >
-          🏠 חזרה הביתה
+          🏠 {nk('חזרה הביתה')}
         </button>
       </div>
     </div>

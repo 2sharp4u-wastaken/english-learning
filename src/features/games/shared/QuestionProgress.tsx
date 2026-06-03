@@ -1,5 +1,6 @@
 import { RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { useNikud } from '@/bridge/nikud'
 
 export interface QuestionProgressProps {
   current: number
@@ -9,6 +10,7 @@ export interface QuestionProgressProps {
 }
 
 export function QuestionProgress({ current, total, onReset, className }: QuestionProgressProps) {
+  const nk = useNikud()
   const safeTotal = Math.max(total, 1)
   const safeCurrent = Math.max(0, Math.min(current, safeTotal))
   const pct = Math.round(((safeCurrent - 1) / safeTotal) * 100)
@@ -24,7 +26,7 @@ export function QuestionProgress({ current, total, onReset, className }: Questio
     >
       <div className="flex items-center justify-between gap-3 text-sm">
         <span className="font-medium text-[color:var(--slate-200)]">
-          שאלה <span data-testid="qp-current">{safeCurrent}</span> מתוך{' '}
+          {nk('שאלה')} <span data-testid="qp-current">{safeCurrent}</span> {nk('מתוך')}{' '}
           <span data-testid="qp-total">{safeTotal}</span>
         </span>
         {onReset ? (
@@ -35,7 +37,7 @@ export function QuestionProgress({ current, total, onReset, className }: Questio
             className="flex items-center gap-1.5 rounded-full border border-[color:var(--amber-400)]/40 bg-[color:var(--amber-400)]/15 px-3 py-1 text-xs font-semibold text-[color:var(--amber-400)] transition hover:bg-[color:var(--amber-400)]/25 hover:text-[color:var(--amber-300)]"
           >
             <RotateCcw className="size-3.5" aria-hidden />
-            אפס משחק
+            {nk('אפס משחק')}
           </button>
         ) : null}
       </div>

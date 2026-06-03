@@ -6,6 +6,7 @@ import { WordJourneyPicture } from './WordJourneyPicture'
 import { cancelSpeech, speakWord } from '@/bridge/audio'
 import { getGameFeedback, getShowConfetti, playAnswerSfx, triggerConfetti } from '@/bridge/feedback'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import {
   isCurrentlyRecording,
   isSpeechRecognitionAvailable,
@@ -45,6 +46,7 @@ interface Props {
  *  to the target and records the attempt under word-journey. */
 export function SayWordStage({ words, onAnswer, onComplete }: Props) {
   const { caseMode, showNikud } = useTextPrefs()
+  const nk = useNikud()
   const [index, setIndex] = useState(0)
   const [phase, setPhase] = useState<'awaiting' | 'recording' | 'answered'>('awaiting')
   const [transcript, setTranscript] = useState<string | null>(null)
@@ -136,7 +138,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
   return (
     <div className="flex flex-1 flex-col gap-4">
       <p dir="rtl" className="text-center text-sm font-medium text-[color:var(--slate-300)]">
-        פריט {index + 1} מתוך {words.length}
+        {nk('פריט')} {index + 1} {nk('מתוך')} {words.length}
       </p>
       <MediaPromptCard
         prompt="לחצו על המיקרופון ואמרו את המילה"
@@ -165,25 +167,27 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
           {recording ? <MicOff className="size-8" aria-hidden /> : <Mic className="size-8" aria-hidden />}
         </button>
         <p dir="rtl" className="text-sm font-medium text-[color:var(--slate-300)]">
-          {recording
-            ? 'מקליט… לחצו שוב לעצירה'
-            : phase === 'answered'
-              ? 'התוצאה מוכנה'
-              : supported
-                ? 'לחצו על המיקרופון'
-                : 'הדפדפן אינו תומך בזיהוי דיבור'}
+          {nk(
+            recording
+              ? 'מקליט… לחצו שוב לעצירה'
+              : phase === 'answered'
+                ? 'התוצאה מוכנה'
+                : supported
+                  ? 'לחצו על המיקרופון'
+                  : 'הדפדפן אינו תומך בזיהוי דיבור',
+          )}
         </p>
       </div>
       {phase === 'answered' && transcript !== null ? (
         <section className="mx-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-white/10 bg-[color:var(--ink-900)]/70 p-4 backdrop-blur">
           <div className="flex items-center justify-between text-sm text-[color:var(--slate-300)]">
-            <span>המילה</span>
+            <span>{nk('המילה')}</span>
             <span dir="ltr" className="font-display text-lg font-bold text-white">
               {displayWord}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm text-[color:var(--slate-300)]">
-            <span>אמרת</span>
+            <span>{nk('אמרת')}</span>
             <span
               dir="ltr"
               className={cn('font-display text-lg font-bold', isCorrect ? 'text-emerald-300' : 'text-rose-300')}
@@ -199,7 +203,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
               className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--blue-400)] to-[color:var(--mint-400)] px-4 py-2 text-sm font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
             >
               <Volume2 className="size-4" aria-hidden />
-              השמע שוב
+              {nk('השמע שוב')}
             </button>
             {recordingUrl ? (
               <button
@@ -215,7 +219,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
                 className="flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:bg-white/15"
               >
                 <Mic className="size-4" aria-hidden />
-                שמע את עצמך
+                {nk('שמע את עצמך')}
               </button>
             ) : null}
           </div>
@@ -229,7 +233,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
           className="mx-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
         >
           <Volume2 className="size-4" aria-hidden />
-          הבא
+          {nk('הבא')}
         </button>
       ) : null}
       {feedback ? <FeedbackBanner variant={feedback.variant} message={feedback.text} visible /> : null}

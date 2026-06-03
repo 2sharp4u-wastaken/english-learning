@@ -933,8 +933,13 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
     // clears at 3 plays.
     await expect(page.locator('[data-testid="answer-grid"]'))
       .toHaveClass(/pointer-events-none/);
-    await expect(page.locator('[data-testid="media-prompt-audio-hint"]'))
-      .toContainText(/השמע עוד/);
+    // React now owns nikud (FU-4.4-nikud) and it's on by default, so the hint
+    // renders with vowel marks (הַשֵּׁמַע עוֹד…). Match nikud-stripped text.
+    await expect
+      .poll(async () =>
+        stripNikud((await page.locator('[data-testid="media-prompt-audio-hint"]').textContent()) || ''),
+      )
+      .toContain('השמע עוד');
 
     await page.locator('[data-testid="media-prompt-audio"]').click();
     await page.locator('[data-testid="media-prompt-audio"]').click();
@@ -942,8 +947,11 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
     await expect(page.locator('[data-testid="answer-grid"]'))
       .not.toHaveClass(/pointer-events-none/);
     // Audio hint flips to "plays remaining" after the gate clears.
-    await expect(page.locator('[data-testid="media-prompt-audio-hint"]'))
-      .toContainText(/השמעות נותרו/);
+    await expect
+      .poll(async () =>
+        stripNikud((await page.locator('[data-testid="media-prompt-audio-hint"]').textContent()) || ''),
+      )
+      .toContain('השמעות נותרו');
   });
 
   test('resume picks up mid-session save and continues from the correct question', async ({ page }) => {

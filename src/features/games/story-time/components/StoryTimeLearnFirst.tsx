@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useNikud } from '@/bridge/nikud'
 
 export interface StoryTimeLearnFirstProps {
   learnedCount: number
@@ -6,6 +7,7 @@ export interface StoryTimeLearnFirstProps {
 
 export function StoryTimeLearnFirst({ learnedCount }: StoryTimeLearnFirstProps) {
   const navigate = useNavigate()
+  const nk = useNikud()
   return (
     <section
       data-testid="story-time-learn-first"
@@ -14,12 +16,12 @@ export function StoryTimeLearnFirst({ learnedCount }: StoryTimeLearnFirstProps) 
       <div className="text-5xl" aria-hidden>
         🔒
       </div>
-      <h2 className="text-2xl font-bold text-white">עוד מעט!</h2>
+      <h2 className="text-2xl font-bold text-white">{nk('עוד מעט!')}</h2>
       <p className="text-base text-[color:var(--slate-200)]">
-        למדת <strong>{learnedCount}</strong> מילים עד כה.
+        {nk('למדת')} <strong>{learnedCount}</strong> {nk('מילים עד כה.')}
       </p>
       <p className="text-sm text-[color:var(--slate-300)]">
-        כדי לקרוא סיפורים צריך ללמוד לפחות 15 מילים. בוא נמשיך במסע המילים!
+        {nk('כדי לקרוא סיפורים צריך ללמוד לפחות 15 מילים. בוא נמשיך במסע המילים!')}
       </p>
       <button
         type="button"
@@ -27,7 +29,7 @@ export function StoryTimeLearnFirst({ learnedCount }: StoryTimeLearnFirstProps) 
         data-testid="story-time-learn-first-cta"
         className="rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-6 py-2.5 text-sm font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >
-        🗺️ למסע המילים
+        🗺️ {nk('למסע המילים')}
       </button>
     </section>
   )

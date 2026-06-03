@@ -1,6 +1,7 @@
 import { useEffect } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { cn } from '@/lib/cn'
+import { useNikud } from '@/bridge/nikud'
 
 export interface ExitConfirmDialogProps {
   open: boolean
@@ -23,6 +24,7 @@ export function ExitConfirmDialog({
   onCancel,
   className,
 }: ExitConfirmDialogProps) {
+  const nk = useNikud()
   useEffect(() => {
     if (!open) return
     const handler = (e: KeyboardEvent) => {
@@ -61,13 +63,13 @@ export function ExitConfirmDialog({
           id="exit-dialog-title"
           className="text-lg font-bold text-white"
         >
-          {title}
+          {nk(title)}
         </h2>
         <p
           id="exit-dialog-message"
           className="mt-2 text-sm text-[color:var(--slate-200)]"
         >
-          {message}
+          {nk(message)}
         </p>
 
         <div className="mt-5 flex flex-col gap-2 sm:flex-row-reverse">
@@ -78,7 +80,7 @@ export function ExitConfirmDialog({
             autoFocus
             className="flex-1 rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-5 py-2.5 text-sm font-bold text-[color:var(--ink-950)] transition hover:brightness-110"
           >
-            {cancelLabel}
+            {nk(cancelLabel)}
           </button>
           <button
             type="button"
@@ -86,7 +88,7 @@ export function ExitConfirmDialog({
             data-testid="exit-dialog-confirm"
             className="flex-1 rounded-full border border-[color:var(--coral-400)]/40 bg-[color:var(--coral-400)]/10 px-5 py-2.5 text-sm font-semibold text-[color:var(--coral-400)] transition hover:bg-[color:var(--coral-400)]/20"
           >
-            {confirmLabel}
+            {nk(confirmLabel)}
           </button>
         </div>
       </div>

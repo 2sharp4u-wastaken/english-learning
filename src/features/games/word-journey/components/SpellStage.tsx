@@ -7,6 +7,7 @@ import { WordJourneyPicture } from './WordJourneyPicture'
 import { cancelSpeech, speak, speakWord } from '@/bridge/audio'
 import { getGameFeedback, getShowConfetti, triggerConfetti } from '@/bridge/feedback'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { POINTS, type WJSpellItem, type WJWord } from '@/bridge/word-journey'
 
 const WORD_REVEAL_MS = 2500
@@ -23,6 +24,7 @@ interface Props {
  *  letter comparison on a wrong one. */
 export function SpellStage({ items, onAnswer, onComplete }: Props) {
   const { caseMode, showNikud } = useTextPrefs()
+  const nk = useNikud()
   const [index, setIndex] = useState(0)
   const [built, setBuilt] = useState('')
   const [clearNonce, setClearNonce] = useState(0)
@@ -89,7 +91,7 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
   return (
     <div className="flex flex-1 flex-col gap-4">
       <p dir="rtl" className="text-center text-sm font-medium text-[color:var(--slate-300)]">
-        פריט {index + 1} מתוך {items.length}
+        {nk('פריט')} {index + 1} {nk('מתוך')} {items.length}
       </p>
       <MediaPromptCard
         prompt={showNikud ? 'הַרְכִּיבוּ אֶת הַמִּלָּה' : 'הרכיבו את המילה'}
@@ -130,7 +132,7 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
             data-testid="wj-spell-clear"
             className="rounded-full border border-white/20 bg-white/5 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            נקה
+            {nk('נקה')}
           </button>
           <button
             type="button"
@@ -139,7 +141,7 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
             data-testid="wj-spell-check"
             className="rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            בדוק
+            {nk('בדוק')}
           </button>
         </div>
       ) : phase === 'wrong' ? (
@@ -149,7 +151,7 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
           data-testid="wj-spell-next"
           className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
         >
-          הבא
+          {nk('הבא')}
         </button>
       ) : null}
 

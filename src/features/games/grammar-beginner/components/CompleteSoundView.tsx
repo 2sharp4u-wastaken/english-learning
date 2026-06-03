@@ -1,5 +1,6 @@
 import { Volume2, Check } from 'lucide-react'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
 import type { CompleteSoundQuestion, VerbOption } from '@/bridge/grammar-beginner'
 import { getPredicateHebrew } from '@/bridge/grammar-beginner'
@@ -24,6 +25,7 @@ export function CompleteSoundView({
   onSelect,
 }: Props) {
   const { showNikud, caseMode } = useTextPrefs()
+  const nk = useNikud()
   const subjHe = showNikud ? question.subjectHebrew : stripNikud(question.subjectHebrew)
   const predHe = getPredicateHebrew(question.predicate, question.subjectKey)
   const predHeText = showNikud ? predHe : stripNikud(predHe)
@@ -60,7 +62,7 @@ export function CompleteSoundView({
             className="mt-1 inline-flex items-center gap-1 rounded-full border border-white/15 bg-white/5 px-3 py-1 text-xs font-semibold text-white hover:bg-white/10"
           >
             <Volume2 size={12} />
-            <span>השמע</span>
+            <span>{nk('השמע')}</span>
           </button>
         </div>
         <span className="font-display text-3xl font-bold text-[color:var(--slate-300)]">

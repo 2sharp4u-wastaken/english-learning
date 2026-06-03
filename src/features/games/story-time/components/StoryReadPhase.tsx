@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BookOpen, Pause, Play, Volume2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { cancelSpeech, speak, speakWord } from '@/bridge/audio'
+import { useNikud } from '@/bridge/nikud'
 import type { Story, StoryHighlight } from '@/bridge/story-time'
 
 export interface StoryReadPhaseProps {
@@ -25,6 +26,7 @@ export function StoryReadPhase({
   storyCount,
   onReady,
 }: StoryReadPhaseProps) {
+  const nk = useNikud()
   const [activeTooltip, setActiveTooltip] = useState<ActiveTooltip | null>(null)
   const [pulseKey, setPulseKey] = useState<string | null>(null)
   const [playingSentence, setPlayingSentence] = useState<number | null>(null)
@@ -126,7 +128,7 @@ export function StoryReadPhase({
           {story.title}
         </h2>
         <p dir="rtl" className="text-lg text-[color:var(--slate-300)] sm:text-xl">
-          סיפור {storyNumber} מתוך {storyCount}
+          {nk('סיפור')} {storyNumber} {nk('מתוך')} {storyCount}
         </p>
 
         <button
@@ -142,7 +144,7 @@ export function StoryReadPhase({
           )}
         >
           {narrating ? <Pause className="size-5" aria-hidden /> : <Play className="size-5" aria-hidden />}
-          <span dir="rtl">{narrating ? 'עצור' : 'הקרא את כל הסיפור'}</span>
+          <span dir="rtl">{nk(narrating ? 'עצור' : 'הקרא את כל הסיפור')}</span>
         </button>
 
         <p
@@ -150,7 +152,7 @@ export function StoryReadPhase({
           data-testid="story-time-hint"
           className="text-base text-[color:var(--amber-400)] sm:text-lg"
         >
-          👆 לחץ על מילים מודגשות כדי לשמוע אותן
+          👆 {nk('לחץ על מילים מודגשות כדי לשמוע אותן')}
         </p>
       </header>
 
@@ -230,7 +232,7 @@ export function StoryReadPhase({
           data-testid="story-time-ready"
           className="rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
         >
-          ✅ מוכן לשאלות
+          ✅ {nk('מוכן לשאלות')}
         </button>
       </div>
     </section>

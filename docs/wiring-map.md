@@ -663,6 +663,21 @@ src/features/games/shared/GameScreenShell.tsx
 
 Pages still declare a single `headerProps = { title, icon, score, onBack }` and the shell forwards the title/icon/subtitle to `<GameHero>`. `<GameHeader>` accepts those fields on the props for forwarding but no longer renders them — its center area is gone, so the back button and toggle/score pills aren't visually crowded by the title. The hero sits between the controls row and the progress strip so it reads as a section heading for the question card. Slices 3.1–3.9 inherit this for free; no per-page change.
 
+## Nikud rendering (React-owned, FU-4.4-nikud — applies to ALL React games)
+
+```
+header-nikud-toggle click → toggleShowNikud() (bridge/textPrefs)
+  → saveSettings({showNikud}) + dispatch 'nikud-changed'
+  → useTextPrefs re-renders subscribers (showNikud state)
+  → useNikud()'s nk(text) re-applies per the new flag:
+       on  → text.replace(HebrewRun, w => window.nikudMap[w] || w)
+       off → stripNikud(text)
+GameHostPage wraps <ReactGame/> in <div data-react-nikud-owned>
+  → utils/nikudDOM.js early-returns inside that subtree (no DOM mutation → no React reconcile crash)
+```
+
+Chrome literals are vowelized by React itself (`nk()` per component), NOT by nikudDOM. Word *data* Hebrew (`word.hebrew`) is pre-enriched at boot and toggled via `stripNikud`. The old crash was nikudDOM structurally mutating React nodes during the toggle re-render; excluding the subtree removes the shared-ownership conflict. `showNikud` defaults true. A new game that forgets `nk()` on its chrome silently renders it un-vowelized. See `project_fu44_nikud_react_owned` memory.
+
 ## Launchable Course Activity Chain (Slice C1)
 
 ```

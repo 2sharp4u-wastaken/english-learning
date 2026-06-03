@@ -1,4 +1,5 @@
 import { cn } from '@/lib/cn'
+import { useNikud } from '@/bridge/nikud'
 import type { MemoryLevelMetrics, MemoryPersonalBest } from '@/bridge/memory'
 
 export interface MemoryLevelSummaryProps {
@@ -42,6 +43,7 @@ export function MemoryLevelSummary({
   onPlayAgain,
   onHome,
 }: MemoryLevelSummaryProps) {
+  const nk = useNikud()
   const runProgressPct = Math.round((level / totalLevels) * 100)
 
   return (
@@ -53,35 +55,35 @@ export function MemoryLevelSummary({
       <div className="flex flex-col items-center gap-1">
         <span className="text-4xl">{isLastLevel ? '🏆' : '⬆️'}</span>
         <h2 className="text-2xl font-black text-white">
-          {isLastLevel ? 'המשחק הושלם!' : `רמה ${level} הושלמה!`}
+          {nk(isLastLevel ? 'המשחק הושלם!' : `רמה ${level} הושלמה!`)}
         </h2>
         {metrics.isNewBest ? (
           <span
             data-testid="memory-new-best"
             className="rounded-full bg-[color:var(--amber-400)]/20 px-3 py-0.5 text-sm font-bold text-[color:var(--amber-300)]"
           >
-            שיא אישי חדש ✨
+            {nk('שיא אישי חדש ✨')}
           </span>
         ) : null}
         <Stars count={metrics.stars} />
       </div>
 
       <div className="grid w-full grid-cols-2 gap-2 sm:grid-cols-3">
-        <SummaryChip label="ניקוד הרמה" value={String(metrics.score)} />
-        <SummaryChip label="זמן" value={formatTime(metrics.timeSeconds)} />
-        <SummaryChip label="טעויות" value={String(metrics.mistakes)} />
-        <SummaryChip label="דיוק" value={`${metrics.accuracyPct}%`} />
-        {metrics.maxCombo >= 2 ? <SummaryChip label="קומבו" value={`×${metrics.maxCombo}`} /> : null}
-        <SummaryChip label="מטבעות" value={`+${metrics.coins}`} highlight />
+        <SummaryChip label={nk('ניקוד הרמה')} value={String(metrics.score)} />
+        <SummaryChip label={nk('זמן')} value={formatTime(metrics.timeSeconds)} />
+        <SummaryChip label={nk('טעויות')} value={String(metrics.mistakes)} />
+        <SummaryChip label={nk('דיוק')} value={`${metrics.accuracyPct}%`} />
+        {metrics.maxCombo >= 2 ? <SummaryChip label={nk('קומבו')} value={`×${metrics.maxCombo}`} /> : null}
+        <SummaryChip label={nk('מטבעות')} value={`+${metrics.coins}`} highlight />
       </div>
 
       <div className="w-full rounded-2xl border border-white/10 bg-[color:var(--ink-900)]/60 p-3">
         <div className="mb-1 flex items-center justify-between text-sm text-[color:var(--slate-200)]">
           <span>
-            רמה {level} מתוך {totalLevels}
+            {nk('רמה')} {level} {nk('מתוך')} {totalLevels}
           </span>
           <strong dir="ltr">
-            {totalScore} נק׳ · {runProgressPct}%
+            {totalScore} {nk('נק׳')} · {runProgressPct}%
           </strong>
         </div>
         <div className="h-2 overflow-hidden rounded-full bg-white/10">
@@ -102,7 +104,7 @@ export function MemoryLevelSummary({
             onClick={onNext}
             className="w-full max-w-xs rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
           >
-            המשך לרמה {level + 1} →
+            {nk('המשך לרמה')} {level + 1} →
           </button>
         ) : (
           <button
@@ -111,7 +113,7 @@ export function MemoryLevelSummary({
             onClick={onPlayAgain}
             className="w-full max-w-xs rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
           >
-            שחק שוב 🔄
+            {nk('שחק שוב 🔄')}
           </button>
         )}
         <button
@@ -120,7 +122,7 @@ export function MemoryLevelSummary({
           onClick={onHome}
           className="w-full max-w-xs rounded-full border border-white/15 px-8 py-2.5 text-sm font-bold text-[color:var(--slate-200)] transition hover:bg-white/5"
         >
-          בחר משחק אחר 🏠
+          {nk('בחר משחק אחר 🏠')}
         </button>
       </div>
     </div>
@@ -162,6 +164,7 @@ function PersonalBestTable({
   currentLevel: number
   totalLevels: number
 }) {
+  const nk = useNikud()
   const rows = []
   for (let i = 1; i <= totalLevels; i++) {
     const rec = bests[String(i)]
@@ -185,15 +188,15 @@ function PersonalBestTable({
   return (
     <div className="w-full rounded-2xl border border-white/10 bg-[color:var(--ink-900)]/60 p-3">
       <h3 className="mb-1 flex items-center justify-center gap-1 text-sm font-bold text-[color:var(--slate-100)]">
-        🏆 שיאים אישיים
+        🏆 {nk('שיאים אישיים')}
       </h3>
       <table className="w-full text-sm text-[color:var(--slate-200)]">
         <thead>
           <tr className="text-xs text-[color:var(--slate-400)]">
-            <th className="py-1 font-medium">רמה</th>
-            <th className="py-1 font-medium">ניקוד</th>
-            <th className="py-1 font-medium">זמן</th>
-            <th className="py-1 font-medium">כוכבים</th>
+            <th className="py-1 font-medium">{nk('רמה')}</th>
+            <th className="py-1 font-medium">{nk('ניקוד')}</th>
+            <th className="py-1 font-medium">{nk('זמן')}</th>
+            <th className="py-1 font-medium">{nk('כוכבים')}</th>
           </tr>
         </thead>
         <tbody>{rows}</tbody>

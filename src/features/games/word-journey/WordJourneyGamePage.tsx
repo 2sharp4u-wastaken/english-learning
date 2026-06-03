@@ -10,6 +10,7 @@ import { SayWordStage } from './components/SayWordStage'
 import { RecallStage } from './components/RecallStage'
 import { WJCelebration } from './components/WJCelebration'
 import { cancelSpeech, hardResetSpeech } from '@/bridge/audio'
+import { useNikud } from '@/bridge/nikud'
 import {
   abortWordJourney,
   beginWordJourney,
@@ -152,10 +153,12 @@ export function WordJourneyGamePage() {
     [handleReset, stageIndex],
   )
 
+  const nk = useNikud()
+
   if (!session) {
     return (
       <GameScreenShell header={headerProps}>
-        <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">טוען…</div>
+        <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">{nk('טוען…')}</div>
       </GameScreenShell>
     )
   }
@@ -165,9 +168,9 @@ export function WordJourneyGamePage() {
       <GameScreenShell header={headerProps}>
         <div dir="rtl" className="flex flex-1 flex-col items-center justify-center gap-3 text-center">
           <div className="text-5xl">🗺️</div>
-          <p className="text-lg font-bold text-white">אין מספיק מילים למסע</p>
+          <p className="text-lg font-bold text-white">{nk('אין מספיק מילים למסע')}</p>
           <p className="text-sm text-[color:var(--slate-300)]">
-            בחרו עוד קטגוריות בהגדרות כדי להתחיל מסע מילים.
+            {nk('בחרו עוד קטגוריות בהגדרות כדי להתחיל מסע מילים.')}
           </p>
         </div>
       </GameScreenShell>

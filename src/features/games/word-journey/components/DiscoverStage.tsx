@@ -4,6 +4,7 @@ import { WordJourneyPicture } from './WordJourneyPicture'
 import { cancelSpeech, speakHebrew, speakWord } from '@/bridge/audio'
 import { getSettings } from '@/bridge/settings'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import type { WJWord } from '@/bridge/word-journey'
 
 const MIN_DWELL_MS = 1400
@@ -19,6 +20,7 @@ export function DiscoverStage({
   onComplete: () => void
 }) {
   const { caseMode, showNikud } = useTextPrefs()
+  const nk = useNikud()
   const [index, setIndex] = useState(0)
   const [canAdvance, setCanAdvance] = useState(false)
   // Carried-forward Slice 3.0 parity: a visible play button with a per-word
@@ -72,7 +74,7 @@ export function DiscoverStage({
         data-item={index + 1}
         className="text-center text-sm font-medium text-[color:var(--slate-300)]"
       >
-        פריט {index + 1} מתוך {words.length}
+        {nk('פריט')} {index + 1} {nk('מתוך')} {words.length}
       </p>
       <MediaPromptCard
         prompt={showNikud ? 'הִכִּירוּ אֶת הַמִּלָּה' : 'הכירו את המילה'}
@@ -96,7 +98,7 @@ export function DiscoverStage({
         data-testid="wj-discover-next"
         className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
       >
-        {index + 1 < words.length ? 'הבא' : 'בואו נתחיל!'}
+        {nk(index + 1 < words.length ? 'הבא' : 'בואו נתחיל!')}
       </button>
     </div>
   )

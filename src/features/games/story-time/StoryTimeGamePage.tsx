@@ -16,6 +16,7 @@ import {
   type StoryTimeSessionResult,
 } from '@/bridge/story-time'
 import { cancelSpeech, hardResetSpeech, speak } from '@/bridge/audio'
+import { useNikud } from '@/bridge/nikud'
 import {
   getGameFeedback,
   getShowConfetti,
@@ -239,11 +240,13 @@ export function StoryTimeGamePage() {
     [answered, handleReset, phase, totalQuiz],
   )
 
+  const nk = useNikud()
+
   if (!session) {
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
-          טוען…
+          {nk('טוען…')}
         </div>
       </GameScreenShell>
     )
@@ -267,7 +270,7 @@ export function StoryTimeGamePage() {
         data-testid="story-time-next"
         className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >
-        השאלה הבאה
+        {nk('השאלה הבאה')}
       </button>
     ) : null
 

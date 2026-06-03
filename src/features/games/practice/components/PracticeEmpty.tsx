@@ -1,4 +1,5 @@
 import { useNavigate } from 'react-router-dom'
+import { useNikud } from '@/bridge/nikud'
 
 export interface PracticeEmptyProps {
   /** How many words the child has Learned (0 → nothing to review yet). */
@@ -12,6 +13,7 @@ export interface PracticeEmptyProps {
  */
 export function PracticeEmpty({ learnedCount }: PracticeEmptyProps) {
   const navigate = useNavigate()
+  const nk = useNikud()
   return (
     <section
       data-testid="practice-empty"
@@ -20,13 +22,12 @@ export function PracticeEmpty({ learnedCount }: PracticeEmptyProps) {
       <div className="text-5xl" aria-hidden>
         🌱
       </div>
-      <h2 className="text-2xl font-bold text-white">אין עדיין מילים לחזרה</h2>
+      <h2 className="text-2xl font-bold text-white">{nk('אין עדיין מילים לחזרה')}</h2>
       <p className="text-base text-[color:var(--slate-200)]">
-        למדת <strong>{learnedCount}</strong> מילים עד כה.
+        {nk('למדת')} <strong>{learnedCount}</strong> {nk('מילים עד כה.')}
       </p>
       <p className="text-sm text-[color:var(--slate-300)]">
-        מצב התרגול חוזר על מילים שכבר למדת כדי לחזק אותן. בוא נלמד עוד מילים
-        חדשות במסע המילים, ואז נחזור לתרגל!
+        {nk('מצב התרגול חוזר על מילים שכבר למדת כדי לחזק אותן. בוא נלמד עוד מילים חדשות במסע המילים, ואז נחזור לתרגל!')}
       </p>
       <button
         type="button"
@@ -34,7 +35,7 @@ export function PracticeEmpty({ learnedCount }: PracticeEmptyProps) {
         data-testid="practice-empty-cta"
         className="rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-6 py-2.5 text-sm font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >
-        🗺️ למסע המילים
+        🗺️ {nk('למסע המילים')}
       </button>
     </section>
   )

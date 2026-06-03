@@ -7,6 +7,7 @@ import { MemoryLevelSummary } from './components/MemoryLevelSummary'
 import { cancelSpeech, hardResetSpeech, speakHebrew, speakWord } from '@/bridge/audio'
 import { getShowConfetti, playAnswerSfx, triggerConfetti } from '@/bridge/feedback'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import {
   abortMemory,
   beginMemory,
@@ -34,6 +35,7 @@ const LEVEL_FINISH_MS = 900
 export function MemoryGamePage() {
   const navigate = useNavigate()
   const { caseMode, showNikud } = useTextPrefs()
+  const nk = useNikud()
 
   const [session, setSession] = useState<MemorySessionResult | null>(null)
   const [levelIndex, setLevelIndex] = useState(0)
@@ -352,7 +354,7 @@ export function MemoryGamePage() {
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
-          טוען…
+          {nk('טוען…')}
         </div>
       </GameScreenShell>
     )
@@ -367,19 +369,19 @@ export function MemoryGamePage() {
           className="flex flex-1 flex-col items-center justify-center gap-3 text-center"
         >
           <div className="text-5xl">🔒</div>
-          <p className="text-lg font-bold text-white">עוד מעט!</p>
+          <p className="text-lg font-bold text-white">{nk('עוד מעט!')}</p>
           <p className="text-sm text-[color:var(--slate-300)]">
-            למדת {session.introducedCount} מילים עד כה.
+            {nk('למדת')} {session.introducedCount} {nk('מילים עד כה.')}
           </p>
           <p className="text-sm text-[color:var(--slate-300)]">
-            יש ללמוד עוד מילים ב<strong>מסע המילים</strong> כדי לשחק במשחק הזיכרון.
+            {nk('יש ללמוד עוד מילים ב')}<strong>{nk('מסע המילים')}</strong>{nk(' כדי לשחק במשחק הזיכרון.')}
           </p>
           <button
             type="button"
             onClick={() => navigate('/game/word-journey')}
             className="rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-6 py-2.5 text-sm font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
           >
-            🗺️ מסע המילים
+            🗺️ {nk('מסע המילים')}
           </button>
         </div>
       </GameScreenShell>
@@ -418,7 +420,7 @@ export function MemoryGamePage() {
         data-testid="memory-advance"
         className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >
-        {isLastLevel ? '🏁 סיים משחק' : '⏭️ רמה הבאה'}
+        {nk(isLastLevel ? '🏁 סיים משחק' : '⏭️ רמה הבאה')}
       </button>
     ) : null
 
@@ -431,16 +433,16 @@ export function MemoryGamePage() {
             className="mx-auto flex items-center gap-4 rounded-full border border-white/10 bg-[color:var(--ink-900)]/60 px-4 py-1.5 text-sm text-[color:var(--slate-200)]"
           >
             <span>
-              רמה <strong className="text-white">{levelIndex + 1}</strong>/{MEMORY_LEVELS.length}
+              {nk('רמה')} <strong className="text-white">{levelIndex + 1}</strong>/{MEMORY_LEVELS.length}
             </span>
             <span>
-              זוגות{' '}
+              {nk('זוגות')}{' '}
               <strong data-testid="memory-pairs" className="text-white">
                 {matchedPairs}/{totalPairs}
               </strong>
             </span>
             <span>
-              מהלכים <strong className="text-white">{moves}</strong>
+              {nk('מהלכים')} <strong className="text-white">{moves}</strong>
             </span>
           </div>
 
@@ -459,9 +461,9 @@ export function MemoryGamePage() {
                 {'⭐'.repeat(metrics.stars)}
                 {'☆'.repeat(Math.max(0, 3 - metrics.stars))}
               </div>
-              <p className="text-sm font-bold text-white">כל הזוגות נמצאו! 🎉</p>
+              <p className="text-sm font-bold text-white">{nk('כל הזוגות נמצאו! 🎉')}</p>
               <p className="text-xs text-[color:var(--slate-300)]">
-                לחצו על קלף כדי לשמוע שוב — וכשמוכנים, המשיכו
+                {nk('לחצו על קלף כדי לשמוע שוב — וכשמוכנים, המשיכו')}
               </p>
             </div>
           ) : null}
@@ -483,7 +485,7 @@ export function MemoryGamePage() {
               data-testid="memory-popup"
               className="pointer-events-none absolute inset-x-0 top-12 z-10 mx-auto w-fit animate-pulse rounded-full bg-[color:var(--mint-400)] px-4 py-1.5 text-base font-black text-[color:var(--ink-950)] shadow-lg"
             >
-              {popup.text}
+              {nk(popup.text)}
             </div>
           ) : null}
         </div>

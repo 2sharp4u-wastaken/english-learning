@@ -28,6 +28,7 @@ import {
 } from '@/bridge/feedback'
 import { getSettings } from '@/bridge/settings'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
 
@@ -71,6 +72,7 @@ function OptionPicture({
 export function PictureMatchGamePage() {
   const navigate = useNavigate()
   const { caseMode, showNikud } = useTextPrefs()
+  const nk = useNikud()
   const [session, setSession] = useState<PictureMatchSessionResult | null>(null)
   const [index, setIndex] = useState(0)
   const [score, setScore] = useState(0)
@@ -345,7 +347,7 @@ export function PictureMatchGamePage() {
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
-          טוען…
+          {nk('טוען…')}
         </div>
       </GameScreenShell>
     )
@@ -399,7 +401,7 @@ export function PictureMatchGamePage() {
         data-testid="picture-match-next"
         className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >
-        השאלה הבאה
+        {nk('השאלה הבאה')}
       </button>
     ) : null
 

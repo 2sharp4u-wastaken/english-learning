@@ -25,6 +25,7 @@ import {
 } from '@/bridge/feedback'
 import { getSettings } from '@/bridge/settings'
 import { useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { Volume2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -48,6 +49,7 @@ function shuffleOptions(options: string[]): { order: string[]; correctIndex: num
 export function FillBlanksGamePage() {
   const navigate = useNavigate()
   const { caseMode } = useTextPrefs()
+  const nk = useNikud()
   const [session, setSession] = useState<FillBlanksSessionResult | null>(null)
   const [index, setIndex] = useState(0)
   const [score, setScore] = useState(0)
@@ -301,7 +303,7 @@ export function FillBlanksGamePage() {
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
-          טוען…
+          {nk('טוען…')}
         </div>
       </GameScreenShell>
     )
@@ -334,7 +336,7 @@ export function FillBlanksGamePage() {
         data-testid="fill-blanks-next"
         className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >
-        השאלה הבאה
+        {nk('השאלה הבאה')}
       </button>
     ) : null
 

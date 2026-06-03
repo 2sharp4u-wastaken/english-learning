@@ -6,6 +6,7 @@ import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { WordJourneyPicture } from './WordJourneyPicture'
 import { cancelSpeech, speakWord } from '@/bridge/audio'
 import { getGameFeedback, getShowConfetti, triggerConfetti } from '@/bridge/feedback'
+import { useNikud } from '@/bridge/nikud'
 import { POINTS, type WJListenMatchItem, type WJWord } from '@/bridge/word-journey'
 
 const ADVANCE_MS = 1300
@@ -19,6 +20,7 @@ interface Props {
 
 /** Stage 2 — hear the word, pick its picture (listening-game shape). */
 export function ListenMatchStage({ items, onAnswer, onComplete }: Props) {
+  const nk = useNikud()
   const [index, setIndex] = useState(0)
   const [revealed, setRevealed] = useState(false)
   const [selected, setSelected] = useState<number | null>(null)
@@ -88,7 +90,7 @@ export function ListenMatchStage({ items, onAnswer, onComplete }: Props) {
   return (
     <div className="flex flex-1 flex-col gap-4">
       <p dir="rtl" className="text-center text-sm font-medium text-[color:var(--slate-300)]">
-        פריט {index + 1} מתוך {items.length}
+        {nk('פריט')} {index + 1} {nk('מתוך')} {items.length}
       </p>
       <MediaPromptCard
         prompt="הקשיבו ובחרו את התמונה הנכונה"
@@ -121,7 +123,7 @@ export function ListenMatchStage({ items, onAnswer, onComplete }: Props) {
           className="mx-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
         >
           <Volume2 className="size-4" aria-hidden />
-          הבא
+          {nk('הבא')}
         </button>
       ) : null}
       {feedback ? (

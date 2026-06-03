@@ -21,6 +21,7 @@ import {
   triggerConfetti,
 } from '@/bridge/feedback'
 import { useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
@@ -56,6 +57,7 @@ function buildShuffledBank(question: ScrambleQuestion): WordToken[] {
 export function SentenceScrambleGamePage() {
   const navigate = useNavigate()
   const { caseMode } = useTextPrefs()
+  const nk = useNikud()
   const [session, setSession] = useState<ScrambleSessionResult | null>(null)
   const [index, setIndex] = useState(0)
   const [score, setScore] = useState(0)
@@ -329,7 +331,7 @@ export function SentenceScrambleGamePage() {
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
-          טוען…
+          {nk('טוען…')}
         </div>
       </GameScreenShell>
     )
@@ -362,7 +364,7 @@ export function SentenceScrambleGamePage() {
             : 'cursor-not-allowed bg-white/10 text-white/40',
         )}
       >
-        בדוק תשובה
+        {nk('בדוק תשובה')}
       </button>
     ) : phase === 'answered' ? (
       <button
@@ -371,7 +373,7 @@ export function SentenceScrambleGamePage() {
         data-testid="scramble-next"
         className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >
-        השאלה הבאה
+        {nk('השאלה הבאה')}
       </button>
     ) : null
 
@@ -410,7 +412,7 @@ export function SentenceScrambleGamePage() {
                   dir="rtl"
                   className="text-sm text-[color:var(--slate-400)] sm:text-base"
                 >
-                  הקלק על מילה כדי להוסיף אותה
+                  {nk('הקלק על מילה כדי להוסיף אותה')}
                 </span>
               ) : (
                 answerChips.map((token, i) => {
@@ -569,7 +571,7 @@ export function SentenceScrambleGamePage() {
                   dir="rtl"
                   className="text-sm text-[color:var(--slate-400)] sm:text-base"
                 >
-                  כל המילים סודרו
+                  {nk('כל המילים סודרו')}
                 </span>
               ) : (
                 bank.map((token) => (

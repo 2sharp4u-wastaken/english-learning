@@ -20,6 +20,7 @@ import {
   triggerConfetti,
 } from '@/bridge/feedback'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import { Volume2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -54,6 +55,7 @@ function splitSentence(sentence: string): { before: string; after: string } {
 export function GrammarGamePage() {
   const navigate = useNavigate()
   const { caseMode, showNikud } = useTextPrefs()
+  const nk = useNikud()
   const autoPlayedRef = useRef(false)
   const [session, setSession] = useState<GrammarSessionResult | null>(null)
   const [index, setIndex] = useState(0)
@@ -250,7 +252,7 @@ export function GrammarGamePage() {
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
-          טוען…
+          {nk('טוען…')}
         </div>
       </GameScreenShell>
     )
@@ -261,7 +263,7 @@ export function GrammarGamePage() {
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-[color:var(--slate-200)]">
           <span className="text-5xl">📝</span>
-          <p>אין שאלות דקדוק זמינות.</p>
+          <p>{nk('אין שאלות דקדוק זמינות.')}</p>
         </div>
       </GameScreenShell>
     )
@@ -329,7 +331,7 @@ export function GrammarGamePage() {
         data-testid="grammar-next"
         className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >
-        השאלה הבאה
+        {nk('השאלה הבאה')}
       </button>
     ) : null
 
