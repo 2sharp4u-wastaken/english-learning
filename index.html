@@ -775,63 +775,8 @@
         </div>
     </div>
 
-    <!-- Login Modal -->
-    <div id="login-modal" class="auth-modal">
-        <div class="auth-modal-content">
-            <div class="auth-header">
-                <i class="fas fa-graduation-cap auth-icon"></i>
-                <h2>English Learning Games</h2>
-                <p class="auth-subtitle">משחקים ללימוד אנגלית</p>
-            </div>
-
-            <!-- User Selection Screen -->
-            <div id="user-selection-screen" class="auth-screen">
-                <h3>Select User / בחר משתמש</h3>
-                <div class="user-selection-grid" id="user-selection-grid">
-                    <!-- Will be populated by JavaScript -->
-                </div>
-            </div>
-
-            <!-- Password Entry Screen -->
-            <div id="password-entry-screen" class="auth-screen" style="display: none;">
-                <button class="back-btn" id="back-to-selection">
-                    <i class="fas fa-arrow-right"></i>
-                </button>
-                <div class="user-login-info">
-                    <div class="login-avatar" id="login-avatar">O</div>
-                    <h3 id="login-user-name">User</h3>
-                </div>
-                <form id="login-form" class="login-form">
-                    <div class="form-group">
-                        <label for="password-input">Password / סיסמה</label>
-                        <div class="password-input-wrapper">
-                            <input
-                                type="password"
-                                id="password-input"
-                                class="password-input"
-                                placeholder="Enter password / הכנס סיסמה"
-                                autocomplete="current-password"
-                                required
-                            />
-                            <button type="button" class="toggle-password" id="toggle-password">
-                                <i class="fas fa-eye"></i>
-                            </button>
-                        </div>
-                        <p class="password-hint" id="password-hint" style="display: none;">
-                            First time? Create a password to protect your account.
-                            <br>
-                            פעם ראשונה? צור סיסמה כדי להגן על החשבון שלך.
-                        </p>
-                    </div>
-                    <div class="auth-error" id="auth-error" style="display: none;"></div>
-                    <button type="submit" class="auth-btn" id="login-submit">
-                        <i class="fas fa-sign-in-alt"></i>
-                        <span>Login / התחבר</span>
-                    </button>
-                </form>
-            </div>
-        </div>
-    </div>
+    <!-- Login Modal retired in Slice 4.4.b2 — React owns auth
+         (src/features/auth/LoginPage.tsx via the AuthGate in App.tsx). -->
 
     <!-- Exit Game Confirmation Modal -->
     <div class="exit-modal" id="exit-modal">
@@ -879,7 +824,7 @@
     <!-- Console Logger - Captures all console output for debugging -->
     <script type="module" src="utils/consoleLogger.js?t=1768159313"></script>
 
-    <script src="auth.js?t=1762332862"></script>
+    <!-- auth.js retired in Slice 4.4.b2 — React owns auth (src/bridge/auth.ts). -->
     <script type="module" src="data/_loader.js?t=1773784000"></script>
     <script src="speechSynthesis.js?t=1742300000"></script>
     <script src="feedback.js"></script>

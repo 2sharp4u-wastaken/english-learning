@@ -1,6 +1,7 @@
 import { setGameContext, cancelSpeech } from './audio'
 import { getSettings } from './settings'
 import { queuePendingUnlocks } from './games'
+import { getCurrentUserId } from './auth'
 
 // ─── Shapes ──────────────────────────────────────────────────────────────────
 
@@ -152,14 +153,9 @@ const GAME_TYPE = 'memory'
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 function currentUserId(): string {
-  try {
-    const svc = (window as any).authService
-    const id = svc?.getCurrentUserId?.()
-    if (id) return id
-  } catch {
-    /* ignore */
-  }
-  return localStorage.getItem('currentUser') || 'default'
+  // Slice 4.4.b2: `window.authService` is retired — resolve via the auth bridge,
+  // which owns the session. Falls back to the raw key for safety.
+  return getCurrentUserId() || localStorage.getItem('currentUser') || 'default'
 }
 
 /** Only treat an `image` field as a card emoji when it isn't a path/URL. */

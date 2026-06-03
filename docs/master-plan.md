@@ -254,21 +254,17 @@ function getAuthService(): AuthService {
 }
 ```
 
-### Auth End-State
+### Auth End-State — REALIZED (Slice 4.4.b2, 2026-06-04)
 
-During the migration, `auth.ts` in the bridge reads from the global `authService` (which is `auth.js`). When `auth.js` is retired in Phase 4, auth must be reimplemented in React:
+`auth.js` is retired; `src/bridge/auth.ts` is the **standalone auth owner** (no `window.authService`). The transition kept the bridge contract identical, so React hooks and components were unaffected. As built:
 
-- `src/bridge/auth.ts` becomes the **auth owner**, not just an adapter
-- It reads/writes `localStorage` directly for user accounts (`v2_authUsers`), sessions (`v2_currentUser`), and activity tracking
-- The `useAuthSession` hook provides the React UI with login/logout/session state
-- The session timeout logic (currently in `AuthService`) is reimplemented in the bridge module
-- Password hashing and admin password check are reimplemented in the bridge module
+- `src/bridge/auth.ts` owns the users database, password hashing, admin-password check, session lifecycle, and idle expiry directly over localStorage.
+- **Storage keys are the legacy UNPREFIXED keys** — `users` (accounts), `currentSession` (session), `currentUser` (back-compat). NOT `v2_authUsers`/`v2_currentUser` as this section originally guessed: the actual `auth.js` and the entire Playwright harness use the unprefixed keys, so the owner must too.
+- `useAuthSession` provides login/logout/session state; its `isAuthenticated` reflects **session validity** (faithful to legacy), not whether the session's user exists in the DB.
+- Idle expiry (30 min) is enforced lazily in `isAuthenticated()` + the 500ms `onAuthChange` poll, with document-event listeners refreshing the timer (no separate monitor/warning/alert).
+- The React login UI is `src/features/auth/LoginPage.tsx`, gated by `AuthGate` in `App.tsx` (one combined component, not a separate `LoginPage`/`PasswordEntryPage` split — the two steps are local state).
 
-This means `src/bridge/auth.ts` has two lifecycle stages:
-1. **During migration (Phase 0–3):** adapter that reads from `window.authService`
-2. **After migration (Phase 4):** standalone auth module that owns session state directly
-
-The bridge contract (`getCurrentUser`, `onAuthChange`) stays the same — only the implementation changes. React hooks and components are unaffected by this transition.
+The bridge contract (`getCurrentUser`, `getCurrentUserId`, `isAuthenticated`, `onAuthChange`, `login`, `logout`, admin helpers) is unchanged; only the implementation moved from delegation to ownership.
 
 ### Event synchronization
 
@@ -1950,28 +1946,40 @@ engine + all parity oracles are deleted.
 - remove `gameLogic.js` (GameManager engine) once reimplemented
 - remove `app.js` orchestration (AppManager — also owns `userProgress` load/save, certificates, coin history)
 
-##### Slice 4.4.b2: Auth rewrite
+##### Slice 4.4.b2: Auth rewrite — SHIPPED (2026-06-04)
 
-- **Boot order inversion** (lands with b1) — today legacy boots, sets up managers after auth, then React reads them. Removing the engine means React owns startup; mind the gating race already flagged in FU-4.1 (`project_react_home_gating_persisted`).
+`auth.js` is deleted. `src/bridge/auth.ts` is now the **standalone auth owner** (no `window.authService`): it owns the users database, password hashing, session lifecycle with idle expiry, and admin CRUD — all over the same UNPREFIXED localStorage keys legacy used (`users` / `currentSession` / `currentUser`; NOT `v2_`-prefixed, because existing sessions + the Playwright harness seed those bytes directly). The public bridge contract is unchanged, so the ~7 React consumers (hooks/pages) were untouched.
 
-   **Auth.** remove `auth.js` global script — `src/bridge/auth.ts` transitions from adapter to standalone auth owner (see Auth End-State section). Port login + password-entry + user-select screens to React (LoginPage / PasswordEntryPage) consuming `useAuthSession`; legacy modal markup in `index.html` is deleted alongside `auth.js`. (Interim: 2026-05 restyled the legacy modal CSS to match the React palette — `.auth-modal*` / `.user-select-*` / `.login-*` / `.password-*` / `.auth-btn` blocks in `styles.css` — so visuals stay consistent until the port lands.)
+- **React login UI** (`src/features/auth/LoginPage.tsx`) replaces the legacy `#login-modal` markup + `AuthUIController`. Two steps (user-select grid → password entry). It **reuses the legacy `.auth-*` CSS classes** (still in `styles.css` until Slice 4.5) so the look is unchanged; icons are Lucide (font-awesome retires in 4.5). Hebrew chrome is `nk()`-wrapped and the root is `data-react-nikud-owned` (FU-4.4-nikud).
+- **AuthGate** (in `App.tsx`) wraps `RouterProvider`: renders `LoginPage` when not authenticated, else the app. `useAuthSession` resolves a valid session synchronously on mount → no login flash on reload.
+- **GOTCHA — legacy DOM suppression on the login screen.** The legacy `.app-layout` markup (still in `index.html` until b3/4.5) is hidden by `body.react-shell-active`, which `AppShell` adds **only once authenticated**. The login screen doesn't mount `AppShell`, so without help the still-present legacy `<main class="game-area">` sits over the modal and *intercepts the user-card clicks* (caught by the new login-flow test). `LoginPage` therefore adds `react-shell-active` itself on mount (and does NOT remove it on unmount — `AppShell` re-adds it idempotently after login, and re-adds after a logout→login transition).
+- **The gate keys off SESSION validity, not the user record.** `useAuthSession.isAuthenticated` now reflects `bridge.isAuthenticated()` (a valid, non-expired session) rather than `getCurrentUser() !== null`. This is faithful to legacy (`auth.js` hid the modal on `isAuthenticated()`), and it matters because smoke/slice-3.7.1 seed a session whose id is NOT in the `users` DB (they write `authUsers`, a dead key) — the app must still render. Side effect: `TopNav`/`MobileTopBar` now treat those DB-less sessions as authed (user-menu shows a `?` avatar); both are null-safe.
+- **Two deliberate, safe simplifications vs legacy:** (1) the 30-min idle expiry is enforced *lazily* in `isAuthenticated()` + caught by the existing 500ms `onAuthChange` poll (no separate `setInterval` monitor, no 2-min warning toast, no timeout `alert()`); document mousedown/keydown/touch/scroll listeners still refresh the timer so an active session never expires. (2) `logout()` no longer reloads the page — it clears the session + dispatches `auth-changed`; the AuthGate shows login and `useEngineBoot` rebuilds the engine on the next login (user-id change).
+- **Instant login:** `login()`/`logout()` dispatch a window `auth-changed` event; `onAuthChange` listens to it (plus the 500ms poll) so the gate flips immediately rather than waiting up to 500ms.
+- **Tests:** the `window.authService` assertion in `react-routes.spec.js` was repointed to assert the AuthGate end-state (home renders, `[data-testid="login-modal"]` absent, no `window.authService`). Full suite green.
+- Boot order: React already owned startup as of b1; `useEngineBoot` boots once data + a session exist. The FU-4.1 gating race (`project_react_home_gating_persisted`) is unchanged.
 
-##### Slice 4.4.b3: Final cleanup
+##### Slice 4.4.b3: Final cleanup — NOT STARTED
 
-Delete the now-dead legacy DOM launch/render path left in `gameLogic.js` by 4.4.a, and the dead `#<game>-game` containers in `index.html` (overlaps Slice 4.5).
+Scope corrected after b1+b2 (the original wording referenced `gameLogic.js`/`app.js`, both already deleted in the b1 cutover). What actually remains:
+
+1. **Bridge window-shim removal (ENGINE only).** `src/engine/boot.ts` still republishes `window.app`/`gameManager`/`scoreManager`/`progressManager`/`courseManager`/`certificateManager`/`coinManager`/`gameRegistry` so the ~13 bridges read them via `window.*`. b3 rewires those bridges to import `src/engine/*` directly and drops the `publishGlobals` shim. **Auth is already shim-free** — `src/bridge/auth.ts` is the owner (no `window.authService`) and `boot.ts` imports `getCurrentUserId` from it directly, so b3 does NOT touch auth. Mind the FU-4.1 gating race (`project_react_home_gating_persisted`).
+2. **Dead legacy DOM.** Delete the now-orphaned `#<game>-game` containers + other dead legacy markup in `index.html` (overlaps Slice 4.5). The login-modal markup is already gone (b2).
 
 ### Slice 4.5: CSS Rationalization
 
 - delete `styles.css` entirely (all styles now in Tailwind + token system)
+  - **b2 dependency:** the React `LoginPage` (`src/features/auth/LoginPage.tsx`) currently **reuses legacy `styles.css` classes** (`.auth-modal`, `.auth-modal-content`, `.auth-header`, `.auth-icon`, `.auth-subtitle`, `.auth-screen`, `.user-selection-grid`, `.user-select-card`, `.user-select-avatar`, `.back-btn`, `.user-login-info`, `.login-avatar`, `.login-form`, `.form-group`, `.password-input*`, `.toggle-password`, `.password-hint`, `.auth-error`, `.auth-btn`). These must be ported to Tailwind/tokens (or moved into a scoped module) **before** `styles.css` is deleted, or the login screen loses all styling. (`purgecss.config.js` already scans `src/**/*.{ts,tsx}` so these survive a purge in the interim.)
 - delete `game-completion-styles.css`
-- remove font-awesome CDN link (replaced by Lucide)
+- remove font-awesome CDN link (replaced by Lucide) — **LoginPage already uses Lucide**, so FA removal is safe for it.
 - remove Poppins CDN link (replaced by Heebo/Fredoka)
 - audit for any remaining dead CSS
 
 ### Slice 4.6: Test Expansion
 
 - update smoke tests to target React app exclusively
-- add regression tests for all migrated flows
+  - **note (b2):** `smoke.spec.js` + `slice-3.7.1` seed a dead `authUsers` key and a session whose id isn't in the `users` DB. It works (the gate keys off session validity), but a fresh-start cleanup could switch them to seed the real `users` key via the `seedUser` pattern in `react-routes.spec.js`.
+- add regression tests for all migrated flows — **auth login flow is now covered** (`react-routes.spec.js`: "React login flow: select user + enter password → app renders" + "React auth gate renders the app for an authenticated user"). Mic games (Pronunciation/Practice/ABC say-letter/Phonics say-sound/WJ say-word) still lack coverage pending a `webkitSpeechRecognition` test stub.
 - remove tests that reference legacy selectors
 
 Acceptance criteria for Phase 4:

@@ -10,9 +10,10 @@
  * readiness keep working unchanged (a true drop-in). Removing the window shim entirely
  * (bridges importing `src/engine` directly) is deferred to b3.
  *
- * Faithful to legacy `AppManager.setupWithAuth`/`initializeManagers` (app.js:68,1037)
- * and `GameManager` ctor settings load (gameLogic.js:60). Re-inits on `user-logged-in`
- * (auth.js:243); logout reloads the page (auth.js:261) so no teardown is needed.
+ * Faithful to the (now-deleted) legacy `AppManager.setupWithAuth`/`initializeManagers`
+ * and `GameManager` ctor settings load. Re-inits on user-id change via `useEngineBoot`'s
+ * `onAuthChange` subscription. Auth is owned by `src/bridge/auth.ts` (Slice 4.4.b2, no
+ * `auth.js`); logout no longer reloads — the stale engine is rebuilt on next login.
  */
 
 import { AppState, type AppManagers } from './appState'

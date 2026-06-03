@@ -1,77 +1,255 @@
 import type { User, UserRole, Session } from './types'
-import { getKey } from './storage'
 
-// ─── Legacy global access ────────────────────────────────────────────────────
+/**
+ * src/bridge/auth.ts — STANDALONE auth owner (Slice 4.4.b2).
+ *
+ * Until b2 this was an adapter that delegated to the legacy `window.authService`
+ * (`auth.js`). b2 retires `auth.js`; this module now owns auth directly:
+ * the users database, password hashing, session lifecycle (with idle expiry),
+ * and admin CRUD — all reading/writing localStorage. The public bridge contract
+ * (`getCurrentUser` / `getCurrentUserId` / `isAuthenticated` / `onAuthChange` /
+ * `login` / `logout` / admin helpers) is unchanged, so React hooks and pages are
+ * unaffected. The React login UI lives in `src/features/auth/LoginPage.tsx`.
+ *
+ * Storage keys are the SAME UNPREFIXED keys legacy `auth.js` used — `users`,
+ * `currentSession`, `currentUser` (NOT `v2_`-prefixed). Existing sessions and the
+ * Playwright suite seed these directly, so the bytes must match.
+ *
+ * Faithful port of `auth.js`. Two deliberate simplifications, both safe:
+ *  - the 2-minute "session about to expire" warning toast and the timeout `alert()`
+ *    are dropped — idle expiry is enforced lazily in `isAuthenticated()` and the
+ *    500ms `onAuthChange` poll flips the React AuthGate to the login screen within
+ *    half a second, which is the desired outcome for a kids' app.
+ *  - `logout()` no longer reloads the page; it clears the session and notifies
+ *    subscribers, so the React AuthGate shows the login screen and the engine
+ *    rebuilds for the next user (`useEngineBoot` re-runs `initEngine` on user-id
+ *    change). SPA-clean, no full reload.
+ */
+
+// ─── Constants (ported from legacy AuthService) ───────────────────────────────
+const SESSION_TIMEOUT = 30 * 60 * 1000 // 30 minutes idle timeout
+const ADMIN_PASSWORD = 'mac7395eRa1n1!'
+const PASSWORD_SALT = 'englishlearning2024'
+
+// UNPREFIXED localStorage keys — exactly as legacy auth.js used them.
+const USERS_KEY = 'users'
+const SESSION_KEY = 'currentSession'
+const CURRENT_USER_KEY = 'currentUser'
+
+const AUTH_CHANGED_EVENT = 'auth-changed'
 
 interface AdminResult { success: boolean; message?: string; error?: string }
+interface LoginResult { success: boolean; error?: string; user?: User; session?: Session }
 
-interface LegacyAuthService {
-  getCurrentUser(): User | null
-  getCurrentUserId(): string | null
-  getCurrentSession(): Session | null
-  isAuthenticated(): boolean
-  getUsers(): Record<string, User> | null
-  getUser(id: string): User | null
-  login(userId: string, password: string): { success: boolean; error?: string; user?: User; session?: Session }
-  logout(): void
-  verifyAdminPassword(password: string): boolean
-  addUser(id: string, name: string, displayName: string, initial: string, adminPassword: string): AdminResult
-  resetUserPassword(userId: string, adminPassword: string): AdminResult
-  deleteUser(userId: string, adminPassword: string): AdminResult
-  saveUsers(users: Record<string, User>): void
-}
+// ─── Low-level storage ────────────────────────────────────────────────────────
 
-function getAuthService(): LegacyAuthService | null {
-  return (window as any).authService ?? null
-}
-
-function requireAuthService(): LegacyAuthService {
-  const svc = getAuthService()
-  if (!svc) throw new Error('AuthService not initialized')
-  return svc
-}
-
-// ─── Public bridge API ───────────────────────────────────────────────────────
-
-/**
- * Get the currently authenticated user, or null if no session.
- * Reads from the legacy AuthService global first, falls back to localStorage.
- */
-export function getCurrentUser(): User | null {
-  const svc = getAuthService()
-  if (svc) {
-    return svc.getCurrentUser() ?? null
+function readJSON<T>(key: string): T | null {
+  const raw = localStorage.getItem(key)
+  if (raw === null) return null
+  try {
+    return JSON.parse(raw) as T
+  } catch {
+    return null
   }
-  // Fallback: read session from localStorage directly
-  const session = getKey<Session>('currentSession')
-  if (!session?.authenticated) return null
-  const users = getKey<Record<string, User>>('users')
-  return users?.[session.userId] ?? null
+}
+
+export function getUsers(): Record<string, User> | null {
+  return readJSON<Record<string, User>>(USERS_KEY)
+}
+
+function saveUsers(users: Record<string, User>): void {
+  try {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users))
+  } catch (e) {
+    console.error('Error saving users:', e)
+  }
+}
+
+export function getUser(userId: string): User | null {
+  const users = getUsers()
+  return users ? users[userId] ?? null : null
+}
+
+// ─── Defaults + migration ───────────────────────────────────────────────────
+
+/** Seed the default omer/zohar/idan accounts the first time the app runs. */
+function initializeUsersDatabase(): void {
+  const existing = getUsers()
+  if (existing && Object.keys(existing).length > 0) return
+
+  const now = new Date().toISOString()
+  const users: Record<string, User> = {
+    omer: { id: 'omer', name: 'עומר', displayName: 'Omer', initial: 'O', password: null, created: now, lastLogin: null },
+    zohar: { id: 'zohar', name: 'זוהר', displayName: 'Zohar', initial: 'Z', password: null, created: now, lastLogin: null },
+    idan: { id: 'idan', name: 'עידן', displayName: 'Idan', initial: 'I', password: null, created: now, lastLogin: null },
+  }
+  saveUsers(users)
+  migrateOldUserData()
+}
+
+/** Migrate progress/history from the old single-letter ids (O/Z/I) to new ids. */
+function migrateOldUserData(): void {
+  const migrations: Array<{ oldKey: string; newKey: string }> = [
+    { oldKey: 'O', newKey: 'omer' },
+    { oldKey: 'Z', newKey: 'zohar' },
+    { oldKey: 'I', newKey: 'idan' },
+  ]
+  const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading']
+
+  migrations.forEach(({ oldKey, newKey }) => {
+    const oldProgress = localStorage.getItem(`userProgress_${oldKey}`)
+    if (oldProgress && !localStorage.getItem(`userProgress_${newKey}`)) {
+      localStorage.setItem(`userProgress_${newKey}`, oldProgress)
+    }
+    gameTypes.forEach((gameType) => {
+      const oldHistory = localStorage.getItem(`${oldKey}_${gameType}_history`)
+      if (oldHistory && !localStorage.getItem(`${newKey}_${gameType}_history`)) {
+        localStorage.setItem(`${newKey}_${gameType}_history`, oldHistory)
+      }
+    })
+  })
+
+  const current = localStorage.getItem(CURRENT_USER_KEY)
+  if (current && ['O', 'Z', 'I'].includes(current)) {
+    // Old current user must log in again under the new id.
+    localStorage.removeItem(CURRENT_USER_KEY)
+  }
+}
+
+// ─── Password ─────────────────────────────────────────────────────────────────
+
+/** Simple obfuscation — not cryptographically secure, sufficient for local parental controls. */
+function hashPassword(password: string): string {
+  return btoa(PASSWORD_SALT + password + PASSWORD_SALT)
+}
+
+function verifyPassword(password: string, hashed: string): boolean {
+  return hashPassword(password) === hashed
+}
+
+function setUserPassword(userId: string, password: string): boolean {
+  const users = getUsers()
+  if (users && users[userId]) {
+    users[userId].password = hashPassword(password)
+    saveUsers(users)
+    return true
+  }
+  return false
+}
+
+/** Whether a user has not yet chosen a password (first login sets it). */
+export function needsPasswordSetup(userId: string): boolean {
+  const user = getUser(userId)
+  return !!user && user.password === null
+}
+
+// ─── Session ───────────────────────────────────────────────────────────────────
+
+function getCurrentSession(): Session | null {
+  return readJSON<Session>(SESSION_KEY)
 }
 
 /**
- * Get the current user ID, or null.
+ * Log a user in. First login (password === null) sets the entered password.
+ * On success writes the session + currentUser, stamps lastLogin, and notifies
+ * subscribers (so the React AuthGate flips immediately, not on the next poll).
  */
-export function getCurrentUserId(): string | null {
-  const svc = getAuthService()
-  if (svc) return svc.getCurrentUserId()
-  const session = getKey<Session>('currentSession')
-  return session?.userId ?? null
+export function login(userId: string, password: string): LoginResult {
+  const user = getUser(userId)
+  if (!user) {
+    return { success: false, error: 'משתמש לא קיים / User not found' }
+  }
+
+  if (user.password === null) {
+    // First-time setup: adopt the entered password.
+    setUserPassword(userId, password)
+  } else if (!verifyPassword(password, user.password)) {
+    return { success: false, error: 'סיסמה שגויה / Incorrect password' }
+  }
+
+  const session: Session = {
+    userId,
+    userName: user.name,
+    displayName: user.displayName,
+    initial: user.initial,
+    loginTime: Date.now(),
+    lastActivity: Date.now(),
+    authenticated: true,
+  }
+  localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+  localStorage.setItem(CURRENT_USER_KEY, userId) // back-compat
+
+  const users = getUsers()
+  if (users && users[userId]) {
+    users[userId].lastLogin = new Date().toISOString()
+    saveUsers(users)
+  }
+
+  lastActivityTime = Date.now()
+
+  // Legacy dispatched `user-logged-in` (useEngineBoot's comment references it).
+  window.dispatchEvent(new CustomEvent('user-logged-in', { detail: { userId, user } }))
+  notifyAuthChanged()
+
+  return { success: true, user: getUser(userId) ?? user, session }
 }
 
-/**
- * Check whether a user is currently authenticated.
- */
+/** Clear the session and notify subscribers (no page reload — see file header). */
+export function logout(): void {
+  localStorage.removeItem(SESSION_KEY)
+  // currentUser is intentionally left for back-compat (legacy did the same).
+  notifyAuthChanged()
+}
+
+/** Whether a valid, non-expired session exists. Lazily expires on idle timeout. */
 export function isAuthenticated(): boolean {
-  const svc = getAuthService()
-  if (svc) return svc.isAuthenticated()
-  const session = getKey<Session>('currentSession')
-  return session?.authenticated === true
+  const session = getCurrentSession()
+  if (!session || !session.authenticated) return false
+
+  const timeSinceActivity = Date.now() - (session.lastActivity || session.loginTime)
+  if (timeSinceActivity > SESSION_TIMEOUT) {
+    logout()
+    return false
+  }
+  return true
+}
+
+export function getCurrentUser(): User | null {
+  const session = getCurrentSession()
+  if (session && isAuthenticated()) {
+    return getUser(session.userId)
+  }
+  return null
+}
+
+export function getCurrentUserId(): string | null {
+  const session = getCurrentSession()
+  return session ? session.userId : null
+}
+
+let lastActivityTime = Date.now()
+
+/** Refresh the idle timer (called on user interaction while authenticated). */
+function updateActivity(): void {
+  lastActivityTime = Date.now()
+  const session = getCurrentSession()
+  if (session) {
+    session.lastActivity = lastActivityTime
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session))
+  }
+}
+
+// ─── Subscription ──────────────────────────────────────────────────────────────
+
+function notifyAuthChanged(): void {
+  window.dispatchEvent(new CustomEvent(AUTH_CHANGED_EVENT))
 }
 
 /**
- * Subscribe to auth changes. Returns an unsubscribe function.
- * During the legacy phase, this polls for changes every 500ms.
+ * Subscribe to auth changes. Returns an unsubscribe function. Fires immediately
+ * with the current user, then on every `auth-changed` event (instant in-app
+ * login/logout) and on a 500ms poll (catches sessions written directly to
+ * localStorage — e.g. the test harness — and lazy idle expiry).
  */
 export function onAuthChange(callback: (user: User | null) => void): () => void {
   let lastUserId: string | null | undefined
@@ -85,50 +263,27 @@ export function onAuthChange(callback: (user: User | null) => void): () => void 
     }
   }
 
-  // Initial check
   check()
 
+  window.addEventListener(AUTH_CHANGED_EVENT, check)
   const intervalId = setInterval(check, 500)
-  return () => clearInterval(intervalId)
+  return () => {
+    window.removeEventListener(AUTH_CHANGED_EVENT, check)
+    clearInterval(intervalId)
+  }
 }
 
-/**
- * Get all registered users.
- */
+/** Get all registered users. */
 export function getAllUsers(): User[] {
-  const svc = getAuthService()
-  if (svc?.getUsers) {
-    const users = svc.getUsers()
-    return users ? Object.values(users) : []
-  }
-  // Fallback: read from localStorage (auth.js stores users at the unprefixed 'users' key).
-  const users = getKey<Record<string, User>>('users')
+  const users = getUsers()
   return users ? Object.values(users) : []
-}
-
-/**
- * Log out the current user.
- * Delegates to the legacy AuthService if available, otherwise clears session from localStorage.
- */
-export function logout(): void {
-  const svc = getAuthService()
-  if (svc) {
-    svc.logout()
-    return
-  }
-  // Fallback: clear session manually
-  localStorage.removeItem('currentUser')
-  localStorage.removeItem('v2_currentSession')
 }
 
 // ─── Admin CRUD ─────────────────────────────────────────────────────────────
 
-/**
- * Verify the admin password against the legacy AuthService.
- */
+/** Verify the admin (parent) password. */
 export function verifyAdminPassword(password: string): boolean {
-  const svc = getAuthService()
-  return svc?.verifyAdminPassword(password) ?? false
+  return password === ADMIN_PASSWORD
 }
 
 /**
@@ -140,9 +295,7 @@ export function isCurrentUserAdmin(): boolean {
   return user?.role === 'parent' || user?.role === 'manager'
 }
 
-/**
- * Create a new user account. Requires the admin password.
- */
+/** Create a new user account. Requires the admin password. */
 export function addUser(
   id: string,
   name: string,
@@ -150,31 +303,72 @@ export function addUser(
   initial: string,
   adminPassword: string,
 ): AdminResult {
-  return requireAuthService().addUser(id, name, displayName, initial, adminPassword)
+  if (!verifyAdminPassword(adminPassword)) {
+    return { success: false, error: 'Incorrect admin password' }
+  }
+  const users = getUsers() ?? {}
+  if (users[id]) {
+    return { success: false, error: 'User already exists' }
+  }
+  users[id] = {
+    id,
+    name,
+    displayName,
+    initial,
+    password: null,
+    created: new Date().toISOString(),
+    lastLogin: null,
+  }
+  saveUsers(users)
+  return { success: true, message: `User ${displayName} created successfully` }
 }
 
-/**
- * Reset a user's password (they will set a new one on next login).
- * Requires the admin password.
- */
+/** Reset a user's password (they set a new one on next login). Requires admin password. */
 export function resetUserPassword(userId: string, adminPassword: string): AdminResult {
-  return requireAuthService().resetUserPassword(userId, adminPassword)
+  if (!verifyAdminPassword(adminPassword)) {
+    return { success: false, error: 'Incorrect admin password' }
+  }
+  const users = getUsers()
+  if (!users || !users[userId]) {
+    return { success: false, error: 'User not found' }
+  }
+  users[userId].password = null
+  saveUsers(users)
+  return {
+    success: true,
+    message: `Password reset for ${users[userId].displayName}. They will set a new password on next login.`,
+  }
 }
 
-/**
- * Delete a user and their localStorage data. Requires the admin password.
- */
+/** Delete a user and their localStorage data. Requires admin password. */
 export function deleteUser(userId: string, adminPassword: string): AdminResult {
-  return requireAuthService().deleteUser(userId, adminPassword)
+  if (!verifyAdminPassword(adminPassword)) {
+    return { success: false, message: 'Incorrect admin password' }
+  }
+  const users = getUsers()
+  if (!users || !users[userId]) {
+    return { success: false, message: 'User not found' }
+  }
+  if (userId === 'manager') {
+    return { success: false, message: 'Cannot delete manager account' }
+  }
+  delete users[userId]
+  saveUsers(users)
+
+  // Faithful to legacy: removes the unprefixed legacy data keys.
+  localStorage.removeItem(`userProgress_${userId}`)
+  const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading']
+  gameTypes.forEach((game) => localStorage.removeItem(`scoreHistory_${userId}_${game}`))
+
+  return { success: true, message: 'User deleted successfully' }
 }
 
 /**
- * Toggle / assign a role for a user. Not gated by admin password on its
- * own — callers must verify admin before invoking.
+ * Toggle / assign a role for a user. Not gated by admin password on its own —
+ * callers must verify admin before invoking.
  */
 export function setUserRole(userId: string, role: UserRole | null): AdminResult {
-  const svc = requireAuthService()
-  const users = svc.getUsers()
+  const users = getUsers()
   if (!users || !users[userId]) {
     return { success: false, error: 'User not found' }
   }
@@ -183,6 +377,31 @@ export function setUserRole(userId: string, role: UserRole | null): AdminResult 
   } else {
     delete users[userId].role
   }
-  svc.saveUsers(users)
+  saveUsers(users)
   return { success: true }
+}
+
+// ─── Module init (browser side effects) ─────────────────────────────────────
+
+if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
+  // Seed default users on first run (was the legacy AuthService constructor).
+  try {
+    initializeUsersDatabase()
+  } catch (e) {
+    console.error('Auth init failed:', e)
+  }
+
+  // Reset the idle timer on interaction so an active session never expires.
+  if (typeof document !== 'undefined') {
+    const events: Array<keyof DocumentEventMap> = ['mousedown', 'keydown', 'touchstart', 'scroll']
+    events.forEach((event) => {
+      document.addEventListener(
+        event,
+        () => {
+          if (isAuthenticated()) updateActivity()
+        },
+        { passive: true },
+      )
+    })
+  }
 }

@@ -68,6 +68,26 @@ gameManager.recordWordAttempt(word, category, correct)
   └─ If mastery crosses 0.8 ──→ in-game level-up celebration
 ```
 
+## Auth / Login (Slice 4.4.b2 — React owns auth)
+
+```
+App.tsx
+  └─ AuthGate (useAuthSession.isAuthenticated = SESSION valid, not user-record present)
+      ├─ not authed → <LoginPage> (src/features/auth/LoginPage.tsx)
+      │     user-select grid → password entry → bridge/auth.login(userId, pw)
+      │       ├─ first login (password===null) adopts entered pw
+      │       ├─ writes currentSession + currentUser (UNPREFIXED keys)
+      │       └─ dispatch 'auth-changed' + 'user-logged-in'
+      │             └─ onAuthChange fires → AuthGate flips to app; useEngineBoot.initEngine()
+      └─ authed → <RouterProvider> (the app)
+
+bridge/auth.ts = standalone owner (no window.authService):
+  storage keys (UNPREFIXED): users · currentSession · currentUser
+  idle expiry 30min — lazy in isAuthenticated() + 500ms onAuthChange poll;
+    document mousedown/keydown/touch/scroll refresh the timer
+  logout() = clear session + dispatch 'auth-changed' (NO page reload)
+```
+
 ## Daily Login
 
 ```
@@ -280,7 +300,7 @@ React route /#/game/fill-blanks
           → standard word-attempt persistence chain (see "Word Attempt During Gameplay")
 ```
 
-Slice 3.7.1 retired the duplicate `word-builder` game (shipped briefly in 3.6) and folded its 15 pts/correct scoring into Fill Blanks — both games pulled from the same `data/sentences.js` pool with near-identical UX, so the duplication was UI-only. Legacy `/#/game/word-builder` bookmarks redirect via `GameHostPage.RETIRED_GAMES`. Orphan localStorage (`savedGame_<uid>_word-builder`, `v2_wordbuilder_audio_<uid>`) is swept on first boot in `app.js:setupWithAuth`. Audio-state key for the surviving game is `v2_fillblanks_audio_<userId>`.
+Slice 3.7.1 retired the duplicate `word-builder` game (shipped briefly in 3.6) and folded its 15 pts/correct scoring into Fill Blanks — both games pulled from the same `data/sentences.js` pool with near-identical UX, so the duplication was UI-only. Legacy `/#/game/word-builder` bookmarks redirect via `GameHostPage.RETIRED_GAMES`. Orphan localStorage (`savedGame_<uid>_word-builder`, `v2_wordbuilder_audio_<uid>`) is swept on first boot in `src/engine/boot.ts:initEngine` (was `app.js:setupWithAuth` before the b1 engine cutover). Audio-state key for the surviving game is `v2_fillblanks_audio_<userId>`.
 
 ## Sentence Scramble Game (React — Slice 3.8)
 

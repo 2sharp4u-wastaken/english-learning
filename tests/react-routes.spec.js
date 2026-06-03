@@ -2859,20 +2859,48 @@ test.describe('Integration (known issues)', () => {
   // calls it — React Router owns game-exit navigation — so the compat-shim test it
   // pinned is gone with the legacy engine.
 
-  test('React auth bridge resolves the authenticated user', async ({ page }) => {
+  // Slice 4.4.b2 retired the legacy `window.authService` global — `src/bridge/auth.ts`
+  // is now the standalone auth owner and the React AuthGate renders the app (not the
+  // login screen) once a valid session exists. We assert that end-state behavior.
+  test('React auth gate renders the app for an authenticated user', async ({ page }) => {
     await seedUser(page);
     await gotoHash(page, '/home');
 
-    const state = await page.evaluate(() => {
-      const svc = window.authService;
-      return {
-        authServiceOnWindow: typeof svc !== 'undefined',
-        svcReportsAuthenticated: !!svc?.isAuthenticated?.(),
-        svcReturnsUser: !!svc?.getCurrentUser?.(),
-      };
+    // App shell is shown, login screen is not.
+    await expect(page.locator('[data-testid="home-hero"]')).toBeVisible();
+    await expect(page.locator('[data-testid="login-modal"]')).toHaveCount(0);
+    // The legacy authService global is gone.
+    const hasLegacyGlobal = await page.evaluate(() => typeof window.authService !== 'undefined');
+    expect(hasLegacyGlobal).toBe(false);
+  });
+
+  // Slice 4.4.b2: the full React login flow (no session → user-select → password →
+  // app). Uses the default seeded users (omer/zohar/idan); first login adopts any
+  // password. Exercises bridge/auth.login + the AuthGate flip end-to-end.
+  test('React login flow: select user + enter password → app renders', async ({ page }) => {
+    await page.goto('/');
+    await page.evaluate(() => {
+      // Ensure no existing session: this is a fresh login.
+      localStorage.removeItem('currentSession');
+      localStorage.removeItem('currentUser');
     });
-    expect(state.authServiceOnWindow).toBe(true);
-    expect(state.svcReportsAuthenticated).toBe(true);
-    expect(state.svcReturnsUser).toBe(true);
+    await page.reload();
+
+    // Login screen is shown with the default user cards.
+    await expect(page.locator('[data-testid="login-modal"]')).toBeVisible();
+    const cards = page.locator('[data-testid="user-select-card"]');
+    expect(await cards.count()).toBeGreaterThan(0);
+
+    // Pick the first user → password step.
+    await cards.first().click();
+    await expect(page.locator('[data-testid="password-entry-screen"]')).toBeVisible();
+
+    // First login adopts the entered password.
+    await page.locator('#password-input').fill('test1234');
+    await page.locator('[data-testid="login-submit"]').click();
+
+    // AuthGate flips to the app.
+    await expect(page.locator('[data-testid="home-hero"]')).toBeVisible();
+    await expect(page.locator('[data-testid="login-modal"]')).toHaveCount(0);
   });
 });

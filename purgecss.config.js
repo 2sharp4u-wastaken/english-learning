@@ -7,6 +7,10 @@ module.exports = {
     'components/*.js',
     'data/*.js',
     'utils/*.js',
+    // React reuses legacy styles.css classes (e.g. the LoginPage reuses .auth-*
+    // / .toggle-password / .form-group after auth.js retired in Slice 4.4.b2),
+    // so scan the React source too or the purge tool would drop them.
+    'src/**/*.{ts,tsx}',
   ],
   css: ['styles.css'],
   output: './purged/',
