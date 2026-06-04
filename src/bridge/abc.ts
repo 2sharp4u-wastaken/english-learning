@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp, getGameManager } from '../engine/instances'
 
 // Legacy data module — same one gameLogic.js imports. generateABCQuestions reads
 // window.app.userProgress.wordMastery directly to filter mastered letters.
@@ -105,7 +106,7 @@ interface LegacyGameManager {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 function getSpeech(): LegacySpeechRecognizer | null {
@@ -156,7 +157,7 @@ export function beginABCSession(opts: BeginOptions = {}): ABCSessionResult {
         mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
         mgr.gameSessionStartAt = Date.now()
         mgr.gameCoinHistoryStartIndex =
-          (window as any).app?.userProgress?.coinHistory?.length ?? 0
+          getApp()?.userProgress?.coinHistory?.length ?? 0
         mgr.isGameActive = true
         const resumeScore =
           saved.score ?? mgr.scoreManager?.getScore?.(GAME_TYPE) ?? 0
@@ -201,7 +202,7 @@ export function beginABCSession(opts: BeginOptions = {}): ABCSessionResult {
     mgr.gameElapsedMs = 0
     mgr.gameSessionStartAt = Date.now()
     mgr.gameCoinHistoryStartIndex =
-      (window as any).app?.userProgress?.coinHistory?.length ?? 0
+      getApp()?.userProgress?.coinHistory?.length ?? 0
     mgr.isGameActive = true
   }
 

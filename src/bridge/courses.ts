@@ -1,4 +1,5 @@
 import { getUserProgress } from './progress'
+import { getApp } from '../engine/instances'
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -64,8 +65,7 @@ function getCourseManager(): LegacyCourseManager | null {
   // `window.app.courseManager` (app.js). There is NO `window.appManager` global —
   // an earlier reference to it silently returned null, leaving this page on its
   // empty state. Always resolve via the real globals.
-  const w = window as any
-  return w.courseManager ?? w.app?.courseManager ?? null
+  return getApp()?.courseManager ?? null
 }
 
 // ─── Public bridge API ──────────────────────────────────────────────────────

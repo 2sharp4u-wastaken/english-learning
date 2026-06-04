@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp, getGameManager } from '../engine/instances'
 import { getDerivedLearnedCount, getLearnedWordKeySet } from './progress'
 // Legacy data module — same one gameLogic.js imports.
 // @ts-expect-error — legacy .js import without a .d.ts
@@ -72,7 +73,7 @@ interface LegacyGameManager {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 const GAME_TYPE = 'story-time'
@@ -150,7 +151,7 @@ export function beginStoryTimeSession(opts: BeginOptions = {}): StoryTimeSession
   mgr.gameElapsedMs = 0
   mgr.gameSessionStartAt = Date.now()
   mgr.gameCoinHistoryStartIndex =
-    (window as any).app?.userProgress?.coinHistory?.length ?? 0
+    getApp()?.userProgress?.coinHistory?.length ?? 0
   mgr.isGameActive = true
 
   return { kind: 'ready', stories, totalQuizQuestions }

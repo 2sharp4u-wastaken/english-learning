@@ -8,6 +8,8 @@
 //  - Clear the context only on USER-triggered exit (RewardModal exit / abort), never
 //    synchronously at finish — endGame reads the context late and async.
 
+import { getApp, getGameManager as getEngineGameManager } from '../engine/instances'
+
 export interface TopicActivityLaunch {
   topicId: string
   activityType: string
@@ -34,14 +36,13 @@ interface LegacyCourseManager {
 }
 
 function getGameManager(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getEngineGameManager() as unknown as LegacyGameManager | null
 }
 
 function getCourseManager(): LegacyCourseManager | null {
   // No `window.appManager` global exists — the CourseManager is `window.courseManager`
   // (gameLogic) / `window.app.courseManager` (app.js). See bridge/courses.ts.
-  const w = window as any
-  return w.courseManager ?? w.app?.courseManager ?? null
+  return getApp()?.courseManager ?? null
 }
 
 /**

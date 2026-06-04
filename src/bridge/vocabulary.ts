@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 import { isCourseMode } from './courseSession'
 
@@ -64,13 +65,13 @@ interface LegacyGameManager {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 const LEGACY_GAME_CONTAINER_ID = 'vocabulary-game'
 
 function getLearnedCount(): number {
-  return Object.keys((window as any).app?.userProgress?.learnedWords ?? {}).length
+  return Object.keys(getApp()?.userProgress?.learnedWords ?? {}).length
 }
 
 export interface BeginOptions {
@@ -117,7 +118,7 @@ export function beginVocabularySession(opts: BeginOptions = {}): VocabularySessi
         mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
         mgr.gameSessionStartAt = Date.now()
         mgr.gameCoinHistoryStartIndex =
-          (window as any).app?.userProgress?.coinHistory?.length ?? 0
+          getApp()?.userProgress?.coinHistory?.length ?? 0
         mgr.isGameActive = true
         const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.('vocabulary') ?? 0
         // Make sure the scoreManager reflects the resumed score (legacy does this
@@ -149,7 +150,7 @@ export function beginVocabularySession(opts: BeginOptions = {}): VocabularySessi
   mgr.gameElapsedMs = 0
   mgr.gameSessionStartAt = Date.now()
   mgr.gameCoinHistoryStartIndex =
-    (window as any).app?.userProgress?.coinHistory?.length ?? 0
+    getApp()?.userProgress?.coinHistory?.length ?? 0
 
   // V2 gating (mirrors gameLogic.js:2244–2257).
   let pool = mgr.getScopedQuestionPool('vocabulary') ?? []

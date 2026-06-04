@@ -23,6 +23,7 @@
  * one-file change). localStorage quota (~5 MB of base64) is the trigger to do it.
  */
 import { getKey, setKey } from './storage'
+import { getGameManager } from '../engine/instances'
 
 const CUSTOM_WORDS_KEY = 'customWords_global'
 const IMAGE_OVERRIDES_KEY = 'wordImageOverrides'
@@ -76,7 +77,7 @@ async function refreshLiveBank(): Promise<void> {
       // refreshCustomWords mutates the raw window.gameData bank in place; rebuild the
       // engine's category-filtered/difficulty-gated pools so the new words surface in
       // this session without a reload (the engine reads filtered copies, not the raw bank).
-      ;(window as any).gameManager?.loadGameData?.()
+      ;getGameManager()?.loadGameData?.()
     } catch {
       /* best-effort live update; persisted either way */
     }

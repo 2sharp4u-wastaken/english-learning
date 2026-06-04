@@ -225,7 +225,7 @@ test.describe('Slice C1: Launchable Courses', () => {
   /** Unlock the first course (auto-unlocks its first topic) and return its info. */
   async function unlockFirstTopic(page) {
     return await page.evaluate(() => {
-      const cm = window.appManager?.courseManager || window.courseManager;
+      const cm = window.app?.courseManager;
       const course = cm.getAllCourses()[0];
       cm.unlockCourse(course.id);
       const topic = course.units[0].topics[0];

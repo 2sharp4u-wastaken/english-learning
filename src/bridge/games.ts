@@ -1,4 +1,6 @@
 import type { GameDefinition, GameUnlockEntry, ContinueTarget } from './types'
+import { getApp, getGameManager as getEngineGameManager } from '../engine/instances'
+import { gameRegistry } from '../engine/gameRegistry'
 import { getUserProgress } from './progress'
 
 // ─── Legacy global access ────────────────────────────────────────────────────
@@ -21,11 +23,11 @@ interface LegacyGameManager {
 }
 
 function getGameRegistry(): LegacyGameRegistry | null {
-  return (window as any).gameRegistry ?? null
+  return gameRegistry as unknown as LegacyGameRegistry | null
 }
 
 function getGameManager(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getEngineGameManager() as unknown as LegacyGameManager | null
 }
 
 // ─── Public bridge API ───────────────────────────────────────────────────────
@@ -90,7 +92,7 @@ export function getContinueTarget(): ContinueTarget | null {
   // introduce/strengthen via Word Journey. (Learning words are already surfaced
   // inside the review games, so they need no separate nudge.) When reviewing,
   // rotate among the unlocked review games rather than always opening Listening.
-  const pm = (window as any).app?.progressManager
+  const pm = getApp()?.progressManager
   const dueCount: number = pm?.getLifecycleCounts ? pm.getLifecycleCounts().due : 0
   if (dueCount > 0) {
     const unlocks = progress.gameUnlocks ?? {}

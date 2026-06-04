@@ -23,14 +23,12 @@ import { ProgressManager } from './progress'
 import { CoinManager } from './coins'
 import { CertificateManager } from './certificates'
 import { CourseManager } from './courses'
-import { gameRegistry } from './gameRegistry'
+import { setEngineInstances, getApp, getGameManager } from './instances'
 import { getCurrentUserId } from '../bridge/auth'
 // Course definitions (legacy app.js imported the same module-level list).
 // @ts-expect-error — legacy .js import without a .d.ts
 import { allCourses } from '../../data/courses/index.js'
 
-let appState: AppState | null = null
-let gameManager: GameManager | null = null
 let engineReady = false
 
 function getVocabularyBank(): any[] {
@@ -64,30 +62,19 @@ function createManagers(userProgress: any, save: () => void): AppManagers {
 
   const coinManager = new CoinManager(userProgress, {
     save,
-    // Legacy stamped history with window.gameManager?.currentGame.
-    currentGameType: () => (window as any).gameManager?.currentGame ?? null,
+    // Legacy stamped history with the live GameManager's currentGame. The GameManager
+    // isn't built until after createManagers returns, so read it lazily at call time.
+    currentGameType: () => getGameManager()?.currentGame ?? null,
   })
   coinManager.initialize()
 
   return { scoreManager, progressManager, courseManager, certificateManager, coinManager }
 }
 
-/** Publish the same globals the legacy engine exported (drop-in compat shim). */
-function publishGlobals(app: AppState, gm: GameManager): void {
-  const w = window as any
-  w.app = app
-  w.gameManager = gm
-  w.scoreManager = app.scoreManager
-  w.progressManager = app.progressManager
-  w.courseManager = app.courseManager
-  w.certificateManager = app.certificateManager
-  w.coinManager = app.coinManager
-  w.gameRegistry = gameRegistry
-}
-
 /**
- * Build (or rebuild) the engine for the current authenticated user and publish the
- * globals. Safe to call again on user switch (`user-logged-in`).
+ * Build (or rebuild) the engine for the current authenticated user and store the
+ * instances (`src/engine/instances.ts`) the bridges read. Safe to call again on
+ * user switch (`user-logged-in`).
  */
 export function initEngine(): boolean {
   const userId = getCurrentUserId()
@@ -104,8 +91,8 @@ export function initEngine(): boolean {
     // changes categories): re-apply + rebuild the filtered pools so the change is
     // picked up in-session, exactly as legacy did.
     onSettingsApplied: (settings) => {
-      gameManager?.applySettings(settings)
-      gameManager?.loadGameData()
+      getGameManager()?.applySettings(settings)
+      getGameManager()?.loadGameData()
     },
   })
   app.currentUser = userId
@@ -154,23 +141,38 @@ export function initEngine(): boolean {
   // (gameLogic.js:1268) AFTER settings load — so selectedCategories is current.
   gm.loadGameData()
 
-  appState = app
-  gameManager = gm
-  publishGlobals(app, gm)
+  setEngineInstances(app, gm)
+  exposeDebugHandles(app, gm)
 
   engineReady = true
   window.dispatchEvent(new CustomEvent('engine-ready'))
   return true
 }
 
+/**
+ * Slice 4.4.b3 — TEST/DEBUG seam, NOT the old `publishGlobals` app shim.
+ *
+ * App code (bridges + game pages) now reaches the engine via `getApp()`/
+ * `getGameManager()` from `src/engine/instances.ts` — it never reads these
+ * globals. We still expose `window.app`/`window.gameManager` because the
+ * Playwright characterization specs (`engine-bridge-contract`, `engine-selection`,
+ * `difficulty-gate`, `react-routes`, `smoke`) drive/inspect the live engine from
+ * the browser, where the engine class isn't importable. The other six legacy
+ * globals (`scoreManager`/`progressManager`/`courseManager`/`certificateManager`/
+ * `coinManager`/`gameRegistry`) are NO LONGER published — tests reach those as
+ * instance props of `window.app`/`window.gameManager`. Repointing the specs to a
+ * non-window handle and deleting this seam is Slice 4.6 test-modernization work.
+ */
+function exposeDebugHandles(app: AppState, gm: GameManager): void {
+  const w = window as any
+  w.app = app
+  w.gameManager = gm
+}
+
 export function getEngineReady(): boolean {
   return engineReady
 }
 
-export function getApp(): AppState | null {
-  return appState
-}
-
-export function getGameManager(): GameManager | null {
-  return gameManager
-}
+// Re-export the live-instance accessors so existing `from '@/engine/boot'` /
+// `from './boot'` imports keep resolving (the singletons now live in instances.ts).
+export { getApp, getGameManager }

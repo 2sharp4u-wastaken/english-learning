@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getApp, getGameManager } from '@/engine/instances'
 import { useNavigate } from 'react-router-dom'
 import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { MediaPromptCard } from '@/features/games/shared/MediaPromptCard'
@@ -158,12 +159,12 @@ export function ReadingGamePage() {
     let attemptsCount = 0
     const tryStart = () => {
       if (cancelled) return
-      const w = window as any
+      const app = getApp()
       const ready =
-        !!w.gameManager &&
-        !!w.app &&
-        !!w.app.userProgress &&
-        typeof w.app.userProgress.learnedWords === 'object'
+        !!getGameManager() &&
+        !!app &&
+        !!app.userProgress &&
+        typeof app.userProgress.learnedWords === 'object'
       if (!ready && attemptsCount < 30) {
         attemptsCount++
         window.setTimeout(tryStart, 100)

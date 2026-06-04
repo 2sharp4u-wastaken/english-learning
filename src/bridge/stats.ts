@@ -1,4 +1,5 @@
 import type { UserProgress } from './types'
+import { getApp } from '../engine/instances'
 import { v2Key } from './storage'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
@@ -274,7 +275,7 @@ function getWordDisplayInfo(wordKey: string, vocabIndex: VocabIndex) {
 function getWordMasteryStats(progress: UserProgress): MasteryStats {
   const wm = progress.wordMastery || {}
   const stats: MasteryStats = { total: 0, struggling: [], learning: [], mastered: [] }
-  const pm = (window as any).app?.progressManager
+  const pm = getApp()?.progressManager
 
   for (const [wordKey, data] of Object.entries(wm)) {
     if (!data || typeof data !== 'object') continue

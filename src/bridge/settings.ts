@@ -1,4 +1,5 @@
 import type { AppSettings } from './types'
+import { getApp } from '../engine/instances'
 import { getKey, setKey, v2Key } from './storage'
 
 const UNPREFIXED_KEY = 'englishLearningSettings'
@@ -31,7 +32,7 @@ interface LegacyAppManager {
 }
 
 function getAppManager(): LegacyAppManager | null {
-  return (window as any).appManager ?? null
+  return getApp() as unknown as LegacyAppManager | null
 }
 
 // ─── Public bridge API ───────────────────────────────────────────────────────

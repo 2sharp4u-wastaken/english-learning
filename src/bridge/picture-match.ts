@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 import { isCourseMode } from './courseSession'
 
@@ -68,14 +69,14 @@ interface LegacyGameManager {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 const LEGACY_GAME_CONTAINER_ID = 'picture-match-game'
 const GAME_TYPE = 'picture-match'
 
 function getLearnedCount(): number {
-  return Object.keys((window as any).app?.userProgress?.learnedWords ?? {}).length
+  return Object.keys(getApp()?.userProgress?.learnedWords ?? {}).length
 }
 
 export interface BeginOptions {
@@ -116,7 +117,7 @@ export function beginPictureMatchSession(opts: BeginOptions = {}): PictureMatchS
         mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
         mgr.gameSessionStartAt = Date.now()
         mgr.gameCoinHistoryStartIndex =
-          (window as any).app?.userProgress?.coinHistory?.length ?? 0
+          getApp()?.userProgress?.coinHistory?.length ?? 0
         mgr.isGameActive = true
         const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.(GAME_TYPE) ?? 0
         mgr.scoreManager?.resetScore(GAME_TYPE)
@@ -143,7 +144,7 @@ export function beginPictureMatchSession(opts: BeginOptions = {}): PictureMatchS
   mgr.gameElapsedMs = 0
   mgr.gameSessionStartAt = Date.now()
   mgr.gameCoinHistoryStartIndex =
-    (window as any).app?.userProgress?.coinHistory?.length ?? 0
+    getApp()?.userProgress?.coinHistory?.length ?? 0
 
   let pool = mgr.getScopedQuestionPool(GAME_TYPE) ?? []
   if (!mgr.settings?.gameUnlockOverride && !courseMode) {

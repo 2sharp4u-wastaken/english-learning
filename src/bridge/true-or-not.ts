@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 import { isCourseMode } from './courseSession'
 
@@ -93,7 +94,7 @@ interface PoolWord {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 // Ported from the deleted games/true-or-not-game.js (Slice 4.4). Pure question
@@ -161,9 +162,9 @@ const MIN_LEARNED_WORDS = 5
 // gate counts words INTRODUCED (Learning ∪ Learned), matching its now-introduced
 // word pool. Falls back to the legacy learnedWords stamp if the manager is absent.
 function getLearnedCount(): number {
-  const pm = (window as any).app?.progressManager
+  const pm = getApp()?.progressManager
   if (pm?.getIntroducedCount) return pm.getIntroducedCount()
-  return Object.keys((window as any).app?.userProgress?.learnedWords ?? {}).length
+  return Object.keys(getApp()?.userProgress?.learnedWords ?? {}).length
 }
 
 function adapt(q: LegacyTrueOrNotQuestion): TrueOrNotQuestion {
@@ -226,7 +227,7 @@ export function beginTrueOrNotSession(opts: BeginOptions = {}): TrueOrNotSession
         mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
         mgr.gameSessionStartAt = Date.now()
         mgr.gameCoinHistoryStartIndex =
-          (window as any).app?.userProgress?.coinHistory?.length ?? 0
+          getApp()?.userProgress?.coinHistory?.length ?? 0
         mgr.isGameActive = true
         const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.(GAME_TYPE) ?? 0
         mgr.scoreManager?.resetScore(GAME_TYPE)
@@ -253,7 +254,7 @@ export function beginTrueOrNotSession(opts: BeginOptions = {}): TrueOrNotSession
   mgr.gameElapsedMs = 0
   mgr.gameSessionStartAt = Date.now()
   mgr.gameCoinHistoryStartIndex =
-    (window as any).app?.userProgress?.coinHistory?.length ?? 0
+    getApp()?.userProgress?.coinHistory?.length ?? 0
 
   // V2 gating: True-or-Not needs ≥5 learned words (mirrors gameLogic.js:2163-2172).
   // Skip in course mode — the topic's words drive the pool, not the learned set.

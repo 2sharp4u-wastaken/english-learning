@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getApp, getGameManager } from '@/engine/instances'
 import { useNavigate } from 'react-router-dom'
 import { Mic, MicOff } from 'lucide-react'
 import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
@@ -122,9 +123,9 @@ export function ABCGamePage() {
     let attempts = 0
     const tryStart = () => {
       if (cancelled) return
-      const w = window as any
+      const app = getApp()
       const ready =
-        !!w.gameManager && !!w.app && !!w.app.userProgress && !!w.app.userProgress.wordMastery
+        !!getGameManager() && !!app && !!app.userProgress && !!app.userProgress.wordMastery
       if (!ready && attempts < 30) {
         attempts++
         window.setTimeout(tryStart, 100)

@@ -725,9 +725,12 @@ CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|pictu
 
 > **Invariants:** never route through legacy `performGameSwitch` (it clears the context on a
 > game-type mismatch, gameLogic.js:1733); clear the context ONLY on user-triggered exit, never
-> at finish (endGame is async + reads context late → early clear races the credit). The
-> CourseManager global is `window.courseManager`/`window.app.courseManager` — `window.appManager`
-> does not exist (its accidental use left CoursesPage rendering empty).
+> at finish (endGame is async + reads context late → early clear races the credit). As of
+> Slice 4.4.b3 the CourseManager (and all engine instances) are reached by APP CODE via
+> `getApp()`/`getGameManager()` from `src/engine/instances.ts` — NOT `window.*`. `window.courseManager`
+> is gone; `window.app`/`window.gameManager` survive ONLY as a Playwright test/debug seam
+> (`courseManager` is read off `window.app.courseManager`). `window.appManager` never existed (its
+> accidental use once left CoursesPage rendering empty).
 
 ## Critical File Locations
 

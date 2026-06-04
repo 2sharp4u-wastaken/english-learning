@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 
 export interface ReadingQuestion {
@@ -63,14 +64,14 @@ interface LegacyGameManager {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 const LEGACY_GAME_CONTAINER_ID = 'reading-game'
 const GAME_TYPE = 'reading'
 
 function getLearnedCount(): number {
-  return Object.keys((window as any).app?.userProgress?.learnedWords ?? {}).length
+  return Object.keys(getApp()?.userProgress?.learnedWords ?? {}).length
 }
 
 export interface BeginOptions {
@@ -107,7 +108,7 @@ export function beginReadingSession(opts: BeginOptions = {}): ReadingSessionResu
         mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
         mgr.gameSessionStartAt = Date.now()
         mgr.gameCoinHistoryStartIndex =
-          (window as any).app?.userProgress?.coinHistory?.length ?? 0
+          getApp()?.userProgress?.coinHistory?.length ?? 0
         mgr.isGameActive = true
         const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.(GAME_TYPE) ?? 0
         mgr.scoreManager?.resetScore(GAME_TYPE)
@@ -134,7 +135,7 @@ export function beginReadingSession(opts: BeginOptions = {}): ReadingSessionResu
   mgr.gameElapsedMs = 0
   mgr.gameSessionStartAt = Date.now()
   mgr.gameCoinHistoryStartIndex =
-    (window as any).app?.userProgress?.coinHistory?.length ?? 0
+    getApp()?.userProgress?.coinHistory?.length ?? 0
 
   // V2 gating mirrors gameLogic.js:2244–2257 — reading is in VOCAB_GATED_GAMES.
   let pool = mgr.getScopedQuestionPool(GAME_TYPE) ?? []

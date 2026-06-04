@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 // Legacy sentence data — same module gameLogic.js imports for scramble.
 // @ts-expect-error — legacy .js import without a .d.ts
@@ -61,7 +62,7 @@ interface LegacyGameManager {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 const GAME_TYPE = 'scramble'
@@ -76,9 +77,9 @@ const SENTENCE_THEMES = new Set([
 // V3: consolidation gate counts derived "Learned" (mastery-stable ∪ grandfathered),
 // not the frozen learnedWords stamp (Word Journey no longer writes it).
 function getLearnedCount(): number {
-  const pm = (window as any).app?.progressManager
+  const pm = getApp()?.progressManager
   if (pm?.getDerivedLearnedCount) return pm.getDerivedLearnedCount()
-  return Object.keys((window as any).app?.userProgress?.learnedWords ?? {}).length
+  return Object.keys(getApp()?.userProgress?.learnedWords ?? {}).length
 }
 
 function computeThemes(mgr: LegacyGameManager): string[] {
@@ -130,7 +131,7 @@ export function beginScrambleSession(opts: BeginOptions = {}): ScrambleSessionRe
         mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
         mgr.gameSessionStartAt = Date.now()
         mgr.gameCoinHistoryStartIndex =
-          (window as any).app?.userProgress?.coinHistory?.length ?? 0
+          getApp()?.userProgress?.coinHistory?.length ?? 0
         mgr.isGameActive = true
         const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.(GAME_TYPE) ?? 0
         mgr.scoreManager?.resetScore(GAME_TYPE)
@@ -157,7 +158,7 @@ export function beginScrambleSession(opts: BeginOptions = {}): ScrambleSessionRe
   mgr.gameElapsedMs = 0
   mgr.gameSessionStartAt = Date.now()
   mgr.gameCoinHistoryStartIndex =
-    (window as any).app?.userProgress?.coinHistory?.length ?? 0
+    getApp()?.userProgress?.coinHistory?.length ?? 0
 
   // V2 gating mirrors gameLogic.js:2000 — scramble requires ≥30 learned.
   if (!mgr.settings?.gameUnlockOverride) {

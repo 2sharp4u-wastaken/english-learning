@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 
 /**
@@ -68,7 +69,7 @@ interface LegacyGameManager {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 function getBank(dataKey: string): BlankFillQuestion[] {
@@ -122,7 +123,7 @@ export function beginBlankFillSession(
         mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
         mgr.gameSessionStartAt = Date.now()
         mgr.gameCoinHistoryStartIndex =
-          (window as any).app?.userProgress?.coinHistory?.length ?? 0
+          getApp()?.userProgress?.coinHistory?.length ?? 0
         mgr.isGameActive = true
         const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.(gameType) ?? 0
         mgr.scoreManager?.resetScore(gameType)
@@ -160,7 +161,7 @@ export function beginBlankFillSession(
     mgr.gameElapsedMs = 0
     mgr.gameSessionStartAt = Date.now()
     mgr.gameCoinHistoryStartIndex =
-      (window as any).app?.userProgress?.coinHistory?.length ?? 0
+      getApp()?.userProgress?.coinHistory?.length ?? 0
     mgr.isGameActive = true
   }
 

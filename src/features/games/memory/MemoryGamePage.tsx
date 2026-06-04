@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { getApp, getGameManager } from '@/engine/instances'
 import { useNavigate } from 'react-router-dom'
 import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
@@ -120,12 +121,12 @@ export function MemoryGamePage() {
     let attempts = 0
     const tryStart = () => {
       if (cancelled) return
-      const w = window as any
+      const app = getApp()
       const ready =
-        !!w.gameManager &&
-        !!w.app &&
-        !!w.app.userProgress &&
-        Array.isArray(w.vocabularyBank)
+        !!getGameManager() &&
+        !!app &&
+        !!app.userProgress &&
+        Array.isArray((window as any).vocabularyBank)
       if (!ready && attempts < 30) {
         attempts++
         window.setTimeout(tryStart, 100)

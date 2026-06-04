@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp as getEngineApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 import { queuePendingUnlocks } from './games'
 import {
@@ -98,11 +99,11 @@ interface LegacySpeechRecognizer {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 function getApp(): any {
-  return (window as any).app ?? null
+  return getEngineApp()
 }
 
 function getSpeech(): LegacySpeechRecognizer | null {

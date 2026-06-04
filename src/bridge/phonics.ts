@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { getApp, getGameManager } from '../engine/instances'
 
 // Legacy data module — generatePhonicsQuestions reads
 // window.app.userProgress.wordMastery directly to filter mastered sounds.
@@ -103,7 +104,7 @@ interface LegacyGameManager {
 }
 
 function getMgr(): LegacyGameManager | null {
-  return (window as any).gameManager ?? null
+  return getGameManager() as unknown as LegacyGameManager | null
 }
 
 function getSpeech(): LegacySpeechRecognizer | null {
@@ -153,7 +154,7 @@ export function beginPhonicsSession(opts: BeginOptions = {}): PhonicsSessionResu
         mgr.gameElapsedMs = saved.gameElapsedMs ?? 0
         mgr.gameSessionStartAt = Date.now()
         mgr.gameCoinHistoryStartIndex =
-          (window as any).app?.userProgress?.coinHistory?.length ?? 0
+          getApp()?.userProgress?.coinHistory?.length ?? 0
         mgr.isGameActive = true
         const resumeScore = saved.score ?? mgr.scoreManager?.getScore?.(GAME_TYPE) ?? 0
         mgr.scoreManager?.resetScore(GAME_TYPE)
@@ -196,7 +197,7 @@ export function beginPhonicsSession(opts: BeginOptions = {}): PhonicsSessionResu
     mgr.gameElapsedMs = 0
     mgr.gameSessionStartAt = Date.now()
     mgr.gameCoinHistoryStartIndex =
-      (window as any).app?.userProgress?.coinHistory?.length ?? 0
+      getApp()?.userProgress?.coinHistory?.length ?? 0
     mgr.isGameActive = true
   }
 
@@ -330,13 +331,13 @@ export async function stopPhonicsRecording(): Promise<void> {
  * inside the bridge layer (the only place allowed to touch legacy state).
  */
 export function resetPhonicsMastery(): void {
-  const w = window as any
-  const wm = w.app?.userProgress?.wordMastery
+  const app = getApp()
+  const wm = app?.userProgress?.wordMastery
   if (!wm) return
   for (const key of Object.keys(wm)) {
     if (key.endsWith('_phonics')) delete wm[key]
   }
-  w.app?.saveUserProgress?.()
+  app?.saveUserProgress?.()
 }
 
 export function finishPhonicsSession(): void {

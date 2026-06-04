@@ -1,4 +1,5 @@
 import type { UserProgress, UserSummary, WordStats, Certificate, LearnedWordEntry } from './types'
+import { getApp } from '../engine/instances'
 import { getKey, v2Key } from './storage'
 import { getCurrentUserId } from './auth'
 
@@ -16,7 +17,7 @@ interface LegacyAppManager {
 }
 
 function getAppManager(): LegacyAppManager | null {
-  return (window as any).appManager ?? null
+  return getApp() as unknown as LegacyAppManager | null
 }
 
 // ─── Public bridge API ───────────────────────────────────────────────────────
@@ -44,11 +45,7 @@ function getProgressManager(): {
   getIntroducedCount?: () => number
   getLearnedWordKeys?: () => Set<string>
 } | null {
-  return (
-    (window as any).app?.progressManager ??
-    (window as any).appManager?.progressManager ??
-    null
-  )
+  return getApp()?.progressManager ?? null
 }
 
 /** Derived "Learned" count (mastery-stable ∪ grandfathered, excl. ABC letters). */
