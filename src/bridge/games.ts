@@ -103,7 +103,7 @@ export function getContinueTarget(): ContinueTarget | null {
       const pool = choices.length > 0 ? choices : open
       const pick = pool[Math.floor(Math.random() * pool.length)]
       lastReviewPick = pick
-      return { gameId: pick, label: 'תרגול מילים שצריך לחזק', icon: '🔁' }
+      return { gameId: pick, label: 'תרגול מילים', icon: '🔁' }
     }
   }
 

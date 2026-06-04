@@ -120,14 +120,18 @@ export function HomePage() {
         className="relative z-10 rounded-3xl border border-white/10 bg-surface shadow-panel"
       >
         {/* Compact single-band hero (2026-06 compaction): mascot + greeting on
-            one side, stat chips + the primary "continue" CTA on the other, all on
-            one centered row that wraps on mobile. The old subtitle + full-width
-            giant button were removed; the CTA stays prominent via bg-learn. */}
+            one side, stat chips + the primary "continue" CTA on the other. On mobile
+            the two halves wrap+center; on sm+ they stay on one band (`sm:flex-nowrap`)
+            — the greeting never collapses to its own row (`shrink-0`), and if the CTA
+            label is long the action group reflows internally (`min-w-0`) instead of
+            pushing the greeting up. Keep continue labels short (see getContinueTarget)
+            so the band stays one line. The old subtitle + full-width giant button were
+            removed; the CTA stays prominent via bg-learn. */}
         <div className="relative rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(99,230,198,0.22),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.18),transparent_40%)] p-3 sm:p-4">
           <HeroSparkles />
-          <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 sm:justify-between">
+          <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 sm:flex-nowrap sm:justify-between">
             {/* Greeting + mascot */}
-            <div className="flex items-center gap-2.5">
+            <div className="flex shrink-0 items-center gap-2.5">
               <HomeMascot streakDays={summary.streakDays} wordsLearned={summary.wordsLearned} size="sm" />
               <h1 className="font-display text-xl font-bold text-text sm:text-2xl">
                 <button
@@ -146,7 +150,7 @@ export function HomePage() {
             </div>
 
             {/* Stat chips + primary continue action */}
-            <div className="flex flex-wrap items-center justify-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 sm:justify-end">
               <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" effect="streak" />
               <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" effect="sparkle" />
               <StatChip emoji="🪙" value={summary.coins} label="מטבעות" effect="coin" />
