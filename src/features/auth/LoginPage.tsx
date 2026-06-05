@@ -1,14 +1,16 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { GraduationCap, ArrowRight, Eye, EyeOff, LogIn } from 'lucide-react'
 import { getAllUsers, getUser, needsPasswordSetup, login } from '@/bridge/auth'
 import { useNikud } from '@/bridge/nikud'
 import type { User } from '@/bridge/types'
+import './login.css'
 
 /**
  * React login screen (Slice 4.4.b2) — replaces the legacy `#login-modal` markup
  * + `AuthUIController` in `auth.js`. Two steps: user-select grid → password entry.
- * Reuses the legacy `.auth-*` CSS classes (still in `styles.css` until Slice 4.5)
- * so the look is unchanged; icons are Lucide (font-awesome retires in 4.5).
+ * Its `.auth-*` styles moved from the legacy `styles.css` into the scoped
+ * `./login.css` when `styles.css` was deleted in Slice 4.5; the look is unchanged.
+ * Icons are Lucide (font-awesome retired in 4.5).
  *
  * Hebrew chrome is wrapped in `nk()` and the subtree is marked
  * `data-react-nikud-owned` so `utils/nikudDOM.js` leaves it alone (FU-4.4-nikud).
@@ -25,15 +27,6 @@ export function LoginPage() {
 
   const selectedUser = selectedUserId ? getUser(selectedUserId) : null
   const isFirstTime = selectedUserId ? needsPasswordSetup(selectedUserId) : false
-
-  // Suppress the legacy `.app-layout` DOM while the login screen shows. Normally
-  // `AppShell` adds `react-shell-active`, but it only mounts once authenticated —
-  // without it the still-present legacy markup sits over the modal and intercepts
-  // clicks. We don't remove it on unmount: AppShell re-adds it idempotently on
-  // login, and re-adds it after a logout→login transition.
-  useEffect(() => {
-    document.body.classList.add('react-shell-active')
-  }, [])
 
   function selectUser(userId: string) {
     setSelectedUserId(userId)

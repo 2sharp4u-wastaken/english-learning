@@ -34,11 +34,9 @@ When changing any setting, game mechanic, or learning flow — update the releva
 React components must never access `window.*` globals or `localStorage` directly. All legacy data access goes through `src/bridge/*.ts` modules. React hooks in `src/hooks/` consume bridge modules. Existing bridges: `auth`, `audio`, `categories`, `courses`, `courseSession`, `feedback`, `games`, `progress`, `settings`, `stats`, `storage`, `textPrefs`, `vocabulary`. Add new ones as needed; never bypass. `courseSession` is the only gateway for launching a topic's activity from `/courses` (sets the legacy course context so the game pool scopes to the topic words). Note: the CourseManager global is `window.courseManager` / `window.app.courseManager` — there is **no** `window.appManager`.
 
 ### CSS containment
-- Tailwind Preflight is **disabled** — legacy `styles.css` provides its own resets
-- React app is scoped under `#react-root` with its own reset in `src/styles/globals.css`
-- Legacy `styles.css` is loaded via `<link>` tag, not imported into Vite
-- No Tailwind prefix — utility classes don't collide with legacy semantic class names
-- If a collision is discovered, fix it per-case
+- Tailwind Preflight is **disabled** — the React app supplies its own reset under `#react-root` in `src/styles/globals.css`
+- **As of Slice 4.5 the legacy `styles.css` + `game-completion-styles.css` are DELETED.** All styling is `src/styles/*` (tokens/themes/globals) + Tailwind utilities + the one scoped `src/features/auth/login.css` (the ported LoginPage `.auth-*` block). `index.html` is React-only; no global legacy stylesheet, no font-awesome/Poppins CDN (Lucide icons + Heebo/Fredoka fonts)
+- No Tailwind prefix — utility classes don't collide (no more legacy semantic class names in play). If a collision with `login.css` is ever found, fix it per-case
 
 ### RTL-first
 Design and implement RTL first. Use Tailwind logical properties (`ps-*`, `pe-*`, `ms-*`, `me-*`) and RTL utilities (`rtl:`, `ltr:`). Test RTL in every slice.
@@ -67,7 +65,7 @@ Design and implement RTL first. Use Tailwind logical properties (`ps-*`, `pe-*`,
 ### Routing
 Hash-based routing via React Router (`createHashRouter`):
 - `/#/home`, `/#/profile`, `/#/courses`, `/#/stats`, `/#/settings`, `/#/game/:gameId`
-- Legacy `.html` pages remain accessible at their file paths until retired
+- `index.html` is the only HTML file (Slice 4.5 deleted the last legacy markup); every page is a React route
 
 ### Word object schema
 ```js

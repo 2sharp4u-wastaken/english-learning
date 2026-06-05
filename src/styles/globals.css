@@ -5,31 +5,12 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Legacy DOM suppression while React shell owns a hub route.
- * Class is toggled by AppShell. Uses !important to beat legacy inline styles.
- * #top-header (Slice 4.2) and #welcome-screen (Slice 4.1) are no longer present
- * in index.html, so only the remaining legacy containers need suppressing. */
-body.react-shell-active #user-hub-screen,
-body.react-shell-active .app-layout {
-  display: none !important;
-}
-
-/* Legacy styles.css declares `.hidden { display: none !important }` globally.
- * That `!important` beats Tailwind's responsive `.sm:block` / `.sm:flex` rules
- * (no !important on Tailwind side), so any React element using the canonical
- * Tailwind pattern `hidden sm:block` stays hidden at every viewport.
- *
- * Neutralize it inside the React shell: re-declare the responsive variants
- * we use (and `.hidden` itself) with !important so they win against the
- * legacy global. Keep this list minimal — extend only as new variants are used. */
-#react-root .hidden { display: none !important; }
-@media (min-width: 640px) {
-  #react-root .sm\:block { display: block !important; }
-  #react-root .sm\:flex { display: flex !important; }
-  #react-root .sm\:inline { display: inline !important; }
-  #react-root .sm\:grid { display: grid !important; }
-  #react-root .sm\:hidden { display: none !important; }
-}
+/* (Slice 4.5) Two legacy workarounds were removed here when `styles.css` and the
+ * `.app-layout` DOM were deleted: the `body.react-shell-active` suppression rule
+ * (nothing left to hide) and the `#react-root .hidden`/`.sm:*` !important
+ * neutralizers (they only existed to beat `styles.css`'s global
+ * `.hidden { display:none !important }`, which no longer exists — Tailwind's
+ * normal responsive cascade now works unaided). */
 
 @font-face {
   font-family: 'Heebo';

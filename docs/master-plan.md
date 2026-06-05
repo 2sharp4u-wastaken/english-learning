@@ -1986,14 +1986,37 @@ Scope corrected after b1+b2 (the original wording referenced `gameLogic.js`/`app
 1. **Bridge window-shim removal (APP CODE) — DONE.** New `src/engine/instances.ts` holds the live `AppState`/`GameManager` singletons (`setEngineInstances` / `getApp` / `getGameManager`); `boot.ts → initEngine` calls `setEngineInstances`. **~24 bridges + 17 game pages** now read the engine via `getApp()`/`getGameManager()` (and `gameRegistry` imported directly from `src/engine/gameRegistry`) instead of `window.app`/`window.gameManager`/`window.gameRegistry`. **Critical catch:** every game *page* had an engine-readiness gate polling `w.gameManager`+`w.app` (else the game starts before the engine is built) — those had to switch to the accessors too, or games hang forever once the shim is gone. **Auth was already shim-free** (`src/bridge/auth.ts` owner) — untouched. The dead `window.appManager` reads (always `null`; never existed) were repointed at `getApp()`. **TEST/DEBUG seam retained (NOT the app shim):** `publishGlobals` (which published all 8 globals) was replaced by a small `exposeDebugHandles` that publishes ONLY `window.app` + `window.gameManager` — the Playwright characterization specs (`engine-bridge-contract`/`engine-selection`/`difficulty-gate`/`react-routes`/`smoke`) drive/inspect the live engine from the browser, where the engine class isn't importable, and reach the sub-managers as instance props of those two. The other 6 globals (`scoreManager`/`progressManager`/`courseManager`/`certificateManager`/`coinManager`/`gameRegistry`) are no longer published; the one direct `window.courseManager` test read was repointed to `window.app.courseManager`. **Repointing the specs off `window.*` and deleting this seam is Slice 4.6 test-modernization work.** **Still `window.*` (retired 4.5/4.6):** `vocabularyBank`/`gameData` (data/_loader.js), `speechManager` (speechSynthesis.js), `selectDistractors`/`refreshCustomWords`/`wordImageOverrides`/`nikudMap`/`_showNikud`. The dormant `gamification.js` reads `window.app`/`gameManager` but is never `init()`-ed and optional-chains → no-op.
 2. **Dead legacy DOM — DONE.** Deleted the 16 orphaned `#<game>-game .game-content` containers (~563 lines) from `index.html`; `<main class="game-area">` now holds only `#user-hub-screen` (legacy profile/courses, kept for 4.5). Index chunk: ~379 KB (well under the 500 KB bar). `bridge/vocabulary.ts`'s `cleanupLegacyDom` still `getElementById('vocabulary-game')` but is null-safe → harmless no-op (can drop in 4.5).
 
-### Slice 4.5: CSS Rationalization
+### Slice 4.5: CSS Rationalization — ✅ SHIPPED (2026-06-05)
 
-- delete `styles.css` entirely (all styles now in Tailwind + token system)
-  - **b2 dependency:** the React `LoginPage` (`src/features/auth/LoginPage.tsx`) currently **reuses legacy `styles.css` classes** (`.auth-modal`, `.auth-modal-content`, `.auth-header`, `.auth-icon`, `.auth-subtitle`, `.auth-screen`, `.user-selection-grid`, `.user-select-card`, `.user-select-avatar`, `.back-btn`, `.user-login-info`, `.login-avatar`, `.login-form`, `.form-group`, `.password-input*`, `.toggle-password`, `.password-hint`, `.auth-error`, `.auth-btn`). These must be ported to Tailwind/tokens (or moved into a scoped module) **before** `styles.css` is deleted, or the login screen loses all styling. (`purgecss.config.js` already scans `src/**/*.{ts,tsx}` so these survive a purge in the interim.)
-- delete `game-completion-styles.css`
-- remove font-awesome CDN link (replaced by Lucide) — **LoginPage already uses Lucide**, so FA removal is safe for it.
-- remove Poppins CDN link (replaced by Heebo/Fredoka)
-- audit for any remaining dead CSS
+Status: shipped. `index.html` is now React-only (favicon + confetti CDN + the root
+debug/data scripts + `#react-root`); all styling lives in `src/styles/*` + the one
+scoped `login.css`. Index chunk 495 KB → **379.79 KB** minified (no functional CSS
+left to ship globally). What landed:
+
+- **Deleted `styles.css` (180 KB) + `game-completion-styles.css` (16 KB).** The
+  completion CSS was already dead (engine `endGame` stopped injecting `.game-complete`
+  HTML in 4.4.b; React `RewardModal` owns completion). Also deleted the orphaned
+  `purgecss.config.js` (a standalone tool that purged only `styles.css`; never wired
+  into `npm run build`, which is just `tsc && vite build`).
+- **Ported the LoginPage `.auth-*` block** (~48 rules) verbatim from `styles.css` into
+  a new scoped `src/features/auth/login.css`, `import`-ed by `LoginPage.tsx`. The
+  classes are unique to LoginPage (no Tailwind/Preflight collision), so they stay as
+  plain semantic classes rather than being rewritten into utilities — pixel-identical.
+  Renamed the one shared keyframe `slideUp` → `auth-slide-up` to avoid a global name.
+- **Deleted the dead legacy `.app-layout` DOM** from `index.html` (user-hub/profile,
+  topics screen, certificate/exit/toast modals) + the dead chime-selector inline
+  script that drove `#chime-selector`. All were React-owned and permanently hidden by
+  `body.react-shell-active .app-layout { display:none }` — confirmed zero live JS refs.
+- **Retired the `react-shell-active` machinery** now that there's nothing to hide:
+  removed the globals.css suppression rule + the `classList.add('react-shell-active')`
+  calls in `AppShell.tsx` and `LoginPage.tsx`. Also removed the globals.css
+  `#react-root .hidden`/`.sm:*` `!important` neutralizers — they only existed to beat
+  `styles.css`'s global `.hidden { display:none !important }`, which is now gone, so
+  Tailwind's normal responsive cascade works unaided. (Kept the `#react-root`
+  full-viewport positioning in AppShell — that's real layout, not legacy suppression.)
+- **Removed the font-awesome + Poppins CDN `<link>`s** — FA `<i>` tags lived only in
+  the deleted legacy DOM (React uses Lucide); Poppins was referenced only inside the
+  deleted `styles.css` (React uses Heebo/Fredoka).
 
 ### Slice 4.6: Test Expansion
 

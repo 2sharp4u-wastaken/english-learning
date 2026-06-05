@@ -1,0 +1,302 @@
+/**
+ * Login screen styles — ported verbatim from the legacy `styles.css` `.auth-*`
+ * block in Slice 4.5 (CSS rationalization), when `styles.css` was deleted. These
+ * class names are unique to `LoginPage.tsx` (no Tailwind collision, no Preflight),
+ * so they stay as plain semantic classes scoped by import rather than being
+ * rewritten into utilities — keeping the look pixel-identical to the b2 version.
+ */
+
+.auth-modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background:
+    radial-gradient(circle at 20% 10%, rgba(99, 230, 198, 0.1), transparent 35%),
+    radial-gradient(circle at 80% 90%, rgba(104, 168, 255, 0.12), transparent 40%),
+    linear-gradient(135deg, #07101d 0%, #0c1728 100%);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+.auth-modal-content {
+  background: linear-gradient(180deg, rgba(20, 35, 58, 0.85), rgba(12, 23, 40, 0.85));
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 24px;
+  padding: 40px;
+  max-width: 460px;
+  width: 90%;
+  color: #f4f7fc;
+  box-shadow: 0 25px 60px rgba(1, 8, 20, 0.55);
+  animation: auth-slide-up 0.4s ease;
+}
+
+@keyframes auth-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.auth-header {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.auth-icon {
+  font-size: 2.8rem;
+  background: linear-gradient(135deg, #63e6c6, #68a8ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 14px;
+}
+
+.auth-header h2 {
+  margin: 0 0 6px 0;
+  font-size: 1.7rem;
+  color: #f4f7fc;
+  font-weight: 700;
+}
+
+.auth-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  color: #b4c2d8;
+  font-weight: 400;
+}
+
+.auth-screen {
+  min-height: 250px;
+}
+
+.auth-screen h3 {
+  text-align: center;
+  color: #d8e2f1;
+  margin: 0 0 22px 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+/* User Selection Grid */
+.user-selection-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.user-select-card {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 18px;
+  padding: 20px 16px;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  color: #f4f7fc;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.user-select-card:hover {
+  transform: translateY(-3px);
+  background: rgba(255, 255, 255, 0.07);
+  border-color: rgba(99, 230, 198, 0.35);
+  box-shadow: 0 14px 32px rgba(1, 8, 20, 0.45);
+}
+
+.user-select-card:active {
+  transform: translateY(-1px);
+}
+
+.user-select-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #63e6c6, #68a8ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.7rem;
+  font-weight: 700;
+  color: #07101d;
+  border: 2px solid rgba(255, 255, 255, 0.18);
+}
+
+/* Password Entry Screen */
+.back-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: #d8e2f1;
+  width: 38px;
+  height: 38px;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 18px;
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.back-btn:hover {
+  transform: translateX(4px);
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.user-login-info {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin-bottom: 26px;
+}
+
+.login-avatar {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #63e6c6, #68a8ff);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: #07101d;
+  border: 3px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 12px 28px rgba(104, 168, 255, 0.25);
+  margin-bottom: 14px;
+}
+
+.user-login-info h3 {
+  margin: 0;
+  font-size: 1.4rem;
+  color: #f4f7fc;
+  font-weight: 700;
+}
+
+/* Login Form */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #d8e2f1;
+  font-size: 0.9rem;
+}
+
+.password-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.password-input {
+  width: 100%;
+  padding: 12px 45px 12px 15px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 12px;
+  font-size: 1rem;
+  color: #f4f7fc;
+  transition: border-color 0.2s ease, background 0.2s ease;
+  font-family: inherit;
+}
+
+.password-input::placeholder {
+  color: rgba(180, 194, 216, 0.55);
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: #63e6c6;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.toggle-password {
+  position: absolute;
+  left: 10px;
+  background: none;
+  border: none;
+  color: #b4c2d8;
+  cursor: pointer;
+  padding: 5px 10px;
+  font-size: 1.05rem;
+  transition: color 0.2s ease;
+}
+
+.toggle-password:hover {
+  color: #63e6c6;
+}
+
+.password-hint {
+  font-size: 0.85rem;
+  color: #b4c2d8;
+  line-height: 1.5;
+  background: rgba(104, 168, 255, 0.08);
+  border: 1px solid rgba(104, 168, 255, 0.18);
+  padding: 10px 12px;
+  border-radius: 10px;
+  margin: 5px 0 0 0;
+}
+
+.auth-error {
+  background: rgba(255, 122, 102, 0.12);
+  border: 1px solid rgba(255, 122, 102, 0.35);
+  color: #ffb4a8;
+  padding: 12px;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  text-align: center;
+}
+
+.auth-btn {
+  background: linear-gradient(135deg, #63e6c6 0%, #68a8ff 100%);
+  color: #07101d;
+  border: none;
+  border-radius: 999px;
+  padding: 13px 20px;
+  font-size: 1.05rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, filter 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.auth-btn:hover {
+  transform: translateY(-2px);
+  filter: brightness(1.05);
+  box-shadow: 0 14px 32px rgba(104, 168, 255, 0.35);
+}
+
+.auth-btn:active {
+  transform: translateY(0);
+}

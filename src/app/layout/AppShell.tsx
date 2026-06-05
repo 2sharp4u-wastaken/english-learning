@@ -19,10 +19,10 @@ export function AppShell() {
     const reactRoot = document.getElementById('react-root')
     if (!reactRoot) return
 
-    // Legacy DOM suppression: toggle a class on body. CSS in globals.css
-    // hides #top-header / #welcome-screen / #user-hub-screen / .app-layout
-    // with !important. Class-based hiding survives the legacy
-    // top-header.js cssText overwrites; inline display:none did not.
+    // Make #react-root a full-viewport scroll layer with the app background.
+    // (The legacy-DOM `react-shell-active` suppression that used to ride along
+    // here was retired in Slice 4.5 when the legacy `.app-layout` markup +
+    // `styles.css` were deleted — there's nothing left to hide.)
 
     if (!isReactDriven) {
       reactRoot.style.position = ''
@@ -30,7 +30,6 @@ export function AppShell() {
       reactRoot.style.zIndex = ''
       reactRoot.style.overflowY = ''
       reactRoot.style.background = ''
-      document.body.classList.remove('react-shell-active')
       return
     }
 
@@ -39,7 +38,6 @@ export function AppShell() {
     reactRoot.style.zIndex = '20'
     reactRoot.style.overflowY = 'auto'
     reactRoot.style.background = 'var(--color-canvas)'
-    document.body.classList.add('react-shell-active')
 
     return () => {
       reactRoot.style.position = ''
@@ -47,7 +45,6 @@ export function AppShell() {
       reactRoot.style.zIndex = ''
       reactRoot.style.overflowY = ''
       reactRoot.style.background = ''
-      document.body.classList.remove('react-shell-active')
     }
   }, [isReactDriven])
 
