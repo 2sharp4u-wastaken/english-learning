@@ -96,7 +96,11 @@ export function getContinueTarget(): ContinueTarget | null {
   const dueCount: number = pm?.getLifecycleCounts ? pm.getLifecycleCounts().due : 0
   if (dueCount > 0) {
     const unlocks = progress.gameUnlocks ?? {}
-    const open = REVIEW_ROTATION.filter((id) => (unlocks as any)[id]?.unlocked)
+    // "Available" uses the SAME rule the home grid uses (`unlocked !== false`, so
+    // an absent entry counts as open) — not `?.unlocked` truthiness. This keeps the
+    // review-vs-Word-Journey decision aligned with what the cards show and removes a
+    // class of in-memory-vs-persisted gameUnlocks mismatch (FU-HOME-continue).
+    const open = REVIEW_ROTATION.filter((id) => (unlocks as any)[id]?.unlocked !== false)
     if (open.length > 0) {
       // Prefer a game other than last time so consecutive visits vary.
       const choices = open.length > 1 ? open.filter((id) => id !== lastReviewPick) : open

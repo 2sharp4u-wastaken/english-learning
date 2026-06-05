@@ -125,7 +125,9 @@ handlers were retired in **Slice 4.1**. React owns the home now:
 HomePage.tsx (React, route /#/home)
   ├─ useGameUnlocks() ──→ polls localStorage gameUnlocks every 500ms; locks card
   │                       when unlocks[id].unlocked === false (ABSENT = unlocked)
-  ├─ getContinueTarget() (bridge/games) ──→ continue-hero recommendation
+  ├─ useContinueTarget() ──→ continue-hero recommendation; recomputes on the
+  │                       `engine-ready` event (NOT a one-shot memo) so fresh-login
+  │                       and refresh agree on the target (FU-HOME-continue fix)
   ├─ useUserProgress() ──→ words-learned / streak
   └─ Profile is its own React route (/#/profile)
 ```

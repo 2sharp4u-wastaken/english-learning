@@ -341,6 +341,50 @@ test.describe('Home Screen', () => {
         await expect(page.locator('[data-testid="home-continue"]')).toBeVisible();
     });
 
+    // FU-HOME-continue: the hero "continue" CTA used to flip target between a
+    // fresh login and a plain refresh (the one-shot useMemo read the engine before
+    // it was ready → Word-Journey fallback; a warm reload read it ready → review).
+    // It now recomputes on `engine-ready`, so the decision must be identical across
+    // loads. A returning player with Due words (grandfathered learnedWords with old
+    // practice dates) and the review games unlocked should get the review nudge both
+    // times. We assert on `data-continue-label` (an attribute, so legacy nikud DOM
+    // injection can't mutate it like it would the visible text).
+    test('continue CTA target is stable across loads (FU-HOME-continue)', async ({ page }) => {
+        await setupFreshUser(page);
+        await injectProgress(page, {
+            learnedWords: makeLearnedWords(8),
+            gameUnlocks: {
+                'word-journey': { unlocked: true },
+                listening: { unlocked: true },
+                'picture-match': { unlocked: true },
+                'true-or-not': { unlocked: true },
+                reading: { unlocked: true },
+            },
+        });
+
+        await gotoReactRoute(page, '/home');
+        const firstLabel = await page
+            .locator('[data-testid="home-continue"]')
+            .getAttribute('data-continue-label');
+        // Due words → review nudge, not the Word-Journey fallback.
+        expect(firstLabel).toBe('תרגול מילים');
+
+        // Warm reload — re-establish the session first (it can expire on reload),
+        // then re-read: the decision must not flip.
+        await page.evaluate(({ userId }) => {
+            localStorage.setItem('currentSession', JSON.stringify({
+                userId, authenticated: true, loginTime: Date.now(), lastActivity: Date.now(),
+            }));
+        }, { userId: TEST_USER_ID });
+        await page.reload();
+        await page.waitForTimeout(1500);
+        await gotoReactRoute(page, '/home');
+        const secondLabel = await page
+            .locator('[data-testid="home-continue"]')
+            .getAttribute('data-continue-label');
+        expect(secondLabel).toBe(firstLabel);
+    });
+
     test('all expected game cards present', async ({ page }) => {
         await setupFreshUser(page);
         await gotoReactRoute(page, '/home');

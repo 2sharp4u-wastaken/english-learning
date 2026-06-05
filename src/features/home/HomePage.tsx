@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Lock, Play } from 'lucide-react'
-import { getContinueTarget, getGameCatalog, takePendingUnlocks } from '@/bridge/games'
+import { getGameCatalog, takePendingUnlocks } from '@/bridge/games'
 import { playEffect, type SoundEffect } from '@/bridge/feedback'
 import { speakHebrew } from '@/bridge/audio'
 import { NewlyUnlockedModal } from './components/NewlyUnlockedModal'
@@ -10,6 +10,7 @@ import { HeroSparkles } from './components/HeroSparkles'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useGameUnlocks } from '@/hooks/useGameUnlocks'
 import { useUserProgress } from '@/hooks/useUserProgress'
+import { useContinueTarget } from '@/hooks/useContinueTarget'
 import { cn } from '@/lib/cn'
 
 type TierId = 'learn' | 'practice' | 'challenge' | 'test'
@@ -68,7 +69,9 @@ export function HomePage() {
     })
   }, [])
 
-  const continueTarget = useMemo(() => getContinueTarget(), [])
+  // Reactive: recomputes when the engine signals readiness so a fresh login and a
+  // warm refresh agree on the target (FU-HOME-continue). NOT a one-shot useMemo.
+  const continueTarget = useContinueTarget()
 
   const nextUnlock = useMemo(
     () => catalog.find((game) => unlocks[game.id]?.unlocked === false) ?? null,
@@ -159,6 +162,7 @@ export function HomePage() {
                 type="button"
                 onClick={() => navigate(`/game/${continueGameId}`)}
                 data-testid="home-continue"
+                data-continue-label={continueLabel}
                 className="group flex items-center gap-2 rounded-full bg-learn px-4 py-2 text-sm font-bold text-slate-950 shadow-glow transition-transform hover:scale-105 active:scale-95 sm:text-base"
               >
                 <span className="text-lg" aria-hidden>{continueIcon}</span>
