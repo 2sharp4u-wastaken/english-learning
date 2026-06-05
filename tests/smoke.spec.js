@@ -136,13 +136,12 @@ function makeAbcMastery(masteryLevel, letterCount = 26) {
 test.describe('Game Gating', () => {
     test('fresh user: only ungated games are accessible', async ({ page }) => {
         await setupFreshUser(page);
-        // A fresh user's default gameUnlocks live only in app.js memory until the
-        // first save; the React home reads *persisted* progress via the bridge.
-        // Flush the seeded defaults so the home renders the real gating map.
-        await page.evaluate(() => window.app?.saveUserProgress?.());
+        // FU-4.1: no pre-flush needed. The home grid (`useGameUnlocks`) recomputes
+        // on `engine-ready`, so a fresh user's default gating renders correctly from
+        // the live engine's in-memory progress without a prior saveUserProgress().
         await gotoReactRoute(page, '/home');
 
-        // Ungated games are unlocked (app.js seeds these as unlocked:true)
+        // Ungated games are unlocked (engine seeds these as unlocked:true)
         await expect(homeCard(page, 'word-journey')).toHaveAttribute('data-locked', 'false');
         await expect(homeCard(page, 'abc')).toHaveAttribute('data-locked', 'false');
         await expect(homeCard(page, 'memory')).toHaveAttribute('data-locked', 'false');

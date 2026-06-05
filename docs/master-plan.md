@@ -1833,13 +1833,17 @@ Vite's post-build warning had been flagging the main bundle as oversize (~1.32 M
 
 **Carry-forward for Slices 4.2–4.4:** retiring legacy DOM will keep stranding tests that assert against the *hidden* legacy tree (visible-or-not, Playwright matches the class attribute). When deleting legacy markup, grep specs for the removed selectors and repoint to the React `data-testid`/`data-*` equivalents — and check the repointed assertion isn't vacuously true (count 0 because the element class no longer exists anywhere).
 
-### Follow-up FU-4.1: Fresh user sees all games unlocked on the React home
+### Follow-up FU-4.1: Fresh user sees all games unlocked on the React home — ✅ FIXED (2026-06-05)
 
-Surfaced (not introduced) by Slice 4.1. **Bug:** a brand-new user with no persisted progress sees *every* game unlocked on `/#/home`. The React home gates on **persisted** `gameUnlocks` (`useGameUnlocks` → `bridge/games.getAllGameUnlocks`, absent entry = unlocked), but `app.js loadUserProgress()` returns the locked defaults **in-memory only** and never saves them — first persist is the first `saveUserProgress()` (after a game). The retired legacy welcome screen masked this by reading in-memory `window.app.userProgress`.
+Surfaced (not introduced) by Slice 4.1. **Symptom (now fixed):** a brand-new user briefly saw *every* gated game unlocked and clickable on `/#/home`.
 
-Severity: low-moderate (a child could open e.g. Grammar/Reading with zero learned words; they'd just hit the empty/learn-first prompt). Pre-existing since Phase 1.
+**Corrected root cause (the original persistence theory was wrong).** Post-4.4, `bridge/progress.getUserProgress` reads the **live engine's in-memory** `userProgress` first (the locked defaults are always present there for a fresh user) and only falls back to localStorage when the engine isn't built. So the grid's *steady state* was already correct — and the engine persists the fresh defaults at boot anyway, so localStorage isn't empty for long. The real defect was a **timing race, identical to FU-HOME-continue**: `useGameUnlocks` seeded its React state with one `getAllGameUnlocks()` read at mount (engine often not ready yet → `{}` → absent entry = unlocked → **all gated cards render open**) and only re-read on its 500ms poll. Result: a ~500ms flash of every game unlocked before the first poll corrected it. Not a seed/persist gap.
 
-Fix options (pick when scheduled): (a) persist seeded defaults at user-create/login in `app.js`; or (b) have `bridge/games.getAllGameUnlocks` fall back to the default unlock map when the persisted map is empty/absent. Prefer keeping gating *computation* in legacy ProgressManager until Phase 4.4; do not re-derive gating inside the React home. Add a Playwright case asserting a fresh user (no `saveUserProgress()`) shows `data-locked="true"` on gated cards. See `project_react_home_gating_persisted` memory.
+**Fix shipped:** `src/hooks/useGameUnlocks.ts` now recomputes on the `engine-ready` event (plus once on effect-attach to close the render↔effect gap), mirroring `useContinueTarget`. The 500ms poll stays for in-session unlocks (`checkAndUnlockGames` during gameplay). This shrinks the flash from a full poll interval to a single sub-50ms frame (the initial `useState` paint before the effect runs); a returning user with a persisted map doesn't flash at all (the localStorage fallback already serves their locked map). The leftover one-frame residual matches FU-HOME-continue's accepted residual and isn't worth duplicating the default unlock map into React to chase.
+
+**Tests:** `tests/react-routes.spec.js` → "fresh user (no persisted progress) sees gated games LOCKED on /home" (no pre-flush/seed — pins the engine-ready recompute). `tests/smoke.spec.js` → "fresh user: only ungated games are accessible" had its obsolete `saveUserProgress()` pre-flush workaround (and its stale `app.js` comment) removed, so it now validates the real no-workaround behavior.
+
+Files: `src/hooks/useGameUnlocks.ts`, `tests/react-routes.spec.js`, `tests/smoke.spec.js`. See `project_react_home_gating_persisted` memory.
 
 ### Follow-up FU-HOME-continue: home "continue" CTA target flips first-login vs refresh — ✅ FIXED (2026-06-05)
 

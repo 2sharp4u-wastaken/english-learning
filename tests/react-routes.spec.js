@@ -137,6 +137,43 @@ test.describe('Slice 1.1: Home', () => {
     const critical = filterCritical(errors);
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
   });
+
+  // FU-4.1: a brand-new user (no persisted progress key) must see gated games
+  // LOCKED on the grid. The grid reads unlock state from the live engine; before
+  // the engine boots, an absent gameUnlocks map made every gated card render OPEN
+  // and clickable. `useGameUnlocks` now recomputes on `engine-ready` (mirrors the
+  // FU-HOME-continue fix) so the lock state is correct once the engine is up.
+  test('fresh user (no persisted progress) sees gated games LOCKED on /home', async ({ page }) => {
+    const FRESH = 'freshfu41';
+    await page.goto('/');
+    await page.evaluate((userId) => {
+      localStorage.setItem('users', JSON.stringify({
+        [userId]: {
+          id: userId, name: 'Fresh', displayName: 'Fresh', initial: 'F',
+          password: null, created: new Date().toISOString(), lastLogin: null,
+        },
+      }));
+      localStorage.setItem('currentUser', userId);
+      localStorage.setItem('currentSession', JSON.stringify({
+        userId, userName: 'Fresh', displayName: 'Fresh', initial: 'F',
+        authenticated: true, loginTime: Date.now(), lastActivity: Date.now(),
+      }));
+      // Deliberately DO NOT seed v2_userProgress_<id> — this is the fresh-user case.
+    }, FRESH);
+    await page.reload();
+    await page.waitForTimeout(2000);
+    await gotoHash(page, '/home');
+
+    // Gated-by-default games render locked; always-open word-journey stays open.
+    for (const g of ['listening', 'vocabulary', 'pronunciation']) {
+      await expect(
+        page.locator(`[data-testid="home-game-card"][data-game="${g}"]`),
+        `gated game ${g} should be locked for a fresh user`,
+      ).toHaveAttribute('data-locked', 'true');
+    }
+    await expect(page.locator('[data-testid="home-game-card"][data-game="word-journey"]'))
+      .toHaveAttribute('data-locked', 'false');
+  });
 });
 
 // ─── Slice 1.2: Nav ─────────────────────────────────────────────────────────
