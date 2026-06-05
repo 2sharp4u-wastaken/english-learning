@@ -229,6 +229,47 @@ test('ProgressManager.calculateMastery — exact masteryLevel values', async ({ 
   });
 });
 
+// ─── GameManager course scoping (baseline fix #1) ────────────────────────────
+
+const GM = '/src/engine/gameManager.ts';
+
+test('getScopedQuestionPool — course topic stays playable when its category is unchecked', async ({ page }) => {
+  const r = await run(page, GM, (ns) => {
+    // Full converted bank (what window.gameData exposes): one animal, one color.
+    const fullVocab = [
+      { word: 'cat', translation: 'חתול', category: 'animals', options: [] },
+      { word: 'red', translation: 'אדום', category: 'colors', options: [] },
+    ];
+    const gm = new ns.GameManager({
+      gameDataProvider: () => ({ vocabulary: fullVocab }),
+      vocabularyBank: () => fullVocab,
+    });
+
+    // Settings uncheck "colors" → loadGameData filters it out of this.gameData.
+    gm.applySettings({ ...gm.getDefaultSettings(), selectedCategories: ['animals'] });
+    gm.loadGameData();
+    const filteredKeys = gm.gameData.vocabulary.map((w) => w.word);
+
+    // Launch the "colors" topic's vocabulary activity (color word is the curriculum).
+    gm.currentTopicId = 't1';
+    gm.currentTopicActivity = 'vocabulary';
+    gm.currentTopicWords = [{ word: 'red', category: 'colors' }];
+    const scoped = gm.getScopedQuestionPool('vocabulary').map((w) => w.word);
+
+    // Outside course mode the category filter still applies (no regression).
+    gm.currentTopicActivity = null;
+    const unscoped = gm.getScopedQuestionPool('vocabulary').map((w) => w.word);
+
+    return { filteredKeys, scoped, unscoped };
+  });
+  // Settings filtered "red" out of the plain pool…
+  expect(r.filteredKeys).toEqual(['cat']);
+  // …but the launched topic still serves its color word (was empty → bug).
+  expect(r.scoped).toEqual(['red']);
+  // Non-course play is unchanged: filtered pool only.
+  expect(r.unscoped).toEqual(['cat']);
+});
+
 // ─── CourseManager unlock requirements ───────────────────────────────────────
 
 const COURSE = '/src/engine/courses.ts';

@@ -712,9 +712,15 @@ CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|pictu
        └─ begin<Game>Session(): isCourseMode()===true
             ├─ skip mid-game resume + skip learned-word filter
             └─ pool = ONLY topic words. vocab/listening/picture-match via
-               getScopedQuestionPool() (gameLogic.js:1886); true-or-not builds from
+               getScopedQuestionPool() (src/engine/gameManager.ts); true-or-not builds from
                getActiveTopicWords() directly (bypasses getScopedQuestionPool and must
                NOT fall back to allWords — that would un-scope a sparse topic)
+               • CATEGORY-INDEPENDENT (baseline fix #1, 2026-06-05): in course mode
+                 getScopedQuestionPool sources from the FULL converted bank
+                 (gameDataProvider()[gameType]), NOT the category-/difficulty-filtered
+                 this.gameData. So unchecking a topic's category in Settings no longer
+                 empties its pool — the launched topic IS the curriculum. Non-course
+                 play still respects the Settings filter (currentTopicActivity guard).
   └─ finish: finish<Game>Session() → gameManager.endGame()
        └─ (gameLogic.js:3404) app.updateProgress(%, getProgressUpdateContext())
             └─ (app.js:1641) _trackCourseActivityFromGame

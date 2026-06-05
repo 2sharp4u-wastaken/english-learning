@@ -388,7 +388,15 @@ export class GameManager {
       return basePool
     }
 
-    return basePool.filter((word) => topicKeys.has(`${word.word?.toLowerCase()}_${word.category}`))
+    // Course mode: scope from the FULL converted bank, not the category-/difficulty-
+    // filtered `this.gameData`. A topic the child launched must stay playable even
+    // when its category is unchecked in Settings — otherwise the filtered pool is
+    // empty and the topic falsely shows a "learn-first" prompt while still unlocked
+    // and holding earned mastery. The topic itself defines the curriculum, so it
+    // bypasses both filters. Keep the converted question objects (with distractor
+    // options) by sourcing from the provider, not from raw words. (Baseline fix #1.)
+    const fullPool = this.opts.gameDataProvider?.()?.[gameType] ?? basePool
+    return fullPool.filter((word) => topicKeys.has(`${word.word?.toLowerCase()}_${word.category}`))
   }
 
   getPracticeWords(_options: { refreshData?: boolean } = {}): WordObj[] {
