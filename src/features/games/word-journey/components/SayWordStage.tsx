@@ -10,6 +10,7 @@ import { useNikud } from '@/bridge/nikud'
 import {
   isCurrentlyRecording,
   isSpeechRecognitionAvailable,
+  normalizeSpokenNumerals,
   startPronunciationRecording,
   stopPronunciationRecording,
 } from '@/bridge/pronunciation'
@@ -101,12 +102,16 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
       return
     }
     setRecordingUrl(await mic.stop())
-    const said = (result.transcript || '').toLowerCase().trim()
-    const expected = word.word.toLowerCase()
+    // Normalize numerals: the recognizer transcribes spoken numbers as digits
+    // ("nineteen" → "19"), which would never match the target word otherwise.
+    const said = normalizeSpokenNumerals((result.transcript || '').toLowerCase().trim())
+    const expected = normalizeSpokenNumerals(word.word.toLowerCase())
     const correct =
       said.length > 0 &&
       (said.includes(expected) || expected.includes(said) || levenshtein(said, expected) <= 2)
-    setTranscript(result.transcript || '(לא זוהה)')
+    // Show the numeral-normalized form ("19" → "nineteen") so the "אמרת" line
+    // reads consistently with how the answer was scored.
+    setTranscript(said.length > 0 ? said : '(לא זוהה)')
     setIsCorrect(correct)
     setPhase('answered')
     const fb = getGameFeedback('word-journey', correct ? 'correct' : 'incorrect')
