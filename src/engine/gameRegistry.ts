@@ -46,6 +46,11 @@ const ENTRIES: Array<Pick<GameRegistryEntry, 'type' | 'displayName' | 'displayNa
   { type: 'picture-match', displayName: 'Picture Match', displayNameHebrew: 'מילה לתמונה', icon: '🖼️' },
   { type: 'true-or-not', displayName: 'True or Not', displayNameHebrew: 'נכון או לא?', icon: '✅' },
   { type: 'story-time', displayName: 'Story Time', displayNameHebrew: 'זמן סיפור', icon: '📖' },
+  // Phase 5 (Slice 5.3) expression games — dedicated "ביטויים" surface.
+  { type: 'expr-meaning', displayName: 'Expression Meaning', displayNameHebrew: 'התאמת משמעות', icon: '🧩' },
+  { type: 'expr-truefalse', displayName: 'Expression True or Not', displayNameHebrew: 'נכון או לא?', icon: '✅' },
+  { type: 'expr-blank', displayName: 'Complete the Expression', displayNameHebrew: 'השלימו את הביטוי', icon: '✍️' },
+  { type: 'expr-build', displayName: 'Build the Expression', displayNameHebrew: 'בנו את הביטוי', icon: '🧱' },
 ]
 
 const GAMES: GameRegistryEntry[] = ENTRIES.map((e) => ({ ...e, config: { ...DEFAULT_CONFIG } }))

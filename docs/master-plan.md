@@ -2216,31 +2216,67 @@ Acceptance criteria:
 - UI labels each register clearly, with example phrases so parents know what they are enabling
 - disabling a register while a game is in progress does not crash the session
 
-### Slice 5.3: Expression Games — Tier 1 (Adapt Existing)
+### Slice 5.3: Expression Games — SHIPPED (2026-06-06)
 
-Status: planned — depends on Slice 5.1
+Status: **SHIPPED**. Four dedicated expression games on a new Home "ביטויים" tier,
+gated at 50 derived-learned vocabulary words.
 
-Adapt games that work naturally with phrases:
+**Two deliberate deviations from the original plan (decided with the user up front):**
 
-- **Listening** — hear phrase, pick Hebrew meaning from 4 options
-- **Fill Blanks** — "Don't _____ on your dreams" → pick the idiom that fits
-- **True or Not** — "'give up' means לוותר?" → yes/no
-- **Reading** — read phrase + example sentence, pick meaning
+1. **Dedicated surface, not a `contentSource` flag.** The original plan threaded a
+   `contentSource: 'vocabulary' | 'expressions'` flag through the existing Listening /
+   Fill-Blanks / True-or-Not bridges. Those bridges are tightly coupled to the legacy
+   `gameManager` word-pool selection, `learnedWords` gating, and `wordMastery` recording —
+   retrofitting them is heavy surgery for little reuse. Instead the games are a
+   **self-contained surface** (mirroring Word Journey / Memory): one parameterized page
+   reading `getExpressionBank()`, no gameManager word-pool plumbing. Reading was dropped
+   (its game is letter-spelling, a poor fit) and its "read + pick meaning" intent folded
+   into the Meaning game (phrase shown as text **and** audio).
+2. **"Build the Phrase" pulled forward from 5.4.** The 4th game arranges the *words* of an
+   idiom (not its letters — tedious for multi-word phrases). This partially delivers 5.4's
+   "Build the Phrase"; 5.4 keeps Meaning Match + Context Swap.
 
-Each game receives a `contentSource: 'vocabulary' | 'expressions'` flag. Default source depends on unlock tier — expressions unlock only after 50 learned vocabulary words.
+The four games (one page, `mode` per game id):
 
-Files:
+- **`expr-meaning` (התאמת משמעות)** — phrase (text + 🔊) → pick the Hebrew meaning (4 options)
+- **`expr-truefalse` (נכון או לא?)** — "‹phrase› = ‹meaning›?" → כן/לא (~50/50 real/swapped)
+- **`expr-blank` (השלימו את הביטוי)** — example with the phrase blanked → pick the idiom (4, with Hebrew gloss sublabels)
+- **`expr-build` (בנו את הביטוי)** — scrambled phrase words → tap into order (reuses the scramble chip idea, word-granularity)
 
-- extend existing game implementations (legacy or migrated, depending on Phase 3 state)
-- `src/features/games/shared/` — primitives updated to accept `Expression` questions
-- `src/bridge/progress.ts` — new `expressionMastery` key, tracked separately from `wordMastery`
+All are tap/choose-based — **no microphone** — so fully Playwright-testable (no speech stub).
 
-Acceptance criteria:
+Files (actuals):
 
-- at least 3 existing games play cleanly with expression content
-- scoring and mastery tracked separately (`expressionMastery` keyed by phrase)
-- RTL layout correct for multi-word English phrases with Hebrew meaning
-- Playwright coverage for each adapted game
+- `src/bridge/expressionGame.ts` — self-contained engine: `getExpressionUnlock()` (the
+  50-word gate, single source of truth), `buildExpressionSession(mode)` +
+  `buildQuestions`/`buildOne` per-mode builders, `recordExpressionAnswer`,
+  `finishExpressionSession`, `abortExpressionSession`.
+- `src/features/games/expressions/` — `ExpressionGamePage.tsx` (parameterized by `mode`,
+  reuses GameScreenShell/MediaPromptCard/AnswerGrid/FeedbackBanner/RewardModal/ExitConfirm),
+  `PhraseBuilder.tsx` (tap-only word-order surface), `pages.tsx` (4 thin mode wrappers, one chunk).
+- `src/engine/progress.ts` — `expressionMastery: Record<string, ExprStats>` (keyed by phrase,
+  separate from `wordMastery`) + `recordExpressionAttempt` (mastered at 3 correct) +
+  `getMasteredExpressionCount`; serialized in `getProgressData`/`restoreProgress`.
+- `src/engine/gameManager.ts` — `recordExpressionAttempt` (persist-immediately, mirrors
+  `recordWordAttempt`). `src/engine/appState.ts` — `expressionMastery: {}` in default progress.
+  `src/engine/gameRegistry.ts` — 4 catalog entries.
+- `src/bridge/progress.ts` — `getExpressionMastery()` / `getMasteredExpressionCount()` (feed 5.5).
+- `src/features/games/reactGames.ts` + `GameHostPage.tsx` — register the 4 ids.
+- `src/features/home/HomePage.tsx` + `src/hooks/useExpressionUnlock.ts` — new `expressions`
+  tier; the tier's lock state comes from the expression gate (NOT the per-game `gameUnlocks`
+  map, which has no `expr-*` entries → would read as unlocked).
+
+Tests: `src/bridge/__tests__/expressionGame.test.ts` (11 Vitest — gate, per-mode builders,
+not-enough, mastery) + `tests/expression-games.spec.js` (6 Playwright — tier surface/gate +
+each of the 4 games renders an interactive question and takes an answer).
+
+Acceptance criteria — met: 4 games (≥3) play with expression content; mastery is separate
+(`expressionMastery` keyed by phrase); RTL correct (Hebrew options/meanings RTL, English
+phrase + builder chips `dir="ltr"`); Playwright covers all 4.
+
+**Next:** 5.4 (Meaning Match + Context Swap; Build-the-Phrase already partly done) or 5.5
+(surface `expressionMastery` in Profile/Stats + a "אלוף ביטויים" certificate — the
+`getExpressionMastery`/`getMasteredExpressionCount` accessors are already in place).
 
 ### Slice 5.4: Expression-Native Games — Tier 2 (New)
 

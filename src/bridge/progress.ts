@@ -110,6 +110,28 @@ export function getWordMastery(): WordStats[] {
 }
 
 /**
+ * Phase 5 expression mastery, keyed by phrase (Slice 5.3). Separate from
+ * wordMastery — feeds the expression games and (later, Slice 5.5) the Profile /
+ * Stats expression surfaces. Shape: { phrase, seen, correct, mastered, lastSeen }.
+ */
+export function getExpressionMastery(): Array<{
+  phrase: string
+  seen: number
+  correct: number
+  mastered: boolean
+  lastSeen: string | null
+}> {
+  const p = getUserProgress() as { expressionMastery?: Record<string, any> } | null
+  if (!p?.expressionMastery) return []
+  return Object.values(p.expressionMastery)
+}
+
+/** Count of phrases the child has mastered (≥3 correct). */
+export function getMasteredExpressionCount(): number {
+  return getExpressionMastery().filter((e) => e.mastered).length
+}
+
+/**
  * Get all earned certificates.
  */
 export function getCertificates(): Certificate[] {

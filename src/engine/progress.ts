@@ -40,6 +40,20 @@ export interface LearnedWordEntry {
   grandfathered?: boolean
 }
 
+/**
+ * Per-phrase mastery for Phase 5 expression games (Slice 5.3). Deliberately
+ * lighter than WordStats — expressions are a side-channel, not part of the
+ * New/Learning/Learned vocabulary lifecycle, and are keyed by `phrase` (NOT
+ * `word_category`). Tracked separately so vocabulary mastery is never polluted.
+ */
+export interface ExprStats {
+  phrase: string
+  seen: number
+  correct: number
+  mastered: boolean
+  lastSeen: string | null
+}
+
 interface Thresholds {
   mastered: number
   learning: number
@@ -50,6 +64,8 @@ interface Thresholds {
 
 export class ProgressManager {
   wordMastery: Record<string, WordStats> = {}
+  /** Phase 5 expression mastery, keyed by phrase (see ExprStats). */
+  expressionMastery: Record<string, ExprStats> = {}
   topicProgress: Record<string, any> = {}
   courseProgress: Record<string, any> = {}
   certificates: any[] = []
@@ -70,6 +86,7 @@ export class ProgressManager {
   initialize(userProgress: any): void {
     if (!userProgress) return
     this.wordMastery = userProgress.wordMastery || {}
+    this.expressionMastery = userProgress.expressionMastery || {}
     this.topicProgress = userProgress.topicProgress || {}
     this.courseProgress = userProgress.courses || {}
     this.certificates = userProgress.certificates || []
@@ -170,6 +187,35 @@ export class ProgressManager {
       reachedLearned: false,
       lapses: 0,
     }
+  }
+
+  // ── Expression mastery (Phase 5, keyed by phrase) ──────────────────────────
+
+  /**
+   * Record one expression-game attempt. Lightweight vs recordWordAttempt: bump
+   * seen/correct, flag `mastered` once the child has answered it correctly
+   * `consecutiveForMastery`+1 times cumulatively (3). Returns the updated stats.
+   */
+  recordExpressionAttempt(phrase: string, isCorrect: boolean): ExprStats {
+    const key = phrase.trim().toLowerCase()
+    const stats: ExprStats = this.expressionMastery[key] || {
+      phrase,
+      seen: 0,
+      correct: 0,
+      mastered: false,
+      lastSeen: null,
+    }
+    stats.seen++
+    if (isCorrect) stats.correct++
+    if (stats.correct >= 3) stats.mastered = true
+    stats.lastSeen = new Date().toISOString()
+    this.expressionMastery[key] = stats
+    return stats
+  }
+
+  /** Count of phrases that have reached the mastery threshold. */
+  getMasteredExpressionCount(): number {
+    return Object.values(this.expressionMastery).filter((s) => s.mastered).length
   }
 
   calculateMastery(stats: Partial<WordStats> | null): number {
@@ -646,6 +692,7 @@ export class ProgressManager {
   getProgressData() {
     return {
       wordMastery: { ...this.wordMastery },
+      expressionMastery: { ...this.expressionMastery },
       topicProgress: { ...this.topicProgress },
       courses: { ...this.courseProgress },
       certificates: [...this.certificates],
@@ -657,6 +704,7 @@ export class ProgressManager {
 
   restoreProgress(data: any): void {
     if (data.wordMastery) this.wordMastery = { ...data.wordMastery }
+    if (data.expressionMastery) this.expressionMastery = { ...data.expressionMastery }
     if (data.topicProgress) this.topicProgress = { ...data.topicProgress }
     if (data.courses) this.courseProgress = { ...data.courses }
     if (data.certificates) this.certificates = [...data.certificates]

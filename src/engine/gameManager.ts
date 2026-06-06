@@ -325,6 +325,24 @@ export class GameManager {
     }
   }
 
+  /**
+   * Phase 5 (Slice 5.3): record one expression-game attempt, keyed by phrase.
+   * Mirrors recordWordAttempt's persist-immediately pattern but writes to the
+   * separate `expressionMastery` map so vocabulary mastery is untouched.
+   */
+  recordExpressionAttempt(phrase: string, isCorrect: boolean): void {
+    if (!this.progressManager) {
+      console.warn('Cannot record expression attempt: ProgressManager not initialized')
+      return
+    }
+    this.progressManager.recordExpressionAttempt(phrase, isCorrect)
+    const app = this.app()
+    if (app?.userProgress) {
+      app.userProgress.expressionMastery = this.progressManager.expressionMastery
+      app.saveUserProgress?.()
+    }
+  }
+
   // ── Pool scoping + difficulty gate ─────────────────────────────────────────
 
   applyDifficultyGate(items: WordObj[], gameType: string): WordObj[] {

@@ -249,6 +249,7 @@ export class AppState {
       lastPlayDate: null,
       totalCorrectAnswers: 0,
       wordMastery: {},
+      expressionMastery: {},
       lastSessionWordKeys: {},
 
       // Course system (v3)

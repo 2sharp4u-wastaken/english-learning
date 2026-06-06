@@ -11,9 +11,10 @@ import { useAuthSession } from '@/hooks/useAuthSession'
 import { useGameUnlocks } from '@/hooks/useGameUnlocks'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useContinueTarget } from '@/hooks/useContinueTarget'
+import { useExpressionUnlock } from '@/hooks/useExpressionUnlock'
 import { cn } from '@/lib/cn'
 
-type TierId = 'learn' | 'practice' | 'challenge' | 'test'
+type TierId = 'learn' | 'practice' | 'challenge' | 'test' | 'expressions'
 
 interface GameCardMeta {
   id: string
@@ -42,6 +43,11 @@ const GAME_ORDER: GameCardMeta[] = [
   { id: 'scramble', tier: 'challenge', fallbackIcon: '🔀', fallbackName: 'סידור משפטים', description: 'מסדרים מילים לסדר נכון ומשמעותי.' },
   { id: 'grammar', tier: 'challenge', fallbackIcon: '✏️', fallbackName: 'תרגול דקדוק', description: 'מעמיקים בדקדוק אחרי בסיס רחב יותר.' },
   { id: 'vocabulary', tier: 'test', fallbackIcon: '📝', fallbackName: 'מבחן מילים', description: 'בודקים כמה מהמילים כבר יושבות חזק.' },
+  // Phase 5 (Slice 5.3) — dedicated expression games, gated at 50 learned words.
+  { id: 'expr-meaning', tier: 'expressions', fallbackIcon: '🧩', fallbackName: 'התאמת משמעות', description: 'שומעים ביטוי ובוחרים את הפירוש הנכון.' },
+  { id: 'expr-truefalse', tier: 'expressions', fallbackIcon: '✅', fallbackName: 'נכון או לא?', description: 'האם הפירוש של הביטוי נכון? כן או לא.' },
+  { id: 'expr-blank', tier: 'expressions', fallbackIcon: '✍️', fallbackName: 'השלימו את הביטוי', description: 'בוחרים את הביטוי שמשלים את המשפט.' },
+  { id: 'expr-build', tier: 'expressions', fallbackIcon: '🧱', fallbackName: 'בנו את הביטוי', description: 'מסדרים את המילים לפי הפירוש בעברית.' },
 ]
 
 const TIER_META: Record<TierId, { title: string; emoji: string; badge: string; accent: string }> = {
@@ -49,6 +55,7 @@ const TIER_META: Record<TierId, { title: string; emoji: string; badge: string; a
   practice: { title: 'מתרגלים יחד', emoji: '🎯', badge: 'נפתח תוך כדי משחק', accent: 'text-practice' },
   challenge: { title: 'אתגרים מגניבים', emoji: '🚀', badge: 'למי שכבר התקדם', accent: 'text-challenge' },
   test: { title: 'בודקים מה ידעתי', emoji: '🏆', badge: 'מבחן ידע', accent: 'text-test' },
+  expressions: { title: 'ביטויים', emoji: '💬', badge: 'נפתח אחרי 50 מילים', accent: 'text-challenge' },
 }
 
 export function HomePage() {
@@ -56,6 +63,17 @@ export function HomePage() {
   const { displayName } = useAuthSession()
   const summary = useUserProgress()
   const unlocks = useGameUnlocks()
+  const exprUnlock = useExpressionUnlock()
+
+  // Expression games are gated by the 50-learned-words expression gate, NOT the
+  // per-game `unlocks` map (which has no expr-* entries → would read as unlocked).
+  const lockInfo = (game: { id: string; tier: TierId }) =>
+    game.tier === 'expressions'
+      ? { locked: !exprUnlock.unlocked, requirement: `${exprUnlock.needed} מילים שנלמדו` }
+      : {
+          locked: unlocks[game.id]?.unlocked === false,
+          requirement: unlocks[game.id]?.requirement ?? undefined,
+        }
 
   const catalog = useMemo(() => {
     const byId = new Map(getGameCatalog().map((game) => [game.type, game]))
@@ -183,7 +201,7 @@ export function HomePage() {
 
       {/* ── Game tiers: kept as the guidance structure, lighter presentation ── */}
       {gamesByTier.map(({ tier, meta, games }) => {
-        const openCount = games.filter((game) => unlocks[game.id]?.unlocked !== false).length
+        const openCount = games.filter((game) => !lockInfo(game).locked).length
         return (
           <section key={tier} data-testid={`home-tier-${tier}`} className="space-y-3">
             <div className="flex items-center justify-between">
@@ -198,7 +216,7 @@ export function HomePage() {
 
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
               {games.map((game) => {
-                const isLocked = unlocks[game.id]?.unlocked === false
+                const { locked: isLocked, requirement } = lockInfo(game)
                 return (
                   <button
                     key={game.id}
@@ -208,7 +226,7 @@ export function HomePage() {
                     data-locked={isLocked ? 'true' : 'false'}
                     disabled={isLocked}
                     onClick={() => navigate(`/game/${game.id}`)}
-                    title={isLocked ? unlocks[game.id]?.requirement ?? undefined : game.description}
+                    title={isLocked ? requirement : game.description}
                     className={cn(
                       'group relative flex flex-col items-center gap-2 rounded-2xl border p-4 text-center shadow-panel transition-transform',
                       isLocked
@@ -234,7 +252,7 @@ export function HomePage() {
                         className="flex items-center gap-1 text-[0.7rem] leading-tight text-muted"
                       >
                         <Lock size={11} />
-                        {unlocks[game.id]?.requirement ?? 'נפתח בקרוב'}
+                        {requirement ?? 'נפתח בקרוב'}
                       </span>
                     ) : null}
                   </button>

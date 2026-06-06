@@ -19,10 +19,11 @@ describe('AppState.getDefaultProgress — v4 schema contract', () => {
 
     expect(Object.keys(p).sort()).toEqual(
       [
-        'bestScores', 'certificates', 'coinHistory', 'coins', 'courses', 'gameUnlocks',
-        'hasPlayedBefore', 'lastLoginDate', 'lastPlayDate', 'lastSessionWordKeys', 'learnedWords',
-        'streakDays', 'studentName', 'topicProgress', 'totalCorrectAnswers', 'totalGamesPlayed',
-        'totalLearningTimeMs', 'totalPoints', 'totalCoinsEarned', 'version', 'wordJourneyProgress', 'wordMastery',
+        'bestScores', 'certificates', 'coinHistory', 'coins', 'courses', 'expressionMastery',
+        'gameUnlocks', 'hasPlayedBefore', 'lastLoginDate', 'lastPlayDate', 'lastSessionWordKeys',
+        'learnedWords', 'streakDays', 'studentName', 'topicProgress', 'totalCorrectAnswers',
+        'totalGamesPlayed', 'totalLearningTimeMs', 'totalPoints', 'totalCoinsEarned', 'version',
+        'wordJourneyProgress', 'wordMastery',
       ].sort(),
     )
     expect(p.version).toBe(4)

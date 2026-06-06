@@ -68,6 +68,19 @@ const REACT_GAMES: Record<string, ComponentType> = {
   phonics: lazy(() =>
     import('./phonics/PhonicsGamePage').then((m) => ({ default: m.PhonicsGamePage })),
   ),
+  // Phase 5 (Slice 5.3) expression games — all share one chunk via ./expressions/pages.
+  'expr-meaning': lazy(() =>
+    import('./expressions/pages').then((m) => ({ default: m.ExpressionMeaningPage })),
+  ),
+  'expr-truefalse': lazy(() =>
+    import('./expressions/pages').then((m) => ({ default: m.ExpressionTrueFalsePage })),
+  ),
+  'expr-blank': lazy(() =>
+    import('./expressions/pages').then((m) => ({ default: m.ExpressionBlankPage })),
+  ),
+  'expr-build': lazy(() =>
+    import('./expressions/pages').then((m) => ({ default: m.ExpressionBuildPage })),
+  ),
 }
 
 // Retired games → bookmark-safe redirects. Slice 3.7.1 folded word-builder
