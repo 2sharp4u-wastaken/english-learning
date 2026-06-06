@@ -33,6 +33,10 @@ export interface WordObj {
   [k: string]: unknown
 }
 
+/** Slice 5.5 — mastered-expression count that earns the "אלוף ביטויים" milestone. */
+export const EXPRESSION_MILESTONE_COUNT = 30
+export const EXPRESSION_MILESTONE_CERT_ID = 'milestone_expressions_30'
+
 export const GAME_CONFIG = {
   MAX_QUESTIONS: 10,
   MAX_AUDIO_PLAYS: 8,
@@ -340,6 +344,20 @@ export class GameManager {
     if (app?.userProgress) {
       app.userProgress.expressionMastery = this.progressManager.expressionMastery
       app.saveUserProgress?.()
+    }
+
+    // Slice 5.5 — award the "אלוף ביטויים" milestone at 30 mastered expressions.
+    const mastered = this.progressManager.getMasteredExpressionCount()
+    if (mastered >= EXPRESSION_MILESTONE_COUNT) {
+      const cm = app?.certificateManager
+      if (cm && !cm.hasCertificate(EXPRESSION_MILESTONE_CERT_ID)) {
+        cm.awardCertificate({
+          id: EXPRESSION_MILESTONE_CERT_ID,
+          topicId: EXPRESSION_MILESTONE_CERT_ID,
+          topicName: 'אלוף ביטויים',
+          score: mastered,
+        })
+      }
     }
   }
 

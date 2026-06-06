@@ -55,6 +55,7 @@ const GAMES = [
   { id: 'expr-truefalse', title: 'נכון או לא?' },
   { id: 'expr-blank', title: 'השלימו את הביטוי' },
   { id: 'expr-build', title: 'בנו את הביטוי' },
+  { id: 'expr-swap', title: 'החליפו בביטוי' },
 ];
 
 test('home surfaces the ביטויים tier and unlocks it past 50 words', async ({ page }) => {

@@ -46,6 +46,8 @@ import { initializePhonetics, selectDistractors } from './phonetics.js';
 // Import the Phase 5 expression bank (idioms + phrasal verbs + slang).
 // Kept SEPARATE from vocabularyBank below — no vocabulary game may pick it up.
 import { expressionBank } from './expressions/_index.js';
+// Slice 5.4 — plain-English synonym per phrase, used by the Context Swap game.
+import { plainForms as expressionPlainForms } from './expressions/plainForms.js';
 
 // Combine all vocabulary into single bank
 const vocabularyBank = [
@@ -220,7 +222,9 @@ window.grammarCategories = grammarCategories;
 // Phase 5 expression bank — exposed parallel to vocabularyBank, read in React only
 // through src/bridge/expressions.ts. Deliberately NOT merged into gameData/vocabulary.
 window.expressionBank = expressionBank;
-export { gameData, difficultyLevels, grammarCategories, expressionBank };
+// Slice 5.4 — plain-English forms for Context Swap, read via bridge/expressions.ts.
+window.expressionPlainForms = expressionPlainForms;
+export { gameData, difficultyLevels, grammarCategories, expressionBank, expressionPlainForms };
 // vocabularyBank already set above before phonetics initialization
 
 // Called when another tab saves new custom words (storage event).

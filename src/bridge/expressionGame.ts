@@ -15,9 +15,9 @@
 import { setGameContext, cancelSpeech } from './audio'
 import { getApp, getGameManager } from '../engine/instances'
 import { getDerivedLearnedCount } from './progress'
-import { getExpressionBank, type Expression } from './expressions'
+import { getExpressionBank, getExpressionPlainForm, type Expression } from './expressions'
 
-export type ExpressionMode = 'meaning' | 'truefalse' | 'blank' | 'build'
+export type ExpressionMode = 'meaning' | 'truefalse' | 'blank' | 'build' | 'swap'
 
 /** Derived-learned vocabulary words required before expressions unlock. */
 export const EXPRESSION_UNLOCK_WORDS = 50
@@ -33,6 +33,7 @@ export const EXPRESSION_GAME_TYPES: Record<ExpressionMode, string> = {
   truefalse: 'expr-truefalse',
   blank: 'expr-blank',
   build: 'expr-build',
+  swap: 'expr-swap',
 }
 
 export const YES_NO_OPTIONS = ['כן', 'לא'] as const
@@ -76,8 +77,11 @@ export interface ExpressionQuestion {
    * - meaning/truefalse → the English phrase
    * - blank            → the example sentence with the phrase replaced by "_____"
    * - build            → the Hebrew meaning (the target to assemble)
+   * - swap             → the plain-English synonym to "upgrade" into the expression
    */
   promptText: string
+  /** swap only — the plain-English synonym shown as the prompt. */
+  plainEn?: string
   /** truefalse only — the candidate Hebrew meaning being judged. */
   candidateMeaning?: string
   /** Multiple-choice option labels (meaning/blank/truefalse). Empty for build. */
@@ -200,6 +204,34 @@ function buildOne(mode: ExpressionMode, e: Expression, bank: Expression[]): Expr
     return {
       ...base,
       promptText: blanked,
+      options,
+      sublabels: options.map((p) => meaningByPhrase.get(p)),
+      correct: options.indexOf(e.phrase),
+    }
+  }
+
+  if (mode === 'swap') {
+    // Plain English → pick the expression that means the same. Skip phrases with
+    // no authored plain form, and keep distractors semantically distinct so the
+    // question has exactly one defensible answer.
+    const plain = getExpressionPlainForm(e.phrase)
+    if (!plain) return null
+    const distractorPool = bank.filter(
+      (x) =>
+        x.phrase !== e.phrase &&
+        x.meaningHe !== e.meaningHe &&
+        getExpressionPlainForm(x.phrase) !== plain,
+    )
+    const distractors = sampleDistinct(distractorPool.map((x) => x.phrase), 3, new Set([e.phrase]))
+    if (distractors.length < 3) return null
+    const options = shuffle([e.phrase, ...distractors])
+    const meaningByPhrase = new Map(bank.map((x) => [x.phrase, x.meaningHe]))
+    return {
+      ...base,
+      // Voice the plain prompt on the audio button so it never reveals the answer.
+      audioPhrase: plain,
+      plainEn: plain,
+      promptText: plain,
       options,
       sublabels: options.map((p) => meaningByPhrase.get(p)),
       correct: options.indexOf(e.phrase),

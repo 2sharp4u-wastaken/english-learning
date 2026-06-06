@@ -355,7 +355,42 @@ function WordsPanel({ model }: { model: UserStatsModel }) {
           <WordMasteryTable words={model.masteryStats.mastered.slice(0, 10)} color="emerald" />
         </StatsCard>
       )}
+
+      {/* Expressions (Phase 5) — shown once the child has practiced any phrase */}
+      {model.expressions.practiced > 0 && <ExpressionStatsCard stats={model.expressions} />}
     </div>
+  )
+}
+
+function ExpressionStatsCard({ stats }: { stats: UserStatsModel['expressions'] }) {
+  return (
+    <StatsCard title="ביטויים" titleIcon={<span aria-hidden>💬</span>}>
+      <div className="mb-4 grid grid-cols-3 gap-3" data-testid="stats-expressions">
+        <MasteryTile value={stats.mastered} label="ביטויים בשליטה" color="text-emerald-400" />
+        <MasteryTile value={stats.practiced} label="ביטויים שתורגלו" color="text-blue-400" />
+        <MasteryTile value={stats.total} label='סה"כ ביטויים' color="text-accent-blue" />
+      </div>
+      <div className="space-y-2">
+        {stats.byType
+          .filter((t) => t.total > 0)
+          .map((t) => (
+            <div
+              key={t.type}
+              className="flex items-center justify-between rounded-xl bg-white/5 px-3 py-2 text-sm"
+            >
+              <span className="font-semibold text-text">
+                <span aria-hidden className="me-1">
+                  {t.icon}
+                </span>
+                {t.label}
+              </span>
+              <span dir="ltr" className="font-bold text-emerald-400">
+                {t.mastered} / {t.total}
+              </span>
+            </div>
+          ))}
+      </div>
+    </StatsCard>
   )
 }
 

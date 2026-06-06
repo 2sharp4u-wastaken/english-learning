@@ -42,6 +42,7 @@ const MODE_META: Record<ExpressionMode, { title: string; icon: string; prompt: s
   truefalse: { title: 'נכון או לא?', icon: '✅', prompt: 'האם הפירוש נכון?' },
   blank: { title: 'השלימו את הביטוי', icon: '✍️', prompt: 'איזה ביטוי משלים את המשפט?' },
   build: { title: 'בנו את הביטוי', icon: '🧱', prompt: 'סדרו את המילים לפי הפירוש' },
+  swap: { title: 'החליפו בביטוי', icon: '🔄', prompt: 'איזה ביטוי אפשר להגיד במקום?' },
 }
 
 export function ExpressionGamePage({ mode }: { mode: ExpressionMode }) {
@@ -310,7 +311,8 @@ export function ExpressionGamePage({ mode }: { mode: ExpressionMode }) {
     current && !isBuild
       ? current.options.map((label, i) => ({
           key: i,
-          label: mode === 'blank' ? transform(label) : label,
+          // blank + swap options are English phrases → apply the case transform.
+          label: mode === 'blank' || mode === 'swap' ? transform(label) : label,
           sublabel: current.sublabels?.[i],
         }))
       : []

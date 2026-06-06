@@ -2278,37 +2278,80 @@ phrase + builder chips `dir="ltr"`); Playwright covers all 4.
 (surface `expressionMastery` in Profile/Stats + a "אלוף ביטויים" certificate — the
 `getExpressionMastery`/`getMasteredExpressionCount` accessors are already in place).
 
-### Slice 5.4: Expression-Native Games — Tier 2 (New)
+### Slice 5.4: Expression-Native Games — Tier 2 — SHIPPED (Context Swap, 2026-06-06)
 
-Status: planned — backlog until Slice 5.3 validates the pattern
+Status: **SHIPPED**. Meaning Match (`expr-meaning`) and Build the Phrase (`expr-build`)
+were already delivered in Slice 5.3, so the only genuinely-new Tier-2 game was
+**Context Swap (`expr-swap`, "החליפו בביטוי")** — the 5th `mode` on the shared
+`ExpressionGamePage`.
 
-New games designed around phrases rather than single words:
+**What it does:** shows a plain-English synonym (e.g. *"very easy"*) and asks the
+child to pick the cooler expression that means the same thing (*"piece of cake"*),
+with the Hebrew meaning as a per-option sublabel for support. This is the distinct
+pedagogical axis vs. the other four modes: plain English → idiomatic English (register
+elevation), not phrase→Hebrew or fill-the-gap. The audio button voices the **plain**
+prompt (never the answer); a correct answer voices the expression to teach its sound.
 
-- **Meaning Match** — phrase shown, 4 Hebrew meanings to pick from (inverse of fill-blanks)
-- **Build the Phrase** — scattered English words, reorder to form the target idiom
-- **Context Swap** — English sentence shown; replace a plain verb/noun with the matching idiom or phrasal verb
+**Plain-form content (the only new data):** `data/expressions/plainForms.js` — a
+single `phrase → plainEn` map (all 121 phrases covered: idioms + phrasal verbs + slang).
+English authoring (low-risk vs. the Hebrew-translation rule), kept in one reviewable
+file rather than touching the 3 large data banks' constructor signatures. Exposed via
+`data/_loader.js → window.expressionPlainForms`, read in React only through
+`src/bridge/expressions.ts` (`getExpressionPlainForm`). A phrase with no plain form is
+simply skipped by the swap builder (graceful, like build-mode skipping single words).
 
-Each game uses the shared gameplay primitives from Phase 2.
+**Builder guard:** swap distractors exclude any phrase sharing the correct phrase's
+`meaningHe` OR `plainEn`, so a swap question always has exactly one defensible answer.
 
-### Slice 5.5: Expression Progress & Certificates
+Files: `data/expressions/plainForms.js` (new), `data/_loader.js`,
+`src/bridge/expressions.ts` (+`getExpressionPlainForm`), `src/bridge/expressionGame.ts`
+(`'swap'` mode + builder branch + `plainEn` on the question), `ExpressionGamePage.tsx`
+(MODE_META + English label transform), `expressions/pages.tsx` (`ExpressionSwapPage`),
+`reactGames.ts` + `GameHostPage.tsx` + `gameRegistry.ts` + `HomePage.tsx` (register
+`expr-swap`). Tests: 2 new Vitest swap-builder cases + `expr-swap` added to the
+Playwright `expression-games.spec.js` GAMES array (tier + interactive-answer coverage).
 
-Status: planned — depends on 5.3
+**Context Swap caveat:** the original plan framed it as "replace a plain verb/noun
+*in a sentence*". The shipped version drops the sentence and presents the plain phrase
+directly — cleaner, avoids generating ungrammatical auto-substituted sentences, and
+keeps the swap unambiguous. Re-add a sentence later only with hand-authored plain
+example sentences.
 
-Surface expression mastery in Profile and Stats; add a new certificate for hitting milestones.
+### Slice 5.5: Expression Progress & Certificates — SHIPPED (2026-06-06)
 
-Files:
+Status: **SHIPPED**. Expression mastery is surfaced in Profile + Stats, and a new
+milestone certificate is awarded at 30 mastered expressions.
 
-- `src/bridge/progress.ts` — `getExpressionMastery()`, `getMasteredExpressions()`, milestone certs
-- `src/features/profile/ProfilePage.tsx` — new "Expressions" section or tab
-- `src/features/stats/StatsPage.tsx` — expression mastery row
-- `managers/CertificateManager.js` (or its React successor) — new cert `milestone_expressions_30`: "אלוף ביטויים"
+Files (actuals):
 
-Acceptance criteria:
+- `src/bridge/types.ts` — `UserProgress.expressionMastery?` + `ExpressionStats` type.
+- `src/bridge/stats.ts` — `ExpressionStatsSummary` (mastered / practiced / total +
+  per-type breakdown) computed by `buildExpressionStats()` (joins the per-phrase
+  `expressionMastery` map with the global catalog via `getAllExpressions()`); added to
+  `UserStatsModel.expressions`.
+- `src/features/stats/StatsPage.tsx` — `ExpressionStatsCard` in the Words panel
+  (`data-testid="stats-expressions"`), shown only once `practiced > 0`.
+- `src/features/profile/ProfilePage.tsx` — a conditional 6th MiniStat
+  (`profile-stat-expressions`, "ביטויים") in the top stats row, shown only when
+  `getMasteredExpressionCount() > 0` (grid flips `sm:grid-cols-5`→`6`).
+- `src/engine/gameManager.ts` — `EXPRESSION_MILESTONE_COUNT = 30` +
+  `EXPRESSION_MILESTONE_CERT_ID = 'milestone_expressions_30'`; `recordExpressionAttempt`
+  awards the "אלוף ביטויים" cert (idempotent via `hasCertificate`) once the mastered
+  count reaches 30. The cert renders in the existing CertificatesTab via its
+  `topicName` — no special display mapping needed.
 
-- Profile shows mastered expressions separately from vocabulary
-- Stats shows per-register mastery counts
-- New certificate awarded at 30 mastered expressions
-- No regression in existing vocabulary progress display
+Tests: `src/engine/__tests__/expressionMilestone.test.ts` (2 Vitest — not awarded
+below 30, awarded exactly once at 30 + no duplicate past it).
+
+Acceptance criteria — met: Profile + Stats show mastered expressions separately from
+vocabulary; Stats shows a per-type (idioms / phrasal verbs / slang) breakdown — note
+**per-type, not per-register** as the plan said, since type is the more meaningful axis
+for kids and the data carries both; cert awarded at 30; no regression (all 36 Vitest +
+the expression Playwright suite green).
+
+**Phase 5 is COMPLETE** (5.1 data → 5.2 controls → 5.3 games → 5.4 Context Swap →
+5.5 progress/certs). 5 expression games on the "ביטויים" tier; expression mastery has
+its own progress surface and milestone certificate.
 
 ### Risks specific to Phase 5
 

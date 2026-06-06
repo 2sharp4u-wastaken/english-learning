@@ -48,6 +48,7 @@ const GAME_ORDER: GameCardMeta[] = [
   { id: 'expr-truefalse', tier: 'expressions', fallbackIcon: '✅', fallbackName: 'נכון או לא?', description: 'האם הפירוש של הביטוי נכון? כן או לא.' },
   { id: 'expr-blank', tier: 'expressions', fallbackIcon: '✍️', fallbackName: 'השלימו את הביטוי', description: 'בוחרים את הביטוי שמשלים את המשפט.' },
   { id: 'expr-build', tier: 'expressions', fallbackIcon: '🧱', fallbackName: 'בנו את הביטוי', description: 'מסדרים את המילים לפי הפירוש בעברית.' },
+  { id: 'expr-swap', tier: 'expressions', fallbackIcon: '🔄', fallbackName: 'החליפו בביטוי', description: 'רואים ביטוי פשוט באנגלית ובוחרים ביטוי מגניב במקום.' },
 ]
 
 const TIER_META: Record<TierId, { title: string; emoji: string; badge: string; accent: string }> = {

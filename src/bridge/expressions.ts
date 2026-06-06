@@ -40,11 +40,22 @@ export const DEFAULT_REGISTERS: Record<Register, boolean> = {
 
 interface ExpressionGlobals {
   expressionBank?: Expression[]
+  expressionPlainForms?: Record<string, string>
 }
 
 function getRawBank(): Expression[] {
   const bank = (window as unknown as ExpressionGlobals).expressionBank
   return Array.isArray(bank) ? bank : []
+}
+
+/**
+ * The plain-English synonym for a phrase (Slice 5.4 Context Swap), or undefined
+ * when none is authored. Boot-loaded into window.expressionPlainForms by
+ * data/_loader.js from data/expressions/plainForms.js.
+ */
+export function getExpressionPlainForm(phrase: string): string | undefined {
+  const map = (window as unknown as ExpressionGlobals).expressionPlainForms
+  return map && typeof map === 'object' ? map[phrase] : undefined
 }
 
 /**

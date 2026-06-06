@@ -20,3 +20,7 @@ export function ExpressionBlankPage() {
 export function ExpressionBuildPage() {
   return <ExpressionGamePage mode="build" />
 }
+
+export function ExpressionSwapPage() {
+  return <ExpressionGamePage mode="swap" />
+}

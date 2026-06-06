@@ -54,10 +54,25 @@ function stubEngine(learnedCount: number, bank: Expression[] = BANK): void {
   ;(window as unknown as { expressionBank: Expression[] }).expressionBank = bank
 }
 
+// Plain-English forms for the fixture bank (Slice 5.4 Context Swap).
+const PLAIN_FORMS: Record<string, string> = {
+  'give up': 'stop trying',
+  'piece of cake': 'very easy',
+  'break the ice': 'start a conversation',
+  'hit the books': 'study hard',
+  'under the weather': 'feeling sick',
+  'once in a blue moon': 'almost never',
+}
+
+function stubPlainForms(map: Record<string, string> | undefined = PLAIN_FORMS): void {
+  ;(window as unknown as { expressionPlainForms?: Record<string, string> }).expressionPlainForms = map
+}
+
 beforeEach(() => {
   recorded.length = 0
   resetSettings()
   stubEngine(EXPRESSION_UNLOCK_WORDS)
+  stubPlainForms()
 })
 
 afterEach(() => {
@@ -156,6 +171,31 @@ describe('build mode', () => {
       expect(q.answerWords!.join(' ')).toBe(q.phrase)
       expect(q.promptText).toBe(q.meaningHe)
     }
+  })
+})
+
+describe('swap mode (Slice 5.4 Context Swap)', () => {
+  it('prompts with the plain form and offers the expression among 4 phrase options', () => {
+    const s = buildExpressionSession('swap')
+    expect(s.kind).toBe('ready')
+    if (s.kind !== 'ready') return
+    for (const q of s.questions) {
+      expect(q.plainEn).toBe(PLAIN_FORMS[q.phrase])
+      expect(q.promptText).toBe(q.plainEn)
+      expect(q.options).toHaveLength(4)
+      expect(new Set(q.options).size).toBe(4)
+      expect(q.options[q.correct]).toBe(q.phrase)
+      expect(q.sublabels).toHaveLength(4)
+      // The audio prompt voices the plain form, never the answer phrase.
+      expect(q.audioPhrase).toBe(q.plainEn)
+    }
+  })
+
+  it('skips phrases that have no authored plain form', () => {
+    // Only two phrases get plain forms → not enough buildable swap questions.
+    stubPlainForms({ 'give up': 'stop trying', 'piece of cake': 'very easy' })
+    const s = buildExpressionSession('swap')
+    expect(s.kind).toBe('not-enough')
   })
 })
 

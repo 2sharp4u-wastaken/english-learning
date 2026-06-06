@@ -51,6 +51,7 @@ const ENTRIES: Array<Pick<GameRegistryEntry, 'type' | 'displayName' | 'displayNa
   { type: 'expr-truefalse', displayName: 'Expression True or Not', displayNameHebrew: 'נכון או לא?', icon: '✅' },
   { type: 'expr-blank', displayName: 'Complete the Expression', displayNameHebrew: 'השלימו את הביטוי', icon: '✍️' },
   { type: 'expr-build', displayName: 'Build the Expression', displayNameHebrew: 'בנו את הביטוי', icon: '🧱' },
+  { type: 'expr-swap', displayName: 'Context Swap', displayNameHebrew: 'החליפו בביטוי', icon: '🔄' },
 ]
 
 const GAMES: GameRegistryEntry[] = ENTRIES.map((e) => ({ ...e, config: { ...DEFAULT_CONFIG } }))

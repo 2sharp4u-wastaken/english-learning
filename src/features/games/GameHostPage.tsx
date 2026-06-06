@@ -81,6 +81,9 @@ const REACT_GAMES: Record<string, ComponentType> = {
   'expr-build': lazy(() =>
     import('./expressions/pages').then((m) => ({ default: m.ExpressionBuildPage })),
   ),
+  'expr-swap': lazy(() =>
+    import('./expressions/pages').then((m) => ({ default: m.ExpressionSwapPage })),
+  ),
 }
 
 // Retired games → bookmark-safe redirects. Slice 3.7.1 folded word-builder

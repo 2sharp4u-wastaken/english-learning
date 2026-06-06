@@ -1,6 +1,7 @@
 import type { UserProgress } from './types'
 import { getApp } from '../engine/instances'
 import { v2Key } from './storage'
+import { getAllExpressions, type ExpressionType } from './expressions'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -147,6 +148,67 @@ export interface UserStatsModel {
   categoriesCompletedCount: number
   learningVelocity: number
   totalLearningTimeMs: number
+  expressions: ExpressionStatsSummary
+}
+
+/** Phase 5 (Slice 5.5) — expression mastery surfaced in Stats/Profile. */
+export interface ExpressionStatsSummary {
+  /** Phrases the child has mastered (≥3 correct). */
+  mastered: number
+  /** Phrases attempted at least once. */
+  practiced: number
+  /** Total phrases in the catalog (unfiltered). */
+  total: number
+  byType: Array<{
+    type: ExpressionType
+    label: string
+    icon: string
+    mastered: number
+    practiced: number
+    total: number
+  }>
+}
+
+const EXPRESSION_TYPE_META: { type: ExpressionType; label: string; icon: string }[] = [
+  { type: 'idiom', label: 'ניבים', icon: '💡' },
+  { type: 'phrasal-verb', label: 'פעלים מורכבים', icon: '🔗' },
+  { type: 'slang', label: 'סלנג', icon: '😎' },
+]
+
+/**
+ * Join the per-phrase expressionMastery map with the (global) expression catalog
+ * to produce mastered/practiced counts overall and per type. The catalog is the
+ * same for every user, so reading it here is safe even when modeling another user.
+ */
+function buildExpressionStats(progress: UserProgress): ExpressionStatsSummary {
+  const mastery = progress.expressionMastery || {}
+  const catalog = getAllExpressions()
+  const typeByPhrase = new Map(catalog.map((e) => [e.phrase.trim().toLowerCase(), e.type]))
+
+  const acc: Record<string, { mastered: number; practiced: number; total: number }> = {}
+  for (const t of EXPRESSION_TYPE_META) acc[t.type] = { mastered: 0, practiced: 0, total: 0 }
+  for (const e of catalog) if (acc[e.type]) acc[e.type].total++
+
+  let mastered = 0
+  let practiced = 0
+  for (const s of Object.values(mastery)) {
+    if (!s) continue
+    const wasSeen = (s.seen || 0) > 0
+    if (wasSeen) practiced++
+    if (s.mastered) mastered++
+    const t = typeByPhrase.get((s.phrase || '').trim().toLowerCase())
+    if (t && acc[t]) {
+      if (wasSeen) acc[t].practiced++
+      if (s.mastered) acc[t].mastered++
+    }
+  }
+
+  return {
+    mastered,
+    practiced,
+    total: catalog.length,
+    byType: EXPRESSION_TYPE_META.map((t) => ({ ...t, ...acc[t.type] })),
+  }
 }
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
@@ -598,6 +660,7 @@ export function buildUserStatsModel(userId: string, displayName: string): UserSt
     categoriesCompletedCount: categoryCompletion.completedCount,
     learningVelocity,
     totalLearningTimeMs: progress.totalLearningTimeMs || 0,
+    expressions: buildExpressionStats(progress),
   }
 }
 

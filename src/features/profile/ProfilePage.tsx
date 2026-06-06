@@ -7,6 +7,7 @@ import {
   Gamepad2,
   Lock,
   Medal,
+  MessageCircle,
   Sparkles,
   Star,
   Trophy,
@@ -22,6 +23,7 @@ import {
   getActivityDates,
   getBestScores,
   getVocabularyBank,
+  getMasteredExpressionCount,
 } from '@/bridge/progress'
 import { getGameCatalog } from '@/bridge/games'
 import { cn } from '@/lib/cn'
@@ -134,6 +136,7 @@ export function ProfilePage() {
 
   const certificates = useMemo(() => getCertificates(), [summary])
   const wordsMastered = useMemo(() => getWordsMasteredCount(), [summary])
+  const expressionsMastered = useMemo(() => getMasteredExpressionCount(), [summary])
   const learnedWords = useMemo(() => getLearnedCollection(), [summary])
   const activityDates = useMemo(() => getActivityDates(), [summary])
   const bestScores = useMemo(() => getBestScores(), [summary])
@@ -196,10 +199,18 @@ export function ProfilePage() {
           </div>
 
           {/* Stats row */}
-          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-5">
+          <div
+            className={cn(
+              'mt-5 grid grid-cols-2 gap-3',
+              expressionsMastered > 0 ? 'sm:grid-cols-6' : 'sm:grid-cols-5',
+            )}
+          >
             <MiniStat testid="profile-stat-streak" icon={<Flame size={16} className="text-learn" />} label="רצף" value={`${summary.streakDays}`} unit="ימים" />
             <MiniStat testid="profile-stat-words" icon={<Star size={16} className="text-practice" />} label="נלמדו" value={`${summary.wordsLearned}`} unit="מילים" />
             <MiniStat icon={<Sparkles size={16} className="text-challenge" />} label="שליטה" value={`${wordsMastered}`} unit="מילים" />
+            {expressionsMastered > 0 && (
+              <MiniStat testid="profile-stat-expressions" icon={<MessageCircle size={16} className="text-challenge" />} label="ביטויים" value={`${expressionsMastered}`} />
+            )}
             <MiniStat icon={<Medal size={16} className="text-test" />} label="מטבעות" value={`${summary.coins}`} />
             <MiniStat testid="profile-stat-certs" icon={<Award size={16} className="text-learn" />} label="תעודות" value={`${certificates.length}`} />
           </div>

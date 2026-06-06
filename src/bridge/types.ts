@@ -117,6 +117,17 @@ export interface UserProgress {
   wordJourneyProgress: Record<string, unknown>
   gameUnlocks: Record<string, GameUnlockEntry>
   activityDates?: string[]
+  /** Phase 5 expression mastery, keyed by phrase (Slice 5.3). */
+  expressionMastery?: Record<string, ExpressionStats>
+}
+
+/** Per-phrase expression mastery (Phase 5). Mirrors engine ExprStats. */
+export interface ExpressionStats {
+  phrase: string
+  seen: number
+  correct: number
+  mastered: boolean
+  lastSeen: string | null
 }
 
 export interface UserSummary {
