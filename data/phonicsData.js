@@ -84,11 +84,17 @@ export const phonicsSounds = [
 
 // ── Mastery helpers (mirror abcData.js exactly) ───────────────────────────────
 
+// Word-mastery provider — injected by the React bridge (src/bridge/phonics.ts),
+// mirroring abcData.js. Defaults to {} (data-load time, before the engine exists).
+// Slice 4.6 removed the `window.app` runtime coupling so the engine global can go.
+let _getWordMastery = () => ({});
+export function setPhonicsMasteryProvider(fn) {
+    _getWordMastery = typeof fn === 'function' ? fn : () => ({});
+}
+
 function getSoundMastery(sound) {
-    if (!window.app || !window.app.userProgress || !window.app.userProgress.wordMastery) {
-        return 0;
-    }
-    const stats = window.app.userProgress.wordMastery[`${sound}_phonics`];
+    const wm = _getWordMastery() || {};
+    const stats = wm[`${sound}_phonics`];
     return stats?.masteryLevel || 0;
 }
 

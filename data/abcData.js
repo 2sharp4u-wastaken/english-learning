@@ -29,13 +29,21 @@ export const alphabet = [
     { letter: 'Z', lowercase: 'z', phonetic: 'zee', word: 'Zebra' }
 ];
 
-// Get letter mastery from app progress
+// Word-mastery provider. The React bridge (src/bridge/abc.ts) injects the live
+// engine's `userProgress.wordMastery` via setAbcMasteryProvider. Defaults to an
+// empty map — that's the value used at data-load time (`_loader.js` builds an ABC
+// pool before any user/engine exists, exactly as the old `window.app` was
+// undefined then). Slice 4.6 removed the `window.app` runtime coupling here so the
+// engine global can be deleted; the bridge is now the only gateway to engine data.
+let _getWordMastery = () => ({});
+export function setAbcMasteryProvider(fn) {
+    _getWordMastery = typeof fn === 'function' ? fn : () => ({});
+}
+
+// Get letter mastery from injected progress
 function getLetterMastery(letter) {
-    if (!window.app || !window.app.userProgress || !window.app.userProgress.wordMastery) {
-        return 0;
-    }
-    const key = `${letter.toUpperCase()}_abc`;
-    const stats = window.app.userProgress.wordMastery[key];
+    const wm = _getWordMastery() || {};
+    const stats = wm[`${letter.toUpperCase()}_abc`];
     return stats?.masteryLevel || 0;
 }
 

@@ -26,14 +26,14 @@ export default defineConfig({
         // they cache independently and per-game lazy chunks stay tiny:
         //   - vendor: React/Router/Lucide etc. (long-lived, cache across deploys)
         //   - motion: framer-motion + motion-dom (heavy, only HomeMascot uses it)
-        // The legacy vanilla-JS graph (gameLogic.js, app.js, data/_loader.js →
-        // managers + legacy game modules) is loaded eagerly via index.html
-        // <script type="module"> tags, which Vite FUSES into the same entry as
-        // src/main.tsx — so it can't be split via manualChunks (entry modules
-        // can't be reassigned). That ~500 KB of eager legacy is what keeps the
-        // index chunk above 500 KB; it shrinks when Phase 4.4 deletes the legacy
-        // game files. React game pages are NOT named here — React.lazy() in
-        // GameHostPage already gives each its own on-demand chunk.
+        // The old eager legacy vanilla-JS graph (gameLogic.js/app.js/legacy game
+        // modules) that used to fuse into the src/main.tsx entry and bloat the index
+        // chunk past 500 KB is GONE (deleted in Slices 4.4.b/4.5 — the engine is now
+        // src/engine/*; index chunk ≈380 KB). What still fuses into the entry are the
+        // remaining eager index.html <script type="module"> tags: utils/consoleLogger.js
+        // + data/_loader.js (the shared content bank) — small, intentionally eager.
+        // React game pages are NOT named here — React.lazy() in GameHostPage already
+        // gives each its own on-demand chunk.
         manualChunks(id) {
           if (id.includes('node_modules')) {
             if (/[\\/]node_modules[\\/](framer-motion|motion-dom|motion)[\\/]/.test(id)) {

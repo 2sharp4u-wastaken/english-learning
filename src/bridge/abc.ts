@@ -1,10 +1,16 @@
 import { setGameContext, cancelSpeech } from './audio'
 import { getApp, getGameManager } from '../engine/instances'
 
-// Legacy data module — same one gameLogic.js imports. generateABCQuestions reads
-// window.app.userProgress.wordMastery directly to filter mastered letters.
+// Legacy data module — same one gameLogic.js imports. generateABCQuestions filters
+// mastered letters by `<letter>_abc` mastery; Slice 4.6 made it read that via an
+// injected provider (was `window.app.userProgress.wordMastery`) so the engine
+// global could be deleted. This bridge is the gateway, so it injects the provider.
 // @ts-expect-error — legacy .js import without a .d.ts
-import { generateABCQuestions } from '../../data/abcData.js'
+import { generateABCQuestions, setAbcMasteryProvider } from '../../data/abcData.js'
+
+// Feed the legacy ABC generator the live engine's word-mastery map. Lazy (reads
+// getApp() at call time) so it always reflects current progress; {} until booted.
+setAbcMasteryProvider(() => getApp()?.userProgress?.wordMastery ?? {})
 
 // ─── Question shape (mirrors data/abcData.js generators) ───────────────────────
 

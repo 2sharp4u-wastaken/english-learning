@@ -2018,13 +2018,52 @@ left to ship globally). What landed:
   the deleted legacy DOM (React uses Lucide); Poppins was referenced only inside the
   deleted `styles.css` (React uses Heebo/Fredoka).
 
-### Slice 4.6: Test Expansion
+### Slice 4.6: Test Expansion — engine-seam modernization ✅ SHIPPED (2026-06-05)
 
-- update smoke tests to target React app exclusively
-  - **note (b2):** `smoke.spec.js` + `slice-3.7.1` seed a dead `authUsers` key and a session whose id isn't in the `users` DB. It works (the gate keys off session validity), but a fresh-start cleanup could switch them to seed the real `users` key via the `seedUser` pattern in `react-routes.spec.js`.
-- add regression tests for all migrated flows — **auth login flow is now covered** (`react-routes.spec.js`: "React login flow: select user + enter password → app renders" + "React auth gate renders the app for an authenticated user"). Mic games (Pronunciation/Practice/ABC say-letter/Phonics say-sound/WJ say-word) still lack coverage pending a `webkitSpeechRecognition` test stub.
-- remove tests that reference legacy selectors
-- **repoint the engine characterization specs off the `window.app`/`window.gameManager` debug seam (left by Slice 4.4.b3) and delete `exposeDebugHandles` from `src/engine/boot.ts`.** `engine-bridge-contract`/`engine-selection`/`difficulty-gate`/`react-routes`/`smoke` drive the live engine from `page.evaluate(() => window.gameManager…)`. Now that `src/engine/gameManager.ts`/`appState.ts` are clean importable classes (b1), the cleanest home is Vitest unit tests importing the engine directly (no Vitest in the repo yet → setup is part of this task), or a `window.__engine` accessor the app exposes only in DEV. Until then the seam keeps the suite green.
+**What shipped (the seam-deletion half):**
+
+- **Vitest stood up** (`vitest.config.ts` + `src/test/setup.ts`, scripts `test:unit`/
+  `test:unit:watch`). Scope is `src/**/*.test.ts` only; Playwright keeps `tests/` —
+  the two runners never see each other's files (Playwright `testDir: './tests'`).
+  jsdom env + an in-memory `localStorage` polyfill (jsdom's opaque-origin Storage is
+  unreliable across versions). Engine classes are now clean DI classes (b1), so they
+  unit-test in-process — deterministic, OFF the Vite dev server, immune to the
+  long-run Playwright flake that bit the old `page.evaluate` characterization specs.
+- **Pure-logic specs ported to Vitest** and deleted from Playwright:
+  `src/engine/__tests__/gameManager-selection.test.ts` (was `engine-selection.spec.js`
+  — selection bucketing + `improvedShuffle`, RNG-independent invariants against a
+  stubbed `progressManager`) and `appState-progress.test.ts` (the pure
+  `getDefaultProgress` v4-schema check, lifted out of `engine-bridge-contract`).
+- **`exposeDebugHandles` → DEV-only `window.__engine = { app, gm }`** in `boot.ts`
+  (gated on `import.meta.env.DEV`, so production ships NO engine handle — the old seam
+  leaked in prod). The *integration* specs that genuinely need a browser
+  (`difficulty-gate`, `engine-bridge-contract` bridge flow, `react-routes`, `smoke`)
+  were repointed `window.app`/`window.gameManager` → `window.__engine.app`/`.gm`.
+- **GOTCHA (the seam was NOT purely a test seam).** Deleting `window.app` first broke
+  the ABC/Phonics "all mastered" congrats tests: three LEGACY DATA modules still read
+  `window.app.userProgress.wordMastery` at runtime — `data/abcData.js` +
+  `data/phonicsData.js` (non-optional, the real breakage: mastery silently read 0 →
+  mastered letters/sounds never filtered → congrats unreachable, a gameplay
+  regression, not just a test failure) and `data/converters.js` (optional + runs at
+  `_loader` time before any engine, so already `{}` → harmless, left as-is).
+  `gamification.js` also reads it but is dormant (never `init()`-ed, optional-chained).
+  b3's "all app code reads via `getApp()`" missed the `data/` generators. Fix:
+  `abcData.js`/`phonicsData.js` now take an injected mastery provider
+  (`setAbcMasteryProvider`/`setPhonicsMasteryProvider`); the bridges (`abc.ts`/
+  `phonics.ts`, the proper gateway) wire `() => getApp()?.userProgress?.wordMastery ?? {}`.
+  Default `{}` matches the old window.app-undefined-at-load behavior, so the vestigial
+  `_loader.js` ABC pool is unchanged. THIS is why the global could finally be deleted.
+
+**Still open (deferred follow-ups, not blockers):**
+
+- Mic games (Pronunciation/Practice/ABC say-letter/Phonics say-sound/WJ say-word)
+  still lack coverage pending a `webkitSpeechRecognition` test stub.
+- **note (b2):** `smoke.spec.js` + `slice-3.7.1` seed a dead `authUsers` key and a
+  session whose id isn't in the `users` DB. It works (the gate keys off session
+  validity), but a fresh-start cleanup could switch them to seed the real `users` key
+  via the `seedUser` pattern in `react-routes.spec.js`.
+- `data/converters.js` + `gamification.js` still carry optional `window.app?.` reads
+  (harmless — always `{}`/no-op now). Sweep when those modules are next touched.
 
 Acceptance criteria for Phase 4:
 

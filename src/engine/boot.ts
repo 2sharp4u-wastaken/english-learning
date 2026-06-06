@@ -4,11 +4,11 @@
  * Replaces the legacy boot (`app.js` AppManager + `gameLogic.js` GameManager that
  * loaded as eager `<script type=module>` and published `window.*` globals). React
  * now owns startup: once game data is loaded and a user is authenticated, `initEngine()`
- * builds the `src/engine/*` instances, wires them together, and **republishes the same
- * `window.*` globals** the legacy engine did — so the ~13 bridges that read
- * `window.gameManager`/`window.app` and the React pages that poll those globals for
- * readiness keep working unchanged (a true drop-in). Removing the window shim entirely
- * (bridges importing `src/engine` directly) is deferred to b3.
+ * builds the `src/engine/*` instances, wires them together, and stores them in
+ * `src/engine/instances.ts` — bridges + game pages read the live engine via
+ * `getApp()`/`getGameManager()` (Slice 4.4.b3 removed the `window.*` app shim). The
+ * only window exposure left is the DEV-only `window.__engine` test handle below
+ * (Slice 4.6), used solely by the Playwright integration specs.
  *
  * Faithful to the (now-deleted) legacy `AppManager.setupWithAuth`/`initializeManagers`
  * and `GameManager` ctor settings load. Re-inits on user-id change via `useEngineBoot`'s
@@ -142,7 +142,7 @@ export function initEngine(): boolean {
   gm.loadGameData()
 
   setEngineInstances(app, gm)
-  exposeDebugHandles(app, gm)
+  exposeEngineForTests(app, gm)
 
   engineReady = true
   window.dispatchEvent(new CustomEvent('engine-ready'))
@@ -150,23 +150,26 @@ export function initEngine(): boolean {
 }
 
 /**
- * Slice 4.4.b3 — TEST/DEBUG seam, NOT the old `publishGlobals` app shim.
+ * Slice 4.6 — DEV-only test handle, replacing the b3 `window.app`/`window.gameManager`
+ * debug seam.
  *
- * App code (bridges + game pages) now reaches the engine via `getApp()`/
- * `getGameManager()` from `src/engine/instances.ts` — it never reads these
- * globals. We still expose `window.app`/`window.gameManager` because the
- * Playwright characterization specs (`engine-bridge-contract`, `engine-selection`,
- * `difficulty-gate`, `react-routes`, `smoke`) drive/inspect the live engine from
- * the browser, where the engine class isn't importable. The other six legacy
- * globals (`scoreManager`/`progressManager`/`courseManager`/`certificateManager`/
- * `coinManager`/`gameRegistry`) are NO LONGER published — tests reach those as
- * instance props of `window.app`/`window.gameManager`. Repointing the specs to a
- * non-window handle and deleting this seam is Slice 4.6 test-modernization work.
+ * App code (bridges + game pages) reaches the engine via `getApp()`/`getGameManager()`
+ * from `src/engine/instances.ts` — it never reads any window global. The only thing
+ * that still needs an in-browser handle is the Playwright *integration* suite, which
+ * drives/inspects the live engine from `page.evaluate` (the engine class isn't
+ * importable in the page). So we expose a single, honestly-named `window.__engine =
+ * { app, gm }` instead of production-looking `window.app`/`window.gameManager` globals.
+ *
+ * It is gated on `import.meta.env.DEV`, so production builds ship NO engine handle on
+ * `window` at all (the old seam leaked in prod too). The pure-logic characterization
+ * specs that needed no browser (selection bucketing, shuffle, default-progress schema)
+ * moved to in-process Vitest unit tests (`src/engine/__tests__/*.test.ts`); only the
+ * content/integration specs (`difficulty-gate`, `engine-bridge-contract`,
+ * `react-routes`, `smoke`) still use this handle.
  */
-function exposeDebugHandles(app: AppState, gm: GameManager): void {
-  const w = window as any
-  w.app = app
-  w.gameManager = gm
+function exposeEngineForTests(app: AppState, gm: GameManager): void {
+  if (!import.meta.env.DEV) return
+  ;(window as any).__engine = { app, gm }
 }
 
 export function getEngineReady(): boolean {

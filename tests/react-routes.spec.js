@@ -262,7 +262,7 @@ test.describe('Slice C1: Launchable Courses', () => {
   /** Unlock the first course (auto-unlocks its first topic) and return its info. */
   async function unlockFirstTopic(page) {
     return await page.evaluate(() => {
-      const cm = window.app?.courseManager;
+      const cm = window.__engine?.app?.courseManager;
       const course = cm.getAllCourses()[0];
       cm.unlockCourse(course.id);
       const topic = course.units[0].topics[0];
@@ -301,8 +301,8 @@ test.describe('Slice C1: Launchable Courses', () => {
 
     // Course context is set on the legacy gameManager.
     const ctx = await page.evaluate(() => ({
-      id: window.gameManager?.currentTopicId,
-      act: window.gameManager?.currentTopicActivity,
+      id: window.__engine?.gm?.currentTopicId,
+      act: window.__engine?.gm?.currentTopicActivity,
     }));
     expect(ctx.id).toBe(info.topicId);
     expect(ctx.act).toBe(activity);
@@ -315,7 +315,7 @@ test.describe('Slice C1: Launchable Courses', () => {
     // least one (an empty pool would have returned the learn-first gate).
     const scopedOk = await page.evaluate((topicWords) => {
       const set = new Set(topicWords.map((w) => String(w).toLowerCase()));
-      const qs = window.gameManager?.shuffledQuestions || [];
+      const qs = window.__engine?.gm?.shuffledQuestions || [];
       return qs.length > 0 && qs.every((q) => set.has(String(q.word).toLowerCase()));
     }, info.words);
     expect(scopedOk).toBe(true);
@@ -341,7 +341,7 @@ test.describe('Slice C1: Launchable Courses', () => {
       .toContain('/courses');
 
     // Context cleared so a later free-play session is not wrongly scoped.
-    const cleared = await page.evaluate(() => window.gameManager?.currentTopicId);
+    const cleared = await page.evaluate(() => window.__engine?.gm?.currentTopicId);
     expect(cleared).toBeFalsy();
   });
 
@@ -354,9 +354,9 @@ test.describe('Slice C1: Launchable Courses', () => {
     const info = await unlockFirstTopic(page);
 
     await page.evaluate(({ topicId, words }) => {
-      window.gameManager.deleteGameState('true-or-not');
-      window.gameManager.isResuming = false;
-      window.gameManager.setCourseActivityContext({
+      window.__engine.gm.deleteGameState('true-or-not');
+      window.__engine.gm.isResuming = false;
+      window.__engine.gm.setCourseActivityContext({
         topicId,
         activityType: 'true-or-not',
         topicWords: words,
@@ -373,7 +373,7 @@ test.describe('Slice C1: Launchable Courses', () => {
     // word and only swap the displayed image, so this holds for both match and mismatch).
     const scopedOk = await page.evaluate((topicWords) => {
       const set = new Set(topicWords.map((w) => String(w).toLowerCase()));
-      const qs = window.gameManager?.shuffledQuestions || [];
+      const qs = window.__engine?.gm?.shuffledQuestions || [];
       return qs.length > 0 && qs.every((q) => set.has(String(q.word).toLowerCase()));
     }, info.words);
     expect(scopedOk).toBe(true);
@@ -854,10 +854,10 @@ async function seedLearnedFromBank(page, count) {
     const existing = JSON.parse(localStorage.getItem(key) || '{}');
     existing.learnedWords = learned;
     localStorage.setItem(key, JSON.stringify(existing));
-    if (window.app) {
-      window.app.userProgress = existing;
-      if (window.app.progressManager) {
-        window.app.progressManager.learnedWords = learned;
+    if (window.__engine?.app) {
+      window.__engine.app.userProgress = existing;
+      if (window.__engine.app.progressManager) {
+        window.__engine.app.progressManager.learnedWords = learned;
       }
     }
     return Object.keys(learned).length;
@@ -910,7 +910,7 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
     // Click the option whose label matches the current question's correct answer
     // (read from the React-driven gameManager state).
     const correctIndex = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
       return q?.correct ?? -1;
     });
@@ -942,7 +942,7 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
     await unlockVocabAudioGate(page);
 
     const correctIndex = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correct ?? -1;
     });
     expect(correctIndex).toBeGreaterThanOrEqual(0);
@@ -1150,7 +1150,7 @@ test.describe('Slice 3.2: Listening Game (React)', () => {
     }).not.toMatch(/pointer-events-none/);
 
     const correctIndex = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correct ?? -1;
     });
     expect(correctIndex).toBeGreaterThanOrEqual(0);
@@ -1178,7 +1178,7 @@ test.describe('Slice 3.2: Listening Game (React)', () => {
     }).not.toMatch(/pointer-events-none/);
 
     const correctIndex = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correct ?? -1;
     });
     expect(correctIndex).toBeGreaterThanOrEqual(0);
@@ -1313,7 +1313,7 @@ test.describe('Slice 3.3: Picture Match Game (React)', () => {
     }).not.toMatch(/pointer-events-none/);
 
     const correctIndex = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correct ?? -1;
     });
     expect(correctIndex).toBeGreaterThanOrEqual(0);
@@ -1341,7 +1341,7 @@ test.describe('Slice 3.3: Picture Match Game (React)', () => {
     }).not.toMatch(/pointer-events-none/);
 
     const correctIndex = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correct ?? -1;
     });
     expect(correctIndex).toBeGreaterThanOrEqual(0);
@@ -1481,7 +1481,7 @@ test.describe('Slice 3.4: True or Not Game (React)', () => {
       .not.toHaveClass(/pointer-events-none/);
 
     const isMatch = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.isMatch;
     });
     expect(typeof isMatch).toBe('boolean');
@@ -1506,7 +1506,7 @@ test.describe('Slice 3.4: True or Not Game (React)', () => {
     await page.waitForTimeout(900);
 
     const isMatch = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.isMatch;
     });
     const correctIndex = isMatch ? 0 : 1;
@@ -1633,7 +1633,7 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
 
     const target = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.word || null;
     });
     expect(target).toBeTruthy();
@@ -1833,7 +1833,7 @@ test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
 
     const target = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.words || null;
     });
     expect(target).toBeTruthy();
@@ -1907,7 +1907,7 @@ test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
     await page.waitForTimeout(900);
 
     const target = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.words || null;
     });
     if (!target || target.length < 2) test.skip();
@@ -1997,7 +1997,7 @@ test.describe('Slice 3.9: Grammar Beginner Game (React)', () => {
     await expect(page.locator('[data-testid="gb-options"]')).toBeVisible();
 
     const correct = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       return m?.shuffledQuestions?.[m.currentQuestionIndex]?.correctAnswer ?? null;
     });
     expect(correct).toBeTruthy();
@@ -2111,7 +2111,7 @@ test.describe('Slice 3.10: Grammar Game (React)', () => {
 
     // Click the correct option using the gameManager state.
     const correctText = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
       return q ? q.options[q.correct] : null;
     });
@@ -2149,7 +2149,7 @@ test.describe('Slice 3.10: Grammar Game (React)', () => {
     await page.waitForTimeout(900);
 
     const { correctText, wrongText } = await page.evaluate(() => {
-      const m = window.gameManager;
+      const m = window.__engine?.gm;
       const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
       if (!q) return { correctText: null, wrongText: null };
       const correctText = q.options[q.correct];
@@ -2244,7 +2244,7 @@ for (const game of [
       await expect(opts.first()).toBeVisible();
 
       const correctText = await page.evaluate(() => {
-        const m = window.gameManager;
+        const m = window.__engine?.gm;
         const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
         return q ? q.options[q.correct] : null;
       });
@@ -2310,7 +2310,7 @@ test.describe('Slice 3.12: Story Time Game (React)', () => {
 
     // Pick the correct option by matching the option text against the bridge's story data.
     const correctText = await page.evaluate(() => {
-      const stories = window.gameManager?.shuffledQuestions;
+      const stories = window.__engine?.gm?.shuffledQuestions;
       const q = stories?.[0]?.questions?.[0];
       return q ? q.options[q.correctIndex] : null;
     });
@@ -2349,7 +2349,7 @@ test.describe('Slice 3.12: Story Time Game (React)', () => {
     await expect(page.locator('[data-testid="story-time-quiz"]')).toBeVisible();
 
     const wrongText = await page.evaluate(() => {
-      const stories = window.gameManager?.shuffledQuestions;
+      const stories = window.__engine?.gm?.shuffledQuestions;
       const q = stories?.[0]?.questions?.[0];
       if (!q) return null;
       const idx = q.options.findIndex((_, i) => i !== q.correctIndex);
@@ -2568,7 +2568,7 @@ test.describe('Slice 3.15: ABC Game (React)', () => {
     // recordABCAnswer advances the legacy index immediately; the React index
     // follows on the 1.5s auto-advance.
     await expect
-      .poll(() => page.evaluate(() => window.gameManager?.currentQuestionIndex), { timeout: 3000 })
+      .poll(() => page.evaluate(() => window.__engine?.gm?.currentQuestionIndex), { timeout: 3000 })
       .toBe(1);
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2', { timeout: 3000 });
 
@@ -2615,7 +2615,7 @@ test.describe('Slice 3.15: ABC Game (React)', () => {
     await seedUser(page);
     // Drive the mastery-based generator to return [] by mastering every letter.
     await page.evaluate(() => {
-      const wm = (window.app.userProgress.wordMastery ||= {});
+      const wm = (window.__engine.app.userProgress.wordMastery ||= {});
       for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
         wm[`${ch}_abc`] = { masteryLevel: 1, attempts: 10, correct: 10 };
       }
@@ -2726,7 +2726,7 @@ test.describe('Phonics Game (React)', () => {
     await page.locator('[data-testid="answer-option"][data-index="0"]').click();
 
     await expect
-      .poll(() => page.evaluate(() => window.gameManager?.currentQuestionIndex), { timeout: 3000 })
+      .poll(() => page.evaluate(() => window.__engine?.gm?.currentQuestionIndex), { timeout: 3000 })
       .toBe(1);
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2', { timeout: 3000 });
 
@@ -2773,7 +2773,7 @@ test.describe('Phonics Game (React)', () => {
   test('all sounds mastered shows the congratulations screen', async ({ page }) => {
     await seedUser(page);
     await page.evaluate(() => {
-      const wm = (window.app.userProgress.wordMastery ||= {});
+      const wm = (window.__engine.app.userProgress.wordMastery ||= {});
       for (const s of ['sh', 'ch', 'th', 'ph', 'wh', 'ck', 'ng', 'ee', 'oo', 'ai', 'oa', 'ea', 'ay']) {
         wm[`${s}_phonics`] = { masteryLevel: 1, attempts: 10, correct: 10 };
       }

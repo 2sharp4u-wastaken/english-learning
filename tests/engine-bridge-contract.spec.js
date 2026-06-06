@@ -6,10 +6,16 @@ import { test, expect } from '@playwright/test';
  *
  * Drives the REAL src/bridge/vocabulary.ts (imported via Vite) end-to-end against
  * the booted engine, and snapshots the externally-observable contract the Slice
- * 4.4.b rewrite must preserve: the begin-session result shape, the userProgress
- * schema (v4), the wordMastery mutation on a recorded answer, the score, and the
- * resumable gameState round-trip. These are implementation-agnostic — they pin
- * WHAT the engine produces, not how.
+ * 4.4.b rewrite must preserve: the begin-session result shape, the wordMastery
+ * mutation on a recorded answer, the score, and the resumable gameState round-trip.
+ * These are implementation-agnostic — they pin WHAT the engine produces, not how.
+ *
+ * Slice 4.6: the pure `getDefaultProgress` v4-schema check moved to the in-process
+ * Vitest unit test `src/engine/__tests__/appState-progress.test.ts` (no browser
+ * needed). What remains here is the genuinely integration-level bridge flow, which
+ * stays in Playwright against the real running app + loaded content. The engine is
+ * reached via the DEV-only `window.__engine` handle that Slice 4.6 introduced in
+ * place of the previous production-looking engine globals.
  */
 
 const TEST_USER_ID = 'bridgesmoke';
@@ -26,32 +32,16 @@ async function boot(page) {
     localStorage.setItem(`${prefix}userProgress_${userId}`, JSON.stringify({ version: 4 }));
   }, { userId: TEST_USER_ID, prefix: V2_PREFIX });
   await page.reload();
-  await page.waitForFunction(() => !!(window.gameManager && window.gameManager.scoreManager && window.gameManager.progressManager && window.app), null, { timeout: 6000 });
+  await page.waitForFunction(() => !!(window.__engine?.gm && window.__engine?.gm.scoreManager && window.__engine?.gm.progressManager && window.__engine?.app), null, { timeout: 6000 });
 }
 
 test.beforeEach(async ({ page }) => {
   await boot(page);
 });
 
-test('AppManager.getDefaultProgress — v4 schema contract (top-level keys)', async ({ page }) => {
-  const r = await page.evaluate(() => {
-    const p = window.app.getDefaultProgress();
-    return { keys: Object.keys(p).sort(), version: p.version, gameUnlockKeys: Object.keys(p.gameUnlocks).length };
-  });
-  // The rewrite's default progress must keep these keys so existing saves migrate cleanly.
-  expect(r.keys).toEqual([
-    'bestScores', 'certificates', 'coinHistory', 'coins', 'courses', 'gameUnlocks',
-    'hasPlayedBefore', 'lastLoginDate', 'lastPlayDate', 'lastSessionWordKeys', 'learnedWords',
-    'streakDays', 'studentName', 'topicProgress', 'totalCorrectAnswers', 'totalGamesPlayed',
-    'totalLearningTimeMs', 'totalPoints', 'totalCoinsEarned', 'version', 'wordJourneyProgress', 'wordMastery',
-  ].sort());
-  expect(r.version).toBe(4);
-  expect(r.gameUnlockKeys).toBeGreaterThanOrEqual(15);
-});
-
 test('vocabulary bridge: begin → recordAnswer → saveState contract', async ({ page }) => {
   const r = await page.evaluate(async () => {
-    const gm = window.gameManager;
+    const gm = window.__engine?.gm;
     // Bypass the learned-word gate so a fresh user has a playable pool.
     gm.settings = { ...(gm.settings || {}), gameUnlockOverride: true };
     gm.loadGameData();
@@ -109,7 +99,7 @@ test('vocabulary bridge: begin → recordAnswer → saveState contract', async (
 
 test('vocabulary bridge: a wrong answer records an attempt but awards no points', async ({ page }) => {
   const r = await page.evaluate(async () => {
-    const gm = window.gameManager;
+    const gm = window.__engine?.gm;
     gm.settings = { ...(gm.settings || {}), gameUnlockOverride: true };
     gm.loadGameData();
     const vb = await import('/src/bridge/vocabulary.ts');

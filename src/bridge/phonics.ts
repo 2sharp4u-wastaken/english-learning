@@ -1,10 +1,15 @@
 import { setGameContext, cancelSpeech } from './audio'
 import { getApp, getGameManager } from '../engine/instances'
 
-// Legacy data module — generatePhonicsQuestions reads
-// window.app.userProgress.wordMastery directly to filter mastered sounds.
+// Legacy data module — generatePhonicsQuestions filters mastered sounds by
+// `<sound>_phonics` mastery; Slice 4.6 made it read that via an injected provider
+// (was `window.app.userProgress.wordMastery`) so the engine global could be
+// deleted. This bridge is the gateway, so it injects the provider.
 // @ts-expect-error — legacy .js import without a .d.ts
-import { generatePhonicsQuestions } from '../../data/phonicsData.js'
+import { generatePhonicsQuestions, setPhonicsMasteryProvider } from '../../data/phonicsData.js'
+
+// Feed the legacy Phonics generator the live engine's word-mastery map (lazy).
+setPhonicsMasteryProvider(() => getApp()?.userProgress?.wordMastery ?? {})
 
 // ─── Question shape (mirrors data/phonicsData.js generators) ───────────────────
 

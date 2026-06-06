@@ -31,7 +31,7 @@ async function seedAndStart(page, { gateOn, learnedCount = 0 }) {
   // Ensure gameManager has the latest settings + reload data
   await page.evaluate(() => {
     const ls = JSON.parse(localStorage.getItem('englishLearningSettings') || '{}');
-    const gm = window.gameManager;
+    const gm = window.__engine?.gm;
     if (!gm) return;
     gm.applySettings({ ...gm.getDefaultSettings(), ...ls });
     gm.progressManager?.loadProgress?.(localStorage.getItem('currentUser'));
@@ -42,7 +42,7 @@ async function seedAndStart(page, { gateOn, learnedCount = 0 }) {
 test('fresh learner with gate on never gets words longer than 7 letters', async ({ page }) => {
   await seedAndStart(page, { gateOn: true, learnedCount: 0 });
   const lengths = await page.evaluate(() =>
-    (window.gameManager.gameData.vocabulary || []).map(w => w.word.length),
+    (window.__engine?.gm.gameData.vocabulary || []).map(w => w.word.length),
   );
   expect(lengths.length).toBeGreaterThan(0);
   expect(Math.max(...lengths)).toBeLessThanOrEqual(7);
@@ -51,7 +51,7 @@ test('fresh learner with gate on never gets words longer than 7 letters', async 
 test('mid-tier learner (15 learned) gets words up to 9 letters', async ({ page }) => {
   await seedAndStart(page, { gateOn: true, learnedCount: 20 });
   const lengths = await page.evaluate(() =>
-    (window.gameManager.gameData.vocabulary || []).map(w => w.word.length),
+    (window.__engine?.gm.gameData.vocabulary || []).map(w => w.word.length),
   );
   expect(lengths.length).toBeGreaterThan(0);
   expect(Math.max(...lengths)).toBeLessThanOrEqual(9);
@@ -62,7 +62,7 @@ test('mid-tier learner (15 learned) gets words up to 9 letters', async ({ page }
 test('advanced learner (50+) sees the unfiltered pool', async ({ page }) => {
   await seedAndStart(page, { gateOn: true, learnedCount: 60 });
   const longCount = await page.evaluate(() =>
-    (window.gameManager.gameData.vocabulary || []).filter(w => w.word.length > 9).length,
+    (window.__engine?.gm.gameData.vocabulary || []).filter(w => w.word.length > 9).length,
   );
   expect(longCount).toBeGreaterThan(0);
 });
@@ -70,7 +70,7 @@ test('advanced learner (50+) sees the unfiltered pool', async ({ page }) => {
 test('toggle off restores legacy unfiltered behavior', async ({ page }) => {
   await seedAndStart(page, { gateOn: false, learnedCount: 0 });
   const longCount = await page.evaluate(() =>
-    (window.gameManager.gameData.vocabulary || []).filter(w => w.word.length > 7).length,
+    (window.__engine?.gm.gameData.vocabulary || []).filter(w => w.word.length > 7).length,
   );
   expect(longCount).toBeGreaterThan(0);
 });
@@ -78,7 +78,7 @@ test('toggle off restores legacy unfiltered behavior', async ({ page }) => {
 test('picture-match distractor set rejects 2+ long-word options for fresh learner', async ({ page }) => {
   await seedAndStart(page, { gateOn: true, learnedCount: 0 });
   const offenders = await page.evaluate(() => {
-    const items = window.gameManager.gameData['picture-match'] || [];
+    const items = window.__engine?.gm.gameData['picture-match'] || [];
     return items.filter(item => {
       if (!Array.isArray(item.options)) return false;
       const longCount = item.options.filter(o => (o?.word || '').length > 5).length;

@@ -270,7 +270,7 @@ test.describe('Profile Rendering', () => {
             lastLoginDate: new Date().toISOString().slice(0, 10), // today, so streak isn't reset
         });
 
-        // Slice 4.4.b: the legacy welcome-screen profile (window.app.renderProfileScreen
+        // Slice 4.4.b: the legacy welcome-screen profile (the engine's renderProfileScreen
         // → #profile-* divs) was retired with the legacy engine; the React /profile route
         // owns these stats now. Leading-int parse since the value pill includes a unit span.
         await gotoReactRoute(page, '/profile');
@@ -412,7 +412,7 @@ test.describe('Memory Game Hybrid Selection', () => {
         await injectProgress(page, { learnedWords: makeLearnedWords(5) });
 
         const result = await page.evaluate(() => {
-            return window.app?.getFilteredWordsForGame?.('memory')?.length || 0;
+            return window.__engine?.app?.getFilteredWordsForGame?.('memory')?.length || 0;
         });
 
         // Full bank should have many more words than 5
@@ -439,7 +439,7 @@ test.describe('Memory Game Hybrid Selection', () => {
         await injectProgress(page, { learnedWords });
 
         const result = await page.evaluate(() => {
-            return window.app?.getFilteredWordsForGame?.('memory')?.length || 0;
+            return window.__engine?.app?.getFilteredWordsForGame?.('memory')?.length || 0;
         });
 
         // Should return exactly 15 (only learned words)
