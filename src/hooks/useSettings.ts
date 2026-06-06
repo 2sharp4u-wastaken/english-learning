@@ -17,9 +17,23 @@ function shallowEqualSettings(a: AppSettings, b: AppSettings): boolean {
     a.showConfetti !== b.showConfetti ||
     a.exitBehavior !== b.exitBehavior ||
     a.gameUnlockOverride !== b.gameUnlockOverride ||
-    a.claudeApiKey !== b.claudeApiKey
+    a.claudeApiKey !== b.claudeApiKey ||
+    a.expressionsEnabled !== b.expressionsEnabled
   ) {
     return false
+  }
+  // Expression registers (Phase 5) — 3 booleans, compare by value.
+  const ar = a.expressionRegisters
+  const br = b.expressionRegisters
+  if (ar !== br) {
+    if (!ar || !br) return false
+    if (
+      ar['kid-friendly'] !== br['kid-friendly'] ||
+      ar.casual !== br.casual ||
+      ar.edgy !== br.edgy
+    ) {
+      return false
+    }
   }
   // Compare category selection by length and content
   if (a.selectedCategories.length !== b.selectedCategories.length) return false

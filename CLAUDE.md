@@ -77,7 +77,7 @@ Hash-based routing via React Router (`createHashRouter`):
 - `v2_userProgress_<userId>` — progress, wordMastery, streak, certificates
 - `v2_englishLearningSettings` — app settings
 - `v2_authUsers` — all user accounts
-- `customWords_global` — parent-added custom words (note: **no** `v2_` prefix; read at boot by `data/_loader.js` and via `src/bridge/customContent.ts`). Related parent-content keys (also unprefixed): `wordImageOverrides`, `wordTranslationOverrides`, `nikudCache`.
+- `customWords_global` — parent-added custom words (note: **no** `v2_` prefix; read at boot by `data/_loader.js` and via `src/bridge/customContent.ts`). Related parent-content keys (also unprefixed): `wordImageOverrides`, `wordTranslationOverrides`, `nikudCache`, `expressionMeaningOverrides` (Phase 5 — expression Hebrew-meaning overrides keyed by phrase, applied live by `src/bridge/expressions.ts`).
 - All keys use `v2_` prefix (set in `app.js`)
 
 ### Managers (legacy, in `managers/`)

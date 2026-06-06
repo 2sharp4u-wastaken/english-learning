@@ -28,6 +28,12 @@ import { getGameManager } from '../engine/instances'
 const CUSTOM_WORDS_KEY = 'customWords_global'
 const IMAGE_OVERRIDES_KEY = 'wordImageOverrides'
 const TRANS_OVERRIDES_KEY = 'wordTranslationOverrides'
+/**
+ * Phase 5 (Slice 5.2) — parent overrides for an expression's Hebrew meaning,
+ * keyed by the English `phrase` (expressions have no category). Read SYNCHRONOUSLY
+ * by src/bridge/expressions.ts when building the bank (see EXPRESSION_MEANING_OVERRIDES_KEY).
+ */
+export const EXPRESSION_MEANING_OVERRIDES_KEY = 'expressionMeaningOverrides'
 
 export interface CustomWord {
   word: string
@@ -138,6 +144,31 @@ export async function removeTranslationOverride(category: string, word: string):
   setKey(TRANS_OVERRIDES_KEY, map)
 }
 
+// ─── Expression meaning overrides (Phase 5, Slice 5.2) ───────────────────────
+// Keyed by phrase. Reads are also done synchronously by bridge/expressions.ts via
+// getExpressionMeaningOverridesSync so edits apply live without a reload.
+
+export async function getExpressionMeaningOverrides(): Promise<OverrideMap> {
+  return getKey<OverrideMap>(EXPRESSION_MEANING_OVERRIDES_KEY) ?? {}
+}
+
+/** Synchronous read for the expressions bridge's per-call meaning resolution. */
+export function getExpressionMeaningOverridesSync(): OverrideMap {
+  return getKey<OverrideMap>(EXPRESSION_MEANING_OVERRIDES_KEY) ?? {}
+}
+
+export async function setExpressionMeaningOverride(phrase: string, meaningHe: string): Promise<void> {
+  const map = await getExpressionMeaningOverrides()
+  map[phrase] = meaningHe
+  setKey(EXPRESSION_MEANING_OVERRIDES_KEY, map)
+}
+
+export async function removeExpressionMeaningOverride(phrase: string): Promise<void> {
+  const map = await getExpressionMeaningOverrides()
+  delete map[phrase]
+  setKey(EXPRESSION_MEANING_OVERRIDES_KEY, map)
+}
+
 // ─── Export / Import (backup + cross-device, replaces save-to-source) ─────────
 
 export interface CustomContentBundle {
@@ -146,6 +177,8 @@ export interface CustomContentBundle {
   customWords: CustomWord[]
   imageOverrides: OverrideMap
   translationOverrides: OverrideMap
+  /** Phase 5 — expression meaning overrides (optional; absent in pre-5.2 bundles). */
+  expressionMeaningOverrides?: OverrideMap
 }
 
 export async function exportAll(): Promise<CustomContentBundle> {
@@ -155,6 +188,7 @@ export async function exportAll(): Promise<CustomContentBundle> {
     customWords: await getCustomWords(),
     imageOverrides: await getImageOverrides(),
     translationOverrides: await getTranslationOverrides(),
+    expressionMeaningOverrides: await getExpressionMeaningOverrides(),
   }
 }
 
@@ -166,7 +200,7 @@ export async function exportAll(): Promise<CustomContentBundle> {
 export async function importAll(
   bundle: CustomContentBundle,
   mode: 'merge' | 'replace' = 'merge',
-): Promise<{ words: number; images: number; translations: number }> {
+): Promise<{ words: number; images: number; translations: number; expressions: number }> {
   if (!bundle || bundle.version !== 1) {
     throw new Error('Unrecognized custom-content bundle')
   }
@@ -200,9 +234,17 @@ export async function importAll(
     mode === 'replace' ? translations : { ...(await getTranslationOverrides()), ...translations }
   setKey(TRANS_OVERRIDES_KEY, mergedTrans)
 
+  const expressions = bundle.expressionMeaningOverrides ?? {}
+  const mergedExpr =
+    mode === 'replace'
+      ? expressions
+      : { ...(await getExpressionMeaningOverrides()), ...expressions }
+  setKey(EXPRESSION_MEANING_OVERRIDES_KEY, mergedExpr)
+
   return {
     words: incomingWords.length,
     images: Object.keys(images).length,
     translations: Object.keys(translations).length,
+    expressions: Object.keys(expressions).length,
   }
 }

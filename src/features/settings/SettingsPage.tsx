@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Library, Gamepad2, SlidersHorizontal, Users, Wrench, RotateCcw, Download } from 'lucide-react'
+import { Library, Gamepad2, SlidersHorizontal, Users, Wrench, MessagesSquare, RotateCcw, Download } from 'lucide-react'
 import { useParentPassword } from '@/hooks/useParentPassword'
 import { useSettings } from '@/hooks/useSettings'
 import { SettingsTabRail, type TabDef } from './components/SettingsTabRail'
@@ -10,13 +10,15 @@ import { GameTab } from './tabs/GameTab'
 import { AdvancedTab } from './tabs/AdvancedTab'
 import { UsersTab } from './tabs/UsersTab'
 import { AdvancedToolsTab } from './tabs/AdvancedToolsTab'
+import { ExpressionsTab } from './tabs/ExpressionsTab'
 
-type TabId = 'categories' | 'game' | 'advanced' | 'users' | 'advanced-tools'
+type TabId = 'categories' | 'game' | 'advanced' | 'users' | 'advanced-tools' | 'expressions'
 
 const TABS: TabDef[] = [
   { id: 'categories',     label: 'קטגוריות',    icon: <Library size={16} />,          protected: false },
   { id: 'game',           label: 'משחק',        icon: <Gamepad2 size={16} />,         protected: true  },
   { id: 'advanced',       label: 'מתקדם',       icon: <SlidersHorizontal size={16} />, protected: true  },
+  { id: 'expressions',    label: 'ביטויים',     icon: <MessagesSquare size={16} />,   protected: true  },
   { id: 'users',          label: 'משתמשים',     icon: <Users size={16} />,            protected: true  },
   { id: 'advanced-tools', label: 'כלי הורה',    icon: <Wrench size={16} />,           protected: true  },
 ]
@@ -118,6 +120,7 @@ export function SettingsPage() {
           {activeId === 'categories' && <CategoriesTab />}
           {activeId === 'game' && <GameTab />}
           {activeId === 'advanced' && <AdvancedTab />}
+          {activeId === 'expressions' && <ExpressionsTab />}
           {activeId === 'users' && <UsersTab />}
           {activeId === 'advanced-tools' && <AdvancedToolsTab />}
         </div>

@@ -2091,7 +2091,41 @@ Scope commitment:
 
 ### Slice 5.1: Expression Data Model
 
-Status: planned
+Status: **SHIPPED (2026-06-06)** — data plumbing only, no game consumes it yet.
+
+As-built notes:
+
+- **Content seeded:** 121 expressions — 51 idioms + 40 phrasal verbs + 30 slang (14 `casual`,
+  16 `edgy`). Banks: `data/expressions/{idioms,phrasalVerbs,slang}.js` (each uses a small
+  factory helper like `articlesData.js`), combined by `data/expressions/_index.js` →
+  `expressionBank`. `data/_loader.js` imports it and exposes `window.expressionBank`
+  **parallel to** `window.vocabularyBank` — deliberately NOT merged into `vocabularyBank`
+  or any `gameData.*` array, so vocabulary games never pick up phrases.
+- **Schema addition vs the plan:** each entry carries `meaningHeOptions: string[]` (2-3
+  candidate Hebrew meanings; `[0]` = recommended) alongside the chosen `meaningHe`. This
+  backs the per-entry translation-review workflow (the parent *picks*, never translates).
+  Picks are tracked in **`docs/expression-review.md`** (auto-generated, ★ = recommendation);
+  applying a pick = set `meaningHe` to the chosen option. `exampleHe` is a single authored
+  translation (no options) to avoid doubling the review burden.
+- **Bridge / hook:** `src/bridge/expressions.ts` is the only gateway to `window.expressionBank`
+  — types (`Expression`/`ExpressionType`/`Register`), `getExpressionBank()` (register-filtered),
+  `getEnabledRegisters()`, `getExpressionsByType()`, `DEFAULT_REGISTERS`. `src/hooks/useExpressions.ts`
+  re-reads on the `game-data-ready` event (same readiness pattern as `useGameUnlocks`).
+- **Register filter lives in the bridge now** (5.1), reading `settings.expressionRegisters`
+  (added to `DEFAULT_SETTINGS` + `AppSettings`): kid-friendly on, casual/edgy off. Slice 5.2
+  only needs to add the toggle UI — the filter boundary already exists.
+- **Tests:** `src/bridge/__tests__/expressions.test.ts` (Vitest, 9 cases) — schema, register
+  filter defaults/overrides, and catalog **disjointness** (no expression phrase collides with a
+  vocabulary word). The disjointness test caught `cool`/`yummy` overlaps → swapped for
+  `totally`/`yum`. Run with `npm run test:unit` (NOT `npm run test`, which is Playwright).
+  Build (`npm run build`) typechecks tests too, so the untyped JS data imports are cast.
+- Index chunk 404 KB (was ~380 KB; +~24 KB authored content), still under the 500 KB bar.
+- **Dev inspector:** `/#/dev/expressions` (`src/features/dev/ExpressionInspectorPage.tsx`) — browse
+  all 121 entries with search + type/register filters, hear each phrase, see which are register-hidden.
+  Reads via a new `getAllExpressions()` (unfiltered) on the bridge. **(RETIRED in Slice 5.2** — the
+  parent-locked ביטויים settings tab supersedes it; route + page deleted.)
+
+Original plan (for reference):
 
 Define the new content shape and load path. No game consumes this data yet — data plumbing only.
 
@@ -2135,9 +2169,37 @@ Acceptance criteria:
 - regular vocabulary games (picture-match, memory, scramble) do NOT pick up expressions
 - phrases render correctly in RTL alongside Hebrew translations
 
-### Slice 5.2: Parental Control for Registers
+### Slice 5.2: Parental Controls + Expression Manager
 
-Status: planned — depends on Slice 1.6 (Settings Shell)
+Status: **SHIPPED (2026-06-06)** — expanded beyond the original "just register toggles" to also
+fold the (now-retired) dev inspector into a parent-facing browse + edit manager.
+
+As-built notes:
+
+- **New parent-locked tab "ביטויים"** (`src/features/settings/tabs/ExpressionsTab.tsx`), registered
+  `protected: true` in `SettingsPage.tsx`. Two sections: (1) controls — a **master on/off**
+  (`expressionsEnabled`) + **per-register toggles** (kid-friendly/casual/edgy) via `Toggle`+`useSettings`,
+  register toggles disabled when master off; (2) **manager** (`ExpressionsPanel`).
+- **Manager** (`tabs/components/ExpressionsPanel.tsx`): search + type/register filters + per-expression
+  meaning editor — quick-pick one of the `meaningHeOptions` (★ = source) or type a custom value, reset
+  to source, speak the phrase. Reuses the retired inspector's card UI.
+- **Translation overrides** ("both" modes): per-browser overrides in `bridge/customContent.ts`
+  (`expressionMeaningOverrides`, keyed by **phrase**; async API + sync `getExpressionMeaningOverridesSync`;
+  added to Export/Import bundle). Applied **live** by `bridge/expressions.ts` (`getExpressionBank`/
+  `getAllExpressions` map `meaningHe` through the override map each call — beats word-translation
+  overrides which only apply on reload). The other mode: bake confirmed `docs/expression-review.md`
+  picks into source `.js` (ongoing content step).
+- **Master switch:** `getExpressionBank()` returns `[]` when `expressionsEnabled === false`;
+  `getAllExpressions()` ignores it (manager always browses all). `expressionsEnabled` default true,
+  added to `DEFAULT_SETTINGS`/`AppSettings` + `useSettings` shallow-compare.
+- **Dev inspector RETIRED:** `/#/dev/expressions` route + `src/features/dev/ExpressionInspectorPage.tsx`
+  deleted; the parent tab supersedes it.
+- **Tests:** `expressions.test.ts` extended (master off → empty bank but full `getAllExpressions`;
+  override applies in both accessors + survives filter; remove restores source). New Playwright
+  `tests/expression-settings.spec.js` (manager user auto-unlocks; toggle persistence; meaning edit +
+  reset persistence). `npm run test:unit` 18/18, build green.
+
+Original plan (for reference):
 
 Settings toggles to enable/disable each register. Defaults: `kid-friendly` on, `casual` off, `edgy` off. Changes gated behind the parent password (same mechanism as existing protected settings).
 

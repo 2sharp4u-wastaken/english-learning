@@ -146,6 +146,35 @@ getFilteredWordsForGame(gameType)
 
 ---
 
+## Expression Data Load + Controls (Phase 5, Slices 5.1–5.2 — no game consumes yet)
+
+```
+data/expressions/{idioms,phrasalVerbs,slang}.js
+  └─ data/expressions/_index.js → expressionBank (full, unfiltered)
+       └─ data/_loader.js: window.expressionBank = expressionBank   (parallel to window.vocabularyBank;
+            NOT merged into vocabularyBank/gameData → vocabulary games never see expressions)
+            └─ dispatches 'game-data-ready'
+src/bridge/expressions.ts (ONLY gateway to window.expressionBank)
+  ├─ master: settings.expressionsEnabled (false → getExpressionBank() = [])
+  ├─ getEnabledRegisters() ← settings.expressionRegisters (default: kid-friendly on, casual/edgy off)
+  ├─ withOverrides() ← customContent.getExpressionMeaningOverridesSync() (by phrase, applied live)
+  ├─ getExpressionBank() = master ? withOverrides(raw filtered by registers) : []
+  └─ getAllExpressions() = withOverrides(raw)   (ignores master + registers — for the manager)
+       └─ src/hooks/useExpressions.ts re-reads on 'game-data-ready'
+
+Settings tab "ביטויים" (parent-locked, ExpressionsTab):
+  ├─ master + register Toggles → useSettings.updateSettings({ expressionsEnabled, expressionRegisters })
+  └─ ExpressionsPanel edit → customContent.set/removeExpressionMeaningOverride(phrase, he)
+       → expressionMeaningOverrides localStorage → next getExpressionBank/getAllExpressions reflects it
+```
+
+**Downstream (future):** Slice 5.3 games call `useExpressions()` and track `expressionMastery`
+separately from `wordMastery`.
+**Invariants:** keep the two catalogs disjoint (pinned by `expressions.test.ts`); the dev route
+`/#/dev/expressions` was retired in 5.2 — the parent ביטויים tab is the only browse/edit surface.
+
+---
+
 ## Vocabulary Game (React — Slice 3.1)
 
 ```

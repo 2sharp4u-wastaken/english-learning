@@ -66,7 +66,7 @@ export function CustomWordsPanel() {
       const bundle = JSON.parse(await file.text()) as CustomContentBundle
       const res = await importAll(bundle, 'merge')
       setWords(await getCustomWords())
-      setMessage({ ok: true, text: `יובאו ${res.words} מילים, ${res.images} תמונות, ${res.translations} תרגומים` })
+      setMessage({ ok: true, text: `יובאו ${res.words} מילים, ${res.images} תמונות, ${res.translations} תרגומים, ${res.expressions} ביטויים` })
     } catch {
       setMessage({ ok: false, text: 'קובץ הגיבוי אינו תקין' })
     }

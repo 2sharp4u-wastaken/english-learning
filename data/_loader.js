@@ -43,6 +43,10 @@ import {
 // Import phonetics system
 import { initializePhonetics, selectDistractors } from './phonetics.js';
 
+// Import the Phase 5 expression bank (idioms + phrasal verbs + slang).
+// Kept SEPARATE from vocabularyBank below — no vocabulary game may pick it up.
+import { expressionBank } from './expressions/_index.js';
+
 // Combine all vocabulary into single bank
 const vocabularyBank = [
     ...animalsWords,    // 60 words
@@ -205,14 +209,18 @@ console.log('Game data loaded successfully:', {
     pronunciation: gameData.pronunciation.length,
     listening: gameData.listening.length,
     reading: gameData.reading.length,
-    abc: gameData.abc.length
+    abc: gameData.abc.length,
+    expressions: expressionBank.length
 });
 
 // Make gameData and difficultyLevels available globally and for ES module import
 window.gameData = gameData;
 window.difficultyLevels = difficultyLevels;
 window.grammarCategories = grammarCategories;
-export { gameData, difficultyLevels, grammarCategories };
+// Phase 5 expression bank — exposed parallel to vocabularyBank, read in React only
+// through src/bridge/expressions.ts. Deliberately NOT merged into gameData/vocabulary.
+window.expressionBank = expressionBank;
+export { gameData, difficultyLevels, grammarCategories, expressionBank };
 // vocabularyBank already set above before phonetics initialization
 
 // Called when another tab saves new custom words (storage event).

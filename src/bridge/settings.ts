@@ -22,6 +22,17 @@ export const DEFAULT_SETTINGS: AppSettings = {
   gameUnlockOverride: false,
   difficultyAutoGate: true,
   claudeApiKey: '',
+  // Phase 5 — master on/off for all expression content (Slice 5.2). When false the
+  // expressions bridge returns an empty bank to games regardless of registers.
+  expressionsEnabled: true,
+  // Phase 5 — which expression registers are enabled. kid-friendly on by default;
+  // casual/edgy are parent opt-in. The expressions bridge filters the bank by these
+  // flags (toggled from the parent-locked ביטויים settings tab, Slice 5.2).
+  expressionRegisters: {
+    'kid-friendly': true,
+    casual: false,
+    edgy: false,
+  },
 }
 
 // ─── Legacy global access ────────────────────────────────────────────────────

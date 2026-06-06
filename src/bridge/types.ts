@@ -154,6 +154,19 @@ export interface AppSettings {
   // Custom words (parent)
   claudeApiKey: string
 
+  // Phase 5 — master on/off for all expression content (Slice 5.2). Optional:
+  // absent ⇒ treated as enabled (the bridge defaults it on).
+  expressionsEnabled?: boolean
+
+  // Phase 5 — enabled expression registers (kid-friendly / casual / edgy).
+  // Optional: pre-5.1 settings blobs won't have it; the expressions bridge
+  // falls back to DEFAULT_REGISTERS. Keyed by Register from bridge/expressions.
+  expressionRegisters?: {
+    'kid-friendly': boolean
+    casual: boolean
+    edgy: boolean
+  }
+
   // Legacy-extensible
   [key: string]: unknown
 }
