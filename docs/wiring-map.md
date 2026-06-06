@@ -168,10 +168,36 @@ Settings tab "ביטויים" (parent-locked, ExpressionsTab):
        → expressionMeaningOverrides localStorage → next getExpressionBank/getAllExpressions reflects it
 ```
 
-**Downstream (future):** Slice 5.3 games call `useExpressions()` and track `expressionMastery`
-separately from `wordMastery`.
+**Expression games (Slices 5.3–5.4 — SHIPPED):** self-contained surface, NOT the legacy
+gameManager word-pool path.
+
+```
+data/expressions/plainForms.js (phrase → plainEn, Slice 5.4)
+  └─ data/_loader.js: window.expressionPlainForms
+       └─ src/bridge/expressions.ts: getExpressionPlainForm(phrase)
+
+React route /#/game/expr-{meaning,truefalse,blank,build,swap}
+  └─ GameHostPage → REACT_GAMES['expr-*'] → expressions/pages.tsx wrapper → ExpressionGamePage(mode)
+      ├─ buildExpressionSession(mode)  (src/bridge/expressionGame.ts)
+      │   ├─ getExpressionUnlock(): getDerivedLearnedCount() ≥ 50 AND getExpressionBank().length>0
+      │   │     (single source of truth — HomePage expressions tier gate too; NOT gameUnlocks)
+      │   └─ buildOne(mode): meaning/truefalse/blank/build + swap (plainEn prompt, skip if no plain form;
+      │         distractors exclude shared meaningHe/plainEn → one defensible answer)
+      └─ recordExpressionAnswer(phrase, ok) → gameManager.recordExpressionAttempt
+            ├─ progressManager.recordExpressionAttempt → expressionMastery[phrase] (mastered at 3 correct)
+            └─ Slice 5.5: getMasteredExpressionCount() ≥ 30 → certificateManager.awardCertificate(
+                  'milestone_expressions_30', "אלוף ביטויים")  (idempotent via hasCertificate)
+
+Progress surfaces (Slice 5.5):
+  ├─ bridge/stats.ts buildExpressionStats() joins expressionMastery × getAllExpressions()
+  │     → UserStatsModel.expressions → StatsPage ExpressionStatsCard (per-type breakdown)
+  └─ bridge/progress.getMasteredExpressionCount() → ProfilePage "ביטויים" MiniStat (when >0)
+```
+
 **Invariants:** keep the two catalogs disjoint (pinned by `expressions.test.ts`); the dev route
 `/#/dev/expressions` was retired in 5.2 — the parent ביטויים tab is the only browse/edit surface.
+A NEW expression game id must be registered in 5 places (reactGames, GameHostPage, gameRegistry,
+HomePage GAME_ORDER, pages.tsx wrapper).
 
 ---
 
