@@ -165,7 +165,7 @@ def enrich(translations_to_fetch, existing_map=None):
 HEBREW_WORD_RE = re.compile(r'[\u05D0-\u05EA]+')
 
 # Directories to skip when scanning source files for UI strings
-SKIP_DIRS = {'.git', 'node_modules', '__pycache__', 'scripts', '.claude'}
+SKIP_DIRS = {'.git', 'node_modules', '__pycache__', 'scripts', '.claude', 'tests'}
 # Files that are already covered by the specific extractors above
 SKIP_FILES = {
     'nikud-map.json', 'phonetic-index.json',
@@ -190,6 +190,11 @@ def extract_ui_hebrew_words():
             if any(part in SKIP_DIRS for part in f.parts):
                 continue
             if f.name in SKIP_FILES:
+                continue
+            # Don't bake test-fixture Hebrew (e.g. a test's story title) into the
+            # production map. Co-located *.test.ts / *.spec.ts under src/ aren't
+            # caught by SKIP_DIRS, so filter by filename too.
+            if '.test.' in f.name or '.spec.' in f.name:
                 continue
             try:
                 content = f.read_text(encoding='utf-8')

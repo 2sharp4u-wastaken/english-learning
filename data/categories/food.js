@@ -83,9 +83,9 @@ export const foodWords = [
     { word: "Salt", translation: "מלח", category: "food", image: "🧂" },
     { word: "Peanuts", translation: "בוטנים", category: "food", image: "🥜" },
     { word: "Sushi", translation: "סושי", category: "food", image: "🍣" },
-    { word: "Beer", translation: "בירה", category: "food", image: "🍺" },
-    { word: "Wine", translation: "יין", category: "food", image: "🍷" },
-    { word: "Champagne", translation: "שמפניה", category: "food", image: "🥂" },
+    { word: "Lemonade", translation: "לימונדה", category: "food", image: "🍋" },
+    { word: "Milkshake", translation: "מילקשייק", category: "food", image: "🥤" },
+    { word: "Hot Chocolate", translation: "שוקו חם", category: "food", image: "☕" },
     { word: "Teapot", translation: "קומקום", category: "food", image: "🫖" },
     { word: "Olive", translation: "זית", category: "food", image: "🫒" },
     { word: "Blueberry", translation: "אוכמניות", category: "food", image: "🫐" }
