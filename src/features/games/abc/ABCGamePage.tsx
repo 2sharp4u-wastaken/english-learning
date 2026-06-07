@@ -54,14 +54,28 @@ function LetterGlyph({ question }: { question: ABCQuestion }) {
       </span>
     )
   }
-  const glyph = question.type === 'letter-sound' ? '?' : question.letter
+  // letter-sound is a "listen and pick the letter" round — the letter is hidden
+  // on purpose. Show a 🔊 audio glyph rather than a bare "?" so it reads as
+  // audio-only, not broken (bug-dump 2026-06-07 C4 / N1).
+  if (question.type === 'letter-sound') {
+    return (
+      <span
+        data-testid="abc-letter-display"
+        className="text-7xl sm:text-8xl"
+        role="img"
+        aria-label="audio"
+      >
+        🔊
+      </span>
+    )
+  }
   return (
     <span
       dir="ltr"
       data-testid="abc-letter-display"
       className="font-display text-7xl font-bold tracking-wide text-white sm:text-8xl"
     >
-      {glyph}
+      {question.letter}
     </span>
   )
 }

@@ -2577,6 +2577,45 @@ test.describe('Slice 3.15: ABC Game (React)', () => {
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
   });
 
+  test('C4: listen-and-pick (letter-sound) shows a 🔊 glyph, not a bare "?"', async ({ page }) => {
+    await seedUser(page);
+    await page.evaluate(() => {
+      const userId = localStorage.getItem('currentUser');
+      const q = {
+        type: 'letter-sound',
+        questionType: 'abc',
+        letter: 'a',
+        letterUpper: 'A',
+        phonetic: 'ay',
+        options: ['a', 'b', 'c', 'd'],
+        correct: 0,
+        category: 'abc',
+        word: 'A',
+        instruction: 'איזו אות שמעת?',
+        instructionEn: 'Which letter did you hear?',
+      };
+      localStorage.setItem(
+        `savedGame_${userId}_abc`,
+        JSON.stringify({
+          gameType: 'abc',
+          currentQuestionIndex: 0,
+          score: 0,
+          totalQuestions: 1,
+          timestamp: Date.now(),
+          shuffledQuestions: [q],
+          gameElapsedMs: 0,
+          selectedCategories: [],
+        }),
+      );
+    });
+    await gotoHash(page, '/game/abc');
+    await page.waitForTimeout(900);
+
+    const glyph = page.locator('[data-testid="abc-letter-display"]');
+    await expect(glyph).toHaveText('🔊');
+    await expect(glyph).not.toHaveText('?');
+  });
+
   test('incorrect answer reveals correct option and surfaces a Next button', async ({ page }) => {
     await seedUser(page);
     await seedABCSaved(page);
