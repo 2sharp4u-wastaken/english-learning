@@ -46,7 +46,7 @@ export const numbersWords = [
     { word: "Billion", translation: "מיליארד", category: "numbers", image: "1️⃣0️⃣0️⃣0️⃣0️⃣0️⃣0️⃣0️⃣0️⃣" },
     { word: "Half", translation: "חצי", category: "numbers", image: "½" },
     { word: "Quarter", translation: "רבע", category: "numbers", image: "¼" },
-    { word: "Dozen", translation: "עשרה", category: "numbers", image: "1️⃣2️⃣" },
+    { word: "Dozen", translation: "תריסר", category: "numbers", image: "1️⃣2️⃣" },
     { word: "Pair", translation: "זוג", category: "numbers", image: "2️⃣" },
     { word: "Twenty-one", translation: "עשרים ואחת", category: "numbers", image: "2️⃣1️⃣" },
     { word: "Thirty-one", translation: "שלושים ואחת", category: "numbers", image: "3️⃣1️⃣" },
