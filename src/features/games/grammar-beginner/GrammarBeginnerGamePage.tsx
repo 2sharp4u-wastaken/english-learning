@@ -120,7 +120,22 @@ export function GrammarBeginnerGamePage() {
     setSelected(null)
     setFeedback(null)
     clearAutoPlayTimer()
-    autoPlayTimerRef.current = window.setTimeout(() => autoPlay(current), 300)
+    // Poll for speech-voice readiness before firing. On fresh entry the voices
+    // often aren't loaded within a fixed 300ms, so a bare timeout silently
+    // no-ops the FIRST question's audio (B2, bug-dump 2026-06-07) — the same
+    // readiness gate Listening/Picture-Match/Pronunciation use.
+    let attempts = 0
+    const tryFire = () => {
+      const sm = (window as any).speechManager
+      const ready = sm?.englishVoice || (sm?.voices && sm.voices.length > 0)
+      if (ready || attempts >= 10) {
+        autoPlay(current)
+        return
+      }
+      attempts++
+      autoPlayTimerRef.current = window.setTimeout(tryFire, 150)
+    }
+    autoPlayTimerRef.current = window.setTimeout(tryFire, 300)
     return () => clearAutoPlayTimer()
   }, [autoPlay, clearAutoPlayTimer, current, index, phase])
 

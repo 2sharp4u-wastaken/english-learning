@@ -53,6 +53,18 @@ function splitSentence(sentence: string): { before: string; after: string } {
   return { before, after }
 }
 
+// Some sentences carry a visual-only hint in (parens) or [brackets] — e.g.
+// "I have two ___ (apple)" or a bracketed pronoun. The child sees it, but it
+// must NOT be read aloud by TTS (B5, bug-dump 2026-06-07). Strip the bracketed
+// runs and tidy the leftover spacing/punctuation before speaking.
+function stripSpokenHints(text: string): string {
+  return text
+    .replace(/[([][^)\]]*[)\]]/g, '')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s+([.,!?])/g, '$1')
+    .trim()
+}
+
 export function GrammarGamePage() {
   const navigate = useNavigate()
   const { caseMode, showNikud } = useTextPrefs()
@@ -121,7 +133,7 @@ export function GrammarGamePage() {
 
   // Speak the sentence with the blank skipped (comma pause replaces ___).
   const speakPrompt = useCallback((q: GrammarQuestion) => {
-    const text = q.sentence.replace('___', ',').replace(/\s+,\s+/, ', ')
+    const text = stripSpokenHints(q.sentence.replace('___', ',')).replace(/\s+,/, ',')
     void speak(text)
   }, [])
 
@@ -200,9 +212,11 @@ export function GrammarGamePage() {
       }
       // Legacy plays praise audio (if any) then full correct sentence (both paths).
       const correctAnswer = current.options[current.correct]
-      const fullSentence = current.sentence.includes('___')
-        ? current.sentence.replace('___', correctAnswer)
-        : current.sentence
+      const fullSentence = stripSpokenHints(
+        current.sentence.includes('___')
+          ? current.sentence.replace('___', correctAnswer)
+          : current.sentence,
+      )
       ;(async () => {
         try {
           if (outcome.isCorrect && fb.audio) await speak(fb.audio)

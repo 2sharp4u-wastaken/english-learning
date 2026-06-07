@@ -28,10 +28,6 @@ import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'recording' | 'answered' | 'finished'
 
-// Auto-advance delay after a correct answer — a beat for the confetti + praise
-// voice, while the "hear yourself"/replay buttons stay usable in the window.
-const ADVANCE_ON_CORRECT_MS = 1800
-
 interface FeedbackState {
   variant: 'correct' | 'incorrect'
   text: string
@@ -81,7 +77,6 @@ export function PronunciationGamePage() {
   const [comparison, setComparison] = useState<ComparisonState | null>(null)
   const [recordError, setRecordError] = useState<string | null>(null)
   const [exitOpen, setExitOpen] = useState(false)
-  const advanceTimer = useRef<number | null>(null)
   const isActiveRef = useRef(false)
   const autoPlayedRef = useRef(false)
   const recognitionSupported = useMemo(() => isSpeechRecognitionAvailable(), [])
@@ -174,10 +169,10 @@ export function PronunciationGamePage() {
       setCorrect(Math.floor(result.resumeScore / 10))
       setPhase('awaiting')
       isActiveRef.current = true
-      // Chrome autoplay policy blocks audio without a prior user gesture, so on
-      // a resumed session we'd silently fail. Mark as "already played" to
-      // suppress the attempt — the kid taps the speaker to hear the word.
-      autoPlayedRef.current = result.resumeIndex > 0
+      // Voice the target word on entry AND re-entry (B3, bug-dump 2026-06-07) —
+      // navigating into the game is itself the user gesture that satisfies
+      // Chrome's autoplay policy, so a resumed session should play too.
+      autoPlayedRef.current = false
     } else {
       setIndex(0)
       setScore(0)
@@ -213,10 +208,6 @@ export function PronunciationGamePage() {
     tryStart()
     return () => {
       cancelled = true
-      if (advanceTimer.current) {
-        window.clearTimeout(advanceTimer.current)
-        advanceTimer.current = null
-      }
       if (isCurrentlyRecording()) {
         void stopPronunciationRecording()
       }
@@ -271,10 +262,6 @@ export function PronunciationGamePage() {
   const handleReset = useCallback(() => {
     if (!window.confirm('האם אתה בטוח שברצונך לאפס את המשחק? כל ההתקדמות תאבד.')) {
       return
-    }
-    if (advanceTimer.current) {
-      window.clearTimeout(advanceTimer.current)
-      advanceTimer.current = null
     }
     if (isCurrentlyRecording()) {
       void stopPronunciationRecording()
@@ -380,13 +367,9 @@ export function PronunciationGamePage() {
           /* ignore */
         }
       })()
-      // Auto-advance on correct after a short beat. The "next" footer button
-      // still works (it clears this timer first, so it advances exactly once).
-      if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
-      advanceTimer.current = window.setTimeout(() => {
-        advanceTimer.current = null
-        advance()
-      }, ADVANCE_ON_CORRECT_MS)
+      // No auto-advance on correct (B4, bug-dump 2026-06-07): the child controls
+      // when to move on via the "next" footer button, so they can replay / hear
+      // themselves first. The footer renders on every answered state.
     } else {
       ;(async () => {
         try {
@@ -408,11 +391,7 @@ export function PronunciationGamePage() {
     stopMediaCapture,
   ])
 
-  const handleNextAfterIncorrect = useCallback(() => {
-    if (advanceTimer.current) {
-      window.clearTimeout(advanceTimer.current)
-      advanceTimer.current = null
-    }
+  const handleNext = useCallback(() => {
     advance()
   }, [advance])
 
@@ -494,7 +473,7 @@ export function PronunciationGamePage() {
     phase === 'answered' ? (
       <button
         type="button"
-        onClick={handleNextAfterIncorrect}
+        onClick={handleNext}
         data-testid="pronunciation-next"
         className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
       >

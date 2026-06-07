@@ -2866,7 +2866,7 @@ test.describe('Slice 3.11: Pronunciation Game (React)', () => {
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
   });
 
-  test('matching speech scores correct, shows 100% comparison, and auto-advances', async ({ page }) => {
+  test('matching speech scores correct, shows 100% comparison, and waits for manual next', async ({ page }) => {
     const errors = captureErrors(page);
     await installMockSpeech(page);
     await seedUser(page);
@@ -2887,8 +2887,15 @@ test.describe('Slice 3.11: Pronunciation Game (React)', () => {
     await expect(page.locator('[data-testid="pronunciation-transcript"]')).toHaveText(target);
     await expect(page.locator('[data-testid="pronunciation-accuracy"]')).toHaveText('100%');
 
-    // Correct answers auto-advance after a ~1.8s beat (confetti + praise).
-    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2', { timeout: 4000 });
+    // B4: correct answers no longer auto-advance — the child controls it via the
+    // "next" button (so they can replay / hear themselves first). Stay put until
+    // it's pressed, then advance.
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+    await expect(page.locator('[data-testid="pronunciation-next"]')).toBeVisible();
+    await page.waitForTimeout(2200); // would have auto-advanced by now under the old behavior
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+    await page.locator('[data-testid="pronunciation-next"]').click();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2');
 
     const critical = filterCritical(errors);
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
