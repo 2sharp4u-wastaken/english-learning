@@ -20,8 +20,8 @@ import {
   getShowConfetti,
   triggerConfetti,
 } from '@/bridge/feedback'
-import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
-import { useNikud } from '@/bridge/nikud'
+import { useTextPrefs } from '@/bridge/textPrefs'
+import { applyNikud, useNikud } from '@/bridge/nikud'
 import { Volume2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 
@@ -273,8 +273,10 @@ export function GrammarGamePage() {
   const renderWord = (word: string) =>
     caseMode === 'lowercase' ? word.toLowerCase() : word.toUpperCase()
 
-  const renderHebrew = (s: string | undefined | null) =>
-    showNikud ? (s ?? '') : stripNikud(s ?? '')
+  // Grammar Hebrew (sentence, option glosses, explanation) is authored without
+  // nikud and isn't pre-enriched at boot, so route it through `applyNikud` —
+  // adds points from the nikud map when ON, strips when OFF (Theme A).
+  const renderHebrew = (s: string | undefined | null) => applyNikud(s, showNikud)
 
   // Map shuffled options back to their original index so we can pull the
   // matching Hebrew gloss from `hebrewOptions` (which is keyed to the

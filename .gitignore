@@ -51,3 +51,6 @@ coverage/
 # SSL certs (generate locally, don't commit)
 server.crt
 server.key
+
+# Python bytecode (build-nikud-map.py)
+__pycache__/

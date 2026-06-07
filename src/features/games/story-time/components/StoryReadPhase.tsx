@@ -3,6 +3,7 @@ import { BookOpen, Pause, Play, Volume2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { cancelSpeech, speak, speakWord } from '@/bridge/audio'
 import { useNikud } from '@/bridge/nikud'
+import { useTextPrefs } from '@/bridge/textPrefs'
 import type { Story, StoryHighlight } from '@/bridge/story-time'
 
 export interface StoryReadPhaseProps {
@@ -27,6 +28,14 @@ export function StoryReadPhase({
   onReady,
 }: StoryReadPhaseProps) {
   const nk = useNikud()
+  const { caseMode } = useTextPrefs()
+  // Display-only case transform for the English sentences. NEVER feed the cased
+  // string to TTS — uppercase words get spelled out letter-by-letter (see
+  // feedback_tts_uppercase_spells_letters); audio always uses the originals.
+  const applyCase = useCallback(
+    (s: string) => (caseMode === 'lowercase' ? s.toLowerCase() : s.toUpperCase()),
+    [caseMode],
+  )
   const [activeTooltip, setActiveTooltip] = useState<ActiveTooltip | null>(null)
   const [pulseKey, setPulseKey] = useState<string | null>(null)
   const [playingSentence, setPlayingSentence] = useState<number | null>(null)
@@ -204,7 +213,7 @@ export function StoryReadPhase({
                           isPulsing && 'scale-110 bg-[color:var(--mint-400)]/40 text-white',
                         )}
                       >
-                        {token}
+                        {applyCase(token)}
                       </button>
                       {showTooltip ? (
                         <span
@@ -212,13 +221,13 @@ export function StoryReadPhase({
                           data-testid="story-word-tooltip"
                           className="absolute start-1/2 top-full z-10 mt-1 -translate-x-1/2 rounded-md bg-[color:var(--ink-950)] px-2 py-1 text-xs font-semibold text-white shadow-md"
                         >
-                          {h.translation}
+                          {nk(h.translation)}
                         </span>
                       ) : null}
                     </span>
                   )
                 }
-                return <span key={tIdx}>{token}</span>
+                return <span key={tIdx}>{applyCase(token)}</span>
               })}
             </p>
           )

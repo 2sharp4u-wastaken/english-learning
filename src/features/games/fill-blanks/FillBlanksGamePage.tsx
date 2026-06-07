@@ -351,7 +351,7 @@ export function FillBlanksGamePage() {
                 data-testid="fill-blanks-hint"
                 className="text-2xl font-semibold text-[color:var(--slate-100)] sm:text-3xl"
               >
-                🇮🇱 {current.translation}
+                🇮🇱 {nk(current.translation)}
               </p>
               <p
                 data-testid="fill-blanks-sentence"

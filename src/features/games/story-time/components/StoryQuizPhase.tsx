@@ -1,5 +1,6 @@
 import { AnswerGrid } from '@/features/games/shared/AnswerGrid'
 import { useTextPrefs } from '@/bridge/textPrefs'
+import { useNikud } from '@/bridge/nikud'
 import type { Story, StoryQuizQuestion } from '@/bridge/story-time'
 
 export interface StoryQuizPhaseProps {
@@ -19,8 +20,10 @@ export function StoryQuizPhase({
 }: StoryQuizPhaseProps) {
   // Quiz options are English word-level answers (slot words + literal phrases),
   // so they respect the abc/ABC case toggle like every other game's English
-  // text. The Hebrew question is left untouched.
+  // text. The Hebrew title + question run through `nk()` so the nikud toggle
+  // adds/strips vowel points on them too (Theme A — bug-dump 2026-06-07).
   const { caseMode } = useTextPrefs()
+  const nk = useNikud()
   const applyCase = (s: string) =>
     caseMode === 'lowercase' ? s.toLowerCase() : s.toUpperCase()
   return (
@@ -34,14 +37,14 @@ export function StoryQuizPhase({
           data-testid="story-time-context-title"
           className="text-sm font-medium text-[color:var(--slate-300)]"
         >
-          📖 {story.title}
+          📖 {nk(story.title)}
         </p>
         <h3
           dir="rtl"
           data-testid="story-time-question"
           className="text-xl font-bold text-white sm:text-2xl"
         >
-          {question.question}
+          {nk(question.question)}
         </h3>
       </header>
 

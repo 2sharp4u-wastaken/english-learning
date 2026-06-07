@@ -100,6 +100,26 @@ export interface BeginOptions {
  * resume entirely (always starts fresh, clears any saved state) to match
  * legacy's *observable* behavior without the broken bookkeeping.
  */
+/**
+ * Fisher-Yates shuffle of each question's answer options, returning new story
+ * objects with `correctIndex` remapped to wherever the correct value landed.
+ * Pure — does not mutate the source story/question objects.
+ */
+export function shuffleQuestionOptions(stories: Story[]): Story[] {
+  return stories.map((story) => ({
+    ...story,
+    questions: story.questions.map((q) => {
+      const correctValue = q.options[q.correctIndex]
+      const order = [...q.options]
+      for (let i = order.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1))
+        ;[order[i], order[j]] = [order[j], order[i]]
+      }
+      return { ...q, options: order, correctIndex: order.indexOf(correctValue) }
+    }),
+  }))
+}
+
 export function beginStoryTimeSession(opts: BeginOptions = {}): StoryTimeSessionResult {
   void opts // resume intentionally unsupported — see comment above
   const mgr = getMgr()
@@ -128,16 +148,23 @@ export function beginStoryTimeSession(opts: BeginOptions = {}): StoryTimeSession
     })
     .filter(Boolean)
 
-  const stories = (getStoriesForSession as (
+  const rawStories = (getStoriesForSession as (
     learned: any[],
     all: any[],
     count: number,
   ) => Story[])(learnedWordsList, allWords, SESSION_STORY_COUNT)
 
-  if (!stories || stories.length === 0) {
+  if (!rawStories || rawStories.length === 0) {
     mgr.isGameActive = false
     return { kind: 'learn-first', learnedCount: getLearnedCount() }
   }
+
+  // The story data authors every question's correct answer at index 0, and
+  // nothing downstream shuffles — so the correct option sat in a fixed slot
+  // every time, making the quiz trivial (bug-dump 2026-06-07 E3). Shuffle each
+  // question's options per session and remap `correctIndex`. Options are
+  // de-duped upstream, so `indexOf` of the correct value is unambiguous.
+  const stories = shuffleQuestionOptions(rawStories)
 
   const totalQuizQuestions = stories.reduce((sum, s) => sum + s.questions.length, 0)
 

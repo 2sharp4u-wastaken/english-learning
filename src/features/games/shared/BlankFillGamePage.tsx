@@ -17,8 +17,8 @@ import {
 } from '@/bridge/grammarLike'
 import { cancelSpeech, hardResetSpeech, speak } from '@/bridge/audio'
 import { getGameFeedback, getShowConfetti, triggerConfetti } from '@/bridge/feedback'
-import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
-import { useNikud } from '@/bridge/nikud'
+import { useTextPrefs } from '@/bridge/textPrefs'
+import { applyNikud, useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
@@ -275,8 +275,11 @@ export function BlankFillGamePage({
 
   const renderWord = (word: string) =>
     caseMode === 'lowercase' ? word.toLowerCase() : word.toUpperCase()
-  const renderHebrew = (s: string | undefined | null) =>
-    showNikud ? (s ?? '') : stripNikud(s ?? '')
+  // Non-vocab Hebrew (grammar/article sentences, glosses, explanations) is NOT
+  // pre-enriched at boot like vocab `word.hebrew`, so a strip-only path leaves
+  // the toggle inert when ON. Route it through `applyNikud` so the nikud map
+  // adds points when ON and strips when OFF (Theme A — bug-dump 2026-06-07).
+  const renderHebrew = (s: string | undefined | null) => applyNikud(s, showNikud)
 
   const options = shuffled.order.map((opt, i) => {
     const originalIndex = current ? current.options.indexOf(opt) : -1

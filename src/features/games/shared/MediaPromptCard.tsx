@@ -81,7 +81,7 @@ export function MediaPromptCard({
           dir="rtl"
           className="text-2xl font-semibold text-[color:var(--slate-100)] sm:text-3xl"
         >
-          {translation}
+          {nk(translation)}
         </p>
       ) : null}
 

@@ -177,10 +177,14 @@ def extract_ui_hebrew_words():
 
     The runtime DOM scanner does word-by-word replacement, so we need individual
     words (not just phrases) in the map.  This function feeds that requirement.
+
+    Includes .ts/.tsx so React-owned Hebrew chrome (nk() literals like the Word
+    Journey / Memory finish screens) is collected — those files are invisible to
+    a .js-only scan, which left their words absent from the map (Theme A).
     """
     words = set()
 
-    for ext_glob in ('**/*.js', '**/*.html'):
+    for ext_glob in ('**/*.js', '**/*.html', '**/*.ts', '**/*.tsx'):
         for f in ROOT.glob(ext_glob):
             # Skip unwanted directories
             if any(part in SKIP_DIRS for part in f.parts):
