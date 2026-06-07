@@ -2056,8 +2056,16 @@ left to ship globally). What landed:
 
 **Still open (deferred follow-ups, not blockers):**
 
-- Mic games (Pronunciation/Practice/ABC say-letter/Phonics say-sound/WJ say-word)
-  still lack coverage pending a `webkitSpeechRecognition` test stub.
+- **Mic-game stub — LANDED (2026-06-07).** `tests/helpers/mockSpeech.js` injects a
+  fake `webkitSpeechRecognition` (+ permission/getUserMedia stubs) *before boot* via
+  `addInitScript`, so the real `window.speechManager` wires to it and the production
+  compare/score path runs unchanged; tests feed transcripts with `queueTranscript`.
+  **Pronunciation (Slice 3.11)** now has a full record→compare block (learn-first gate,
+  correct→100%→auto-advance, incorrect→manual-next, recognition-error retry) and
+  **Practice (3.16)** gains a mic happy-path test. Still uncovered: **ABC say-letter /
+  Phonics say-sound / WJ say-word** — the helper drives them too, but their mic step is
+  a random-subtype (ABC/Phonics) or stage-4-of-5 (WJ) sub-state that's hard to reach
+  deterministically; left for a follow-up that forces the subtype/stage.
 - **note (b2):** `smoke.spec.js` + `slice-3.7.1` seed a dead `authUsers` key and a
   session whose id isn't in the `users` DB. It works (the gate keys off session
   validity), but a fresh-start cleanup could switch them to seed the real `users` key

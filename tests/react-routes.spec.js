@@ -1,5 +1,6 @@
 // @ts-check
 import { test, expect } from '@playwright/test';
+import { installMockSpeech, queueTranscript, queueSpeechError } from './helpers/mockSpeech.js';
 
 /**
  * React migration sweep — Phase 0 + Phase 1 (Home, Nav, Profile, Courses, Stats).
@@ -2800,12 +2801,110 @@ test.describe('Phonics Game (React)', () => {
   });
 });
 
+// ─── Slice 3.11: Pronunciation Game (React) ─────────────────────────────────
+// The mic→compare→score path is driven through the real `window.speechManager`
+// wired to the `webkitSpeechRecognition` stub from helpers/mockSpeech.js
+// (installed before boot). `queueTranscript` feeds what the recognizer "hears".
+
+/** Read the current English target word from the prompt card (case-folded for compare). */
+async function pronunciationTarget(page) {
+  const raw = await page.locator('[data-testid="media-prompt-word"]').textContent();
+  return (raw || '').trim().toLowerCase();
+}
+
+test.describe('Slice 3.11: Pronunciation Game (React)', () => {
+  test('under-threshold learned set shows the learn-first gate (no mic)', async ({ page }) => {
+    const errors = captureErrors(page);
+    await installMockSpeech(page);
+    await seedUser(page);
+    await gotoHash(page, '/game/pronunciation');
+    await page.waitForTimeout(900);
+
+    // Pool needs >= 4 admitted words; a fresh user has none → learn-first.
+    await expect(page.locator('[data-testid="pronunciation-record"]')).toHaveCount(0);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('matching speech scores correct, shows 100% comparison, and auto-advances', async ({ page }) => {
+    const errors = captureErrors(page);
+    await installMockSpeech(page);
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/pronunciation');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="pronunciation-record"]')).toBeVisible();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+
+    const target = await pronunciationTarget(page);
+    expect(target.length).toBeGreaterThan(0);
+    await queueTranscript(page, target);
+    await page.locator('[data-testid="pronunciation-record"]').click();
+
+    const comparison = page.locator('[data-testid="pronunciation-comparison"]');
+    await expect(comparison).toBeVisible();
+    await expect(page.locator('[data-testid="pronunciation-transcript"]')).toHaveText(target);
+    await expect(page.locator('[data-testid="pronunciation-accuracy"]')).toHaveText('100%');
+
+    // Correct answers auto-advance after a ~1.8s beat (confetti + praise).
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2', { timeout: 4000 });
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('mismatching speech scores incorrect; manual next advances', async ({ page }) => {
+    const errors = captureErrors(page);
+    await installMockSpeech(page);
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/pronunciation');
+    await page.waitForTimeout(900);
+
+    const target = await pronunciationTarget(page);
+    await queueTranscript(page, 'zzzz');
+    await page.locator('[data-testid="pronunciation-record"]').click();
+
+    await expect(page.locator('[data-testid="pronunciation-comparison"]')).toBeVisible();
+    await expect(page.locator('[data-testid="pronunciation-transcript"]')).toHaveText('zzzz');
+    // Incorrect does NOT auto-advance — the child taps "next" themselves.
+    await page.waitForTimeout(2000);
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+    expect(target).not.toBe('zzzz');
+
+    await page.locator('[data-testid="pronunciation-next"]').click();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('2');
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('a recognition error surfaces a retry message and stays on the question', async ({ page }) => {
+    await installMockSpeech(page);
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/pronunciation');
+    await page.waitForTimeout(900);
+
+    await queueSpeechError(page, 'no-speech');
+    await page.locator('[data-testid="pronunciation-record"]').click();
+
+    await expect(page.locator('[data-testid="pronunciation-error"]')).toBeVisible();
+    // No score recorded, no comparison panel — the question is still live.
+    await expect(page.locator('[data-testid="pronunciation-comparison"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="pronunciation-record"]')).toBeVisible();
+    await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+  });
+});
+
 // ─── Slice 3.16: Practice Game (React) ──────────────────────────────────────
-// Practice reuses the Pronunciation mechanic (mic → compare), so — like Slice
-// 3.11 — the record/score path needs a `webkitSpeechRecognition` stub we don't
-// have yet. These cover the non-mic surface: the empty state, the Due-first pool
-// render, and the exit dialog. (Grandfathered learnedWords seeded with an old
-// `lastPracticed` land well past the 30-day max review interval, so they're Due.)
+// Practice reuses the Pronunciation mechanic (mic → compare). The non-mic tests
+// below cover the empty state, the Due-first pool render, and the exit dialog;
+// the mic→score path uses the same `webkitSpeechRecognition` stub as Slice 3.11.
+// (Grandfathered learnedWords seeded with an old `lastPracticed` land well past
+// the 30-day max review interval, so they're Due.)
 
 test.describe('Slice 3.16: Practice Game (React)', () => {
   test('no learned words shows the "nothing to review yet" empty state', async ({ page }) => {
@@ -2851,6 +2950,27 @@ test.describe('Slice 3.16: Practice Game (React)', () => {
 
     await page.locator('[data-testid="exit-dialog-cancel"]').click();
     await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+
+  test('matching speech scores correct and shows the comparison (mic stub)', async ({ page }) => {
+    const errors = captureErrors(page);
+    await installMockSpeech(page);
+    await seedUser(page);
+    await seedLearnedFromBank(page, 6);
+    await gotoHash(page, '/game/practice');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="practice-record"]')).toBeVisible();
+    const target = await pronunciationTarget(page);
+    expect(target.length).toBeGreaterThan(0);
+    await queueTranscript(page, target);
+    await page.locator('[data-testid="practice-record"]').click();
+
+    await expect(page.locator('[data-testid="practice-comparison"]')).toBeVisible();
+    await expect(page.locator('[data-testid="practice-transcript"]')).toHaveText(target);
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
   });
 });
 
