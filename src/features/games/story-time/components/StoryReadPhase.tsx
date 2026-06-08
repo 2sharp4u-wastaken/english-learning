@@ -246,7 +246,7 @@ export function StoryReadPhase({
 
       {story.highlights.length > 0 ? (
         <WordTable
-          title="המילים בסיפור"
+          title="מילים חדשות בסיפור"
           rows={story.highlights.map((h) => ({ word: h.word, hebrew: h.translation }))}
         />
       ) : null}

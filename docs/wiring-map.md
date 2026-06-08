@@ -543,19 +543,25 @@ React route /#/game/story-time
       │   ├─ Build learnedWordsList from app.userProgress.learnedWords keys
       │   │   (mirrors gameLogic.js:2191–2196)
       │   ├─ getStoriesForSession(learned, vocabularyBank, 3) → 0..3 stories
-      │   │   (fallbacks fill slots when a category has no learned word)
+      │   │   (fallbacks fill slots when a category has no learned word).
+      │   │   buildStoryFromTemplate also auto-detects NEW words (E6): every
+      │   │   bank word in the rendered text NOT in the learned set → story.
+      │   │   highlights (exact + shallow -s stem); learned slot words → plain.
+      │   │   story.reinforceWords = the learned slot words (recording source).
       │   └─ Stash on gameManager: shuffledQuestions=stories,
       │       totalQuestions=sum(quizQuestions), currentQuestionIndex=0
       ├─ Phase state machine (read → quiz → answered → next):
       │   ├─ Read phase: StoryReadPhase renders sentences with tappable
-      │   │   highlights (speakWord on tap + 1.5s translation tooltip) and a
-      │   │   per-sentence 🔊 button (speak() on tap).
+      │   │   highlights = NEW/unlearned words (speakWord→speakHebrew on tap +
+      │   │   translation tooltip), a per-sentence 🔊 button (speak() on tap),
+      │   │   and a "מילים חדשות בסיפור" WordTable of the same new words.
       │   ├─ "מוכן לשאלות" → switches to quiz phase, cancels speech.
       │   ├─ Quiz phase: StoryQuizPhase reuses shared AnswerGrid (2–3 cols,
       │   │   text variant) over question.options.
       │   └─ Answer → recordStoryQuizAnswer(story, question, idx):
       │       +15 pts on correct (legacy story-time-game.js:249) +
-      │       recordWordAttempt for every story.highlight +
+      │       recordWordAttempt for every story.reinforceWords entry (learned
+      │       slot words only — NEW highlights are exposure-only, E6) +
       │       currentQuestionIndex++ + saveGameState (always).
       ├─ Correct → confetti + getGameFeedback audio + auto-advance 1.5s
       ├─ Incorrect → reveal correct option + "השאלה הבאה" footer button

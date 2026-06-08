@@ -356,19 +356,12 @@ export function buildStoryFromTemplate(template, learnedWords, allWords) {
         }
     }
 
-    // Build filled sentences and track which words are highlights (tappable)
-    const highlights = []; // { word, translation, sentenceIdx, startIdx }
-    const filledSentences = template.sentences.map((sentence, sIdx) => {
+    // Build filled sentences (slot placeholders → the chosen words).
+    const filledSentences = template.sentences.map((sentence) => {
         let filled = sentence;
         for (const [slotName, wordObj] of Object.entries(filledSlots)) {
             const placeholder = `{${slotName}}`;
-            if (filled.includes(placeholder)) {
-                const idx = filled.indexOf(placeholder);
-                highlights.push({
-                    word: wordObj.word,
-                    translation: wordObj.translation,
-                    sentenceIndex: sIdx
-                });
+            while (filled.includes(placeholder)) {
                 filled = filled.replace(placeholder, wordObj.word);
             }
         }
@@ -430,11 +423,63 @@ export function buildStoryFromTemplate(template, learnedWords, allWords) {
         };
     });
 
+    // ── Auto-detect NEW words to highlight (bug-dump 2026-06-07 E6 + C6) ──
+    // The child can already read the learned slot words, so those render plain.
+    // Every OTHER word in the story that exists in the vocabulary bank and is
+    // NOT yet learned becomes a tappable highlight (pill + translation + audio +
+    // a row in the "new words" table). This is exposure-only — highlighted new
+    // words are NOT recorded toward mastery (see reinforceWords below).
+    const learnedSet = new Set((learnedWords || []).map(w => w.word.toLowerCase()));
+    // Translation source: the full bank + the chosen slot words (so a fallback
+    // slot word that isn't in `allWords` still has a translation to show).
+    const bankIndex = new Map();
+    for (const w of allWords) if (w && w.word) bankIndex.set(w.word.toLowerCase(), w);
+    for (const w of Object.values(filledSlots)) if (w && w.word) bankIndex.set(w.word.toLowerCase(), w);
+
+    const PUNCT_EDGE = /^[.,!?;:'"()]+|[.,!?;:'"()]+$/g;
+    // Exact match first, then a light singular/3rd-person "-s" strip so "runs",
+    // "cats", "dogs" map to "run"/"cat"/"dog". Kept deliberately shallow to
+    // avoid over-matching (e.g. "is" is too short to strip).
+    const lookupBankWord = (clean) => {
+        if (bankIndex.has(clean)) return bankIndex.get(clean);
+        if (clean.length > 3 && clean.endsWith('s')) {
+            const base = clean.slice(0, -1);
+            if (bankIndex.has(base)) return bankIndex.get(base);
+        }
+        return null;
+    };
+
+    const newHighlights = new Map(); // clean token form → highlight
+    for (const sentence of filledSentences) {
+        for (const raw of sentence.split(/\s+/)) {
+            const clean = raw.replace(PUNCT_EDGE, '').toLowerCase();
+            if (!clean || learnedSet.has(clean) || newHighlights.has(clean)) continue;
+            const entry = lookupBankWord(clean);
+            if (!entry) continue;
+            // Key the highlight by the token AS IT APPEARS so the read-phase
+            // renderer (which matches tokens against highlight.word) makes the
+            // actual word tappable, while the translation comes from the bank.
+            newHighlights.set(clean, {
+                word: clean,
+                translation: entry.translation,
+                category: entry.category,
+            });
+        }
+    }
+
+    // Words to reinforce on a correct quiz answer: the LEARNED slot words only.
+    // New (highlighted) words stay exposure-only — reading a story must not
+    // auto-advance a word's mastery (product decision, bug-dump E6).
+    const reinforceWords = Object.values(filledSlots)
+        .filter(w => learnedSet.has(w.word.toLowerCase()))
+        .map(w => ({ word: w.word, category: w.category }));
+
     return {
         id: template.id,
         title: template.titleHebrew,
         sentences: filledSentences,
-        highlights: [...new Map(highlights.map(h => [h.word.toLowerCase(), h])).values()],
+        highlights: [...newHighlights.values()],
+        reinforceWords,
         questions: filledQuestions
     };
 }

@@ -25,7 +25,12 @@ export interface Story {
   id: string
   title: string
   sentences: string[]
+  /** NEW (not-yet-learned) bank words found in the story → tappable pills +
+   *  translation + audio + the "new words" review table. Exposure-only. */
   highlights: StoryHighlight[]
+  /** Learned slot words featured by the story — reinforced (recordWordAttempt)
+   *  on a correct quiz answer. Distinct from `highlights` (E6, 2026-06-08). */
+  reinforceWords?: { word: string; category?: string }[]
   questions: StoryQuizQuestion[]
 }
 
@@ -192,7 +197,9 @@ export interface QuizOutcome {
 /**
  * Record one quiz answer. Mirrors legacy story-time-game.js:197-257:
  * - +15 points on correct
- * - recordWordAttempt for every highlighted word on correct
+ * - recordWordAttempt for the story's LEARNED featured words on correct
+ *   (reinforcement). NEW auto-highlighted words are exposure-only and are NOT
+ *   recorded — reading a story must not auto-advance mastery (E6, 2026-06-08).
  * - advances currentQuestionIndex regardless of correctness
  */
 export function recordStoryQuizAnswer(
@@ -206,8 +213,8 @@ export function recordStoryQuizAnswer(
 
   if (isCorrect) {
     mgr.scoreManager?.addPoints(GAME_TYPE, POINTS_PER_CORRECT)
-    for (const h of story.highlights) {
-      mgr.recordWordAttempt(h.word, h.category ?? '', true, 0, GAME_TYPE)
+    for (const w of story.reinforceWords ?? []) {
+      mgr.recordWordAttempt(w.word, w.category ?? '', true, 0, GAME_TYPE)
     }
   }
 
