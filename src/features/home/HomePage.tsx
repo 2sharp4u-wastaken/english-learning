@@ -171,8 +171,9 @@ export function HomePage() {
               </h1>
             </div>
 
-            {/* Stat chips + primary continue action */}
-            <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 sm:justify-end">
+            {/* Stat chips + primary continue action — kept on ONE row on sm+ so
+                the "בוא נשחק" CTA sits beside the chips, not on a second line (D2). */}
+            <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 sm:flex-nowrap sm:justify-end">
               <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" effect="streak" />
               <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" effect="sparkle" />
               <StatChip emoji="🪙" value={summary.coins} label="מטבעות" effect="coin" />
