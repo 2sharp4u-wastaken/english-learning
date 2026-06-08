@@ -16,15 +16,13 @@ const STATUS_META: Record<WJStatus, { label: string; cls: string }> = {
 
 interface Props {
   summary: WJSummaryEntry[]
-  hasLearnedWords: boolean
   onPlayAgain: () => void
-  onPractice: () => void
   onHome: () => void
 }
 
 /** Animated end-of-journey recap: each word card animates in with its picture
  *  and is spoken aloud, tagged with the word's new status. */
-export function WJCelebration({ summary, hasLearnedWords, onPlayAgain, onPractice, onHome }: Props) {
+export function WJCelebration({ summary, onPlayAgain, onHome }: Props) {
   const { caseMode, showNikud } = useTextPrefs()
   const nk = useNikud()
   const [revealed, setRevealed] = useState(0)
@@ -95,16 +93,6 @@ export function WJCelebration({ summary, hasLearnedWords, onPlayAgain, onPractic
         >
           ← {nk('התחילו מסע מילים נוסף')}
         </button>
-        {hasLearnedWords ? (
-          <button
-            type="button"
-            onClick={onPractice}
-            data-testid="wj-practice"
-            className="rounded-full border border-white/20 bg-white/5 px-8 py-3 text-base font-bold text-white transition hover:bg-white/10"
-          >
-            🔁 {nk('תרגול מילים שנלמדו')}
-          </button>
-        ) : null}
         <button
           type="button"
           onClick={onHome}

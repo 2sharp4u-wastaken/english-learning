@@ -26,10 +26,6 @@ import {
 
 const STAGE_ORDER: WJStageId[] = ['discover', 'listen-match', 'spell-tiles', 'say-word', 'recall']
 
-function learnedCount(): number {
-  return getApp()?.progressManager?.getDerivedLearnedCount?.() ?? 0
-}
-
 export function WordJourneyGamePage() {
   const navigate = useNavigate()
   const [session, setSession] = useState<WordJourneyResult | null>(null)
@@ -190,9 +186,7 @@ export function WordJourneyGamePage() {
         <GameScreenShell header={headerProps}>
           <WJCelebration
             summary={summary}
-            hasLearnedWords={learnedCount() >= 3}
             onPlayAgain={() => start()}
-            onPractice={() => start({ replay: true })}
             onHome={() => navigate('/home')}
           />
         </GameScreenShell>

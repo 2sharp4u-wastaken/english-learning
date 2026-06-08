@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { BookOpen, Pause, Play, Volume2 } from 'lucide-react'
 import { cn } from '@/lib/cn'
-import { cancelSpeech, speak, speakWord } from '@/bridge/audio'
+import { cancelSpeech, speak, speakHebrew, speakWord } from '@/bridge/audio'
 import { useNikud } from '@/bridge/nikud'
 import { useTextPrefs } from '@/bridge/textPrefs'
 import type { Story, StoryHighlight } from '@/bridge/story-time'
@@ -104,8 +104,16 @@ export function StoryReadPhase({
         setActiveTooltip((t) =>
           t && t.sentenceIdx === sentenceIdx && t.tokenIdx === tokenIdx ? null : t,
         )
-      }, 1500)
-      void speakWord(h.word.toLowerCase(), 'story-time').catch(() => {})
+      }, 2600)
+      // Play the English word, then the Hebrew translation (E4, bug-dump 2026-06-07).
+      void (async () => {
+        try {
+          await speakWord(h.word.toLowerCase(), 'story-time')
+          await speakHebrew(h.translation)
+        } catch {
+          /* ignore */
+        }
+      })()
     },
     [stopNarration, tappedKeyRef],
   )
@@ -209,10 +217,11 @@ export function StoryReadPhase({
                         data-testid="story-highlight"
                         data-word={h.word}
                         className={cn(
-                          'cursor-pointer rounded-md bg-[color:var(--blue-400)]/20 px-1 font-semibold text-[color:var(--blue-200)] underline decoration-[color:var(--blue-400)]/60 decoration-2 underline-offset-2 transition hover:bg-[color:var(--blue-400)]/35 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--blue-400)]/60',
-                          isPulsing && 'scale-110 bg-[color:var(--mint-400)]/40 text-white',
+                          'inline-flex cursor-pointer items-center gap-1 rounded-full bg-[color:var(--blue-400)]/25 px-2 py-0.5 align-middle font-semibold text-[color:var(--blue-100)] shadow-sm ring-1 ring-[color:var(--blue-400)]/40 transition hover:bg-[color:var(--blue-400)]/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--blue-400)]/70',
+                          isPulsing && 'scale-110 bg-[color:var(--mint-400)]/50 text-white ring-[color:var(--mint-400)]/60',
                         )}
                       >
+                        <Volume2 className="size-3 shrink-0 opacity-80" aria-hidden />
                         {applyCase(token)}
                       </button>
                       {showTooltip ? (
