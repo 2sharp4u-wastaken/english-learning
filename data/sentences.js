@@ -753,6 +753,55 @@ export const sentences = [
     }
 ];
 
+// Per-option Hebrew glosses for the Fill-in-the-Blanks word-review table (F2,
+// bug-dump 2026-06-07). The blank `options` are bare function/content words with
+// no per-word Hebrew (the sentence `translation` is the whole-sentence gloss), so
+// the WordTable needs a word→Hebrew lookup. Keyed by the lowercased option word;
+// each word has one consistent meaning across the fill-blanks bank, so a shared
+// map (vs. a per-sentence `hebrewOptions` array) stays DRY and covers all 184
+// option words. Authored WITHOUT nikud — `scripts/build-nikud-map.py` scans this
+// file and `nk()` adds the vowel points at render. See docs/word-table-spec.md.
+export const optionTranslations = {
+    angry: 'כועס', art: 'אומנות', ate: 'אכל', avoids: 'נמנע', bad: 'רע', bathroom: 'אמבטיה',
+    big: 'גדול', bird: 'ציפור', black: 'שחור', blue: 'כחול', book: 'ספר', boring: 'משעמם',
+    bread: 'לחם', break: 'שובר', brother: 'אח', burning: 'שורף', call: 'מתקשר', candy: 'ממתקים',
+    cat: 'חתול', chips: "צ'יפס", coffee: 'קפה', cold: 'קר', cousin: 'בן דוד', cries: 'בוכה',
+    cry: 'לבכות', crying: 'בוכה', dad: 'אבא', day: 'יום', dog: 'כלב', drink: 'שותה',
+    drying: 'מנגב', early: 'מוקדם', eat: 'לאכול', eight: 'שמונה', eleven: 'אחת עשרה',
+    family: 'משפחה', father: 'אבא', fight: 'רב', find: 'מוצא', finished: 'סיים', five: 'חמש',
+    flew: 'עף', fly: 'עף', forget: 'שוכח', forgot: 'שכח', four: 'ארבע', fresh: 'טרי',
+    friend: 'חבר', fun: 'כיף', funny: 'מצחיק', good: 'טוב', goodbye: 'להתראות', grandma: 'סבתא',
+    gray: 'אפור', great: 'נהדר', green: 'ירוק', hard: 'קשה', hat: 'כובע', hate: 'שונא',
+    hates: 'שונא', have: 'יש', hello: 'שלום', help: 'עוזר', hibernate: 'ישן בחורף', hide: 'מחביא',
+    hiding: 'מחביא', how: 'איך', hunts: 'צד', hurt: 'פוגע', intelligent: 'חכם', jump: 'קופץ',
+    jumps: 'קופץ', kitchen: 'מטבח', landed: 'נחת', late: 'מאוחר', later: 'אחר כך', laughing: 'צוחק',
+    lazy: 'עצלן', library: 'ספרייה', like: 'אוהב', love: 'אוהב', loves: 'אוהב', magic: 'קסם',
+    mat: 'מחצלת', math: 'חשבון', meet: 'לפגוש', milk: 'חלב', moon: 'ירח', morning: 'בוקר',
+    mother: 'אמא', name: 'שם', need: 'צריך', never: 'אף פעם', new: 'חדש', nice: 'נחמד',
+    now: 'עכשיו', old: 'מבוגר', orange: 'כתום', park: 'פארק', party: 'חוגג', pen: 'עט',
+    pet: 'חיית מחמד', pink: 'ורוד', play: 'לשחק', plays: 'משחק', please: 'בבקשה', pot: 'סיר',
+    practice: 'תרגול', prefer: 'מעדיף', preparing: 'מתכונן', purple: 'סגול', raining: 'יורד גשם',
+    read: 'קורא', reading: 'קורא', red: 'אדום', rice: 'אורז', run: 'רץ', running: 'רץ',
+    runs: 'רץ', sad: 'עצוב', salty: 'מלוח', scary: 'מפחיד', school: 'בית ספר', science: 'מדע',
+    see: 'רואה', seven: 'שבע', share: 'משתף', shining: 'זורחת', sing: 'שר', sister: 'אחות',
+    six: 'שש', sleep: 'ישן', sleeping: 'ישן', sleeps: 'ישן', small: 'קטן', snowing: 'יורד שלג',
+    soda: 'סודה', soft: 'רך', sorry: 'סליחה', sour: 'חמוץ', space: 'חלל', spaghetti: 'ספגטי',
+    spring: 'אביב', started: 'התחיל', store: 'חנות', student: 'תלמיד', stupid: 'טיפש',
+    sugar: 'סוכר', summer: 'קיץ', sunny: 'שמשי', sweet: 'מתוק', swim: 'שוחה', tame: 'מאולף',
+    teacher: 'מורה', ten: 'עשר', thank: 'תודה', three: 'שלוש', throw: 'זורק', throwing: 'זורק',
+    travel: 'נוסע', twenty: 'עשרים', two: 'שתיים', vegetables: 'ירקות', visit: 'מבקר',
+    walk: 'ללכת', walks: 'הולך', want: 'רוצה', washing: 'שוטף', water: 'מים', weekend: 'סוף שבוע',
+    welcome: 'ברוך הבא', what: 'מה', when: 'מתי', where: 'איפה', white: 'לבן', who: 'מי',
+    wild: 'פראי', winter: 'חורף', word: 'מילה', work: 'עובד', yellow: 'צהוב', young: 'צעיר',
+    yummy: 'טעים', zoo: 'גן חיות',
+};
+
+// Look up the Hebrew gloss for a fill-blanks option word (case-insensitive).
+export function getOptionHebrew(word) {
+    if (!word) return undefined;
+    return optionTranslations[String(word).toLowerCase()];
+}
+
 // Helper function to get sentences by difficulty
 export function getSentencesByDifficulty(difficulty) {
     return sentences.filter(s => s.difficulty === difficulty);

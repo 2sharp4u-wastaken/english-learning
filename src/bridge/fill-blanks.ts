@@ -3,7 +3,16 @@ import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 // Legacy sentence data — same module gameLogic.js imports for fill-blanks.
 // @ts-expect-error — legacy .js import without a .d.ts
-import { getRandomSentences } from '../../data/sentences.js'
+import { getRandomSentences, getOptionHebrew as getOptionHebrewData } from '../../data/sentences.js'
+
+/**
+ * Hebrew gloss for a fill-blanks option word (F2 word-review table). Bare option
+ * words carry no per-word Hebrew, so this resolves the shared `optionTranslations`
+ * map in data/sentences.js. Raw (no nikud) — WordTable nk()'s it at render.
+ */
+export function getOptionHebrew(word: string): string | undefined {
+  return getOptionHebrewData(word) as string | undefined
+}
 
 export interface FillBlanksQuestion {
   sentence: string

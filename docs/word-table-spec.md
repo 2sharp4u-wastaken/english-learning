@@ -72,7 +72,7 @@ Wrap in `void (async () => { try { … } catch {} })()`. Allow only one at a tim
 
 | Item | Where | Rows from |
 |---|---|---|
-| **F2** Fill-blanks | after answering, **between the answer grid and the "next" button** | the 3 answer options → `{ word: opt, hebrew: <per-option Hebrew> }` ⚠️ **see §6 — data gap** |
+| **F2** Fill-blanks | after answering, **below the answer grid** (the "next" button is the pinned footer) | correct option (✓) + chosen-wrong option (✗), each `{ word, hebrew }` where `hebrew = getOptionHebrew(word)` ✅ data ready (`optionTranslations` map added 2026-06-09) |
 | **F3** Story Time | read phase (below the text) or quiz recap | `story.highlights.map(h => ({ word: h.word, hebrew: h.translation }))` ✅ data ready |
 | **F3 / E7 / E8** Grammar | after answering, below the sentence | `options.map((o,i) => ({ word: o, hebrew: hebrewOptions[i] }))` ✅ data ready (`hebrewOptions` added 2026-05-23) |
 
@@ -80,7 +80,7 @@ Wrap in `void (async () => { try { … } catch {} })()`. Allow only one at a tim
 
 - **Story Time** — `StoryHighlight { word, translation }` already carries per-word Hebrew. ✅
 - **Grammar** — `GrammarQuestion.hebrewOptions?: string[]` (per-option gloss, same index order). ✅ Guard for older saves lacking the field (already merged-in by the bridge).
-- **Fill-blanks** — ⚠️ **blocked on content.** `current.blank.options` are bare English function words (`["how","what","when"]`) with **no per-word Hebrew** (`translation` is the whole-sentence gloss). To ship F2 we must first author a per-option Hebrew field (e.g. `hebrewOptions`) in `data/sentences.js` (+ `articles.js`, `progressive.js` if the table is wanted there too), mirroring grammar. **Recommendation: ship F3 + Grammar first; treat F2 as a follow-up gated on that authoring.**
+- **Fill-blanks** — ✅ **resolved 2026-06-09.** `current.blank.options` are bare English function words (`["how","what","when"]`) with no per-word Hebrew (`translation` is the whole-sentence gloss). Rather than a per-sentence `hebrewOptions` array (210 entries, most repeating), a **shared `optionTranslations` map** (lowercased word → Hebrew, all 184 unique option words) was authored in `data/sentences.js`; `getOptionHebrew(word)` resolves it, re-exported through `bridge/fill-blanks.ts`. Each option word has one consistent meaning across the bank, so the map stays DRY. Glosses authored without nikud; `scripts/build-nikud-map.py` added them (+8 manual homograph overrides where Dicta returned the noun/imperative voweling instead of the verb — `צד`/`רב`/`שר`/`נחת`/`שכח`/`משחק`/`שוחה`/`מוצא`; these survive re-runs like C5's goat fix).
 
 ## 7. Build order
 
@@ -88,11 +88,11 @@ Wrap in `void (async () => { try { … } catch {} })()`. Allow only one at a tim
 2. ✅ Wire **F3 Story Time** (read phase, highlights) — Playwright asserts table + row.
 3. ✅ Wire **Grammar** (after every answer, correct ✓ + chosen ✗) — covers the table half of E7/E8.
 4. ⬜ **E7's other half** (show the *full correct Hebrew sentence*, no blank-deduction) — separate Grammar change, still open.
-5. ⬜ **F2 Fill-blanks** — blocked on the user authoring per-option Hebrew in `data/sentences.js` (§6).
+5. ✅ **F2 Fill-blanks** (2026-06-09) — `optionTranslations` map + `getOptionHebrew` in `data/sentences.js`; WordTable wired below the answer grid (correct ✓ + chosen-wrong ✗). Playwright asserts the table + correct row + 2-row wrong-pick case.
 6. ✅ **E8** "new words learning surface" (2026-06-09) — `detectNewWords()` + `NewWordPill`/`SentenceText` surface unlearned bank words as tappable pills in Grammar + Articles + Progressive, merged into the after-answer table. Spec: `docs/grammar-new-words-spec.md`.
 
 ## 8. Decisions (user, 2026-06-08)
 
 - **Rows (answer games):** the **correct** word (mark `'correct'`, green ✓) + **the chosen** word (mark `'wrong'`, red ✗) when the pick was wrong. If correct, one row. Story Time still shows all its highlights (no marks).
 - **Timing:** show the table **after every answer** (correct and wrong).
-- **F2:** the **user will author** per-option Hebrew in `data/sentences.js`; then F2 gets wired. Build Story + Grammar first regardless.
+- **F2:** ✅ shipped 2026-06-09. Per `feedback_choose_dont_translate`, the glosses were **authored** (not delegated as a translation chore) into a shared `optionTranslations` map and surfaced for review; the table shows the correct + chosen-wrong rows (mirrors Grammar §8), not all 3 options.

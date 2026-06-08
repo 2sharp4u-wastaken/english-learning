@@ -2009,6 +2009,93 @@ test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
   });
 });
 
+// ─── Slice 3.7: Fill-in-the-Blanks Game (React) ─────────────────────────────
+
+test.describe('Slice 3.7: Fill-in-the-Blanks Game (React)', () => {
+  // F2 (bug-dump 2026-06-07): after answering, a word-review table shows the
+  // correct option (✓) + the chosen wrong option (✗), each with its Hebrew gloss
+  // (from the shared optionTranslations map) and a play button.
+  test('F2: word-review table appears after answering with the correct option row', async ({ page }) => {
+    const errors = captureErrors(page);
+    await seedUser(page);
+    const learned = await seedLearnedFromBank(page, 35);
+    expect(learned).toBeGreaterThanOrEqual(30);
+
+    await gotoHash(page, '/game/fill-blanks');
+    await page.waitForTimeout(900);
+
+    await expect(page.locator('[data-testid="fill-blanks-sentence"]')).toBeVisible();
+    // No table before answering.
+    await expect(page.locator('[data-testid="word-table"]')).toHaveCount(0);
+
+    const correctText = await page.evaluate(() => {
+      const m = window.__engine?.gm;
+      const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
+      return q ? q.blank.options[0] : null;
+    });
+    expect(correctText).toBeTruthy();
+
+    // Click the correct option (English label is the first inner span).
+    const opts = page.locator('[data-testid="answer-option"]');
+    const optCount = await opts.count();
+    let clicked = false;
+    for (let i = 0; i < optCount; i++) {
+      const text = (await opts.nth(i).locator('span > span').first().textContent())
+        ?.trim().toLowerCase();
+      if (text === correctText.toLowerCase()) {
+        await opts.nth(i).click();
+        clicked = true;
+        break;
+      }
+    }
+    expect(clicked).toBe(true);
+
+    await expect(page.locator('[data-testid="fill-blanks-next"]')).toBeVisible();
+    await expect(page.locator('[data-testid="word-table"]')).toBeVisible();
+    await expect(
+      page.locator(`[data-testid="word-table-row"][data-word="${correctText}"]`),
+    ).toBeVisible();
+    // The row carries a Hebrew gloss + a play button.
+    await expect(page.locator('[data-testid="word-table-play"]').first()).toBeVisible();
+
+    const critical = filterCritical(errors);
+    expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('F2: a wrong pick adds its own ✗ row alongside the correct ✓ row', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 35);
+    await gotoHash(page, '/game/fill-blanks');
+    await page.waitForTimeout(900);
+
+    const correctText = await page.evaluate(() => {
+      const m = window.__engine?.gm;
+      const q = m?.shuffledQuestions?.[m.currentQuestionIndex];
+      return q ? q.blank.options[0] : null;
+    });
+    expect(correctText).toBeTruthy();
+
+    // Click a WRONG option.
+    const opts = page.locator('[data-testid="answer-option"]');
+    const optCount = await opts.count();
+    let wrongText = null;
+    for (let i = 0; i < optCount; i++) {
+      const text = (await opts.nth(i).locator('span > span').first().textContent())
+        ?.trim();
+      if (text && text.toLowerCase() !== correctText.toLowerCase()) {
+        wrongText = text;
+        await opts.nth(i).click();
+        break;
+      }
+    }
+    expect(wrongText).toBeTruthy();
+
+    await expect(page.locator('[data-testid="word-table"]')).toBeVisible();
+    // Both the correct and the chosen-wrong rows are present (2 rows).
+    await expect(page.locator('[data-testid="word-table-row"]')).toHaveCount(2);
+  });
+});
+
 // ─── Slice 3.9: Grammar Beginner Game (React) ───────────────────────────────
 
 test.describe('Slice 3.9: Grammar Beginner Game (React)', () => {

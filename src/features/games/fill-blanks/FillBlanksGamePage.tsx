@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { AnswerGrid } from '@/features/games/shared/AnswerGrid'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
+import { WordTable, type WordTableRow } from '@/features/games/shared/WordTable'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
 import { FillBlanksLearnFirst } from './components/FillBlanksLearnFirst'
@@ -12,6 +13,7 @@ import {
   beginFillBlanksSession,
   clearFillBlanksAudioState,
   finishFillBlanksSession,
+  getOptionHebrew,
   loadFillBlanksAudioState,
   recordFillBlanksAnswer,
   saveFillBlanksAudioState,
@@ -329,6 +331,27 @@ export function FillBlanksGamePage() {
   const audioHint =
     audioPlaysLeft <= 0 ? 'נגמרו ההשמעות' : `השמעות נותרו: ${audioPlaysLeft}`
 
+  // Word-review table (F2, bug-dump 2026-06-07): after answering, show the
+  // correct option (✓) and — if the child missed — the one they picked (✗),
+  // each with its Hebrew gloss + a play button. Hebrew comes from the shared
+  // `optionTranslations` map via getOptionHebrew (raw; WordTable nk()'s it).
+  // Mirrors the Grammar table (correct + chosen-wrong) per docs/word-table-spec.
+  const wordTableRows: WordTableRow[] = []
+  if (phase === 'answered' && current) {
+    const correctOpt = current.blank.options[0]
+    const correctHe = getOptionHebrew(correctOpt)
+    if (correctOpt && correctHe) {
+      wordTableRows.push({ word: correctOpt, hebrew: correctHe, mark: 'correct' })
+    }
+    if (selectedIndex != null) {
+      const chosen = shuffled.order[selectedIndex]
+      if (chosen && chosen.toLowerCase() !== correctOpt.toLowerCase()) {
+        const chosenHe = getOptionHebrew(chosen)
+        if (chosenHe) wordTableRows.push({ word: chosen, hebrew: chosenHe, mark: 'wrong' })
+      }
+    }
+  }
+
   const footer =
     phase === 'answered' ? (
       <button
@@ -417,6 +440,10 @@ export function FillBlanksGamePage() {
               variant="text"
               columns={options.length === 2 ? 2 : options.length >= 4 ? 4 : 3}
             />
+
+            {phase === 'answered' && wordTableRows.length > 0 ? (
+              <WordTable rows={wordTableRows} title="המילים" />
+            ) : null}
           </div>
         ) : null}
       </GameScreenShell>
