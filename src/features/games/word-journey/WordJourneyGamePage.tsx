@@ -144,14 +144,20 @@ export function WordJourneyGamePage() {
       icon: '🗺️',
       score,
       onBack: requestExit,
-      heroAside: stage ? <WJStageBar activeStage={stage} /> : undefined,
     }),
-    [requestExit, score, stage],
+    [requestExit, score],
   )
 
   const progressProps = useMemo(
-    () => ({ current: stageIndex + 1, total: STAGE_ORDER.length, onReset: handleReset }),
-    [handleReset, stageIndex],
+    () => ({
+      current: stageIndex + 1,
+      total: STAGE_ORDER.length,
+      onReset: handleReset,
+      // The stage bar lives inside the progress strip — centered between the
+      // reset button and the "שאלה N מתוך M" label (D1, bug-dump 2026-06-07).
+      center: stage ? <WJStageBar activeStage={stage} /> : undefined,
+    }),
+    [handleReset, stage, stageIndex],
   )
 
   const nk = useNikud()

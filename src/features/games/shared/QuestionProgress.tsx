@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { RotateCcw } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useNikud } from '@/bridge/nikud'
@@ -6,10 +7,14 @@ export interface QuestionProgressProps {
   current: number
   total: number
   onReset?: () => void
+  /** Optional content centered in the top row, between the "שאלה N מתוך M"
+   *  label (right) and the reset button (left) — used by Word Journey to sit
+   *  its stage bar inside the progress strip (D1). */
+  center?: ReactNode
   className?: string
 }
 
-export function QuestionProgress({ current, total, onReset, className }: QuestionProgressProps) {
+export function QuestionProgress({ current, total, onReset, center, className }: QuestionProgressProps) {
   const nk = useNikud()
   const safeTotal = Math.max(total, 1)
   const safeCurrent = Math.max(0, Math.min(current, safeTotal))
@@ -29,6 +34,11 @@ export function QuestionProgress({ current, total, onReset, className }: Questio
           {nk('שאלה')} <span data-testid="qp-current">{safeCurrent}</span> {nk('מתוך')}{' '}
           <span data-testid="qp-total">{safeTotal}</span>
         </span>
+        {center ? (
+          <div className="flex min-w-0 flex-1 items-center justify-center" data-testid="qp-center">
+            {center}
+          </div>
+        ) : null}
         {onReset ? (
           <button
             type="button"
