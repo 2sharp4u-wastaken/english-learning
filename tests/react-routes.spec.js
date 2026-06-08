@@ -1929,8 +1929,10 @@ test.describe('Slice 3.8: Sentence Scramble Game (React)', () => {
     }
 
     await page.locator('[data-testid="scramble-check"]').click();
-    // Reveal animation populates the answer zone with the correct words.
-    await page.waitForTimeout(500 + target.length * 200 + 200);
+    // D4: a wrong answer shows the correct-above-attempt comparison panel
+    // (correct order in green) instead of overwriting the attempt zone.
+    await expect(page.locator('[data-testid="sentence-comparison"]')).toBeVisible();
+    await expect(page.locator('[data-testid="sentence-target-word"]').first()).toBeVisible();
     await expect(page.locator('[data-testid="scramble-next"]')).toBeVisible();
   });
 

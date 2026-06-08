@@ -89,21 +89,24 @@ export function CompleteSoundView({
             <div
               key={opt.verb}
               data-testid="gb-option-group"
+              dir="ltr"
               className={cn(
                 'flex items-stretch gap-2 rounded-2xl border border-white/10 bg-white/5 p-2 transition',
                 showCorrect && 'border-[color:var(--mint-400)] bg-[color:var(--mint-400)]/15',
                 showWrong && 'border-red-400 bg-red-500/15',
               )}
             >
+              {/* Speaker is play-only, sits to the LEFT; the word itself is the
+                  answer affordance (D5, bug-dump 2026-06-07). */}
               <button
                 type="button"
                 onClick={() => onPlayVerb(opt.verb)}
                 data-testid="gb-play-verb"
                 data-verb={opt.verb}
-                className="flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-base font-bold text-white hover:bg-white/10"
+                aria-label="השמע"
+                className="inline-flex items-center justify-center rounded-xl bg-white/5 px-3 py-2 text-white hover:bg-white/10"
               >
-                <Volume2 size={14} />
-                <span>{renderVerb(opt.verb)}</span>
+                <Volume2 size={16} />
               </button>
               <button
                 type="button"
@@ -112,13 +115,18 @@ export function CompleteSoundView({
                 data-testid="gb-option"
                 data-key={opt.verb}
                 className={cn(
-                  'inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-3 py-2 text-[color:var(--ink-950)] transition',
-                  !locked && 'hover:brightness-110',
+                  'flex items-center gap-2 rounded-xl bg-white/5 px-4 py-2 text-base font-bold text-white transition',
+                  !locked && 'hover:bg-white/10',
                   locked && 'opacity-60',
                 )}
-                aria-label="בחר"
               >
-                <Check size={18} strokeWidth={3} />
+                <span>{renderVerb(opt.verb)}</span>
+                <Check
+                  size={18}
+                  strokeWidth={3}
+                  className="text-[color:var(--blue-400)]"
+                  aria-hidden
+                />
               </button>
             </div>
           )

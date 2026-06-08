@@ -6,6 +6,7 @@ import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
+import { SentenceComparison } from '@/features/games/shared/SentenceComparison'
 import { ScrambleLearnFirst } from './components/ScrambleLearnFirst'
 import {
   abortScrambleSession,
@@ -39,8 +40,6 @@ interface WordToken {
   word: string
 }
 
-const REVEAL_WORD_STAGGER_MS = 180
-
 function stripPunct(w: string): string {
   return w.replace(/[.,!?;:]+$/, '')
 }
@@ -69,8 +68,6 @@ export function SentenceScrambleGamePage() {
 
   const [bank, setBank] = useState<WordToken[]>([])
   const [placed, setPlaced] = useState<WordToken[]>([])
-  // Reveal sequence (when wrong) — words append one by one, then 'next' button shows.
-  const [revealed, setRevealed] = useState<WordToken[] | null>(null)
 
   const isActiveRef = useRef(false)
   const dragSrcRef = useRef<number | null>(null)
@@ -92,7 +89,6 @@ export function SentenceScrambleGamePage() {
     const result = beginScrambleSession(opts ?? {})
     setSession(result)
     setFeedback(null)
-    setRevealed(null)
     if (result.kind === 'ready') {
       setIndex(result.resumeIndex)
       setScore(result.resumeScore)
@@ -149,7 +145,6 @@ export function SentenceScrambleGamePage() {
     clearRevealTimers()
     setBank(buildShuffledBank(current))
     setPlaced([])
-    setRevealed(null)
     setFeedback(null)
     try {
       void speak(current.sentence)
@@ -231,32 +226,19 @@ export function SentenceScrambleGamePage() {
         /* ignore */
       }
     } else {
+      // Wrong: the SentenceComparison panel shows the correct order above the
+      // child's attempt (D4) — voice the correct sentence to reinforce it.
       try {
         void speak(current.sentence)
       } catch {
         /* ignore */
       }
-      // Reveal the correct order with a staggered animation (matches legacy).
-      const correctWords = current.words.map(stripPunct)
-      const correctTokens: WordToken[] = correctWords.map((word, i) => ({
-        key: `reveal-${i}-${word}`,
-        word,
-      }))
-      clearRevealTimers()
-      setRevealed([])
-      correctTokens.forEach((tok, i) => {
-        const id = window.setTimeout(() => {
-          setRevealed((prev) => (prev ? [...prev, tok] : [tok]))
-        }, 500 + i * REVEAL_WORD_STAGGER_MS)
-        revealTimersRef.current.push(id)
-      })
     }
-  }, [clearRevealTimers, current, phase, placed])
+  }, [current, phase, placed])
 
   const handleNext = useCallback(() => {
     clearRevealTimers()
     setFeedback(null)
-    setRevealed(null)
     setIndex((prev) => {
       const next = prev + 1
       if (next >= total) {
@@ -349,7 +331,8 @@ export function SentenceScrambleGamePage() {
   const allPlaced =
     phase === 'awaiting' && current ? placed.length === current.words.length : false
 
-  const answerChips: WordToken[] = revealed ?? placed
+  const answerChips: WordToken[] = placed
+  const showComparison = phase === 'answered' && feedback?.variant === 'incorrect'
 
   const footer =
     phase === 'awaiting' ? (
@@ -402,7 +385,15 @@ export function SentenceScrambleGamePage() {
               </button>
             </div>
 
-            {/* Answer zone */}
+            {/* On a wrong answer, swap the attempt zone for the correct-above-
+                attempt comparison (D4). */}
+            {showComparison ? (
+              <SentenceComparison
+                target={current.words.map(stripPunct)}
+                attempt={placed.map((t) => t.word)}
+                caseMode={caseMode}
+              />
+            ) : (
             <div
               data-testid="scramble-answer-zone"
               dir="ltr"
@@ -417,36 +408,18 @@ export function SentenceScrambleGamePage() {
                 </span>
               ) : (
                 answerChips.map((token, i) => {
-                  const isReveal = revealed != null
                   const isCorrectAnswer =
                     phase === 'answered' && feedback?.variant === 'correct'
-                  const isIncorrectChip =
-                    phase === 'answered' && !isReveal && feedback?.variant === 'incorrect'
                   return (
                     <button
                       key={token.key}
                       type="button"
                       data-testid="scramble-answer-chip"
-                      data-state={
-                        isReveal
-                          ? 'reveal'
-                          : isCorrectAnswer
-                          ? 'correct'
-                          : isIncorrectChip
-                          ? 'incorrect'
-                          : 'placed'
-                      }
+                      data-state={isCorrectAnswer ? 'correct' : 'placed'}
                       draggable={phase === 'awaiting'}
                       onClick={() => {
                         if (dragMovedRef.current) return
                         if (phase === 'awaiting') handleRemoveFromAnswer(token.key)
-                        else if (isReveal) {
-                          try {
-                            void speak(token.word)
-                          } catch {
-                            /* ignore */
-                          }
-                        }
                       }}
                       onDragStart={(e) => {
                         if (phase !== 'awaiting') return
@@ -546,10 +519,8 @@ export function SentenceScrambleGamePage() {
                       className={cn(
                         'inline-flex min-h-[2.5rem] items-center rounded-xl px-3 py-1.5 text-lg font-bold shadow-sm transition',
                         'cursor-grab touch-none select-none',
-                        isReveal && 'animate-in fade-in zoom-in bg-[color:var(--mint-400)]/80 text-[color:var(--ink-950)]',
-                        !isReveal && isCorrectAnswer && 'bg-emerald-500/80 text-white',
-                        !isReveal && isIncorrectChip && 'bg-rose-500/80 text-white',
-                        !isReveal && phase === 'awaiting' && 'bg-white text-[color:var(--ink-950)] hover:brightness-95',
+                        isCorrectAnswer && 'bg-emerald-500/80 text-white',
+                        phase === 'awaiting' && 'bg-white text-[color:var(--ink-950)] hover:brightness-95',
                         dragOverIndex === i && 'ring-2 ring-[color:var(--blue-400)]',
                       )}
                       style={{ direction: 'ltr' }}
@@ -560,6 +531,7 @@ export function SentenceScrambleGamePage() {
                 })
               )}
             </div>
+            )}
 
             {/* Word bank */}
             <div

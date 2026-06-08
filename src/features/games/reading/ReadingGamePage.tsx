@@ -452,7 +452,8 @@ export function ReadingGamePage() {
             <MediaPromptCard
               prompt={showNikud ? 'הַרְכִּיבוּ אֶת הַמִּלָּה' : 'הרכיבו את המילה'}
               media={<ReadingPicture question={current} />}
-              word={wordVisible ? renderLetter(current.word) : undefined}
+              word={renderLetter(current.word)}
+              wordHidden={!wordVisible}
               translation={promptHebrew || undefined}
               onPlayAudio={playWord}
               audioDisabled={audioPlaysLeft <= 0}

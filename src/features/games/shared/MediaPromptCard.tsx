@@ -12,6 +12,9 @@ export interface MediaPromptCardProps {
   media?: ReactNode
   /** Top-line instruction (e.g. "האזן ובחר את התמונה") */
   prompt?: string
+  /** Reserve the word's layout box but hide it (visibility:hidden). Lets a game
+   *  flash-then-hide the word without the rest of the card shifting (Reading D3). */
+  wordHidden?: boolean
   /** When provided, renders the audio play button */
   onPlayAudio?: () => void
   audioPlaying?: boolean
@@ -26,6 +29,7 @@ export interface MediaPromptCardProps {
 
 export function MediaPromptCard({
   word,
+  wordHidden = false,
   translation,
   media,
   prompt,
@@ -69,7 +73,11 @@ export function MediaPromptCard({
         <h2
           data-testid="media-prompt-word"
           dir="ltr"
-          className="font-display text-3xl font-bold tracking-wide text-white sm:text-4xl"
+          aria-hidden={wordHidden || undefined}
+          className={cn(
+            'font-display text-3xl font-bold tracking-wide text-white sm:text-4xl',
+            wordHidden && 'invisible',
+          )}
         >
           {word}
         </h2>
