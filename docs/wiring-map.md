@@ -447,6 +447,25 @@ React route /#/game/grammar
 
 No audio-state localStorage key (no gate, no per-question plays budget). Index advances regardless of correctness (legacy invariant — grammar-game.js:151 & 199).
 
+### E8 (bug-dump 2026-06-07, shipped 2026-06-09) — new-words exposure layer
+
+```
+src/bridge/newWords.ts  detectNewWords(text|texts, {learnedSet?, bank?})
+  ├─ bank = window.vocabularyBank (index cached by array identity)
+  ├─ learnedSet = lowercased words from getLearnedWordKeySet() (key.split('_')[0])
+  └─ returns bank words in the text NOT learned (exact + shallow -s stem),
+     de-duped, translation from the bank entry. Exposure-only.
+src/features/games/shared/NewWordPill.tsx
+  ├─ NewWordPill — blue speaker-pill; tap → Hebrew tooltip + speakWord→speakHebrew
+  └─ SentenceText(text, newWords, renderWord) — tokenizes a fragment, swaps matched
+     tokens for pills, leaves the rest plain.
+GrammarGamePage + BlankFillGamePage (Articles, Progressive):
+  ├─ newWordsList = detectNewWords(sentence.replace('___',' '))  (memo per question)
+  ├─ before/after sentence fragments rendered via <SentenceText> (pills ALWAYS, D2)
+  └─ after answering: new-word rows MERGED into the same WordTable (D3) — correct ✓,
+     chosen ✗ (if wrong), then new words (no mark). NOT recorded to mastery.
+```
+
 ### Slice 3.10 polish (2026-05-23) — bilingual options + filled Hebrew sentence
 
 ```

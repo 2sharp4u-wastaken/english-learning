@@ -89,7 +89,7 @@ Wrap in `void (async () => { try { … } catch {} })()`. Allow only one at a tim
 3. ✅ Wire **Grammar** (after every answer, correct ✓ + chosen ✗) — covers the table half of E7/E8.
 4. ⬜ **E7's other half** (show the *full correct Hebrew sentence*, no blank-deduction) — separate Grammar change, still open.
 5. ⬜ **F2 Fill-blanks** — blocked on the user authoring per-option Hebrew in `data/sentences.js` (§6).
-6. ⬜ **E8** "new words learning surface" — broadest redesign; the table piece is done, the rest needs direction.
+6. ✅ **E8** "new words learning surface" (2026-06-09) — `detectNewWords()` + `NewWordPill`/`SentenceText` surface unlearned bank words as tappable pills in Grammar + Articles + Progressive, merged into the after-answer table. Spec: `docs/grammar-new-words-spec.md`.
 
 ## 8. Decisions (user, 2026-06-08)
 

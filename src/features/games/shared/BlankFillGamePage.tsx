@@ -7,6 +7,9 @@ import { AnswerGrid } from '@/features/games/shared/AnswerGrid'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
+import { WordTable, type WordTableRow } from '@/features/games/shared/WordTable'
+import { SentenceText } from '@/features/games/shared/NewWordPill'
+import { detectNewWords } from '@/bridge/newWords'
 import {
   abortBlankFillSession,
   beginBlankFillSession,
@@ -133,6 +136,17 @@ export function BlankFillGamePage({
     if (!current) return { order: [] as string[], correctIndex: -1 }
     return shuffleOptions(current.options, current.correct)
   }, [current])
+
+  // E8 (bug-dump 2026-06-07): surface NEW (not-yet-learned) vocab-bank words in
+  // the sentence as tappable pills + translation + audio. Exposure-only.
+  const newWordsList = useMemo(
+    () => (current ? detectNewWords(current.sentence.replace('___', ' ')) : []),
+    [current],
+  )
+  const newWordsMap = useMemo(
+    () => new Map(newWordsList.map((nw) => [nw.word, nw])),
+    [newWordsList],
+  )
 
   const speakPrompt = useCallback((q: BlankFillQuestion) => {
     const text = q.sentence.replace('___', ',').replace(/\s+,\s+/, ', ')
@@ -311,6 +325,28 @@ export function BlankFillGamePage({
     ? current.hebrewExplanation || current.explanation || ''
     : ''
 
+  // After-answer word table (E8, merged per D3): the correct option (✓), the
+  // chosen option when wrong (✗), then the sentence's NEW vocab words (no mark).
+  // Hebrew is raw — WordTable nk()'s it.
+  const wordTableRows: WordTableRow[] = []
+  if (phase === 'answered' && current) {
+    const correctHe = current.hebrewOptions?.[current.correct]
+    if (correctAnswer && correctHe) {
+      wordTableRows.push({ word: correctAnswer, hebrew: correctHe, mark: 'correct' })
+    }
+    if (selectedIndex != null) {
+      const chosen = shuffled.order[selectedIndex]
+      if (chosen && chosen !== correctAnswer) {
+        const oi = current.options.indexOf(chosen)
+        const chosenHe = oi >= 0 ? current.hebrewOptions?.[oi] : undefined
+        if (chosenHe) wordTableRows.push({ word: chosen, hebrew: chosenHe, mark: 'wrong' })
+      }
+    }
+    for (const nw of newWordsList) {
+      wordTableRows.push({ word: nw.word, hebrew: nw.hebrew })
+    }
+  }
+
   const footer =
     phase === 'answered' ? (
       <button
@@ -347,7 +383,12 @@ export function BlankFillGamePage({
                 dir="ltr"
                 className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-2xl font-bold text-white sm:text-3xl"
               >
-                <span>{renderWord(split.before).trimEnd()}</span>
+                <SentenceText
+                  text={split.before.trimEnd()}
+                  newWords={newWordsMap}
+                  renderWord={renderWord}
+                  gameContext={gameType}
+                />
                 <span
                   data-testid={`${gameType}-blank`}
                   data-state={filled ? (wasCorrect ? 'correct' : 'incorrect') : 'empty'}
@@ -360,7 +401,12 @@ export function BlankFillGamePage({
                 >
                   {blankText}
                 </span>
-                <span>{renderWord(split.after).trimStart()}</span>
+                <SentenceText
+                  text={split.after.trimStart()}
+                  newWords={newWordsMap}
+                  renderWord={renderWord}
+                  gameContext={gameType}
+                />
               </p>
               <button
                 type="button"
@@ -400,6 +446,10 @@ export function BlankFillGamePage({
               variant="text"
               columns={options.length === 2 ? 2 : options.length >= 4 ? 4 : 3}
             />
+
+            {phase === 'answered' && wordTableRows.length > 0 ? (
+              <WordTable rows={wordTableRows} title="המילים" />
+            ) : null}
           </div>
         ) : null}
       </GameScreenShell>

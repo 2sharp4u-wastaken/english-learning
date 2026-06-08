@@ -5,6 +5,8 @@ import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { AnswerGrid } from '@/features/games/shared/AnswerGrid'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { WordTable, type WordTableRow } from '@/features/games/shared/WordTable'
+import { SentenceText } from '@/features/games/shared/NewWordPill'
+import { detectNewWords } from '@/bridge/newWords'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
 import {
@@ -131,6 +133,19 @@ export function GrammarGamePage() {
     if (!current) return { order: [] as string[], correctIndex: -1 }
     return shuffleOptions(current.options, current.correct)
   }, [current])
+
+  // E8 (bug-dump 2026-06-07): surface NEW (not-yet-learned) vocab-bank words in
+  // the sentence as tappable pills + translation + audio. Exposure-only — not
+  // recorded toward mastery. Scan the sentence with the blank dropped (the blank
+  // answer is a grammar function word, never a content word).
+  const newWordsList = useMemo(
+    () => (current ? detectNewWords(current.sentence.replace('___', ' ')) : []),
+    [current],
+  )
+  const newWordsMap = useMemo(
+    () => new Map(newWordsList.map((nw) => [nw.word, nw])),
+    [newWordsList],
+  )
 
   // Speak the sentence with the blank skipped (comma pause replaces ___).
   const speakPrompt = useCallback((q: GrammarQuestion) => {
@@ -358,6 +373,10 @@ export function GrammarGamePage() {
         if (chosenHe) wordTableRows.push({ word: chosen, hebrew: chosenHe, mark: 'wrong' })
       }
     }
+    // E8: merge the sentence's NEW vocab words into the same table (no ✓/✗ mark).
+    for (const nw of newWordsList) {
+      wordTableRows.push({ word: nw.word, hebrew: nw.hebrew })
+    }
   }
 
   const footer =
@@ -391,7 +410,12 @@ export function GrammarGamePage() {
                 dir="ltr"
                 className="flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-2xl font-bold text-white sm:text-3xl"
               >
-                <span>{renderWord(split.before).trimEnd()}</span>
+                <SentenceText
+                  text={split.before.trimEnd()}
+                  newWords={newWordsMap}
+                  renderWord={renderWord}
+                  gameContext="grammar"
+                />
                 <span
                   data-testid="grammar-blank"
                   data-state={filled ? (wasCorrect ? 'correct' : 'incorrect') : 'empty'}
@@ -404,7 +428,12 @@ export function GrammarGamePage() {
                 >
                   {blankText}
                 </span>
-                <span>{renderWord(split.after).trimStart()}</span>
+                <SentenceText
+                  text={split.after.trimStart()}
+                  newWords={newWordsMap}
+                  renderWord={renderWord}
+                  gameContext="grammar"
+                />
               </p>
               <button
                 type="button"

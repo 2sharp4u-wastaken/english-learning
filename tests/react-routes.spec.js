@@ -2162,10 +2162,13 @@ test.describe('Slice 3.10: Grammar Game (React)', () => {
 
     await expect(page.locator('[data-testid="grammar-next"]')).toBeVisible();
     await expect(page.locator('[data-testid="grammar-blank"]')).toHaveAttribute('data-state', 'correct');
-    // F3 + E7/E8: after answering, the word-review table shows the correct word
-    // (here the answer was correct, so exactly one ✓ row).
+    // F3: after answering, the word-review table shows the correct word (✓).
+    // E8 also merges the sentence's NEW vocab words in (no mark), so there may
+    // be more than one row — assert the correct option's row is present.
     await expect(page.locator('[data-testid="word-table"]')).toBeVisible();
-    await expect(page.locator('[data-testid="word-table-row"]')).toHaveCount(1);
+    await expect(
+      page.locator(`[data-testid="word-table-row"][data-word="${correctText}"]`),
+    ).toBeVisible();
 
     await page.locator('[data-testid="grammar-next"]').click();
     await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
@@ -2174,6 +2177,31 @@ test.describe('Slice 3.10: Grammar Game (React)', () => {
 
     const critical = filterCritical(errors);
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('E8: new vocabulary words surface as tappable pills', async ({ page }) => {
+    // Zero learned words → every vocab-bank content word in the sentence is "new".
+    await seedUser(page);
+    await gotoHash(page, '/game/grammar');
+    await page.waitForTimeout(900);
+
+    // Most questions carry a bank content word; a few don't — advance until one
+    // renders a new-word pill (bounded).
+    let found = false;
+    for (let attempt = 0; attempt < 10; attempt++) {
+      if ((await page.locator('[data-testid="new-word-pill"]').count()) > 0) {
+        found = true;
+        break;
+      }
+      await page.locator('[data-testid="answer-option"]').first().click();
+      await page.locator('[data-testid="grammar-next"]').click();
+      await page.waitForTimeout(300);
+    }
+    expect(found).toBe(true);
+
+    // Tapping a pill reveals its Hebrew tooltip.
+    await page.locator('[data-testid="new-word-pill"]').first().click();
+    await expect(page.locator('[data-testid="new-word-tooltip"]').first()).toBeVisible();
   });
 
   test('incorrect answer reveals the correct option and shows explanation', async ({ page }) => {
