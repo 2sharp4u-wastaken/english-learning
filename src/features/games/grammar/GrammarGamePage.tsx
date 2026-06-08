@@ -314,20 +314,20 @@ export function GrammarGamePage() {
 
   const split = current ? splitSentence(current.sentence) : { before: '', after: '' }
   const correctAnswer = current?.options[current.correct] ?? ''
-  const correctHebrewGloss =
-    current?.hebrewOptions?.[current.correct] ?? undefined
-  // Keep the Hebrew sentence blank EMPTY until answered — filling it with the
-  // correct gloss up front gave the answer away. After answering, fill it in
-  // so kids see the full meaning (e.g. "אנחנו לא יכול לשחק בחוץ בגשם").
+  // E7 (bug-dump 2026-06-07): always show the FULL Hebrew sentence — drop the
+  // blank so the child reads the complete meaning instead of deducing from
+  // context. Hebrew present-tense copula sentences omit "to be", so removing
+  // `___` yields the natural sentence ("אני ___ שמח" → "אני שמח"); question
+  // forms read fine too ("___ הלכת לישון?" → "הלכת לישון?"). The Hebrew gives
+  // the meaning; the English blank stays the exercise.
   const hebrewSentenceDisplay = current?.hebrewSentence
-    ? current.hebrewSentence.includes('___')
-      ? renderHebrew(
-          current.hebrewSentence.replace(
-            '___',
-            phase === 'answered' && correctHebrewGloss ? correctHebrewGloss : '______',
-          ),
-        )
-      : renderHebrew(current.hebrewSentence)
+    ? renderHebrew(
+        current.hebrewSentence
+          .replace('___', '')
+          .replace(/\s{2,}/g, ' ')
+          .replace(/\s+([?!.,])/g, '$1')
+          .trim(),
+      )
     : ''
   const filled = phase === 'answered' && selectedIndex != null
   const wasCorrect = filled && selectedIndex === shuffled.correctIndex

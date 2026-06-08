@@ -162,6 +162,13 @@ export interface AppSettings {
   gameUnlockOverride: boolean
   difficultyAutoGate: boolean    // Slice 1.9 — gate word-length by progress
 
+  // Reading "sneak peek" (F1) — a child-tapped button re-flashes the hidden
+  // word for a short moment. Optional: pre-F1 settings blobs won't have these;
+  // the Reading page + DEFAULT_SETTINGS supply the fallbacks.
+  sneakPeekEnabled?: boolean     // master on/off for the peek button
+  sneakPeekDuration?: number     // reveal length in seconds (0.3..2)
+  sneakPeekBudget?: number       // peeks allowed per question (1..5)
+
   // Custom words (parent)
   claudeApiKey: string
 

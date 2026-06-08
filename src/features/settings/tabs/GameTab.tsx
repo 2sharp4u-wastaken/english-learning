@@ -56,6 +56,41 @@ export function GameTab() {
         />
       </SectionCard>
 
+      <SectionCard
+        title="הצצה חטופה (קריאה)"
+        description="במשחק הקריאה המילה נעלמת אחרי כמה שניות. הצצה חטופה מאפשרת לילד ללחוץ כדי לחשוף את המילה שוב לרגע קצר."
+      >
+        <Toggle
+          label="אפשר הצצה חטופה"
+          description="כפתור 👁 במשחק הקריאה שמהבהב את המילה שנעלמה"
+          checked={settings.sneakPeekEnabled ?? true}
+          onChange={(v) => updateSettings({ sneakPeekEnabled: v })}
+        />
+        {(settings.sneakPeekEnabled ?? true) && (
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            <Slider
+              label="משך ההצצה"
+              min={0.3}
+              max={2}
+              step={0.1}
+              unit="שנ׳"
+              value={settings.sneakPeekDuration ?? 0.5}
+              onChange={(v) => updateSettings({ sneakPeekDuration: v })}
+              description="כמה זמן המילה נחשפת בכל הצצה"
+            />
+            <Slider
+              label="מספר הצצות"
+              min={1}
+              max={5}
+              unit="פעמים"
+              value={settings.sneakPeekBudget ?? 3}
+              onChange={(v) => updateSettings({ sneakPeekBudget: v })}
+              description="כמה הצצות מותרות בכל שאלה"
+            />
+          </div>
+        )}
+      </SectionCard>
+
       <SectionCard title="קול וקריאה">
         <Toggle
           label="ניקוד עברי בקריאה"

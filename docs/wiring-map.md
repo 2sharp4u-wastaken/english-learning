@@ -320,6 +320,7 @@ React route /#/game/reading
       ├─ Loop: <MediaPromptCard media=<ReadingPicture> word=question.word> + built-word box + <letter-bank>
       │   ├─ On new question: shuffle (word.split + extraLetters) into LetterToken[]; auto-play English word once
       │   ├─ 3s English-word reveal cycle: wordVisible state + wordHideTimer (Hebrew stays visible)
+      │   ├─ Sneak peek (F1): 👁 הצצה button re-flashes the hidden word for sneakPeekDuration; sneakPeekBudget peeks/question (settings; on by default)
       │   ├─ Letter click → move LetterToken from bank.used=false → built[]; speak(letter.toLowerCase())
       │   ├─ "נקה" → empty built[], reset all bank tokens to used=false
       │   └─ "בדוק" → recordReadingAnswer(question, builtWord, attempts)

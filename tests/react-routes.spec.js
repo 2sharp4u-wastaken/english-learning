@@ -1679,6 +1679,29 @@ test.describe('Slice 3.5: Reading Game (React)', () => {
     ).toBeVisible();
   });
 
+  test('sneak peek button re-flashes the hidden word and spends its budget', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 8);
+    await gotoHash(page, '/game/reading');
+    await page.waitForTimeout(900);
+
+    const peek = page.locator('[data-testid="reading-peek"]');
+    await expect(peek).toBeVisible();
+    // Default budget is 3; the word auto-reveals first, so peek starts disabled.
+    await expect(peek).toContainText('(3)');
+    await expect(peek).toBeDisabled();
+
+    // Once the 3s auto-reveal lapses the word hides and peek becomes available.
+    const word = page.locator('[data-testid="media-prompt-word"]');
+    await expect(word).toHaveClass(/invisible/, { timeout: 5000 });
+    await expect(peek).toBeEnabled();
+
+    // Peeking re-reveals the word and decrements the per-question budget.
+    await peek.click();
+    await expect(word).not.toHaveClass(/invisible/);
+    await expect(peek).toContainText('(2)');
+  });
+
   test('incorrect submission surfaces feedback + Next button (no retry)', async ({ page }) => {
     await seedUser(page);
     await seedLearnedFromBank(page, 8);
@@ -2108,6 +2131,9 @@ test.describe('Slice 3.10: Grammar Game (React)', () => {
     await expect(page.locator('[data-testid="grammar-play"]')).toBeVisible();
     await expect(page.locator('[data-testid="grammar-blank"]')).toHaveAttribute('data-state', 'empty');
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
+    // E7: the Hebrew sentence shows in FULL (no blank placeholder) so the child
+    // reads the meaning instead of deducing it.
+    await expect(page.locator('[data-testid="grammar-hebrew"]')).not.toContainText('___');
 
     const opts = page.locator('[data-testid="answer-option"]');
     await expect(opts).toHaveCount(4);

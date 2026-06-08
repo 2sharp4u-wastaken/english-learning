@@ -22,6 +22,11 @@ export const DEFAULT_SETTINGS: AppSettings = {
   gameUnlockOverride: false,
   difficultyAutoGate: true,
   claudeApiKey: '',
+  // Reading "sneak peek" (F1) — on by default; child taps to re-flash the
+  // hidden word for ~½s, up to 3 times per question.
+  sneakPeekEnabled: true,
+  sneakPeekDuration: 0.5,
+  sneakPeekBudget: 3,
   // Phase 5 — master on/off for all expression content (Slice 5.2). When false the
   // expressions bridge returns an empty bank to games regardless of registers.
   expressionsEnabled: true,

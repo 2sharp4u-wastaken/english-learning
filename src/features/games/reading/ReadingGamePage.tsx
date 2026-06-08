@@ -98,6 +98,17 @@ export function ReadingGamePage() {
   const [audioPlaysLeft, setAudioPlaysLeft] = useState<number>(() =>
     getSettings().audioPlaysAllowed ?? 8,
   )
+  // Sneak peek (F1): child-tapped button re-flashes the hidden word for a short
+  // moment, up to a per-question budget. Config is read once per session.
+  const sneakPeek = useMemo(() => {
+    const s = getSettings()
+    return {
+      enabled: s.sneakPeekEnabled ?? true,
+      durationMs: Math.round((s.sneakPeekDuration ?? 0.5) * 1000),
+      budget: s.sneakPeekBudget ?? 3,
+    }
+  }, [])
+  const [peeksLeft, setPeeksLeft] = useState<number>(() => sneakPeek.budget)
   const advanceTimer = useRef<number | null>(null)
   const wordHideTimer = useRef<number | null>(null)
   const isActiveRef = useRef(false)
@@ -201,8 +212,9 @@ export function ReadingGamePage() {
     if (!current) return
     setBuilt('')
     setAttempts(0)
+    setPeeksLeft(sneakPeek.budget)
     startWordHideTimer()
-  }, [current, startWordHideTimer])
+  }, [current, startWordHideTimer, sneakPeek.budget])
 
   // Persist per-question audio counters so a refresh doesn't reset them.
   useEffect(() => {
@@ -222,6 +234,20 @@ export function ReadingGamePage() {
     // letters by most speech engines (legacy reading-game.js:74).
     void speakWord(current.word.toLowerCase(), 'reading')
   }, [audioPlaysLeft, current])
+
+  // Re-flash the hidden word for a short moment (sneak peek). Only meaningful
+  // once the word has auto-hidden and while still building — disabled otherwise.
+  const peek = useCallback(() => {
+    if (!sneakPeek.enabled) return
+    if (phase !== 'awaiting' || wordVisible || peeksLeft <= 0) return
+    setPeeksLeft((n) => Math.max(0, n - 1))
+    clearWordHideTimer()
+    setWordVisible(true)
+    wordHideTimer.current = window.setTimeout(() => {
+      setWordVisible(false)
+      wordHideTimer.current = null
+    }, sneakPeek.durationMs)
+  }, [clearWordHideTimer, peeksLeft, phase, sneakPeek, wordVisible])
 
   // Auto-play on each new question. Mirrors the Slice 3.1 template (voice
   // readiness poll, allowOverlap, suppressed on resume).
@@ -414,6 +440,22 @@ export function ReadingGamePage() {
   const actions =
     phase === 'awaiting' ? (
       <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-3">
+        {sneakPeek.enabled ? (
+          <button
+            type="button"
+            onClick={peek}
+            disabled={wordVisible || peeksLeft <= 0}
+            data-testid="reading-peek"
+            aria-label="הצצה במילה"
+            className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+          >
+            <span aria-hidden>👁</span>
+            {nk('הצצה')}
+            <span className="tabular-nums" dir="ltr">
+              ({peeksLeft})
+            </span>
+          </button>
+        ) : null}
         <button
           type="button"
           onClick={() => setClearNonce((n) => n + 1)}
