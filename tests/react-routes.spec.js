@@ -2136,6 +2136,10 @@ test.describe('Slice 3.10: Grammar Game (React)', () => {
 
     await expect(page.locator('[data-testid="grammar-next"]')).toBeVisible();
     await expect(page.locator('[data-testid="grammar-blank"]')).toHaveAttribute('data-state', 'correct');
+    // F3 + E7/E8: after answering, the word-review table shows the correct word
+    // (here the answer was correct, so exactly one ✓ row).
+    await expect(page.locator('[data-testid="word-table"]')).toBeVisible();
+    await expect(page.locator('[data-testid="word-table-row"]')).toHaveCount(1);
 
     await page.locator('[data-testid="grammar-next"]').click();
     await expect.poll(() => page.locator('[data-testid="qp-current"]').textContent(), {
@@ -2303,6 +2307,9 @@ test.describe('Slice 3.12: Story Time Game (React)', () => {
     await expect(page.locator('[data-testid="story-time-title"]')).toBeVisible();
     await expect(page.locator('[data-testid="story-sentence"]').first()).toBeVisible();
     await expect(page.locator('[data-testid="story-sentence-play"]').first()).toBeVisible();
+    // F3: the word-review table lists the story's highlighted words.
+    await expect(page.locator('[data-testid="word-table"]')).toBeVisible();
+    await expect(page.locator('[data-testid="word-table-row"]').first()).toBeVisible();
 
     // Switch to quiz.
     await page.locator('[data-testid="story-time-ready"]').click();

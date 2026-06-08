@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { AnswerGrid } from '@/features/games/shared/AnswerGrid'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
+import { WordTable, type WordTableRow } from '@/features/games/shared/WordTable'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
 import {
@@ -340,6 +341,25 @@ export function GrammarGamePage() {
     ? current.hebrewExplanation || current.explanation || ''
     : ''
 
+  // Word-review table (F3 + E7/E8): after answering, show the correct option and
+  // — if the child missed — the one they picked, each with its Hebrew gloss + a
+  // play button. Hebrew comes from `hebrewOptions` (raw; WordTable nk()'s it).
+  const wordTableRows: WordTableRow[] = []
+  if (phase === 'answered' && current) {
+    const correctHe = current.hebrewOptions?.[current.correct]
+    if (correctAnswer && correctHe) {
+      wordTableRows.push({ word: correctAnswer, hebrew: correctHe, mark: 'correct' })
+    }
+    if (selectedIndex != null) {
+      const chosen = shuffled.order[selectedIndex]
+      if (chosen && chosen !== correctAnswer) {
+        const oi = current.options.indexOf(chosen)
+        const chosenHe = oi >= 0 ? current.hebrewOptions?.[oi] : undefined
+        if (chosenHe) wordTableRows.push({ word: chosen, hebrew: chosenHe, mark: 'wrong' })
+      }
+    }
+  }
+
   const footer =
     phase === 'answered' ? (
       <button
@@ -425,6 +445,10 @@ export function GrammarGamePage() {
               variant="text"
               columns={options.length === 2 ? 2 : options.length >= 4 ? 4 : 3}
             />
+
+            {phase === 'answered' && wordTableRows.length > 0 ? (
+              <WordTable rows={wordTableRows} title="המילים" />
+            ) : null}
           </div>
         ) : null}
       </GameScreenShell>

@@ -4,6 +4,7 @@ import { cn } from '@/lib/cn'
 import { cancelSpeech, speak, speakHebrew, speakWord } from '@/bridge/audio'
 import { useNikud } from '@/bridge/nikud'
 import { useTextPrefs } from '@/bridge/textPrefs'
+import { WordTable } from '@/features/games/shared/WordTable'
 import type { Story, StoryHighlight } from '@/bridge/story-time'
 
 export interface StoryReadPhaseProps {
@@ -242,6 +243,13 @@ export function StoryReadPhase({
           )
         })}
       </div>
+
+      {story.highlights.length > 0 ? (
+        <WordTable
+          title="המילים בסיפור"
+          rows={story.highlights.map((h) => ({ word: h.word, hebrew: h.translation }))}
+        />
+      ) : null}
 
       <div className="flex justify-center pt-2">
         <button
