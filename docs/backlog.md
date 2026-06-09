@@ -30,11 +30,14 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
   fully offline. SW registered from `src/main.tsx` (PROD only, readyState-guarded).
   **Verified in `vite preview`:** SW controls, offline reload serves the cached app,
   confetti works offline. Static wiring pinned by `src/__tests__/pwa-wiring.test.ts`.
-- ⬜ **Host hookup (NEXT, needs the user).** Write `netlify.toml`/`vercel.json`; the live
-  deploy needs the user's account auth (run `netlify deploy` in-session). Root-domain host
-  preferred: the app fetches the absolute path `/data/nikud-map.json`, so GH Pages' `/repo/`
-  subpath would need a Vite `base` + rewrites. PWA install + offline only kick in once
-  served over the host's HTTPS (or localhost).
+- 🟡 **Host hookup (NEXT, needs the user's account auth).** `netlify.toml` is **written
+  and committed** (build `npm run build` → publish `dist`, Node 20, SPA fallback,
+  immutable `/assets/*` caching, no-cache `/sw.js`+`/index.html`). All that remains is the
+  live deploy, which needs the user's login: either connect the GitHub repo in the Netlify
+  dashboard (auto-deploys on push) or run `netlify deploy --prod` in-session. Root-domain
+  host (Netlify) chosen over GH Pages because the app fetches the absolute path
+  `/data/nikud-map.json` (a `/repo/` subpath would need a Vite `base` + rewrites). PWA
+  install + offline + mic games all activate once served over the host's HTTPS.
 - Natural partner to a **human play-test** on a real tablet.
 
 ### Recently fixed alongside INFRA1 (2026-06-09 preview play-test)
