@@ -1801,6 +1801,8 @@ Investigate exposing the app beyond `localhost` and pick a path:
 - **As an app:** **PWA** (manifest + service worker — installable + offline) is the lowest-friction fit for a static SPA → recommend first; Capacitor/Tauri/Electron only if app-store distribution is needed.
 - **Deliverable:** a recommendation + concrete steps for the chosen path, with the HTTPS/secure-context requirement called out as the main blocker for mic games off-localhost.
 
+**Progress (2026-06-09):** spike done → chosen path is **public static deploy (Netlify/Vercel) + PWA layer** (a host gives free HTTPS, auto-solving the mic secure-context blocker; PWA adds install + offline; LAN is the weakest option). **Build-asset prerequisite shipped** (commit `0520a2d`): `publicDir: false` meant `vite build` emitted only the bundled graph, so a built `dist/` (and `vite preview`) 404'd on the 5 legacy `<script>` files + `data/*.json` + `img/` — all referenced by bare/absolute paths outside the module graph. A build-only Vite plugin (`infra1-copy-static-assets`) now copies them into `dist`, making it deployable. **Next: PWA layer, then host hookup** (root-domain host preferred — the app fetches the absolute `/data/nikud-map.json`). Open status tracked in `backlog.md` §1.
+
 ## Phase 4: Cleanup and Consolidation
 
 Objective: remove dead legacy code and shrink maintenance burden.

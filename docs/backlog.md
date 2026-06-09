@@ -9,18 +9,41 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 
 ---
 
-## 1. Ship beyond localhost — **Slice INFRA1** (spike, never started) 🟢
+## 1. Ship beyond localhost — **Slice INFRA1** (spike done; path chosen: Deploy + PWA) 🟢
 
-The biggest untouched item. Investigate + recommend a path; no commit until chosen.
+Chosen path: **public static deploy (Netlify/Vercel) + PWA layer**. A hosted deploy
+gives free HTTPS → solves the mic secure-context blocker automatically (no cert
+mgmt), reachable on any tablet; PWA adds install-to-home-screen + offline. LAN is
+the weakest option (self-signed cert friction) — skip unless offline-LAN is required.
 Detail/spec: `master-plan.md` → "Slice INFRA1".
-- **LAN access** — Vite `--host`; **blocker:** mic games (Pronunciation, Practice) +
-  Web Speech need a *secure context*, so LAN needs the `server.crt`/`server.key`
-  HTTPS path, not plain HTTP.
-- **PWA** — manifest + service worker (installable + offline). Lowest-friction fit
-  for a static SPA → recommended first.
-- **Public deploy** — `npm run build` → static `dist/` to Netlify/Vercel/Pages. App
-  is already Python-free (progress in `localStorage`), so it mostly stands alone.
+
+- ✅ **Build-asset prerequisite (2026-06-09, shipped, commit `0520a2d`).** `publicDir:
+  false` meant `vite build` dropped every runtime-served asset → a built `dist/`
+  404'd on the 5 legacy `<script>` files, `data/*.json`, and `img/`. Fixed with a
+  build-only Vite plugin (`infra1-copy-static-assets`) that copies them into `dist`.
+  `vite preview` now serves a faithful, deployable copy. **This was the gating blocker
+  for ANY deploy.**
+- ⬜ **PWA layer (NEXT)** — manifest + service worker (vite-plugin-pwa). Precache the
+  app shell + `data/*.json`, runtime-cache `img/`. Self-host the confetti jsdelivr CDN
+  script for true offline. Verifiable locally in `vite preview`.
+- ⬜ **Host hookup** — write `netlify.toml`/`vercel.json`; the live deploy needs the
+  user's account auth (run `netlify deploy` in-session). Root-domain host preferred:
+  the app fetches the absolute path `/data/nikud-map.json`, so GH Pages' `/repo/`
+  subpath would need a Vite `base` + rewrites.
 - Natural partner to a **human play-test** on a real tablet.
+
+### Recently fixed alongside INFRA1 (2026-06-09 preview play-test)
+- ✅ **Dead back button on gate screens (14 games, commits `b4db4ce`+`be58f54`).** Gate/
+  terminal screens (learn-first, all-mastered, expr locked/not-enough, blank-fill/grammar
+  `total===0`) reused the play header, whose back opens an exit-confirm dialog those
+  branches never mount → dead button. Idiom: `header={{ ...headerProps, onBack: () =>
+  navigate('/home') }}`. Loading screens keep the play header on purpose. See
+  `feedback_gate_screen_back_home` memory.
+- ✅ **Phonics case toggle was inert** — it rendered text raw; now honors `caseMode`
+  like every other game.
+- ✅ **Home encouragement line (commit `ed9445f`)** — progress-aware, gender-neutral
+  Hebrew; fills the blank hero a fully-unlocked player used to see. See
+  `feedback_gender_neutral_hebrew`.
 
 ## 2. Learning-flow loose ends (from `learning-path.md`)
 
