@@ -416,7 +416,7 @@ export function ReadingGamePage() {
 
   if (session.kind === 'learn-first') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={{ ...headerProps, onBack: () => navigate('/home') }}>
         <ReadingLearnFirst learnedCount={session.learnedCount} />
       </GameScreenShell>
     )

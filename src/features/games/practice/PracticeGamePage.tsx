@@ -452,7 +452,7 @@ export function PracticeGamePage() {
 
   if (session.kind === 'learn-first') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={{ ...headerProps, onBack: () => navigate('/home') }}>
         <PracticeEmpty learnedCount={session.learnedCount} />
       </GameScreenShell>
     )

@@ -442,7 +442,7 @@ export function PronunciationGamePage() {
 
   if (session.kind === 'learn-first') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={{ ...headerProps, onBack: () => navigate('/home') }}>
         <PictureMatchLearnFirst learnedCount={session.learnedCount} />
       </GameScreenShell>
     )

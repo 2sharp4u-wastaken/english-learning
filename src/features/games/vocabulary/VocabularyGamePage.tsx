@@ -359,7 +359,7 @@ export function VocabularyGamePage() {
 
   if (session.kind === 'learn-first') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={{ ...headerProps, onBack: () => navigate('/home') }}>
         <VocabularyLearnFirst learnedCount={session.learnedCount} />
       </GameScreenShell>
     )

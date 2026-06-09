@@ -891,6 +891,20 @@ test.describe('Slice 3.1: Vocabulary Game (React)', () => {
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
   });
 
+  test('learn-first gate header back navigates straight home', async ({ page }) => {
+    // Representative coverage of the shared learn-first gate-back fix applied to
+    // all 10 learn-first games (vocabulary/listening/picture-match/true-or-not/
+    // reading/story-time/pronunciation/practice/fill-blanks/sentence-scramble).
+    await seedUser(page);
+    await gotoHash(page, '/game/vocabulary');
+    await expect(page.locator('[data-testid="vocabulary-learn-first"]')).toBeVisible();
+
+    // Gate screen has no game in progress → header back goes home directly
+    // (it doesn't mount the exit-confirm dialog the play screen uses).
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/home');
+  });
+
   test('happy path: question + 4 options render and progress advances after correct answer', async ({ page }) => {
     const errors = captureErrors(page);
     await seedUser(page);

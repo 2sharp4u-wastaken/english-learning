@@ -278,7 +278,7 @@ export function BlankFillGamePage({
 
   if (total === 0) {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={{ ...headerProps, onBack: () => navigate('/home') }}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-[color:var(--slate-200)]">
           <span className="text-5xl">{icon}</span>
           <p>{nk('אין שאלות זמינות כרגע.')}</p>

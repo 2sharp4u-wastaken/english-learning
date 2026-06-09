@@ -255,7 +255,7 @@ export function StoryTimeGamePage() {
 
   if (session.kind === 'learn-first') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={{ ...headerProps, onBack: () => navigate('/home') }}>
         <StoryTimeLearnFirst learnedCount={session.learnedCount} />
       </GameScreenShell>
     )

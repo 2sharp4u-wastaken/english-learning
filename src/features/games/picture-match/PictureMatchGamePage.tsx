@@ -371,7 +371,7 @@ export function PictureMatchGamePage() {
 
   if (session.kind === 'learn-first') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={{ ...headerProps, onBack: () => navigate('/home') }}>
         <PictureMatchLearnFirst learnedCount={session.learnedCount} />
       </GameScreenShell>
     )

@@ -344,7 +344,7 @@ export function TrueOrNotGamePage() {
 
   if (session.kind === 'learn-first') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={{ ...headerProps, onBack: () => navigate('/home') }}>
         <TrueOrNotLearnFirst learnedCount={session.learnedCount} />
       </GameScreenShell>
     )
