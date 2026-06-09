@@ -467,7 +467,7 @@ test.describe('Slice 1.6: Settings', () => {
     await expect(page.locator('#parent-password')).toBeVisible();
 
     // Submit the correct admin password (hardcoded in auth.js)
-    await page.locator('#parent-password').fill('mac7395eRa1n1!');
+    await page.locator('#parent-password').fill('horim-kef-2432!');
     await page.locator('#parent-password').press('Enter');
 
     // Modal should close and Game tab content should render
@@ -527,7 +527,7 @@ test.describe('Slice 1.6: Settings', () => {
 
     // Password modal opens (user is not auto-admin)
     await expect(page.locator('#parent-password')).toBeVisible({ timeout: 3000 });
-    await page.locator('#parent-password').fill('mac7395eRa1n1!');
+    await page.locator('#parent-password').fill('horim-kef-2432!');
     await page.locator('#parent-password').press('Enter');
     await expect(page.locator('#parent-password')).not.toBeVisible();
 
@@ -567,7 +567,7 @@ test.describe('Slice 1.6: Settings', () => {
     await gotoHash(page, '/settings');
     await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
     await expect(page.locator('#parent-password')).toBeVisible();
-    await page.locator('#parent-password').fill('mac7395eRa1n1!');
+    await page.locator('#parent-password').fill('horim-kef-2432!');
     await page.locator('#parent-password').press('Enter');
     await expect(page.locator('#parent-password')).not.toBeVisible();
   }

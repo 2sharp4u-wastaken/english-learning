@@ -28,7 +28,11 @@ import type { User, UserRole, Session } from './types'
 
 // ─── Constants (ported from legacy AuthService) ───────────────────────────────
 const SESSION_TIMEOUT = 30 * 60 * 1000 // 30 minutes idle timeout
-const ADMIN_PASSWORD = 'mac7395eRa1n1!'
+// App-only parent password. This ships in the public JS bundle, so it must NEVER
+// be a personal/reused password — it's a child gate, not a security boundary
+// (any client-only check is bypassable via devtools). A per-device parent
+// password is backlogged (docs/backlog.md §4); real secrecy needs a backend (§6).
+const ADMIN_PASSWORD = 'horim-kef-2432!'
 const PASSWORD_SALT = 'englishlearning2024'
 
 // UNPREFIXED localStorage keys — exactly as legacy auth.js used them.
