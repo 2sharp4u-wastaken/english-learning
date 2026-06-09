@@ -88,6 +88,16 @@ test('A11-adjacent: Word Journey Hebrew card honors the nikud toggle (pre-enrich
   await page.waitForTimeout(200);
   const offText = (await hebrew.textContent()) || '';
   expect(NIKUD_RE.test(offText), `expected nikud OFF, got: ${offText}`).toBe(false);
+
+  // A11: the case toggle drives the English word card (case is English-only, so
+  // it correctly leaves the Hebrew card alone — same binary path as every game).
+  const english = page.locator('[data-testid="media-prompt-word"]');
+  const beforeCase = (await english.textContent()) || '';
+  await page.locator('[data-testid="header-case-toggle"]').click();
+  await page.waitForTimeout(200);
+  const afterCase = (await english.textContent()) || '';
+  expect(afterCase, `case toggle changed the word: ${beforeCase} -> ${afterCase}`).not.toBe(beforeCase);
+  expect(afterCase.toLowerCase()).toBe(beforeCase.toLowerCase());
 });
 
 test('E5: Story Time sentences honor the case toggle', async ({ page }) => {
