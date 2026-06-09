@@ -8,10 +8,19 @@
     <meta http-equiv="Expires" content="0">
     <title>English Learning Games - לומדים אנגלית בכיף</title>
     <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <!-- PWA (Slice INFRA1): installable + offline. Manifest + icons + theme color;
+         the service worker is registered from src/main.tsx (production only). -->
+    <link rel="manifest" href="/manifest.webmanifest">
+    <meta name="theme-color" content="#07101d">
+    <link rel="apple-touch-icon" href="/img/pwa/apple-touch-icon.png">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <!-- Slice 4.5: legacy styles.css + game-completion-styles.css deleted (React
          owns all styling via src/styles/*); font-awesome + Poppins CDNs removed
          (React uses Lucide icons + Heebo/Fredoka fonts). -->
-    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <!-- canvas-confetti self-hosted (INFRA1) so the PWA works fully offline — no
+         jsdelivr CDN dependency. Copied into dist/ by the vite copy plugin. -->
+    <script src="/vendor/confetti.browser.min.js"></script>
 </head>
 <body>
     <!-- Slice 4.5: legacy `.app-layout` hub/profile/topics DOM + certificate/exit/toast

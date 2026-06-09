@@ -23,13 +23,18 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
   build-only Vite plugin (`infra1-copy-static-assets`) that copies them into `dist`.
   `vite preview` now serves a faithful, deployable copy. **This was the gating blocker
   for ANY deploy.**
-- ⬜ **PWA layer (NEXT)** — manifest + service worker (vite-plugin-pwa). Precache the
-  app shell + `data/*.json`, runtime-cache `img/`. Self-host the confetti jsdelivr CDN
-  script for true offline. Verifiable locally in `vite preview`.
-- ⬜ **Host hookup** — write `netlify.toml`/`vercel.json`; the live deploy needs the
-  user's account auth (run `netlify deploy` in-session). Root-domain host preferred:
-  the app fetches the absolute path `/data/nikud-map.json`, so GH Pages' `/repo/`
-  subpath would need a Vite `base` + rewrites.
+- ✅ **PWA layer (2026-06-09, shipped, commit pending).** Hand-rolled (NOT
+  vite-plugin-pwa — it fights `publicDir:false` + the copy plugin): `manifest.webmanifest`
+  + `sw.js` (network-first nav, stale-while-revalidate assets) + PWA icons + `theme-color`.
+  Confetti **self-hosted** at `/vendor/confetti.browser.min.js` (jsdelivr CDN removed) →
+  fully offline. SW registered from `src/main.tsx` (PROD only, readyState-guarded).
+  **Verified in `vite preview`:** SW controls, offline reload serves the cached app,
+  confetti works offline. Static wiring pinned by `src/__tests__/pwa-wiring.test.ts`.
+- ⬜ **Host hookup (NEXT, needs the user).** Write `netlify.toml`/`vercel.json`; the live
+  deploy needs the user's account auth (run `netlify deploy` in-session). Root-domain host
+  preferred: the app fetches the absolute path `/data/nikud-map.json`, so GH Pages' `/repo/`
+  subpath would need a Vite `base` + rewrites. PWA install + offline only kick in once
+  served over the host's HTTPS (or localhost).
 - Natural partner to a **human play-test** on a real tablet.
 
 ### Recently fixed alongside INFRA1 (2026-06-09 preview play-test)

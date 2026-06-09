@@ -11,14 +11,20 @@ import fs from 'fs'
 //   - 5 legacy non-module <script> tags in index.html (error/speech/feedback/audio/gamification)
 //   - data/*.json fetched at runtime (nikud map + phonetic index)
 //   - img/ (vocab pictures referenced via imageUrl strings, not imports)
+//   - PWA (INFRA1): manifest.webmanifest + sw.js (root) + vendor/ (self-hosted confetti)
 // This makes `dist/` a faithful, deployable copy of what `npm run dev` serves.
 function copyStaticAssets(): Plugin {
-  const rootScripts = [
+  const rootFiles = [
     'error-tracker.js',
     'speechSynthesis.js',
     'feedback.js',
     'audio-effects.js',
     'gamification.js',
+    // PWA (INFRA1): the service worker is referenced only as a runtime string
+    // (navigator.serviceWorker.register('/sw.js')), so Vite never processes it —
+    // it must be copied to the root verbatim. (The manifest + apple-touch-icon are
+    // <link>ed in index.html, so Vite already hashes + emits + rewrites those.)
+    'sw.js',
   ]
   return {
     name: 'infra1-copy-static-assets',
@@ -26,9 +32,11 @@ function copyStaticAssets(): Plugin {
     closeBundle() {
       const root = __dirname
       const out = path.resolve(root, 'dist')
-      for (const file of rootScripts) {
+      for (const file of rootFiles) {
         fs.copyFileSync(path.resolve(root, file), path.join(out, file))
       }
+      // vendor/: self-hosted canvas-confetti (no jsdelivr CDN → offline-capable).
+      fs.cpSync(path.resolve(root, 'vendor'), path.join(out, 'vendor'), { recursive: true })
       // data/: only the runtime-fetched JSON (the .js banks are already bundled
       // via the _loader module graph — copying them would be dead weight).
       const dataDir = path.resolve(root, 'data')
