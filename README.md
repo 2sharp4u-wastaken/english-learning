@@ -11,16 +11,16 @@ and React reaches it only through typed adapters in `src/bridge/`. See
 
 ## Getting Started
 
-Two dev servers run side by side:
+As of Slice 4.3 the app is **fully Python-free** — one process:
 
 ```bash
-python3 server.py     # Python API server on :3000 (handles /api/*)
-npm run dev           # Vite dev server on :3002 (proxies /api/* to :3000)
+npm run dev           # Vite dev server on :3002 (the React app; no backend)
 ```
 
-Then open **`http://localhost:3002`**. (HTTPS is served automatically if `server.crt`/
-`server.key` exist at the project root — required for microphone games; see
-[`docs/dev-setup.md`](docs/dev-setup.md).)
+Then open **`http://localhost:3002`**. Microphone games work on `localhost`
+(a secure context). `server.py` is an optional maintainer-only tool (nikud-map
+regeneration / authoring); the running app never needs it. See
+[`docs/dev-setup.md`](docs/dev-setup.md).
 
 ## Features
 

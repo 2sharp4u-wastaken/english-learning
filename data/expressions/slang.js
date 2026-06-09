@@ -9,7 +9,8 @@
 // Entry shape (see src/bridge/expressions.ts): phrase / type / register /
 // meaningHe / meaningHeOptions / literalHe? / exampleEn / exampleHe / difficulty.
 //
-// meaningHeOptions[0] is my recommended pick; see docs/expression-review.md to choose.
+// meaningHeOptions[0] ships as meaningHe; the rest are alternatives. Change a
+// meaning via the in-app Settings -> ביטויים editor (Slice 5.2, expressionMeaningOverrides).
 
 function sl(phrase, register, meaningHeOptions, exampleEn, exampleHe, difficulty, literalHe) {
     return {

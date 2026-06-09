@@ -270,18 +270,6 @@ This ensures the child is always nudged toward learning new words first, but can
 
 ## Open loose ends (not yet built)
 
-Carried over from the mastery-redesign handoff — pending, not blocking:
-
-- **🟡 Certificate / level recalibration (product decision).** Split milestone certificates
-  into "words met" vs "words mastered" tracks and decide thresholds. Also: milestone certs
-  do **not** fire on React Word Journey completion (`finishWordJourney` doesn't call
-  `checkMilestoneCertificates`) — wire after the threshold decision.
-- **`wordJourneyProgress`** — retire vs surface read-only in Stats → Words (currently
-  written but unread; harmless either way).
-- **Long words skip spelling** — they need a lighter spelling interaction instead of being
-  omitted from the spell stage.
-- **Recommendation explicitness** — make the engine clearer about vocab-growth path vs
-  course/topic path.
-- **Human-verification gaps** — Word Journey recall 3D flip, slot interaction, say-word
-  recording, and celebration animation/audio have no E2E (need a `webkitSpeechRecognition`
-  stub); confirm in-app.
+➡️ **Tracked in [`docs/backlog.md`](backlog.md)** (§2 learning-flow loose ends + §3 test
+gaps) — the single source of truth for open work. This is intentionally a pointer so the
+backlog can't drift across docs. The design rationale for the learning flow stays above.

@@ -6,7 +6,8 @@ Behavioral rules for Claude Code in this project. These override defaults.
 - Hebrew-speaking kids, ages 5–8, learning English
 - RTL interface (`dir="rtl"`, `lang="he"`)
 - Hybrid app: React (Vite + TypeScript + Tailwind) progressively replacing legacy vanilla JS
-- **Master plan:** `docs/master-plan.md` — the source of truth for migration phases and decisions
+- **Master plan:** `docs/master-plan.md` — the source of truth for migration phases and decisions (history + the *why*)
+- **Open work:** `docs/backlog.md` — the single source of truth for what's left to do; the other docs point here for status
 
 ## Dev Setup
 - **Run the app:** `npm run dev` (Vite, port 3002) — that's all. As of Slice 4.3 the app is **fully Python-free** (no `/api/*` calls). Open `http://localhost:3002`.

@@ -1707,6 +1707,8 @@ A cross-cutting play-test pass (no new games). WHY each change:
 
 **Deferred / optional (discussed, not applied — pick up anytime):**
 
+➡️ Open status for these is tracked in [`backlog.md`](backlog.md) §4 (polish grab-bag).
+
 - **Pronunciation right-pair Hebrew delay** — shrink the ~400ms pre-Hebrew delay
   to ~200ms so the celebration lands right after the "ding" (reduces the stray-tap
   window). Constant in `PronunciationGamePage` `playMatchedPairAudio`-equivalent.
@@ -1720,6 +1722,9 @@ A cross-cutting play-test pass (no new games). WHY each change:
   (`bridge/memory.ts`) are the levers if cards feel too big/small on any level.
 
 ## Planned feature slices (backlog)
+
+➡️ Open status is tracked in [`backlog.md`](backlog.md) (INFRA1 = §1). The entries below keep
+the full specs/rationale; `backlog.md` is the live checklist.
 
 ### Slice C1: Launchable Courses page — SHIPPED (3-game MVP, 2026-05-27)
 
@@ -2112,9 +2117,10 @@ As-built notes:
 - **Schema addition vs the plan:** each entry carries `meaningHeOptions: string[]` (2-3
   candidate Hebrew meanings; `[0]` = recommended) alongside the chosen `meaningHe`. This
   backs the per-entry translation-review workflow (the parent *picks*, never translates).
-  Picks are tracked in **`docs/expression-review.md`** (auto-generated, ★ = recommendation);
-  applying a pick = set `meaningHe` to the chosen option. `exampleHe` is a single authored
-  translation (no options) to avoid doubling the review burden.
+  `meaningHe` ships as `meaningHeOptions[0]`; the rest are alternatives. (The original
+  one-time picking doc `docs/expression-review.md` was retired 2026-06-09 — the live way
+  to change a meaning is now the in-app Settings → ביטויים editor, Slice 5.2, which writes
+  `expressionMeaningOverrides`.) `exampleHe` is a single authored translation (no options).
 - **Bridge / hook:** `src/bridge/expressions.ts` is the only gateway to `window.expressionBank`
   — types (`Expression`/`ExpressionType`/`Register`), `getExpressionBank()` (register-filtered),
   `getEnabledRegisters()`, `getExpressionsByType()`, `DEFAULT_REGISTERS`. `src/hooks/useExpressions.ts`
@@ -2195,8 +2201,8 @@ As-built notes:
   (`expressionMeaningOverrides`, keyed by **phrase**; async API + sync `getExpressionMeaningOverridesSync`;
   added to Export/Import bundle). Applied **live** by `bridge/expressions.ts` (`getExpressionBank`/
   `getAllExpressions` map `meaningHe` through the override map each call — beats word-translation
-  overrides which only apply on reload). The other mode: bake confirmed `docs/expression-review.md`
-  picks into source `.js` (ongoing content step).
+  overrides which only apply on reload). The other mode: bake confirmed meaning picks
+  (from `meaningHeOptions`) into source `.js` (ongoing content step).
 - **Master switch:** `getExpressionBank()` returns `[]` when `expressionsEnabled === false`;
   `getAllExpressions()` ignores it (manager always browses all). `expressionsEnabled` default true,
   added to `DEFAULT_SETTINGS`/`AppSettings` + `useSettings` shallow-compare.

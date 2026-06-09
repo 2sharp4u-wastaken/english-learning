@@ -13,7 +13,8 @@
 //   - exampleHe:       the example translated to Hebrew for context
 //   - difficulty:      'beginner' | 'intermediate' | 'advanced'
 //
-// meaningHeOptions[0] is my recommended pick; see docs/expression-review.md to choose.
+// meaningHeOptions[0] ships as meaningHe; the rest are alternatives. Change a
+// meaning via the in-app Settings -> ביטויים editor (Slice 5.2, expressionMeaningOverrides).
 
 function idiom(phrase, meaningHeOptions, exampleEn, exampleHe, difficulty, literalHe) {
     return {

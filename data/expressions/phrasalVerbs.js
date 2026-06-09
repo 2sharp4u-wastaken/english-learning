@@ -7,7 +7,8 @@
 //     exampleEn / exampleHe / difficulty
 // (same fields as data/expressions/idioms.js — see that file's header for details).
 //
-// meaningHeOptions[0] is my recommended pick; see docs/expression-review.md to choose.
+// meaningHeOptions[0] ships as meaningHe; the rest are alternatives. Change a
+// meaning via the in-app Settings -> ביטויים editor (Slice 5.2, expressionMeaningOverrides).
 
 function pv(phrase, meaningHeOptions, exampleEn, exampleHe, difficulty, literalHe) {
     return {
