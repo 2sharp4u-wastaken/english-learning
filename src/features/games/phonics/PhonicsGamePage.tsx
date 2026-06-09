@@ -238,7 +238,7 @@ export function PhonicsGamePage() {
       if (isCorrect) {
         setScore((s) => s + 10)
         setCorrect((c) => c + 1)
-        if (getShowConfetti()) triggerConfetti()
+        if (getShowConfetti()) triggerConfetti('phonics')
         clearAdvanceTimer()
         advanceTimer.current = window.setTimeout(advance, ADVANCE_DELAY_MS)
       } else {

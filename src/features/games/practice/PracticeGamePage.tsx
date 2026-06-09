@@ -367,7 +367,7 @@ export function PracticeGamePage() {
     if (outcome.isCorrect) {
       setScore((s) => s + outcome.pointsAwarded)
       setCorrect((c) => c + 1)
-      if (getShowConfetti()) triggerConfetti()
+      if (getShowConfetti()) triggerConfetti('practice')
       ;(async () => {
         try {
           if (outcome.audioFeedback) await speak(outcome.audioFeedback)

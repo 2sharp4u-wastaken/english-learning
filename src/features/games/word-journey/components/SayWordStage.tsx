@@ -119,7 +119,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
     onAnswer(word, correct, correct ? POINTS.say : 0)
     playAnswerSfx(correct ? 'correct' : 'incorrect')
     if (correct) {
-      if (getShowConfetti()) triggerConfetti()
+      if (getShowConfetti()) triggerConfetti('wj-say-word')
       advanceTimer.current = window.setTimeout(advance, ADVANCE_MS)
     } else {
       void speakWord(word.word.toLowerCase(), 'word-journey', { allowOverlap: true })

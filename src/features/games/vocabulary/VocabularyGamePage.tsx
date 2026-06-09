@@ -281,7 +281,7 @@ export function VocabularyGamePage() {
       if (outcome.isCorrect) {
         setScore((s) => s + outcome.pointsAwarded)
         setCorrect((c) => c + 1)
-        if (getShowConfetti()) triggerConfetti()
+        if (getShowConfetti()) triggerConfetti('vocabulary')
       }
       if (fb.audio) void speak(fb.audio)
       if (outcome.isCorrect) {

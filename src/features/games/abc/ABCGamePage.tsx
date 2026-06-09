@@ -248,7 +248,7 @@ export function ABCGamePage() {
       if (isCorrect) {
         setScore((s) => s + 10)
         setCorrect((c) => c + 1)
-        if (getShowConfetti()) triggerConfetti()
+        if (getShowConfetti()) triggerConfetti('abc')
         clearAdvanceTimer()
         advanceTimer.current = window.setTimeout(advance, ADVANCE_DELAY_MS)
       } else {

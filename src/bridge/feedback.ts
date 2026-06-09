@@ -93,9 +93,14 @@ export function playAnswerSfx(kind: 'correct' | 'incorrect'): void {
   }
 }
 
-export function triggerConfetti(): void {
+export function triggerConfetti(label?: string): void {
   const confetti = (window as any).confetti as ConfettiFn | undefined
   if (typeof confetti !== 'function') return
+  // G1 profiling: when window.__PROFILE_CONFETTI__ is set, record frame timing +
+  // long tasks for the burst. DEV-only so it tree-shakes out of prod builds.
+  if (import.meta.env.DEV) {
+    void import('./confettiProfiler').then((m) => m.profileBurst(label ?? 'confetti'))
+  }
   try {
     confetti({
       particleCount: 100,
