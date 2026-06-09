@@ -12,7 +12,7 @@
  * Bump CACHE_VERSION to invalidate the whole cache on a breaking change. The
  * `activate` handler deletes every cache that isn't the current one.
  */
-const CACHE_VERSION = 'v1';
+const CACHE_VERSION = 'v2';
 const CACHE = `elg-${CACHE_VERSION}`;
 const SHELL = '/';
 
