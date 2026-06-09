@@ -70,50 +70,41 @@ export function getUser(userId: string): User | null {
   return users ? users[userId] ?? null : null
 }
 
-// ─── Defaults + migration ───────────────────────────────────────────────────
+// ─── First-run bootstrap ──────────────────────────────────────────────────────
+// INFRA1 (2026-06-10): the legacy hard-coded omer/zohar/idan seeding was removed
+// so a published deploy starts with an EMPTY user database — the LoginPage shows
+// a "create first profile" form instead (the O/Z/I → omer/zohar/idan migration
+// went with it; it only ever ran on an empty DB, which real legacy devices never
+// have). Existing devices are untouched: their `users` key already exists.
 
-/** Seed the default omer/zohar/idan accounts the first time the app runs. */
-function initializeUsersDatabase(): void {
+/**
+ * Bootstrap the very first profile on a fresh device. Deliberately NOT gated by
+ * the admin password — with zero users there is nobody to authenticate against,
+ * and without this the app would be unreachable (users are otherwise only
+ * created from Settings → Users, behind login). Refuses once any user exists.
+ * The new account's password is null → adopted on first login, like all users.
+ */
+export function createFirstUser(id: string, name: string, initial: string): AdminResult {
   const existing = getUsers()
-  if (existing && Object.keys(existing).length > 0) return
-
-  const now = new Date().toISOString()
+  if (existing && Object.keys(existing).length > 0) {
+    return { success: false, error: 'Users already exist' }
+  }
+  if (!/^[a-zA-Z0-9_]+$/.test(id)) {
+    return { success: false, error: 'Invalid user id' }
+  }
   const users: Record<string, User> = {
-    omer: { id: 'omer', name: 'עומר', displayName: 'Omer', initial: 'O', password: null, created: now, lastLogin: null },
-    zohar: { id: 'zohar', name: 'זוהר', displayName: 'Zohar', initial: 'Z', password: null, created: now, lastLogin: null },
-    idan: { id: 'idan', name: 'עידן', displayName: 'Idan', initial: 'I', password: null, created: now, lastLogin: null },
+    [id]: {
+      id,
+      name,
+      displayName: name,
+      initial,
+      password: null,
+      created: new Date().toISOString(),
+      lastLogin: null,
+    },
   }
   saveUsers(users)
-  migrateOldUserData()
-}
-
-/** Migrate progress/history from the old single-letter ids (O/Z/I) to new ids. */
-function migrateOldUserData(): void {
-  const migrations: Array<{ oldKey: string; newKey: string }> = [
-    { oldKey: 'O', newKey: 'omer' },
-    { oldKey: 'Z', newKey: 'zohar' },
-    { oldKey: 'I', newKey: 'idan' },
-  ]
-  const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading']
-
-  migrations.forEach(({ oldKey, newKey }) => {
-    const oldProgress = localStorage.getItem(`userProgress_${oldKey}`)
-    if (oldProgress && !localStorage.getItem(`userProgress_${newKey}`)) {
-      localStorage.setItem(`userProgress_${newKey}`, oldProgress)
-    }
-    gameTypes.forEach((gameType) => {
-      const oldHistory = localStorage.getItem(`${oldKey}_${gameType}_history`)
-      if (oldHistory && !localStorage.getItem(`${newKey}_${gameType}_history`)) {
-        localStorage.setItem(`${newKey}_${gameType}_history`, oldHistory)
-      }
-    })
-  })
-
-  const current = localStorage.getItem(CURRENT_USER_KEY)
-  if (current && ['O', 'Z', 'I'].includes(current)) {
-    // Old current user must log in again under the new id.
-    localStorage.removeItem(CURRENT_USER_KEY)
-  }
+  return { success: true, message: `User ${name} created successfully` }
 }
 
 // ─── Password ─────────────────────────────────────────────────────────────────
@@ -384,12 +375,7 @@ export function setUserRole(userId: string, role: UserRole | null): AdminResult 
 // ─── Module init (browser side effects) ─────────────────────────────────────
 
 if (typeof window !== 'undefined' && typeof localStorage !== 'undefined') {
-  // Seed default users on first run (was the legacy AuthService constructor).
-  try {
-    initializeUsersDatabase()
-  } catch (e) {
-    console.error('Auth init failed:', e)
-  }
+  // No first-run seeding here (removed for INFRA1 — see createFirstUser above).
 
   // Reset the idle timer on interaction so an active session never expires.
   if (typeof document !== 'undefined') {

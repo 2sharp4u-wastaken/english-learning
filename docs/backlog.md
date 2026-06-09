@@ -52,6 +52,13 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
 - ✅ **Home encouragement line (commit `ed9445f`)** — progress-aware, gender-neutral
   Hebrew; fills the blank hero a fully-unlocked player used to see. See
   `feedback_gender_neutral_hebrew`.
+- ✅ **No seeded users on deploy + first-run create-profile (2026-06-10).** The
+  hard-coded עומר/זוהר/עידן seeding was removed from `bridge/auth.ts` (a published
+  site must start with an empty user DB; existing devices keep their `users` key).
+  `LoginPage` now shows a "create first profile" form when the DB is empty
+  (`createFirstUser` — the one non-admin-gated creation path), flowing into the
+  normal first-login password setup. The parent password constant was also rotated
+  to an app-only value (the old one looked personal and ships in the public bundle).
 
 ## 2. Learning-flow loose ends (from `learning-path.md`)
 
@@ -90,6 +97,19 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
 - 🟢 **Reuse Reading's compact layout** for the Word Journey spell stage (consistency).
 - 🟢 **Memory sizing knobs** — `AREA_REM2`/`CHROME_REM`/per-level `columns` in
   `bridge/memory.ts` if cards feel off on any level.
+- 🟢 **Per-device parent password ("Tier 2", design agreed 2026-06-10).** Replace
+  the hard-coded `ADMIN_PASSWORD` constant in `bridge/auth.ts` with a wizard on
+  **first protected access**: no stored parent password → `ParentPasswordModal`
+  opens in "create" mode (enter twice), stores it hashed in localStorage (same
+  scheme as kid passwords), `verifyAdminPassword` checks the hash. One modal +
+  one bridge change covers every protected surface AND existing devices (no
+  first-run step, no migration). Include a **"שכחתי סיסמה" reset link** that wipes
+  only the parent password (wizard re-runs next open) — a kid *could* tap it, but
+  the gate is against wandering, not attack, and a no-reset design risks permanent
+  lockout. Small slice: modal create-mode, bridge, gender-neutral copy + nikud,
+  Playwright specs seed the stored hash instead of typing the constant (3 places).
+  Buys hygiene/UX, NOT security — any client-only gate is devtools-bypassable
+  (see §6 for the real fix).
 
 ## 5. Bug dump (remainder of `bug-dump-2026-06-07.md`)
 
@@ -114,6 +134,28 @@ The rest of that doc is shipped; only these remain:
 - 🧹 **Cleanup (post-G1):** once G1 is resolved, decide whether to strip the
   `__PROFILE_CONFETTI__` profiler + the `triggerConfetti(label)` labels or keep them
   as a permanent dev tool.
+
+## 6. Architecture horizon — backend / accounts ("Tier 3") 🟢
+
+Everything today is client-only: each browser's localStorage is its own island
+(users, progress, settings), and the static deploy (INFRA1) keeps it that way on
+purpose — free hosting, zero ops, fully offline-capable. A backend redesign only
+makes sense when a feature **needs** shared state, and then several wants land
+together in one architecture change:
+
+- **Cross-device progress sync** — the kid plays on the tablet and the laptop and
+  it's the same profile. This is the feature most likely to motivate the change.
+- **Real parent-password secrecy** — server-side auth is the only non-bypassable
+  gate (every client-only check, incl. the §4 Tier-2 item, can be defeated via
+  devtools).
+- **Family accounts / multi-device user management**, remote content updates,
+  usage analytics for the parent.
+
+Cost class: weeks, not a slice — accounts, server-side auth, a data-sync model
+(localStorage ⇄ server reconciliation), paid-or-managed hosting, privacy posture
+(it's kids' data), and migration of existing local progress. **Decision rule:
+don't start this for security alone; start it if/when cross-device sync becomes a
+real want, and fold the parent-password fix in.**
 
 ---
 

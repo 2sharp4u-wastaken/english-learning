@@ -3331,20 +3331,52 @@ test.describe('Integration (known issues)', () => {
     expect(hasLegacyGlobal).toBe(false);
   });
 
-  // Slice 4.4.b2: the full React login flow (no session → user-select → password →
-  // app). Uses the default seeded users (omer/zohar/idan); first login adopts any
-  // password. Exercises bridge/auth.login + the AuthGate flip end-to-end.
-  test('React login flow: select user + enter password → app renders', async ({ page }) => {
+  // Slice 4.4.b2 + INFRA1 (2026-06-10): the bridge no longer seeds default users
+  // (a published deploy must start with an EMPTY user database). A truly fresh
+  // device shows the first-run create-profile form, which flows into the normal
+  // first-login password setup. Exercises createFirstUser + bridge/auth.login +
+  // the AuthGate flip end-to-end.
+  test('React first-run flow: empty DB → create profile + set password → app renders', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => {
-      // Ensure no existing session: this is a fresh login.
+      // Truly fresh device: no users, no session.
+      localStorage.clear();
+    });
+    await page.reload();
+
+    // No seeded users: first-run screen, zero user cards.
+    await expect(page.locator('[data-testid="login-modal"]')).toBeVisible();
+    await expect(page.locator('[data-testid="first-run-screen"]')).toBeVisible();
+    await expect(page.locator('[data-testid="user-select-card"]')).toHaveCount(0);
+
+    // Create the first profile → flows straight into password setup.
+    await page.locator('#first-user-id').fill('dana');
+    await page.locator('#first-user-name').fill('דנה');
+    await page.locator('[data-testid="create-first-user"]').click();
+    await expect(page.locator('[data-testid="password-entry-screen"]')).toBeVisible();
+
+    // First login adopts the entered password.
+    await page.locator('#password-input').fill('test1234');
+    await page.locator('[data-testid="login-submit"]').click();
+
+    // AuthGate flips to the app.
+    await expect(page.locator('[data-testid="home-hero"]')).toBeVisible();
+    await expect(page.locator('[data-testid="login-modal"]')).toHaveCount(0);
+  });
+
+  // The classic select-user → password flow, against an existing (seeded) user.
+  test('React login flow: select user + enter password → app renders', async ({ page }) => {
+    await seedUser(page);
+    await page.evaluate(() => {
+      // Keep the user, drop the session: this is a fresh login.
       localStorage.removeItem('currentSession');
       localStorage.removeItem('currentUser');
     });
     await page.reload();
 
-    // Login screen is shown with the default user cards.
+    // Login screen shows the existing user's card (not the first-run form).
     await expect(page.locator('[data-testid="login-modal"]')).toBeVisible();
+    await expect(page.locator('[data-testid="first-run-screen"]')).toHaveCount(0);
     const cards = page.locator('[data-testid="user-select-card"]');
     expect(await cards.count()).toBeGreaterThan(0);
 
