@@ -2579,6 +2579,18 @@ test.describe('Slice 3.14: Memory Game (React)', () => {
     await expect(page.locator('[data-testid="memory-board"]')).toHaveCount(0);
   });
 
+  test('learn-first gate header back navigates straight home', async ({ page }) => {
+    await seedUser(page);
+    await seedLearnedFromBank(page, 3); // below the 6-word minimum → learn-first gate
+    await gotoHash(page, '/game/memory');
+    await expect(page.locator('[data-testid="memory-learn-first"]')).toBeVisible();
+
+    // The gate screen has no game in progress, so the header back goes home
+    // directly (it doesn't mount the exit-confirm dialog the play screen uses).
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/home');
+  });
+
   test('renders the level-1 board and a single match advances the pairs counter + score', async ({ page }) => {
     const errors = captureErrors(page);
     await seedUser(page);
@@ -2830,6 +2842,22 @@ test.describe('Slice 3.15: ABC Game (React)', () => {
     await page.locator('[data-testid="exit-dialog-cancel"]').click();
     await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
   });
+
+  test('gate-screen (all-mastered) header back navigates straight home', async ({ page }) => {
+    await seedUser(page);
+    await page.evaluate(() => {
+      const wm = (window.__engine.app.userProgress.wordMastery ||= {});
+      for (const ch of 'ABCDEFGHIJKLMNOPQRSTUVWXYZ') {
+        wm[`${ch}_abc`] = { masteryLevel: 1, attempts: 10, correct: 10 };
+      }
+    });
+    await gotoHash(page, '/game/abc');
+    await expect(page.locator('[data-testid="abc-all-mastered"]')).toBeVisible();
+
+    // Gate screen has no game in progress → header back goes home directly.
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/home');
+  });
 });
 
 // ─── Phonics Game (React) ───────────────────────────────────────────────────
@@ -2903,8 +2931,9 @@ test.describe('Phonics Game (React)', () => {
     await gotoHash(page, '/game/phonics');
     await page.waitForTimeout(900);
 
-    // The big digraph prompt renders.
-    await expect(page.locator('[data-testid="phonics-sound-display"]')).toHaveText('sh');
+    // The big digraph prompt renders (uppercase by default — phonics honors the
+    // app-wide case toggle whose default is uppercase, like every other game).
+    await expect(page.locator('[data-testid="phonics-sound-display"]')).toHaveText('SH');
     await expect(page.locator('[data-testid="qp-current"]')).toHaveText('1');
     await expect(page.locator('[data-testid="qp-total"]')).toHaveText('3');
 
@@ -2987,6 +3016,37 @@ test.describe('Phonics Game (React)', () => {
 
     await page.locator('[data-testid="exit-dialog-cancel"]').click();
     await expect(page.locator('[data-testid="exit-confirm-dialog"]')).toHaveCount(0);
+  });
+
+  test('case toggle flips the digraph display (phonics honors the case toggle)', async ({ page }) => {
+    await seedUser(page);
+    await seedPhonicsSaved(page);
+    await gotoHash(page, '/game/phonics');
+    await page.waitForTimeout(900);
+
+    const display = page.locator('[data-testid="phonics-sound-display"]');
+    await expect(display).toHaveText('SH'); // uppercase default
+    await page.locator('[data-testid="header-case-toggle"]').click();
+    await expect(display).toHaveText('sh'); // toggled to lowercase
+    await page.locator('[data-testid="header-case-toggle"]').click();
+    await expect(display).toHaveText('SH'); // and back
+  });
+
+  test('gate-screen (all-mastered) header back navigates straight home', async ({ page }) => {
+    await seedUser(page);
+    await page.evaluate(() => {
+      const wm = (window.__engine.app.userProgress.wordMastery ||= {});
+      for (const s of ['sh', 'ch', 'th', 'ph', 'wh', 'ck', 'ng', 'ee', 'oo', 'ai', 'oa', 'ea', 'ay']) {
+        wm[`${s}_phonics`] = { masteryLevel: 1, attempts: 10, correct: 10 };
+      }
+    });
+    await gotoHash(page, '/game/phonics');
+    await expect(page.locator('[data-testid="phonics-all-mastered"]')).toBeVisible();
+
+    // On a gate screen there's no game in progress: the header back must go home
+    // directly (no exit-confirm dialog, which the gate screen doesn't mount).
+    await page.locator('[data-testid="game-header-back"]').click();
+    await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/home');
   });
 });
 

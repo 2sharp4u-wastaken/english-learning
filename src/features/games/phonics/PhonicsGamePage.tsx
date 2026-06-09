@@ -26,6 +26,7 @@ import {
 import { cancelSpeech, hardResetSpeech, speakWord } from '@/bridge/audio'
 import { getGameFeedback, getShowConfetti, triggerConfetti } from '@/bridge/feedback'
 import { useNikud } from '@/bridge/nikud'
+import { useTextPrefs } from '@/bridge/textPrefs'
 import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'recording' | 'answered' | 'finished'
@@ -41,7 +42,13 @@ const GAME_CONTEXT = 'phonics'
 /** MC types whose options stay hidden until the prompt audio auto-plays. */
 const GATE_TYPES = new Set<PhonicsQuestion['type']>(['hear-pick-word', 'see-pick-sound'])
 
-function PhonicsGlyph({ question }: { question: PhonicsQuestion }) {
+function PhonicsGlyph({
+  question,
+  renderEnglish,
+}: {
+  question: PhonicsQuestion
+  renderEnglish: (s: string | undefined) => string
+}) {
   if (question.type === 'hear-pick-word') {
     // The sound is the prompt; the pictures are the options below.
     return (
@@ -51,7 +58,7 @@ function PhonicsGlyph({ question }: { question: PhonicsQuestion }) {
           data-testid="phonics-sound-display"
           className="font-display text-7xl font-bold tracking-wide text-white sm:text-8xl"
         >
-          {question.display}
+          {renderEnglish(question.display)}
         </span>
         <span dir="rtl" className="text-sm font-medium text-[color:var(--slate-300)]">
           {question.hebrewSound}
@@ -66,8 +73,8 @@ function PhonicsGlyph({ question }: { question: PhonicsQuestion }) {
         {question.emoji}
       </span>
       {question.type === 'say-sound' && question.promptWord ? (
-        <span dir="ltr" className="font-display text-3xl font-bold lowercase text-white">
-          {question.promptWord}
+        <span dir="ltr" className="font-display text-3xl font-bold text-white">
+          {renderEnglish(question.promptWord)}
         </span>
       ) : null}
     </div>
@@ -346,6 +353,14 @@ export function PhonicsGamePage() {
     [requestExit, score],
   )
 
+  // The all-mastered gate has no game in progress, so back goes straight home.
+  // (The play header's onBack opens the exit-confirm dialog, which the gate
+  // screen doesn't mount — without this its back button is dead.)
+  const gateHeaderProps = useMemo(
+    () => ({ title: 'משחק צלילים', icon: '🔡', score: 0, onBack: () => navigate('/home') }),
+    [navigate],
+  )
+
   const progressProps = useMemo(
     () => ({
       current: phase === 'finished' ? total : Math.min(index + 1, total || 1),
@@ -356,8 +371,18 @@ export function PhonicsGamePage() {
   )
 
   const nk = useNikud()
+  const { caseMode } = useTextPrefs()
+  const renderEnglish = useCallback(
+    (s: string | undefined) => {
+      if (!s) return ''
+      return caseMode === 'lowercase' ? s.toLowerCase() : s.toUpperCase()
+    },
+    [caseMode],
+  )
 
   if (!session) {
+    // Loading is transient and keeps the play header: a back-click here sets
+    // exitOpen, which the play screen's dialog picks up once the session loads.
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
@@ -369,7 +394,7 @@ export function PhonicsGamePage() {
 
   if (session.kind === 'all-mastered') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={gateHeaderProps}>
         <PhonicsAllMastered onStartOver={handleStartOver} onExit={() => navigate('/home')} />
       </GameScreenShell>
     )
@@ -406,7 +431,7 @@ export function PhonicsGamePage() {
               </span>
             ),
           }
-        : { key: i, label: o.label, sublabel: o.sublabel },
+        : { key: i, label: renderEnglish(o.label), sublabel: o.sublabel },
     ) ?? []
 
   return (
@@ -416,7 +441,7 @@ export function PhonicsGamePage() {
           <div key={index} className="flex flex-1 flex-col gap-4">
             <MediaPromptCard
               prompt={current.instruction}
-              media={<PhonicsGlyph question={current} />}
+              media={<PhonicsGlyph question={current} renderEnglish={renderEnglish} />}
               onPlayAudio={isSaySound ? undefined : replayAudio}
               audioDisabled={phase === 'answered'}
               audioLabel="השמע שוב"

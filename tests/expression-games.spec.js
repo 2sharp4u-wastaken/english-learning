@@ -86,6 +86,29 @@ test('a fresh kid sees the expression tier gated', async ({ page }) => {
   await expect(card).toHaveAttribute('data-locked', 'true');
 });
 
+test('locked-gate header back navigates straight home', async ({ page }) => {
+  // Fresh kid → 0 learned words → the expr game route shows the locked gate.
+  await page.goto('/');
+  await page.evaluate(() => {
+    localStorage.setItem('users', JSON.stringify({
+      fresh_kid: { id: 'fresh_kid', name: 'Fresh', displayName: 'Fresh', initial: 'F', role: 'student', password: null, created: new Date().toISOString(), lastLogin: null },
+    }));
+    localStorage.setItem('currentUser', 'fresh_kid');
+    localStorage.setItem('currentSession', JSON.stringify({ userId: 'fresh_kid', userName: 'Fresh', displayName: 'Fresh', initial: 'F', authenticated: true, loginTime: Date.now(), lastActivity: Date.now() }));
+    localStorage.setItem('v2_englishLearningSettings', JSON.stringify({ expressionsEnabled: true, expressionRegisters: { 'kid-friendly': true, casual: false, edgy: false } }));
+  });
+  await page.goto('/#/game/expr-meaning');
+  await page.waitForTimeout(1200);
+  // The gate Hebrew is nikud-injected, so match the lock emoji (not injected) +
+  // the absence of a question surface to confirm we're on the locked gate.
+  await expect(page.getByText('🔒')).toBeVisible();
+  await expect(page.getByTestId('media-prompt-card')).toHaveCount(0);
+
+  // The gate has no game in progress → header back goes home directly (no dialog).
+  await page.locator('[data-testid="game-header-back"]').click();
+  await expect.poll(() => page.evaluate(() => location.hash)).toBe('#/home');
+});
+
 for (const g of GAMES) {
   test(`${g.id} renders an interactive question (not locked)`, async ({ page }) => {
     await seedUnlockedKid(page);

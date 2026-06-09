@@ -255,6 +255,14 @@ export function ExpressionGamePage({ mode }: { mode: ExpressionMode }) {
     [handleReset, index, phase, total],
   )
 
+  // The locked / not-enough gates have no game in progress, so back goes straight
+  // home. (The play header's onBack opens the exit-confirm dialog, which the gate
+  // screens don't mount — without this their back button is dead.)
+  const gateHeaderProps = useMemo(
+    () => ({ title: meta.title, icon: meta.icon, score: 0, onBack: () => navigate('/home') }),
+    [meta.icon, meta.title, navigate],
+  )
+
   // ── Gate / loading screens ──────────────────────────────────────────────────
 
   if (!session) {
@@ -270,7 +278,7 @@ export function ExpressionGamePage({ mode }: { mode: ExpressionMode }) {
   if (session.kind === 'locked') {
     const { learnedCount, needed } = session.unlock
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={gateHeaderProps}>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
           <span className="text-6xl" aria-hidden>
             🔒
@@ -288,7 +296,7 @@ export function ExpressionGamePage({ mode }: { mode: ExpressionMode }) {
 
   if (session.kind === 'not-enough') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={gateHeaderProps}>
         <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
           <span className="text-6xl" aria-hidden>
             💬

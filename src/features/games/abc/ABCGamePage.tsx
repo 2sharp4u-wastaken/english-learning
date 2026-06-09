@@ -360,6 +360,14 @@ export function ABCGamePage() {
     [requestExit, score],
   )
 
+  // The all-mastered gate has no game in progress, so back goes straight home.
+  // (The play header's onBack opens the exit-confirm dialog, which the gate
+  // screen doesn't mount — without this its back button is dead.)
+  const gateHeaderProps = useMemo(
+    () => ({ title: 'ABC אותיות', icon: '🔤', score: 0, onBack: () => navigate('/home') }),
+    [navigate],
+  )
+
   const progressProps = useMemo(
     () => ({
       current: phase === 'finished' ? total : Math.min(index + 1, total || 1),
@@ -383,7 +391,7 @@ export function ABCGamePage() {
 
   if (session.kind === 'all-mastered') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={gateHeaderProps}>
         <ABCAllMastered onStartOver={handleStartOver} onExit={() => navigate('/home')} />
       </GameScreenShell>
     )

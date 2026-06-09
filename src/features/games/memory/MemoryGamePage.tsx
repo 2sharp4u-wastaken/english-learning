@@ -342,6 +342,14 @@ export function MemoryGamePage() {
     [requestExit, score],
   )
 
+  // The learn-first gate has no game in progress, so back goes straight home.
+  // (The play header's onBack opens the exit-confirm dialog, which the gate
+  // screen doesn't mount — without this its back button is dead.)
+  const gateHeaderProps = useMemo(
+    () => ({ title: 'משחק זיכרון', icon: '🧠', score: 0, onBack: () => navigate('/home') }),
+    [navigate],
+  )
+
   const progressProps = useMemo(
     () => ({
       current: phase === 'finished' ? MEMORY_LEVELS.length : levelIndex + 1,
@@ -352,6 +360,8 @@ export function MemoryGamePage() {
   )
 
   if (!session) {
+    // Loading is transient and keeps the play header: a back-click here sets
+    // exitOpen, which the play screen's dialog picks up once the session loads.
     return (
       <GameScreenShell header={headerProps}>
         <div className="flex flex-1 items-center justify-center text-[color:var(--slate-300)]">
@@ -363,7 +373,7 @@ export function MemoryGamePage() {
 
   if (session.kind === 'learn-first') {
     return (
-      <GameScreenShell header={headerProps}>
+      <GameScreenShell header={gateHeaderProps}>
         <div
           dir="rtl"
           data-testid="memory-learn-first"
