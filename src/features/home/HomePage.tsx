@@ -97,6 +97,29 @@ export function HomePage() {
     [catalog, unlocks],
   )
 
+  // Progress-aware encouragement, shown when there's no unlock teaser so a fully
+  // unlocked player still gets a warm nudge (previously the hero went blank). The
+  // Hebrew is gender-neutral on purpose — no 2nd-person-singular verbs (אתה/את,
+  // בוא/בואי): inclusive first-person-plural ("בואו נלמד") + verbless praise, so
+  // it reads the same for boys and girls. The live number is wrapped in a <span>
+  // so legacy nikud DOM injection can't clobber the digits
+  // (see project_nikud_dom_clobbers_react_numbers).
+  const encouragement = useMemo(() => {
+    if (summary.streakDays >= 3)
+      return (
+        <>
+          🔥 <span>{summary.streakDays}</span> ימים ברצף — איזה כיף!
+        </>
+      )
+    if (summary.wordsLearned > 0)
+      return (
+        <>
+          ⭐ כבר <span>{summary.wordsLearned}</span> מילים — כל הכבוד!
+        </>
+      )
+    return <>🌟 בואו נלמד מילים חדשות!</>
+  }, [summary.streakDays, summary.wordsLearned])
+
   const gamesByTier = useMemo(
     () =>
       (Object.keys(TIER_META) as TierId[]).map((tier) => ({
@@ -192,12 +215,19 @@ export function HomePage() {
             </div>
           </div>
 
-          {nextUnlock ? (
-            <p className="relative z-10 mt-3 text-center text-sm text-muted">
-              🎁 עוד קצת ותפתח את <span className="font-semibold text-text">{nextUnlock.icon} {nextUnlock.name}</span>
-              {unlocks[nextUnlock.id]?.requirement ? ` · ${unlocks[nextUnlock.id]?.requirement}` : ''}
-            </p>
-          ) : null}
+          <p className="relative z-10 mt-3 text-center text-sm text-muted">
+            {nextUnlock ? (
+              <>
+                🎁 עוד קצת ונפתח את{' '}
+                <span className="font-semibold text-text">
+                  {nextUnlock.icon} {nextUnlock.name}
+                </span>
+                {unlocks[nextUnlock.id]?.requirement ? ` · ${unlocks[nextUnlock.id]?.requirement}` : ''}
+              </>
+            ) : (
+              encouragement
+            )}
+          </p>
         </div>
       </section>
 

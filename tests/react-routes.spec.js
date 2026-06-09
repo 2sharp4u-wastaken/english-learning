@@ -175,6 +175,36 @@ test.describe('Slice 1.1: Home', () => {
     await expect(page.locator('[data-testid="home-game-card"][data-game="word-journey"]'))
       .toHaveAttribute('data-locked', 'false');
   });
+
+  test('hero shows a gender-neutral encouragement line when everything is unlocked', async ({ page }) => {
+    await page.goto('/');
+    await page.waitForFunction(() => Array.isArray(window.vocabularyBank) && window.vocabularyBank.length >= 60);
+    await page.evaluate(() => {
+      localStorage.setItem('users', JSON.stringify({ enc: { id: 'enc', name: 'Enc', displayName: 'Enc', initial: 'E', password: null, created: new Date().toISOString(), lastLogin: null } }));
+      localStorage.setItem('currentUser', 'enc');
+      localStorage.setItem('currentSession', JSON.stringify({ userId: 'enc', userName: 'Enc', displayName: 'Enc', initial: 'E', authenticated: true, loginTime: Date.now(), lastActivity: Date.now() }));
+      const learnedWords = {};
+      for (const w of window.vocabularyBank.slice(0, 80)) {
+        learnedWords[`${String(w.word).toLowerCase()}_${w.category}`] = { graduatedDate: '2025-01-01', grandfathered: true };
+      }
+      const gameUnlocks = {};
+      for (const id of ['word-journey', 'abc', 'phonics', 'memory', 'grammar-beginner', 'articles', 'progressive', 'listening', 'picture-match', 'reading', 'pronunciation', 'fill-blanks', 'scramble', 'grammar', 'vocabulary', 'true-or-not', 'story-time']) {
+        gameUnlocks[id] = { unlocked: true, unlockedDate: '2025-01-01' };
+      }
+      localStorage.setItem('v2_userProgress_enc', JSON.stringify({ version: 4, learnedWords, wordMastery: {}, gameUnlocks }));
+    });
+    await gotoHash(page, '/home');
+    await page.waitForTimeout(1500);
+
+    // Everything unlocked → the unlock teaser is gone and the encouragement line
+    // shows. Nikud is injected, so strip it before matching. Assert the words
+    // message renders AND that no masculine 2nd-person form leaked in (אתה/בוא/למדת).
+    const raw = await page.locator('[data-testid="home-hero"] p').last().textContent();
+    const text = (raw || '').replace(/[֑-ׇ]/g, '');
+    expect(text).toContain('כל הכבוד');
+    expect(text).not.toContain('🎁');
+    expect(text).not.toMatch(/אתה|בוא\b|למדת/);
+  });
 });
 
 // ─── Slice 1.2: Nav ─────────────────────────────────────────────────────────
