@@ -1,9 +1,51 @@
-import { defineConfig } from 'vite'
+import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
+import fs from 'fs'
+
+// INFRA1: `publicDir` is false (legacy assets are served from the project root by
+// the dev server), so `vite build` emits only the bundled module graph. These
+// runtime-served assets are referenced by bare/absolute paths and are NOT in that
+// graph, so without this copy step a built `dist/` (and `vite preview`) 404s on
+// them — silently breaking audio/feedback, nikud, and every vocab picture:
+//   - 5 legacy non-module <script> tags in index.html (error/speech/feedback/audio/gamification)
+//   - data/*.json fetched at runtime (nikud map + phonetic index)
+//   - img/ (vocab pictures referenced via imageUrl strings, not imports)
+// This makes `dist/` a faithful, deployable copy of what `npm run dev` serves.
+function copyStaticAssets(): Plugin {
+  const rootScripts = [
+    'error-tracker.js',
+    'speechSynthesis.js',
+    'feedback.js',
+    'audio-effects.js',
+    'gamification.js',
+  ]
+  return {
+    name: 'infra1-copy-static-assets',
+    apply: 'build',
+    closeBundle() {
+      const root = __dirname
+      const out = path.resolve(root, 'dist')
+      for (const file of rootScripts) {
+        fs.copyFileSync(path.resolve(root, file), path.join(out, file))
+      }
+      // data/: only the runtime-fetched JSON (the .js banks are already bundled
+      // via the _loader module graph — copying them would be dead weight).
+      const dataDir = path.resolve(root, 'data')
+      for (const entry of fs.readdirSync(dataDir, { recursive: true }) as string[]) {
+        if (!entry.endsWith('.json')) continue
+        const dest = path.join(out, 'data', entry)
+        fs.mkdirSync(path.dirname(dest), { recursive: true })
+        fs.copyFileSync(path.join(dataDir, entry), dest)
+      }
+      // img/: the full picture tree (referenced by imageUrl strings, not imports).
+      fs.cpSync(path.resolve(root, 'img'), path.join(out, 'img'), { recursive: true })
+    },
+  }
+}
 
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), copyStaticAssets()],
   root: '.',
   publicDir: false, // legacy assets served from project root directly
   resolve: {
