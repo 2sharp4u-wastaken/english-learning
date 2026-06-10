@@ -9,7 +9,13 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 
 ---
 
-## 1. Ship beyond localhost — **Slice INFRA1** (spike done; path chosen: Deploy + PWA) 🟢
+## 1. Ship beyond localhost — **Slice INFRA1** ✅ SHIPPED (live 2026-06-10)
+
+**The app is LIVE at https://lomdim-anglit.netlify.app** (Netlify site `lomdim-anglit`,
+account 2sharp4u@gmail.com; this folder is CLI-linked via `.netlify/`, gitignored).
+**Redeploy = `netlify deploy --prod`** (builds + publishes; the GitHub repo is NOT
+dashboard-connected, so pushing alone does NOT deploy). Remaining: a real-device
+play-test over the live HTTPS URL (mic games + PWA install) — see §3.
 
 Chosen path: **public static deploy (Netlify/Vercel) + PWA layer**. A hosted deploy
 gives free HTTPS → solves the mic secure-context blocker automatically (no cert
@@ -30,14 +36,13 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
   fully offline. SW registered from `src/main.tsx` (PROD only, readyState-guarded).
   **Verified in `vite preview`:** SW controls, offline reload serves the cached app,
   confetti works offline. Static wiring pinned by `src/__tests__/pwa-wiring.test.ts`.
-- 🟡 **Host hookup (NEXT, needs the user's account auth).** `netlify.toml` is **written
-  and committed** (build `npm run build` → publish `dist`, Node 20, SPA fallback,
-  immutable `/assets/*` caching, no-cache `/sw.js`+`/index.html`). All that remains is the
-  live deploy, which needs the user's login: either connect the GitHub repo in the Netlify
-  dashboard (auto-deploys on push) or run `netlify deploy --prod` in-session. Root-domain
-  host (Netlify) chosen over GH Pages because the app fetches the absolute path
-  `/data/nikud-map.json` (a `/repo/` subpath would need a Vite `base` + rewrites). PWA
-  install + offline + mic games all activate once served over the host's HTTPS.
+- ✅ **Host hookup (2026-06-10, LIVE).** `netlify login` + `netlify sites:create --name
+  lomdim-anglit` + `netlify deploy --prod` → **https://lomdim-anglit.netlify.app**.
+  Verified live: `/`, `/sw.js`, `/data/nikud-map.json`, `/vendor/confetti…`, PWA icons
+  all 200; `netlify.toml` caching headers confirmed (no-cache on `/sw.js`+`/index.html`).
+  Root-domain host (Netlify) chosen over GH Pages because the app fetches the absolute
+  path `/data/nikud-map.json`. **Deploys are CLI-driven** (`netlify deploy --prod`) —
+  the GitHub repo is not dashboard-connected, so a `git push` alone does not deploy.
 - Natural partner to a **human play-test** on a real tablet.
 
 ### Recently fixed alongside INFRA1 (2026-06-09 preview play-test)
