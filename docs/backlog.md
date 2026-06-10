@@ -102,19 +102,13 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
 - 🟢 **Reuse Reading's compact layout** for the Word Journey spell stage (consistency).
 - 🟢 **Memory sizing knobs** — `AREA_REM2`/`CHROME_REM`/per-level `columns` in
   `bridge/memory.ts` if cards feel off on any level.
-- 🟢 **Per-device parent password ("Tier 2", design agreed 2026-06-10).** Replace
-  the hard-coded `ADMIN_PASSWORD` constant in `bridge/auth.ts` with a wizard on
-  **first protected access**: no stored parent password → `ParentPasswordModal`
-  opens in "create" mode (enter twice), stores it hashed in localStorage (same
-  scheme as kid passwords), `verifyAdminPassword` checks the hash. One modal +
-  one bridge change covers every protected surface AND existing devices (no
-  first-run step, no migration). Include a **"שכחתי סיסמה" reset link** that wipes
-  only the parent password (wizard re-runs next open) — a kid *could* tap it, but
-  the gate is against wandering, not attack, and a no-reset design risks permanent
-  lockout. Small slice: modal create-mode, bridge, gender-neutral copy + nikud,
-  Playwright specs seed the stored hash instead of typing the constant (3 places).
-  Buys hygiene/UX, NOT security — any client-only gate is devtools-bypassable
-  (see §6 for the real fix).
+- ✅ **Per-device parent password ("Tier 2") — SHIPPED 2026-06-10.** The
+  hard-coded `ADMIN_PASSWORD` constant is gone; `ParentPasswordModal` runs a
+  create wizard on first protected access (enter twice → hashed at the
+  unprefixed `parentPassword` key), with a "שכחתי סיסמה" reset link. Covers
+  existing devices with no migration. Detail: `master-plan.md` → "Slice TIER2".
+  Note for the live site: requires a `netlify deploy --prod` to take effect.
+  Still NOT security — any client-only gate is devtools-bypassable (§6).
 
 ## 5. Bug dump (remainder of `bug-dump-2026-06-07.md`)
 

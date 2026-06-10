@@ -17,6 +17,7 @@ import {
   deleteUser as bridgeDeleteUser,
   setUserRole,
   verifyAdminPassword,
+  hasParentPassword,
 } from '@/bridge/auth'
 import { resetUserPractice, resetUserStats } from '@/bridge/progress'
 import { SectionCard } from '../components/SectionCard'
@@ -32,32 +33,43 @@ type PendingAction =
   | { kind: 'reset-practice'; user: User }
   | { kind: 'delete'; user: User }
   | { kind: 'toggle-role'; user: User }
+  // Add-user needs the parent password typed inline (AddUserModal), so when no
+  // parent password exists yet (admin-role users auto-unlock the tab and skip
+  // the gate) we run the create wizard first, then open AddUserModal.
+  | { kind: 'setup-for-add' }
 
 const PROMPTS: Record<PendingAction['kind'], { title: string; description: string; submitLabel: string }> = {
   'reset-password': {
     title: 'איפוס סיסמה',
-    description: 'ההורה יגדיר סיסמה חדשה בהתחברות הבאה. הזן את סיסמת ההורה לאישור.',
+    description: 'ההורה יגדיר סיסמה חדשה בהתחברות הבאה. יש להזין את סיסמת ההורה לאישור.',
     submitLabel: 'אפס סיסמה',
   },
   'reset-stats': {
     title: 'איפוס כל הסטטיסטיקות',
-    description: 'כל ציוני המשחקים, ההיסטוריה, המטבעות, התעודות והמילים הנלמדות יימחקו. אין ביטול. הזן את סיסמת ההורה לאישור.',
+    description: 'כל ציוני המשחקים, ההיסטוריה, המטבעות, התעודות והמילים הנלמדות יימחקו. אין ביטול. יש להזין את סיסמת ההורה לאישור.',
     submitLabel: 'אפס סטטיסטיקות',
   },
   'reset-practice': {
     title: 'איפוס נתוני תרגול',
-    description: 'מונה מילים הנאבקות יאופס. הציונים יישמרו. הזן את סיסמת ההורה לאישור.',
+    description: 'מונה מילים הנאבקות יאופס. הציונים יישמרו. יש להזין את סיסמת ההורה לאישור.',
     submitLabel: 'אפס תרגול',
   },
   delete: {
     title: 'מחיקת משתמש',
-    description: 'המשתמש ונתוניו יימחקו לצמיתות. אין ביטול. הזן את סיסמת ההורה לאישור.',
+    description: 'המשתמש ונתוניו יימחקו לצמיתות. אין ביטול. יש להזין את סיסמת ההורה לאישור.',
     submitLabel: 'מחק משתמש',
   },
   'toggle-role': {
     title: 'שינוי תפקיד',
-    description: 'החלפת סטטוס הורה. הזן את סיסמת ההורה לאישור.',
+    description: 'החלפת סטטוס הורה. יש להזין את סיסמת ההורה לאישור.',
     submitLabel: 'החלף תפקיד',
+  },
+  // Only ever shown in the modal's create mode (which renders its own wizard
+  // copy) — reached solely when no parent password exists yet.
+  'setup-for-add': {
+    title: 'סיסמת הורה',
+    description: 'יש להזין את סיסמת ההורה לאישור.',
+    submitLabel: 'המשך',
   },
 }
 
@@ -108,6 +120,11 @@ export function UsersTab() {
             if (!r.success) return r.error ?? 'שגיאה'
             break
           }
+          case 'setup-for-add': {
+            setPending(null)
+            setAddOpen(true)
+            return null
+          }
         }
       } catch (err) {
         return err instanceof Error ? err.message : 'שגיאה בלתי צפויה'
@@ -157,7 +174,9 @@ export function UsersTab() {
         actions={
           <button
             type="button"
-            onClick={() => setAddOpen(true)}
+            onClick={() =>
+              hasParentPassword() ? setAddOpen(true) : setPending({ kind: 'setup-for-add' })
+            }
             disabled={atCapacity}
             className="flex items-center gap-1.5 rounded-lg bg-learn/90 px-3 py-1.5 text-sm font-medium text-ink-950 transition-colors hover:bg-learn disabled:cursor-not-allowed disabled:opacity-50"
           >

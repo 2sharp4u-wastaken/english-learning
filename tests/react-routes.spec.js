@@ -50,6 +50,19 @@ async function seedUser(page, { progressPatch = {} } = {}) {
   await page.waitForTimeout(2500);
 }
 
+// Tier-2 parent password (backlog §4): per-device, stored hashed at the
+// unprefixed 'parentPassword' key. Tests seed the hash directly instead of
+// walking the first-access create wizard (covered by its own spec below).
+// Hash scheme mirrors bridge/auth.ts: btoa(SALT + password + SALT).
+const PARENT_PASSWORD = 'test-parent-pass';
+
+async function seedParentPassword(page, password = PARENT_PASSWORD) {
+  await page.evaluate((pw) => {
+    const SALT = 'englishlearning2024';
+    localStorage.setItem('parentPassword', btoa(SALT + pw + SALT));
+  }, password);
+}
+
 function captureErrors(page) {
   const errors = [];
   page.on('console', (msg) => {
@@ -458,21 +471,52 @@ test.describe('Slice 1.6: Settings', () => {
   test('protected tab opens password modal and unlocks on correct password', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await seedUser(page);
+    await seedParentPassword(page);
     await gotoHash(page, '/settings');
 
     // Click the visible "game" tab (mobile pill is hidden at desktop viewport)
     await page.locator('[data-tab-id="game"]:visible').first().click();
 
-    // Password modal should appear
+    // Password modal should appear in verify mode (no confirm input)
     await expect(page.locator('#parent-password')).toBeVisible();
+    await expect(page.locator('#parent-password-confirm')).toHaveCount(0);
 
-    // Submit the correct admin password (hardcoded in auth.js)
-    await page.locator('#parent-password').fill('horim-kef-2432!');
+    // Submit the seeded per-device parent password
+    await page.locator('#parent-password').fill(PARENT_PASSWORD);
     await page.locator('#parent-password').press('Enter');
 
     // Modal should close and Game tab content should render
     await expect(page.locator('#parent-password')).not.toBeVisible();
     await expect.poll(() => hasText(page, 'מכניקת'), { timeout: 5000 }).toBe(true);
+  });
+
+  test('first protected access (no stored password) runs the create wizard', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedUser(page);
+    await gotoHash(page, '/settings');
+
+    await page.locator('[data-tab-id="game"]:visible').first().click();
+
+    // Create mode: password + confirm inputs
+    await expect(page.locator('#parent-password')).toBeVisible();
+    await expect(page.locator('#parent-password-confirm')).toBeVisible();
+
+    // Mismatched confirm is rejected and the modal stays open
+    await page.locator('#parent-password').fill('new-pass-1');
+    await page.locator('#parent-password-confirm').fill('different');
+    await page.locator('#parent-password-confirm').press('Enter');
+    await expect(page.locator('#parent-password')).toBeVisible();
+
+    // Matching entries store the hash and unlock the pending tab
+    await page.locator('#parent-password').fill('new-pass-1');
+    await page.locator('#parent-password-confirm').fill('new-pass-1');
+    await page.locator('#parent-password-confirm').press('Enter');
+    await expect(page.locator('#parent-password')).not.toBeVisible();
+    await expect.poll(() => hasText(page, 'מכניקת'), { timeout: 5000 }).toBe(true);
+
+    // Stored hash matches the bridge scheme
+    const stored = await page.evaluate(() => localStorage.getItem('parentPassword'));
+    expect(stored).toBe(Buffer.from('englishlearning2024new-pass-1englishlearning2024').toString('base64'));
   });
 
   test('changing a setting persists to both legacy localStorage keys', async ({ page }) => {
@@ -510,6 +554,7 @@ test.describe('Slice 1.6: Settings', () => {
   test('reset settings flow: gate → confirm → defaults restored', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await seedUser(page);
+    await seedParentPassword(page);
     await gotoHash(page, '/settings');
 
     // Pre-mutate the persisted settings so we have something to reset
@@ -527,7 +572,7 @@ test.describe('Slice 1.6: Settings', () => {
 
     // Password modal opens (user is not auto-admin)
     await expect(page.locator('#parent-password')).toBeVisible({ timeout: 3000 });
-    await page.locator('#parent-password').fill('horim-kef-2432!');
+    await page.locator('#parent-password').fill(PARENT_PASSWORD);
     await page.locator('#parent-password').press('Enter');
     await expect(page.locator('#parent-password')).not.toBeVisible();
 
@@ -564,10 +609,11 @@ test.describe('Slice 1.6: Settings', () => {
   async function openAdvancedTools(page) {
     await page.setViewportSize({ width: 1280, height: 800 });
     await seedUser(page);
+    await seedParentPassword(page);
     await gotoHash(page, '/settings');
     await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
     await expect(page.locator('#parent-password')).toBeVisible();
-    await page.locator('#parent-password').fill('horim-kef-2432!');
+    await page.locator('#parent-password').fill(PARENT_PASSWORD);
     await page.locator('#parent-password').press('Enter');
     await expect(page.locator('#parent-password')).not.toBeVisible();
   }

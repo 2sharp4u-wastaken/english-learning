@@ -28,17 +28,18 @@ import type { User, UserRole, Session } from './types'
 
 // ─── Constants (ported from legacy AuthService) ───────────────────────────────
 const SESSION_TIMEOUT = 30 * 60 * 1000 // 30 minutes idle timeout
-// App-only parent password. This ships in the public JS bundle, so it must NEVER
-// be a personal/reused password — it's a child gate, not a security boundary
-// (any client-only check is bypassable via devtools). A per-device parent
-// password is backlogged (docs/backlog.md §4); real secrecy needs a backend (§6).
-const ADMIN_PASSWORD = 'horim-kef-2432!'
 const PASSWORD_SALT = 'englishlearning2024'
 
 // UNPREFIXED localStorage keys — exactly as legacy auth.js used them.
 const USERS_KEY = 'users'
 const SESSION_KEY = 'currentSession'
 const CURRENT_USER_KEY = 'currentUser'
+// Per-device parent (admin) password, stored as a hash (Tier 2, backlog §4 —
+// replaced the old hard-coded constant that shipped in the public bundle).
+// Created by ParentPasswordModal's create mode on first protected access.
+// A child gate, not a security boundary: any client-only check is bypassable
+// via devtools; real secrecy needs a backend (backlog §6).
+const PARENT_PASSWORD_KEY = 'parentPassword'
 
 const AUTH_CHANGED_EVENT = 'auth-changed'
 
@@ -274,11 +275,32 @@ export function getAllUsers(): User[] {
   return users ? Object.values(users) : []
 }
 
-// ─── Admin CRUD ─────────────────────────────────────────────────────────────
+// ─── Parent (admin) password — per-device, Tier 2 ───────────────────────────
 
-/** Verify the admin (parent) password. */
+/** Whether this device has a parent password set up yet. */
+export function hasParentPassword(): boolean {
+  return localStorage.getItem(PARENT_PASSWORD_KEY) !== null
+}
+
+/** Store the per-device parent password (hashed, same scheme as kid passwords). */
+export function setParentPassword(password: string): void {
+  localStorage.setItem(PARENT_PASSWORD_KEY, hashPassword(password))
+}
+
+/**
+ * Wipe ONLY the parent password ("שכחתי סיסמה"). The create wizard re-runs on
+ * the next protected access. Deliberately reachable without the old password —
+ * the gate is against a wandering kid, not an attacker, and a no-reset design
+ * risks permanent parent lockout.
+ */
+export function resetParentPassword(): void {
+  localStorage.removeItem(PARENT_PASSWORD_KEY)
+}
+
+/** Verify the admin (parent) password. False when none is set up yet. */
 export function verifyAdminPassword(password: string): boolean {
-  return password === ADMIN_PASSWORD
+  const stored = localStorage.getItem(PARENT_PASSWORD_KEY)
+  return stored !== null && verifyPassword(password, stored)
 }
 
 /**

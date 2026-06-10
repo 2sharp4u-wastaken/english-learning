@@ -79,6 +79,7 @@ Hash-based routing via React Router (`createHashRouter`):
 - `v2_englishLearningSettings` — app settings
 - `v2_authUsers` — all user accounts
 - `customWords_global` — parent-added custom words (note: **no** `v2_` prefix; read at boot by `data/_loader.js` and via `src/bridge/customContent.ts`). Related parent-content keys (also unprefixed): `wordImageOverrides`, `wordTranslationOverrides`, `nikudCache`, `expressionMeaningOverrides` (Phase 5 — expression Hebrew-meaning overrides keyed by phrase, applied live by `src/bridge/expressions.ts`).
+- `parentPassword` — per-device parent (admin) password hash, unprefixed (Tier 2, 2026-06-10). There is NO hard-coded admin password anymore: `verifyAdminPassword()` is false until the `ParentPasswordModal` create wizard runs on first protected access. Any surface that collects the parent password inline (not via the modal) must guard the not-set-up state. Tests seed the hash (`seedParentPassword` in `tests/react-routes.spec.js`).
 - All keys use `v2_` prefix (set in `app.js`)
 
 ### Managers (legacy, in `managers/`)
