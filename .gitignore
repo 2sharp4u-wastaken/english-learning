@@ -54,3 +54,6 @@ server.key
 
 # Python bytecode (build-nikud-map.py)
 __pycache__/
+
+# Local Netlify folder
+.netlify
