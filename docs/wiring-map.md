@@ -88,6 +88,25 @@ bridge/auth.ts = standalone owner (no window.authService):
   logout() = clear session + dispatch 'auth-changed' (NO page reload)
 ```
 
+## Parent (Admin) Gate — per-device password (Tier 2, 2026-06-10)
+
+```
+Protected surface (settings tab / reset / UsersTab action)
+  └─ <ParentPasswordModal> opens → mode decided per open:
+      ├─ hasParentPassword() false → CREATE wizard (enter twice, min 4)
+      │     └─ setParentPassword(pw) [hash → UNPREFIXED 'parentPassword' key]
+      │           └─ flows into the SAME onSubmit → pending action proceeds
+      └─ true → verify prompt → verifyAdminPassword(pw) checks stored hash
+            └─ "שכחתי סיסמה" → resetParentPassword() (wipes ONLY that key)
+                  └─ modal flips to create mode in place
+
+No hard-coded admin password exists; verifyAdminPassword() = false until set up.
+isCurrentUserAdmin() (role parent/manager) auto-unlocks tabs WITHOUT the modal →
+any surface collecting the password inline (AddUserModal) must guard the
+not-set-up state: UsersTab "הוסף משתמש" routes through a 'setup-for-add'
+pending kind first. Client-only gate = devtools-bypassable by design (Tier 3 = backend).
+```
+
 ## Daily Login
 
 ```
