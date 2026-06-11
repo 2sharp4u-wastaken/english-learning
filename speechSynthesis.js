@@ -13,6 +13,7 @@ class SpeechManager {
         this.recognition = null;
         this.isRecording = false;
         this.currentRecordingReject = null;
+        this._manualStop = false;
         this.voices = [];
         this.englishVoice = null;
         this.hebrewVoice = null;
@@ -370,9 +371,14 @@ class SpeechManager {
                 return;
             }
 
+            // M9b: mark this as a deliberate stop so the silent-end auto-retry
+            // in startRecording's onend doesn't restart the mic.
+            this._manualStop = true;
+
             // Set up one-time onend handler to know when it's fully stopped
             const onEndHandler = () => {
                 this.isRecording = false;
+                this._manualStop = false;
                 this.recognition.removeEventListener('end', onEndHandler);
                 resolve();
             };
@@ -385,6 +391,7 @@ class SpeechManager {
                 // If stop fails, still resolve after timeout
                 this.recognition.removeEventListener('end', onEndHandler);
                 this.isRecording = false;
+                this._manualStop = false;
                 setTimeout(resolve, 100);
             }
         });
@@ -423,19 +430,28 @@ class SpeechManager {
             // 'aborted' onerror path settles the promise so the game can show
             // its retry message. Chrome's own no-speech timeout (~8s) normally
             // fires long before this.
-            const recogWatchdog = setTimeout(() => {
-                if (!this.isRecording) return;
-                console.warn('[Speech] Watchdog: recognition delivered no events in 15s - aborting');
-                try {
-                    this.recognition.abort();
-                } catch (e) {
-                    // abort() itself failed — settle manually so the caller unblocks
-                    this.isRecording = false;
-                    const rejectFn = this.currentRecordingReject;
-                    this.currentRecordingReject = null;
-                    if (rejectFn) rejectFn(new Error('RECORDING_CANCELLED'));
-                }
-            }, 15000);
+            let recogWatchdog = null;
+            const armWatchdog = () => {
+                recogWatchdog = setTimeout(() => {
+                    if (!this.isRecording) return;
+                    console.warn('[Speech] Watchdog: recognition delivered no events in 15s - aborting');
+                    try {
+                        this.recognition.abort();
+                    } catch (e) {
+                        // abort() itself failed — settle manually so the caller unblocks
+                        this.isRecording = false;
+                        const rejectFn = this.currentRecordingReject;
+                        this.currentRecordingReject = null;
+                        if (rejectFn) rejectFn(new Error('RECORDING_CANCELLED'));
+                    }
+                }, 15000);
+            };
+            armWatchdog();
+
+            // M9b: Android's service sometimes ends recognition ~2-3s in with
+            // NO result and NO error (tablet log signature: "onend |
+            // isRecording=true"). Allow one silent auto-retry before failing.
+            let silentRetryUsed = false;
 
             this.recognition.onresult = (event) => {
                 clearTimeout(recogWatchdog);
@@ -488,13 +504,35 @@ class SpeechManager {
             this.recognition.onend = () => {
                 clearTimeout(recogWatchdog);
                 console.log(`[Speech] Recognition onend | isRecording=${this.isRecording} | hasReject=${!!this.currentRecordingReject}`);
+                const endedSilently = this.isRecording; // no result/error arrived first
                 this.isRecording = false;
-                // If there's still a pending reject (meaning user stopped manually), call it
-                if (this.currentRecordingReject) {
-                    const rejectFn = this.currentRecordingReject;
-                    this.currentRecordingReject = null;
-                    rejectFn(new Error('RECORDING_CANCELLED'));
+                if (!this.currentRecordingReject) return;
+
+                // M9b: silent end on Android without a manual stop → one retry.
+                if (endedSilently && SPEECH_IS_ANDROID && !this._manualStop && !silentRetryUsed) {
+                    silentRetryUsed = true;
+                    console.warn('[Speech] Recognition ended silently - retrying once');
+                    setTimeout(() => {
+                        if (!this.currentRecordingReject) return; // settled meanwhile
+                        try {
+                            this.isRecording = true;
+                            this.recognition.start();
+                            armWatchdog();
+                        } catch (error) {
+                            console.error('[Speech] retry start() threw:', error);
+                            this.isRecording = false;
+                            const rejectFn = this.currentRecordingReject;
+                            this.currentRecordingReject = null;
+                            if (rejectFn) rejectFn(new Error('RECORDING_CANCELLED'));
+                        }
+                    }, 250);
+                    return;
                 }
+
+                // Pending reject (manual stop, or retry exhausted) — settle it.
+                const rejectFn = this.currentRecordingReject;
+                this.currentRecordingReject = null;
+                rejectFn(new Error('RECORDING_CANCELLED'));
             };
 
             try {

@@ -265,11 +265,14 @@ render assertions in `react-routes.spec.js`); nikud map regenerated (+7).
 - ⏸ Parked: make the captured log more verbose/descriptive (scope what
   consoleLogger records) — user flagged it may not be useful enough yet.
 
-### M7 🟡 שלום-{name} greeting TTS flaky on tablet
-**Code fix shipped 2026-06-11 with M9** (speak-time Hebrew-voice re-resolution
-in `speechSynthesis.js speak()`); pending tablet verify. NOTE: if the tablet
-has NO Hebrew TTS voice installed, no code can help — check Android Settings →
-Text-to-speech output → Google Speech Services → Install voice data → עברית.
+### M7 🟡 שלום-{name} greeting TTS flaky on tablet — ROOT CAUSE FOUND (device, not code)
+**Tablet log 2026-06-11 20:54Z: `Available voices: 1` — the device exposes ONLY
+"אנגלית ארצות הברית (en_US)"; `Selected Hebrew voice: undefined`. There is NO
+Hebrew TTS voice installed on the tablet — no code can speak Hebrew there.**
+User action: Android Settings → Text-to-speech output → Google Speech
+Recognition & Synthesis → ⚙ → Install voice data → עברית. The code half
+(speak-time voice re-resolution) shipped with M9 and will pick the voice up
+as soon as it exists.
 
 ### M8 🟢 In-app PWA install button
 Chrome's automatic install banner is heuristic (engagement threshold; 90-day
@@ -292,7 +295,25 @@ add-to-home-screen instructions there instead.
   utterance ref kept against the Chrome GC-drops-onend bug;
 - recognition watchdog: no result/error/end within 15s → `abort()` → the
   game's retry path (cures "green dot on, app stuck, can't progress");
-- `cancelSpeech()` now actually cancels on Android only.
+- `cancelSpeech()` now actually cancels on Android only;
+- **M9b (2nd tablet log, 20:54Z — new bundle confirmed live):** the wedge
+  fixes work (queue unwedges, watchdogs recover, recognitions DO succeed
+  now), but recognition still sometimes ends ~2.5s in with NO result and NO
+  error (fail-fail-fail-success pattern, kid retapping). Added a one-shot
+  silent-end auto-retry in `startRecording` (Android-only, skipped on
+  manual `_manualStop`, re-arms the 15s watchdog) so the service hiccup is
+  absorbed before the kid sees a failure.
+**Log evidence (tablet, 2026-06-11 20:43Z, OLD bundle — captured pre-update):
+diagnosis CONFIRMED.** 10× consecutive "Queue full - skipping" (wedged TTS
+queue eating every sound) + repeated recognition signature "starting → ~2.6s →
+onend with NO result/error" right after a no-op (disabled) cancelSpeech() —
+i.e. recognition launched while TTS still spoke and got no audio. Both are
+exactly the paths the fix targets. NOTE the SW serves legacy scripts
+stale-while-revalidate: after a deploy, launch → full close → launch again
+(or reinstall the PWA) before judging. New-bundle marker in the logs:
+"[Speech] cancelSpeech() — Android: cancelling" (old prints "DISABLED").
+Verbosity follow-up (parked item below): log the deploy/build id in the
+console-log header so stale-bundle confusion is visible at a glance.
 Repro that motivated it (tablet PWA, post-M1): ABC recording worked a couple
 of questions then stopped (green dot on, no pickup, no progress); hero sounds
 intermittently dead (owl/greeting/score effects). Original analysis:
