@@ -93,6 +93,12 @@ export function playAnswerSfx(kind: 'correct' | 'incorrect'): void {
   }
 }
 
+// G1 note (2026-06-11): the burst is intentionally IDENTICAL on mic and
+// non-mic games. The mic-game jank was never a rendering cost — macOS
+// reconfigures the audio device when each capture closes, freezing system
+// frame delivery for up to ~500ms while the page's rAF stays clean. The cure
+// is bridge/micHold.ts (keep-alive capture stream per mic-game session), not a
+// different burst.
 export function triggerConfetti(label?: string): void {
   const confetti = (window as any).confetti as ConfettiFn | undefined
   if (typeof confetti !== 'function') return

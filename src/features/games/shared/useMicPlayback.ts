@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
+import { ensureMicHold, scheduleMicRelease } from '@/bridge/micHold'
 
 /**
  * Parallel mic capture for a "hear yourself" playback button.
@@ -37,6 +38,8 @@ export function useMicPlayback(): MicPlayback {
   const start = useCallback(async () => {
     if (!('mediaDevices' in navigator) || typeof MediaRecorder === 'undefined') return
     try {
+      // G1: keep the audio device alive through capture + celebration (micHold.ts).
+      ensureMicHold()
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
       streamRef.current = stream
       const rec = new MediaRecorder(stream)
@@ -71,6 +74,7 @@ export function useMicPlayback(): MicPlayback {
           streamRef.current?.getTracks().forEach((t) => t.stop())
           streamRef.current = null
           recorderRef.current = null
+          scheduleMicRelease() // parallel capture ended — start the linger window
           if (!chunks.length) {
             resolve(null)
             return

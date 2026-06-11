@@ -1,4 +1,5 @@
 import { setGameContext, cancelSpeech } from './audio'
+import { ensureMicHold, scheduleMicRelease } from './micHold'
 import { getApp, getGameManager } from '../engine/instances'
 
 // Legacy data module — same one gameLogic.js imports. generateABCQuestions filters
@@ -328,11 +329,20 @@ export async function startABCRecording(): Promise<{
 }> {
   const sm = getSpeech()
   if (!sm) throw new Error('Speech recognition not available')
-  return sm.startRecording()
+  // G1: keep the audio device alive through the capture + celebration window
+  // (see micHold.ts). startRecording resolves when recognition ENDS, so the
+  // finally marks capture end.
+  ensureMicHold()
+  try {
+    return await sm.startRecording()
+  } finally {
+    scheduleMicRelease()
+  }
 }
 
 export async function stopABCRecording(): Promise<void> {
   await getSpeech()?.stopRecording()
+  scheduleMicRelease()
 }
 
 /**

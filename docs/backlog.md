@@ -121,18 +121,27 @@ The rest of that doc is shipped; only these remain:
   `קריפר` is correct; needs a real picture. Drop-in: `img/icons/minecraft/creeper.png`
   → add `imageUrl` to the `Creeper` entry in `data/categories/minecraft.js`. **Don't
   wire `imageUrl` before the asset exists** (broken image).
-- 🔴 **G1** — confetti animation jank + mouse-freeze on the voice-recording games.
-  Known unsolved; 3 fixes tried & reverted. **Instrumented 2026-06-09:** a DEV-only
-  profiler logs frame-timing + longtask data per burst when
-  `window.__PROFILE_CONFETTI__ = true` (`src/bridge/confettiProfiler.ts`; labels on
-  the 5 mic games + a `vocabulary` baseline). **Next:** capture numbers on a real
-  device (vocabulary baseline vs a mic game), compare `worstFrameMs`/`jankyFrames`/
-  `longTasks`; clean numbers + visible jank ⇒ cost is below frame-timing (OS audio
-  device) ⇒ mitigate with a lighter/shorter burst on mic games, *not* another
-  rendering-path change. Full analysis: `project_confetti_first_burst_lag` memory.
-- 🧹 **Cleanup (post-G1):** once G1 is resolved, decide whether to strip the
-  `__PROFILE_CONFETTI__` profiler + the `triggerConfetti(label)` labels or keep them
-  as a permanent dev tool.
+- ✅ **G1 — SOLVED 2026-06-11 (cure: `src/bridge/micHold.ts`), pending one final
+  visual verify.** Root cause proven on the user's machine: in-page rAF perfectly
+  clean on BOTH vocabulary and pronunciation bursts (worst frame 9.4ms, 0 janky,
+  0 longTasks @120Hz) while a screen recording showed **175–524ms pixel freezes**
+  on the mic burst ⇒ macOS reconfigures the audio device every time a capture
+  closes, freezing system frame delivery — below the page, which is why all 3
+  rendering-path fixes failed. **Live experiment confirmed the cure:** holding an
+  extra `getUserMedia` stream made the burst smooth (built-in mic — no Bluetooth
+  involved). Shipped: `ensureMicHold()` acquires one keep-alive stream at
+  recording start (pronunciation/abc/phonics bridges + `useMicPlayback`);
+  `scheduleMicRelease()` releases it on an **8s linger timer after capture
+  end** — refreshed by the next recording — so the celebration plays against a
+  warm device and the reconfiguration lands on a quiet screen. All-mic games
+  (Pronunciation/Practice) stay warm end-to-end; mixed games (ABC/Phonics/WJ)
+  drop the mic dot seconds after a say-question. Hard release on leaving
+  `/game/*` (hashchange) + pagehide. The interim light-burst mitigation was
+  reverted (didn't help — the freeze is load-independent); bursts are identical
+  everywhere again. Unit-pinned: `src/bridge/__tests__/micHold.test.ts`.
+- 🧹 **Cleanup (post-G1):** decide whether to strip the `__PROFILE_CONFETTI__`
+  profiler + the `triggerConfetti(label)` labels or keep them as a permanent
+  dev tool.
 
 ## 6. Architecture horizon — backend / accounts ("Tier 3") 🟢
 

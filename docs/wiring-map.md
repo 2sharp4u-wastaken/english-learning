@@ -107,6 +107,23 @@ not-set-up state: UsersTab "הוסף משתמש" routes through a 'setup-for-add
 pending kind first. Client-only gate = devtools-bypassable by design (Tier 3 = backend).
 ```
 
+## Mic Keep-Alive (G1 cure, 2026-06-11)
+
+```
+recording question starts (bridge/pronunciation·abc·phonics startXRecording,
+                           useMicPlayback.start)
+  └─ ensureMicHold() → one keep-alive getUserMedia stream (cancels pending release)
+capture ends (same call sites)
+  └─ scheduleMicRelease() → 8s linger timer → releaseMicHold()
+        (next recording cancels it → all-mic games stay warm end-to-end;
+         mixed games drop the mic dot seconds after a say-question)
+hashchange off /game/* or pagehide → releaseMicHold() immediately
+
+WHY: the OS freezes frame delivery for 175–524ms when an audio capture closes;
+held device ⇒ per-answer captures don't close the device ⇒ confetti smooth.
+Details: project_confetti_first_burst_lag memory + backlog §5 G1.
+```
+
 ## Daily Login
 
 ```
