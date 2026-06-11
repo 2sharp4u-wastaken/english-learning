@@ -167,9 +167,112 @@ real want, and fold the parent-password fix in.**
 
 ---
 
+## 7. MOBILE1 — small-phone & Android play-test findings (2026-06-11)
+
+From the first real-device play-test of the live site (Android tablet + small
+Android phone). Planned with the user 2026-06-11; product decisions inline.
+
+### M1 🔴 Android mic: recognition records silence (tablet + phone)
+**Fix implemented 2026-06-11 (pending on-device verify + deploy):**
+`src/lib/platform.ts` `isAndroid()` no-ops both `ensureMicHold()` and
+`useMicPlayback.start()` on Android (the hear-yourself button self-hides —
+it's gated on the captured URL). Unit-pinned in `micHold.test.ts`. **Verify on
+the tablet AND phone after the next `netlify deploy --prod`** — if recognition
+is still silent with our streams gone, see the fallback suspects below.
+
+Original finding: permission granted, green mic dot on, but nothing gets picked up. Prime suspect
+(code-level, not yet device-verified): the app holds EXTRA `getUserMedia`
+streams open while `webkitSpeechRecognition` runs — `useMicPlayback`'s
+hear-yourself recorder (Slice 3.11; Pronunciation/Practice/WJ say-word) and the
+`micHold` keep-alive (2026-06-11, ALL recording bridges). Desktop Chrome shares
+the mic between consumers; Android Chrome's recognition (Google service) gets
+silence while a page stream holds the device — the green dot is OUR stream, not
+recognition. Explains phone-never-worked (the playback stream predates micHold)
+AND tablet-worked-once-then-broke (the micHold deploy landed in between).
+micHold cures a macOS-only quirk (audio-device reconfigure freeze) — pointless
+on Android anyway. **Fix:** platform-gate BOTH off on Android (hide the
+"שמע את עצמך" button there); verify on both devices. If still silent after
+that, next suspects: recognition `lang`, Google-app speech service settings.
+
+### M2 🔴 Hebrew player names mangled (עידן→עדן, זוהר→זהר)
+`utils/nikudDOM.js` still walks the non-game React pages and replaces the name
+text with its nikud-map form, which drops matres lectionis (same mechanism as
+the `testing_legacy_nikud_injection` memory). **Fix: names are NEVER
+nikud-ized** — add a skip marker (e.g. `data-nikud-skip`) to nikudDOM and wrap
+every name render site (home greeting, TopNav, profile, login user cards,
+stats). Original spelling exactly as the parent typed it; no nikud on names.
+
+### M3 🟡 Small-phone game layout (one shared fix, all games)
+All games already use `GameScreenShell fitViewport` (footer pinned, only
+`<main>` scrolls) — but on a small phone the pinned chrome (GameHeader +
+GameHero + QuestionProgress) eats so much height that `<main>` overflows: the
+question top scrolls away, and the scroll offset persists into the next
+question. Plan:
+- **Compact chrome below a height breakpoint** in `GameScreenShell`: collapse
+  `GameHero` (game name moves as small text into the header row), slim the
+  header, thin progress strip. One change → every game inherits it. Static
+  compact mode, not scroll-triggered auto-hide (predictable for kids); iterate
+  visually on the device.
+- **Scroll reset on question change**: reset `<main>` scrollTop when the
+  question index advances (shared mechanism in the shell).
+- **WJ stage indicator**: compact dots-only variant of `WJStageBar` on narrow
+  screens (currently unreadable at phone width).
+- **Content-fit audit** at ~360×640: shrink paddings/fonts on the biggest
+  offenders (AnswerGrid media cards, MediaPromptCard) so `<main>` stops
+  overflowing at all — scrolling mid-question is the failure mode to eliminate.
+- **Memory game (decision: rotate hint)**: portrait phone on big-grid levels
+  shows a friendly rotate-the-device hint; landscape gets a wider grid via the
+  existing `bridge/memory.ts` sizing knobs (no Screen-Orientation lock — only
+  works installed/fullscreen).
+
+### M4 🟡 First-run parent onboarding wizard
+Replace the bare create-first-profile form with a friendly first-run flow
+(Hebrew, **no nikud** — adult-facing; beautiful, not wordy): welcome / what the
+app is → create player profile(s) → set the parent password (reuse the
+ParentPasswordModal wizard) → pointer to the parent area + link to the guide.
+**Guide (decision): in-app `/parent-guide` route** — offline-capable, app-styled,
+linked from the wizard and from the parent area.
+
+### M5 🟢 Custom words without a parent API key (decision: server-assisted + share-back)
+Today `CustomWordsPanel` requires the parent's own Anthropic key
+(browser-direct call). Decision — Netlify Function with the project key, plus
+central word-sharing:
+- (a) `/.netlify/functions/word-import` proxy holding the project's Anthropic
+  key (Netlify env var) — parents never need a key; drop the key field from the
+  panel. Needs basic abuse guarding (rate limit, word-count cap) since usage
+  bills to the project key.
+- (b) The function also **logs each submission** (input words + generated
+  entries) to a central store (Netlify Blobs) so the project owner sees what
+  parents add — not just on that device.
+- (c) Review pipeline (future): owner reviews the queue → approves → bakes into
+  `data/categories/*` via the existing maintainer flow → next
+  `netlify deploy --prod` ships the words to all users. Automate only if volume
+  ever justifies it.
+This is the first real backend seam — keep it tiny; full accounts/sync remain §6.
+
+### M6 🟢 Settings header buttons → parent area
+Move both off the kid-visible settings header into the protected כלי הורה tab:
+- **לוגים** — downloads the in-memory console log; keep it (it's the
+  bug-report-from-the-tablet tool, e.g. for M1).
+- **איפוס הגדרות** — already password-gated and only resets *settings* (not
+  progress); just relocate it.
+- ⏸ Parked: make the captured log more verbose/descriptive (scope what
+  consoleLogger records) — user flagged it may not be useful enough yet.
+
+### M7 🟡 שלום-{name} greeting TTS flaky on tablet
+`speechSynthesis.js` binds `this.hebrewVoice` once at init; Android loads
+voices late, so the voice can be null at tap time and `lang='he-IL'` alone
+doesn't always resolve a voice. **Fix:** re-resolve the Hebrew voice at speak
+time + `voiceschanged` listener (same readiness pattern as
+`feedback_game_audio_autoplay_pattern`). Verify on the tablet (phone was fine).
+
+---
+
 ### Suggested order
-INFRA1 spike + a tablet play-test together (surfaces real-user issues) → the
-milestone-cert bug (clear fix, but needs the recalibration decision first) → E2E
-backfill for the mic/WJ paths (stub now exists) → polish grab-bag as time allows.
-C2/C3 unblock the moment you drop the two images; G1 unblocks the moment you paste
-the profiler numbers.
+**MOBILE1 first — it's what the live play-test surfaced:** M1 (mic — core
+feature broken on the target devices) → M2 (names — personal and visible) → M3
+(layout) → M4 (onboarding) → M6 (quick) → M7 (tablet TTS) → M5 (needs the
+Netlify function + key setup). Then the milestone-cert bug (clear fix, but
+needs the recalibration decision first) → E2E backfill for the mic/WJ paths
+(stub now exists) → polish grab-bag as time allows. C2/C3 unblock the moment
+you drop the two images.

@@ -122,6 +122,13 @@ hashchange off /game/* or pagehide → releaseMicHold() immediately
 WHY: the OS freezes frame delivery for 175–524ms when an audio capture closes;
 held device ⇒ per-answer captures don't close the device ⇒ confetti smooth.
 Details: project_confetti_first_burst_lag memory + backlog §5 G1.
+
+ANDROID GATE (M1, 2026-06-11): isAndroid() (src/lib/platform.ts) no-ops BOTH
+ensureMicHold() and useMicPlayback.start() — Android Chrome's speech
+recognition hears silence while the page holds any other getUserMedia stream
+(the broken-mic bug on tablet/phone), and the freeze this cures is macOS-only.
+The "שמע את עצמך" button self-hides there (it's gated on the captured URL).
+ANY future parallel-capture feature must respect the same gate.
 ```
 
 ## Daily Login

@@ -19,6 +19,8 @@
  * say-question. Verified live: held stream ⇒ smooth burst.
  */
 
+import { isAndroid } from '@/lib/platform'
+
 const LINGER_MS = 8000
 
 let holdStream: MediaStream | null = null
@@ -38,6 +40,9 @@ function cancelReleaseTimer(): void {
  * touch the mic beyond their own recognition.
  */
 export function ensureMicHold(): void {
+  // M1: never hold on Android — the freeze this cures is macOS-only, and a
+  // page-held stream starves Android's speech recognition into silence.
+  if (isAndroid()) return
   cancelReleaseTimer()
   if (holdStream || acquiring) return
   if (typeof navigator === 'undefined' || !('mediaDevices' in navigator)) return

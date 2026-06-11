@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { ensureMicHold, scheduleMicRelease } from '@/bridge/micHold'
+import { isAndroid } from '@/lib/platform'
 
 /**
  * Parallel mic capture for a "hear yourself" playback button.
@@ -36,6 +37,10 @@ export function useMicPlayback(): MicPlayback {
   }, [])
 
   const start = useCallback(async () => {
+    // M1: a parallel capture stream starves Android's speech recognition into
+    // silence, so the hear-yourself feature is desktop-only. `stop()` then
+    // resolves null and the "שמע את עצמך" button (gated on the URL) never shows.
+    if (isAndroid()) return
     if (!('mediaDevices' in navigator) || typeof MediaRecorder === 'undefined') return
     try {
       // G1: keep the audio device alive through capture + celebration (micHold.ts).

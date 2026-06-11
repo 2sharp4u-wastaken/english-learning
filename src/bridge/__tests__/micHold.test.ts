@@ -93,6 +93,25 @@ describe('micHold', () => {
     expect(isMicHeld()).toBe(false)
   })
 
+  it('never holds on Android (M1: a page-held stream starves speech recognition)', async () => {
+    // Shadow jsdom's prototype getter with an Android UA for this test only.
+    Object.defineProperty(navigator, 'userAgent', {
+      value: 'Mozilla/5.0 (Linux; Android 14; Pixel 8) AppleWebKit/537.36 Chrome/126 Mobile Safari/537.36',
+      configurable: true,
+    })
+    try {
+      const { stream } = makeFakeStream()
+      const getUserMedia = installGUM(() => Promise.resolve(stream))
+
+      ensureMicHold()
+      await Promise.resolve()
+      expect(getUserMedia).not.toHaveBeenCalled()
+      expect(isMicHeld()).toBe(false)
+    } finally {
+      delete (navigator as { userAgent?: string }).userAgent // restore prototype getter
+    }
+  })
+
   it('is a safe no-op when getUserMedia rejects, and can retry later', async () => {
     installGUM(() => Promise.reject(new Error('denied')))
     ensureMicHold()
