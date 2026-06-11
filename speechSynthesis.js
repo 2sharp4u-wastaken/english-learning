@@ -101,6 +101,19 @@ class SpeechManager {
             this.recognition.interimResults = false;
             this.recognition.lang = 'en-US';
             this.recognition.maxAlternatives = 1;
+
+            // M9 diagnostics: Android devices fail with a silent onend (no
+            // result, no error). These lifecycle events tell the downloaded
+            // log WHERE the pipeline died: no audiostart = the service never
+            // received audio (device/service config); audiostart without
+            // speechstart = audio flows but no speech detected; nomatch =
+            // heard speech it couldn't transcribe.
+            ['audiostart', 'soundstart', 'speechstart', 'speechend', 'soundend', 'audioend', 'nomatch']
+                .forEach((ev) => {
+                    this.recognition.addEventListener(ev, () => {
+                        console.log(`[Speech] recognition event: ${ev}`);
+                    });
+                });
         }
     }
 

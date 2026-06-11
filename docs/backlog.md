@@ -296,6 +296,15 @@ add-to-home-screen instructions there instead.
 - recognition watchdog: no result/error/end within 15s → `abort()` → the
   game's retry path (cures "green dot on, app stuck, can't progress");
 - `cancelSpeech()` now actually cancels on Android only;
+- **M9c diagnostics (phone log 21:29Z, M9b bundle):** the PHONE never gets a
+  single result — every attempt (and its M9b retry) ends silently ~2.5s in
+  with NO error event at all, which points at the device's Google speech
+  service failing internally (our green dot only proves the browser opened
+  the mic). Added permanent recognition lifecycle logging
+  (audiostart/soundstart/speechstart/nomatch/…) so the next log shows WHERE
+  the pipeline dies. User checks: does Google voice search itself work in
+  Chrome on the phone? Google app → Permissions → Microphone; update
+  "Speech Recognition & Synthesis" from Play Store.
 - **M9b (2nd tablet log, 20:54Z — new bundle confirmed live):** the wedge
   fixes work (queue unwedges, watchdogs recover, recognitions DO succeed
   now), but recognition still sometimes ends ~2.5s in with NO result and NO
