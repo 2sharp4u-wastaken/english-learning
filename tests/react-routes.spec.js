@@ -551,11 +551,10 @@ test.describe('Slice 1.6: Settings', () => {
     expect(legacy?.selectedCategories).toContain('weather');
   });
 
-  test('reset settings flow: gate → confirm → defaults restored', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await seedUser(page);
-    await seedParentPassword(page);
-    await gotoHash(page, '/settings');
+  test('reset settings flow: parent-tools gate → confirm → defaults restored (M6)', async ({ page }) => {
+    // M6: the reset button moved off the kid-visible settings header into the
+    // parent-gated כלי הורה tab (the tab unlock IS the password gate now).
+    await openAdvancedTools(page);
 
     // Pre-mutate the persisted settings so we have something to reset
     await page.evaluate(() => {
@@ -564,32 +563,11 @@ test.describe('Slice 1.6: Settings', () => {
       localStorage.setItem('englishLearningSettings', JSON.stringify(mutated));
     });
 
-    // Click the reset button (lucide rotate-ccw icon inside header). Hebrew text
-    // contains injected nikud so we can't reliably filter by visible text.
-    const resetBtn = page.locator('#react-root header button:has(svg.lucide-rotate-ccw)');
-    await expect(resetBtn).toBeVisible({ timeout: 3000 });
-    await resetBtn.click();
+    // The kid-visible header has no maintenance buttons anymore.
+    await expect(page.locator('#react-root header button:has(svg.lucide-rotate-ccw)')).toHaveCount(0);
 
-    // Password modal opens (user is not auto-admin)
-    await expect(page.locator('#parent-password')).toBeVisible({ timeout: 3000 });
-    await page.locator('#parent-password').fill(PARENT_PASSWORD);
-    await page.locator('#parent-password').press('Enter');
-    await expect(page.locator('#parent-password')).not.toBeVisible();
-
-    // Confirm dialog appears — click destructive "איפוס" via JS (nikud-stripped exact match)
-    // Substring without yod (legacy collapses איפוס → אפוס after stripping nikud)
-    await expect.poll(() => hasText(page, 'כל ההגדרות'), { timeout: 3000 }).toBe(true);
-    await page.evaluate(() => {
-      const strip = (s) => (s || '').replace(/[֑-ׇ]/g, '');
-      // The confirm button is inside the modal at z-50 (no header tag), exact text "איפוס"
-      const btn = Array.from(document.querySelectorAll('button')).find((b) => {
-        const inHeader = b.closest('header');
-        const t = strip(b.textContent || '').trim();
-        // Legacy nikud collapses איפוס → אפוס (yod dropped after stripping)
-        return !inHeader && (t === 'איפוס' || t === 'אפוס');
-      });
-      btn?.dispatchEvent(new MouseEvent('click', { bubbles: true }));
-    });
+    await page.locator('[data-testid="tools-reset-settings"]').click();
+    await page.locator('[data-testid="tools-reset-confirm"]').click();
 
     // Defaults should be back in both keys
     await expect.poll(() => page.evaluate(() => {
@@ -624,6 +602,10 @@ test.describe('Slice 1.6: Settings', () => {
     // Custom Words panel (textarea) + Word Images panel (list) both render.
     await expect(page.locator('#react-root textarea')).toBeVisible();
     await expect(page.locator('[data-testid="word-images-list"]')).toBeVisible();
+
+    // M6: maintenance actions (logs download + settings reset) live here now.
+    await expect(page.locator('[data-testid="tools-download-logs"]')).toBeVisible();
+    await expect(page.locator('[data-testid="tools-reset-settings"]')).toBeVisible();
 
     // No legacy escape hatch links remain.
     await expect(page.locator('#react-root a[href="settings.html"]')).toHaveCount(0);
