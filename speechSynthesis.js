@@ -1,5 +1,12 @@
 // Speech Synthesis and Recognition for English Learning Games
 
+// M9 (2026-06-11): Android's speech engine sometimes never starts/finishes an
+// utterance; the desktop-safe "never cancel()" policy then wedges the queue
+// forever (every later speak() is skipped) and can starve recognition too.
+// Android therefore gets cancel-based unwedging + watchdogs below, while
+// desktop behavior is unchanged. Mirrors src/lib/platform.ts isAndroid().
+const SPEECH_IS_ANDROID = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
+
 class SpeechManager {
     constructor() {
         this.synthesis = window.speechSynthesis;
@@ -195,39 +202,111 @@ class SpeechManager {
     }
 
     async speak(text, options = {}) {
-        // CHROME BUG WORKAROUND: Calling cancel() corrupts Chrome's speech engine.
-        // Instead: allow 1 item to queue so rapid taps feel responsive.
-        // If the queue already has a pending item, skip (prevents unbounded backlog).
+        // CHROME BUG WORKAROUND (desktop): Calling cancel() corrupts Chrome's
+        // speech engine. Instead: allow 1 item to queue so rapid taps feel
+        // responsive; if the queue already has a pending item, skip.
+        // M9: on Android the opposite holds — a stuck utterance keeps `pending`
+        // true FOREVER, so skipping silences the app permanently. There,
+        // cancel() the wedged queue and proceed.
         if (!options.allowOverlap) {
             if (this.synthesis.pending) {
-                console.log('[Speech] Queue full - skipping');
-                return Promise.resolve();
+                if (SPEECH_IS_ANDROID) {
+                    console.warn('[Speech] Queue busy on Android - cancel() to unwedge');
+                    this.synthesis.cancel();
+                } else {
+                    console.log('[Speech] Queue full - skipping');
+                    return Promise.resolve();
+                }
             }
         }
 
-        const utterance = new SpeechSynthesisUtterance(text);
-
-        // Route voice/language by requested content language
-        if (options.language === 'hebrew') {
-            if (this.hebrewVoice) {
-                utterance.voice = this.hebrewVoice;
-            }
-            utterance.lang = this.hebrewVoice?.lang || 'he-IL';
-        } else if (this.englishVoice) {
-            utterance.voice = this.englishVoice;
-            utterance.lang = 'en-US';
+        // M7: Android loads TTS voices late — re-resolve at speak time if the
+        // needed voice is still missing instead of trusting the boot-time pick.
+        if (options.language === 'hebrew' && !this.hebrewVoice) {
+            this.voices = this.synthesis.getVoices();
+            this.selectVoices();
         }
 
-        // Use browser defaults for rate, pitch, and volume
+        return this._speakUtterance(text, options, SPEECH_IS_ANDROID ? 1 : 0);
+    }
 
-        this.synthesis.speak(utterance);
+    _speakUtterance(text, options, retriesLeft) {
+        return new Promise((resolve) => {
+            const utterance = new SpeechSynthesisUtterance(text);
 
-        return new Promise((resolve, reject) => {
-            utterance.onend = resolve;
+            // Route voice/language by requested content language
+            if (options.language === 'hebrew') {
+                if (this.hebrewVoice) {
+                    utterance.voice = this.hebrewVoice;
+                }
+                utterance.lang = this.hebrewVoice?.lang || 'he-IL';
+            } else if (this.englishVoice) {
+                utterance.voice = this.englishVoice;
+                utterance.lang = 'en-US';
+            }
+
+            // Use browser defaults for rate, pitch, and volume
+
+            // Keep a live reference — Chrome may GC the utterance mid-speech,
+            // silently dropping its onend (a long-known speechSynthesis bug).
+            this._activeUtterance = utterance;
+
+            // M9 watchdogs: never let a speak() promise hang. If the utterance
+            // never STARTS, the engine is wedged — on Android cancel()+retry
+            // once, then give up gracefully. If it never ENDS, force-settle
+            // after a generous text-scaled cap.
+            let settled = false;
+            let started = false;
+            const maxMs = Math.min(15000, 3000 + 120 * text.length);
+
+            const finish = () => {
+                if (settled) return;
+                settled = true;
+                clearTimeout(startTimer);
+                clearTimeout(maxTimer);
+                if (this._activeUtterance === utterance) this._activeUtterance = null;
+                resolve();
+            };
+
+            utterance.onstart = () => {
+                started = true;
+            };
+            utterance.onend = finish;
             utterance.onerror = (e) => {
                 console.warn('Speech error:', e.error);
-                resolve(); // Resolve anyway to not break game flow
+                finish(); // Resolve anyway to not break game flow
             };
+
+            const startTimer = setTimeout(() => {
+                if (settled || started) return;
+                if (!SPEECH_IS_ANDROID && (this.synthesis.speaking || this.synthesis.pending)) {
+                    // Desktop: engine legitimately busy with an earlier utterance —
+                    // ours is queued, not wedged. maxTimer stays as the safety net.
+                    return;
+                }
+                console.warn('[Speech] Watchdog: utterance never started (engine wedged?)');
+                if (SPEECH_IS_ANDROID) {
+                    this.synthesis.cancel();
+                    if (retriesLeft > 0) {
+                        settled = true;
+                        clearTimeout(maxTimer);
+                        setTimeout(() => {
+                            this._speakUtterance(text, options, retriesLeft - 1).then(resolve);
+                        }, 250);
+                        return;
+                    }
+                }
+                finish();
+            }, 3000);
+
+            const maxTimer = setTimeout(() => {
+                if (settled) return;
+                console.warn('[Speech] Watchdog: utterance exceeded max duration - force-settling');
+                if (SPEECH_IS_ANDROID) this.synthesis.cancel();
+                finish();
+            }, maxMs);
+
+            this.synthesis.speak(utterance);
         });
     }
 
@@ -338,7 +417,28 @@ class SpeechManager {
             this.currentRecordingReject = reject; // Store reject function for manual stop
             console.log('[Speech] Recognition starting...');
 
+            // M9 watchdog: a wedged speech service can leave recognition "on"
+            // (green mic dot) but deliver NO result/error/end — the promise
+            // would hang and the game freezes. Force an abort after 15s; the
+            // 'aborted' onerror path settles the promise so the game can show
+            // its retry message. Chrome's own no-speech timeout (~8s) normally
+            // fires long before this.
+            const recogWatchdog = setTimeout(() => {
+                if (!this.isRecording) return;
+                console.warn('[Speech] Watchdog: recognition delivered no events in 15s - aborting');
+                try {
+                    this.recognition.abort();
+                } catch (e) {
+                    // abort() itself failed — settle manually so the caller unblocks
+                    this.isRecording = false;
+                    const rejectFn = this.currentRecordingReject;
+                    this.currentRecordingReject = null;
+                    if (rejectFn) rejectFn(new Error('RECORDING_CANCELLED'));
+                }
+            }, 15000);
+
             this.recognition.onresult = (event) => {
+                clearTimeout(recogWatchdog);
                 this.isRecording = false;
                 this.currentRecordingReject = null; // Clear reject function
                 const transcript = event.results[0][0].transcript.toLowerCase().trim();
@@ -352,6 +452,7 @@ class SpeechManager {
             };
 
             this.recognition.onerror = (event) => {
+                clearTimeout(recogWatchdog);
                 console.error(`[Speech] Recognition onerror: "${event.error}" | isRecording=${this.isRecording} | hasReject=${!!this.currentRecordingReject}`);
                 this.isRecording = false;
 
@@ -385,6 +486,7 @@ class SpeechManager {
             };
 
             this.recognition.onend = () => {
+                clearTimeout(recogWatchdog);
                 console.log(`[Speech] Recognition onend | isRecording=${this.isRecording} | hasReject=${!!this.currentRecordingReject}`);
                 this.isRecording = false;
                 // If there's still a pending reject (meaning user stopped manually), call it
@@ -411,9 +513,16 @@ class SpeechManager {
     }
 
     cancelSpeech() {
-        // DISABLED: cancel() corrupts Chrome's speech engine
-        // Let speech finish naturally instead
-        console.log('[Speech] cancelSpeech() called but DISABLED to prevent Chrome corruption');
+        // DISABLED on desktop: cancel() corrupts Chrome's speech engine —
+        // let speech finish naturally instead.
+        // M9: on Android cancel() is the cure, not the disease — it's the only
+        // way to unstick a wedged utterance (and it doesn't corrupt there).
+        if (SPEECH_IS_ANDROID) {
+            console.log('[Speech] cancelSpeech() — Android: cancelling');
+            this.synthesis.cancel();
+        } else {
+            console.log('[Speech] cancelSpeech() called but DISABLED to prevent Chrome corruption');
+        }
         this.currentGameContext = null;
     }
 

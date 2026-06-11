@@ -212,7 +212,11 @@ question. Plan:
   `GameHero` (game name moves as small text into the header row), slim the
   header, thin progress strip. One change → every game inherits it. Static
   compact mode, not scroll-triggered auto-hide (predictable for kids); iterate
-  visually on the device.
+  visually on the device. **Confirmed worst case (2026-06-11 device test):
+  phone LANDSCAPE — chrome fills almost the whole ~350–400px height, leaving a
+  sliver of scrollable `<main>`. The breakpoint must be on viewport HEIGHT
+  (e.g. `@media (max-height: ~480px)` + a milder ~600px tier), which covers
+  portrait small phones and landscape with the same mechanism.**
 - **Scroll reset on question change**: reset `<main>` scrollTop when the
   question index advances (shared mechanism in the shell).
 - **WJ stage indicator**: compact dots-only variant of `WJStageBar` on narrow
@@ -250,21 +254,63 @@ central word-sharing:
   ever justifies it.
 This is the first real backend seam — keep it tiny; full accounts/sync remain §6.
 
-### M6 🟢 Settings header buttons → parent area
-Move both off the kid-visible settings header into the protected כלי הורה tab:
-- **לוגים** — downloads the in-memory console log; keep it (it's the
-  bug-report-from-the-tablet tool, e.g. for M1).
-- **איפוס הגדרות** — already password-gated and only resets *settings* (not
-  progress); just relocate it.
+### M6 ✅ Settings header buttons → parent area (SHIPPED 2026-06-11)
+Both buttons moved off the kid-visible settings header into a "תחזוקה"
+SectionCard in the protected כלי הורה tab (`AdvancedToolsTab`): **הורדת
+לוגים** (downloads the in-memory console log — the bug-report-from-the-tablet
+tool, e.g. for M1/M9) and **איפוס הגדרות** (inline confirm; the tab unlock is
+the password gate now — the old header-button password plumbing was removed
+from `SettingsPage`). Tests repointed (`reset settings flow` + advanced-tools
+render assertions in `react-routes.spec.js`); nikud map regenerated (+7).
 - ⏸ Parked: make the captured log more verbose/descriptive (scope what
   consoleLogger records) — user flagged it may not be useful enough yet.
 
 ### M7 🟡 שלום-{name} greeting TTS flaky on tablet
-`speechSynthesis.js` binds `this.hebrewVoice` once at init; Android loads
-voices late, so the voice can be null at tap time and `lang='he-IL'` alone
-doesn't always resolve a voice. **Fix:** re-resolve the Hebrew voice at speak
-time + `voiceschanged` listener (same readiness pattern as
-`feedback_game_audio_autoplay_pattern`). Verify on the tablet (phone was fine).
+**Code fix shipped 2026-06-11 with M9** (speak-time Hebrew-voice re-resolution
+in `speechSynthesis.js speak()`); pending tablet verify. NOTE: if the tablet
+has NO Hebrew TTS voice installed, no code can help — check Android Settings →
+Text-to-speech output → Google Speech Services → Install voice data → עברית.
+
+### M8 🟢 In-app PWA install button
+Chrome's automatic install banner is heuristic (engagement threshold; 90-day
+suppression after a dismissal) — the tablet got it, the phone didn't. Add an
+"התקינו את האפליקציה" button in the parent area: capture the
+`beforeinstallprompt` event (suppress default, stash it), show the button only
+while the stashed prompt exists and the app isn't already standalone
+(`display-mode: standalone` media query), call `prompt()` on tap. Hide on
+iOS/unsupported browsers (no event) — optionally show the manual
+add-to-home-screen instructions there instead.
+
+### M9 🔴 Android PWA audio/TTS wedge (tablet, 2026-06-11)
+**Fix implemented 2026-06-11 (pending on-device verify + deploy)** — all in
+`speechSynthesis.js`, Android-gated via `SPEECH_IS_ANDROID` (mirrors
+`src/lib/platform.ts`):
+- busy-queue → `cancel()` + proceed on Android (desktop keeps skip-forever);
+- utterance watchdogs: never-started (3s; Android cancel+retry once;
+  desktop skips while engine legitimately busy) + never-ended
+  (text-scaled cap ≤15s) so a `speak()` promise can never hang; live
+  utterance ref kept against the Chrome GC-drops-onend bug;
+- recognition watchdog: no result/error/end within 15s → `abort()` → the
+  game's retry path (cures "green dot on, app stuck, can't progress");
+- `cancelSpeech()` now actually cancels on Android only.
+Repro that motivated it (tablet PWA, post-M1): ABC recording worked a couple
+of questions then stopped (green dot on, no pickup, no progress); hero sounds
+intermittently dead (owl/greeting/score effects). Original analysis:
+- **TTS queue wedge:** `speechSynthesis.js` skips every `speak()` while
+  `synthesis.pending` is true, and `cancel()` is deliberately NEVER called
+  (desktop-Chrome corruption workaround, see comments at ~198/414). Android's
+  speech engine is known to stick mid-utterance → `pending` true forever →
+  every later utterance silently skipped ("[Speech] Queue full - skipping").
+  Likely fix: Android-only watchdog — if pending/speaking persists >Xs with no
+  onstart/onend events, call `cancel()` (the corruption bug the workaround
+  guards against is desktop Chrome; re-verify on Android) and retry once.
+- **Audio-focus cascade:** a wedged speech service can cost the WebAPK process
+  its audio focus → `AudioContext.resume()` hangs → every Web-Audio effect
+  awaits forever (audio-effects.js awaits resume() before each play — add a
+  timeout). Mic recognition failing at the same moment fits the same wedge.
+**Evidence to collect (user):** force-stop + reopen the PWA — does everything
+recover? When wedged, download לוגים and check for repeated queue-full lines.
+Related: M7 (greeting flakiness may be an early/mild form of the same wedge).
 
 ---
 
