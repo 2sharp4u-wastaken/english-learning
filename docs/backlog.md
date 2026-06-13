@@ -232,10 +232,70 @@ question. Plan:
 ### M4 🟡 First-run parent onboarding wizard
 Replace the bare create-first-profile form with a friendly first-run flow
 (Hebrew, **no nikud** — adult-facing; beautiful, not wordy): welcome / what the
-app is → create player profile(s) → set the parent password (reuse the
-ParentPasswordModal wizard) → pointer to the parent area + link to the guide.
-**Guide (decision): in-app `/parent-guide` route** — offline-capable, app-styled,
-linked from the wizard and from the parent area.
+app is → **create the parent/admin account (M12)** → create player profile(s) →
+set the parent password (= the parent account's credential) → pointer to the
+parent area + link to the guide. **Guide (decision): in-app `/parent-guide`
+route** — offline-capable, app-styled, linked from the wizard and parent area.
+**Now coupled to M12** — the wizard is where the parent account is born; build
+M12's model first (or together) so the wizard creates a real account, not just
+a device password.
+
+### M12 🟢 Parent/Admin account — own the protected "backend" area (design 2026-06-14)
+**Goal (user, 2026-06-14):** promote the protected/parent area from a bare
+per-device *password* into a first-class **parent/admin account** that owns all
+the "backend" functions — everything currently password-gated — created in the
+M4 setup wizard. The original trigger was wanting a parent-side "unlock games
+for testing" affordance (see sub-item below); that belongs on this account.
+
+**Big realisation — most of the model already exists, just isn't wired to
+access.** `src/bridge/auth.ts` users already carry a `role`
+(`student` | `parent` | `manager`), there's an `isParentOrManager()` helper, and
+`UsersTab` can already flag a profile as `parent`. But **today's gating ignores
+role** — `useParentPassword`/`SettingsPage` only check the per-device
+`parentPassword` hash (Tier 2). So this is "promote the latent role into the
+real access model," not build-from-scratch.
+
+**Proposed model (client-only — NOT §6 security; recommended defaults, forks
+flagged):**
+- **One parent/admin account per device**, role `parent`, created by the M4
+  wizard (name + password). Its password IS the `parentPassword` hash — one
+  credential, no second secret. `manager` stays **reserved** for the future
+  project-owner/global admin that the M5 word-review pipeline needs (don't
+  conflate the two).
+- **Access = password-elevation tied to the account, NOT profile-switching.**
+  Kids and parent share the device; entering the parent password elevates the
+  *current* session into "parent mode" for a timeout window, without logging the
+  kid out. (Recommended over "log in as the parent user" — far less friction on
+  a shared tablet. Fork: if you'd rather a hard profile switch, say so.)
+- **What the account owns (the whole protected surface, in one place):** all
+  parent-gated Settings tabs (game / advanced / expressions / users / כלי הורה),
+  the M6 תחזוקה card (logs + reset), the M5 custom-words submission, the
+  `/parent-guide`, and the **QA/testing panel** below. Single "parent area"
+  entry point, role-gated.
+- **Migration (no lockout):** existing devices have a `parentPassword` hash but
+  no parent *user*. On first parent-mode entry post-update, if a hash exists and
+  no `parent` user does, auto-create one wrapping it (or treat the device
+  password as the account credential). Untouched for devices that re-run the
+  wizard. Mirror the Tier-2 "covers existing devices, no migration step" promise.
+- **Still client-only:** every check is devtools-bypassable; this is
+  organisation/UX, not real secrecy. Real multi-device parent identity + true
+  enforcement = the §6 Tier-3 backend (fold in there if/when it happens).
+
+**Sub-item (the original ask) — 🟢 QA / "unlock for testing" panel.** In the
+parent area: open gated games without grinding to the thresholds — e.g. unlock
+the **ביטויים tier** (needs 50 derived-learned words; `getExpressionUnlock`),
+unlock individual locked games, optionally seed N learned words. Replaces the
+current console-only workaround (paste a `localStorage` snippet that fills
+`v2_userProgress_<uid>.learnedWords` from `window.vocabularyBank`). Keep it
+clearly a parent/QA tool, not kid-facing.
+
+**Decisions still needed from the user:** (a) elevation vs hard profile-switch
+(recommended: elevation); (b) does the QA panel ship to the public site or only
+a dev build; (c) whether `manager`/project-owner is in scope now or deferred
+with M5. **Cost:** a medium slice — touches auth gating, the wizard (M4), the
+settings entry point, and a migration; no backend. Sequence: design M12 → build
+with M4 → the QA panel can land first as a thin standalone if you want the
+testing unlock sooner.
 
 ### M5 🟢 Custom words without a parent API key (decision: server-assisted + share-back)
 Today `CustomWordsPanel` requires the parent's own Anthropic key
@@ -382,10 +442,13 @@ on-reload timing issue, not a product regression. Worth a separate look.
 ---
 
 ### Suggested order
-**MOBILE1 first — it's what the live play-test surfaced:** M1 (mic — core
-feature broken on the target devices) → M2 (names — personal and visible) → M3
-(layout) → M4 (onboarding) → M6 (quick) → M7 (tablet TTS) → M5 (needs the
-Netlify function + key setup). Then the milestone-cert bug (clear fix, but
+**MOBILE1 first — it's what the live play-test surfaced:** M1✅ → M6✅ → M9✅ →
+M10✅ → M11✅ done. Remaining: M2 (names — personal and visible) → M3 (layout) →
+**M12 + M4 together** (parent/admin account is where the onboarding wizard
+lands; the QA testing-unlock panel can ship first as a thin standalone if you
+want it sooner) → M7 (tablet TTS — likely just the device Hebrew-voice install)
+→ M8 (PWA install button) → M5 (needs the Netlify function + project key, and
+its `manager` role overlaps M12). Then the milestone-cert bug (clear fix, but
 needs the recalibration decision first) → E2E backfill for the mic/WJ paths
 (stub now exists) → polish grab-bag as time allows. C2/C3 unblock the moment
 you drop the two images.
