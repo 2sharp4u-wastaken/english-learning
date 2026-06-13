@@ -15,27 +15,11 @@ import {
   stopPronunciationRecording,
 } from '@/bridge/pronunciation'
 import { useMicPlayback } from '@/features/games/shared/useMicPlayback'
+import { isBalancedSpeechMatch } from '@/lib/speechMatch'
 import { cn } from '@/lib/cn'
 import { POINTS, type WJWord } from '@/bridge/word-journey'
 
 const ADVANCE_MS = 1400
-
-function levenshtein(a: string, b: string): number {
-  const m = a.length
-  const n = b.length
-  const dp = Array.from({ length: m + 1 }, () => new Array<number>(n + 1).fill(0))
-  for (let i = 0; i <= m; i++) dp[i][0] = i
-  for (let j = 0; j <= n; j++) dp[0][j] = j
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      dp[i][j] =
-        a[i - 1] === b[j - 1]
-          ? dp[i - 1][j - 1]
-          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
-    }
-  }
-  return dp[m][n]
-}
 
 interface Props {
   words: WJWord[]
@@ -102,15 +86,12 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
       return
     }
     setRecordingUrl(await mic.stop())
-    // Normalize numerals: the recognizer transcribes spoken numbers as digits
-    // ("nineteen" → "19"), which would never match the target word otherwise.
-    const said = normalizeSpokenNumerals((result.transcript || '').toLowerCase().trim())
-    const expected = normalizeSpokenNumerals(word.word.toLowerCase())
-    const correct =
-      said.length > 0 &&
-      (said.includes(expected) || expected.includes(said) || levenshtein(said, expected) <= 2)
+    // Balanced match (M10): the first-letter gate stops a near-homophone like
+    // "bat" passing for "cat"; numeral folding (19↔nineteen) is built in.
+    const correct = isBalancedSpeechMatch(word.word, result.transcript || '')
     // Show the numeral-normalized form ("19" → "nineteen") so the "אמרת" line
     // reads consistently with how the answer was scored.
+    const said = normalizeSpokenNumerals((result.transcript || '').toLowerCase().trim())
     setTranscript(said.length > 0 ? said : '(לא זוהה)')
     setIsCorrect(correct)
     setPhase('answered')

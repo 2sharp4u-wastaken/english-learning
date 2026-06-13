@@ -342,6 +342,27 @@ intermittently dead (owl/greeting/score effects). Original analysis:
 recover? When wedged, download לוגים and check for repeated queue-full lines.
 Related: M7 (greeting flakiness may be an early/mild form of the same wedge).
 
+### M10 ✅ Say-it games accepted wrong words (SHIPPED 2026-06-14)
+ABC say-letter, Phonics say-sound, and Word Journey say-word all shared one
+over-lenient matcher — `said.includes(target) || target.includes(said) ||
+levenshtein ≤ 2` — which accepted whole wrong words ("beach" for "peach": the
+two are even sibling words under the same `ea` sound), bare fragments ("ee"
+for the letter B), and nearly any short utterance against the tiny ABC
+phonetics ("see"/C scored as "bee"/B). **Audit result: those 3 were broken;
+Pronunciation + Practice were already fine** (they use
+`speechManager.comparePronunciation` — exact short-circuit, first-letter gate,
+short-word scaling, 0.7 bar). Fix: new pure `src/lib/speechMatch.ts`
+`isBalancedSpeechMatch()` mirroring comparePronunciation's principles
+(first-letter gate is what kills beach/peach + bee/see; numeral fold built in
+for WJ), wired into `bridge/abc.ts` (aliases=[bare letter]), `bridge/phonics.ts`,
+and `SayWordStage.tsx`; per-game local `levenshtein` helpers deleted. User
+picked the **Balanced** calibration (reject wrong words, still forgive ASR
+noise; an occasional real attempt may need a retry). Pinned:
+`src/lib/__tests__/speechMatch.test.ts` (9 cases incl. the exact reported
+false-accepts). FOLLOW-UP: converge comparePronunciation (legacy JS) onto this
+module so there's one matcher; left separate for now to avoid disturbing the
+on-device-proven Pronunciation/Practice path.
+
 ---
 
 ### Suggested order

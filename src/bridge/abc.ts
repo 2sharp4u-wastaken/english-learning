@@ -1,6 +1,7 @@
 import { setGameContext, cancelSpeech } from './audio'
 import { ensureMicHold, scheduleMicRelease } from './micHold'
 import { getApp, getGameManager } from '../engine/instances'
+import { isBalancedSpeechMatch } from '../lib/speechMatch'
 
 // Legacy data module — same one gameLogic.js imports. generateABCQuestions filters
 // mastered letters by `<letter>_abc` mastery; Slice 4.6 made it read that via an
@@ -259,10 +260,11 @@ export interface ABCSpeechOutcome extends ABCAnswerOutcome {
 }
 
 /**
- * Score a say-letter recording. Lenient match (legacy abc-game.js:483): accept
- * if the transcript contains the phonetic OR the letter name, or is within a
- * Levenshtein distance of 2 of the phonetic. Same mastery + scoring + index
- * advance as a multiple-choice answer.
+ * Score a say-letter recording. Balanced match (M10, src/lib/speechMatch.ts):
+ * the transcript must match the letter's phonetic ("bee") or the bare letter
+ * itself; a different letter ("see"/C for "bee"/B) is rejected by the
+ * first-letter gate. Replaced an over-lenient rule that accepted almost any
+ * short utterance. Same mastery + scoring + index advance as a MC answer.
  */
 export function recordABCSpeechAttempt(
   question: ABCQuestion,
@@ -271,12 +273,9 @@ export function recordABCSpeechAttempt(
   const transcript = (result.transcript || '').toLowerCase().trim()
   const expectedPhonetic = (question.phonetic || '').toLowerCase()
   const expectedLetter = (question.letterUpper || '').toLowerCase()
-  const isCorrect =
-    !!transcript &&
-    (transcript.includes(expectedPhonetic) ||
-      transcript.includes(expectedLetter) ||
-      expectedPhonetic.includes(transcript) ||
-      levenshtein(transcript, expectedPhonetic) <= 2)
+  const isCorrect = isBalancedSpeechMatch(expectedPhonetic, transcript, {
+    aliases: [expectedLetter],
+  })
 
   const mgr = getMgr()
   if (!mgr) return { isCorrect, pointsAwarded: 0, transcript }
@@ -293,23 +292,6 @@ export function recordABCSpeechAttempt(
     /* legacy logs */
   }
   return { isCorrect, pointsAwarded, transcript }
-}
-
-function levenshtein(a: string, b: string): number {
-  const m = a.length
-  const n = b.length
-  const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0))
-  for (let i = 0; i <= m; i++) dp[i][0] = i
-  for (let j = 0; j <= n; j++) dp[0][j] = j
-  for (let i = 1; i <= m; i++) {
-    for (let j = 1; j <= n; j++) {
-      dp[i][j] =
-        a[i - 1] === b[j - 1]
-          ? dp[i - 1][j - 1]
-          : 1 + Math.min(dp[i - 1][j], dp[i][j - 1], dp[i - 1][j - 1])
-    }
-  }
-  return dp[m][n]
 }
 
 // ─── Speech recognition (say-letter) ───────────────────────────────────────────
