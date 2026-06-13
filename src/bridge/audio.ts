@@ -1,3 +1,5 @@
+import { stripSpeechEmoji } from '@/lib/stripEmoji'
+
 interface LegacySpeechManager {
   speakWord(word: string, phonetic?: string, gameContext?: string | null, allowOverlap?: boolean): Promise<void>
   speak(text: string, options?: Record<string, unknown>): Promise<void>
@@ -49,9 +51,10 @@ export async function speakWord(
 
 export async function speak(text: string): Promise<void> {
   const sm = getSpeech()
-  if (!sm || !text) return
+  const clean = stripSpeechEmoji(text) // M11: never voice emoji (owl/encouragement bubbles)
+  if (!sm || !clean) return
   try {
-    await sm.speak(text)
+    await sm.speak(clean)
   } catch {
     /* swallow */
   }
@@ -59,9 +62,10 @@ export async function speak(text: string): Promise<void> {
 
 export async function speakHebrew(text: string): Promise<void> {
   const sm = getSpeech()
-  if (!sm || !text) return
+  const clean = stripSpeechEmoji(text) // M11: never voice emoji (owl/encouragement bubbles)
+  if (!sm || !clean) return
   try {
-    await sm.speak(text, { language: 'hebrew' })
+    await sm.speak(clean, { language: 'hebrew' })
   } catch {
     /* swallow */
   }

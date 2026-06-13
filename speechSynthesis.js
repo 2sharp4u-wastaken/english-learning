@@ -216,6 +216,13 @@ class SpeechManager {
     }
 
     async speak(text, options = {}) {
+        // M11: emojis must never be voiced. The React speak boundary
+        // (src/bridge/audio.ts) already strips via stripSpeechEmoji; this is
+        // the legacy-internal safety net (keep the regex in sync with that
+        // module). An emoji-only string strips to "" → nothing to say.
+        text = SpeechManager.stripSpeechEmoji(text);
+        if (!text) return Promise.resolve();
+
         // CHROME BUG WORKAROUND (desktop): Calling cancel() corrupts Chrome's
         // speech engine. Instead: allow 1 item to queue so rapid taps feel
         // responsive; if the queue already has a pending item, skip.
@@ -580,6 +587,18 @@ class SpeechManager {
     setGameContext(gameType) {
         this.currentGameContext = gameType;
         console.log('Speech context set to:', gameType);
+    }
+
+    // M11: strip emoji before speaking. Mirror of src/lib/stripEmoji.ts
+    // stripSpeechEmoji (this classic <script> can't import the TS module).
+    static stripSpeechEmoji(text) {
+        if (!text) return text;
+        return text
+            .replace(/[0-9#*]️?⃣/gu, '')   // keycap sequences (1️⃣)
+            .replace(/\p{Extended_Pictographic}/gu, '')
+            .replace(/[\u{FE00}-\u{FE0F}\u{200D}\u{20E3}\u{1F3FB}-\u{1F3FF}]/gu, '')
+            .replace(/\s+/g, ' ')
+            .trim();
     }
 
     // Map numerals the browser may return to their English word equivalents

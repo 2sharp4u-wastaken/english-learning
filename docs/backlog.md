@@ -363,6 +363,22 @@ false-accepts). FOLLOW-UP: converge comparePronunciation (legacy JS) onto this
 module so there's one matcher; left separate for now to avoid disturbing the
 on-device-proven Pronunciation/Practice path.
 
+### M11 ✅ TTS read emojis aloud (SHIPPED 2026-06-14)
+The owl mascot encouragement bubbles end with an emoji (🔥/🌟/🚀); the bubble
+keeps it visually but `speakHebrew(message)` voiced the whole string, so TTS
+read the emoji name ("...ממשיכים star"). Fixed at the speak boundary: new
+`src/lib/stripEmoji.ts` `stripSpeechEmoji()` (Extended_Pictographic + keycap/
+ZWJ/skin-tone/variation-selector handling) applied in `bridge/audio.ts`
+`speak`/`speakHebrew`, with a mirrored safety-net strip in `speechSynthesis.js`
+`speak()` (legacy chokepoint can't import the TS module — keep the two regexes
+in sync). Display text untouched. Tests: `src/lib/__tests__/stripEmoji.test.ts`.
+
+### Pre-existing (NOT MOBILE1) — unrelated smoke failures
+`smoke.spec.js` "continue CTA target is stable across loads (FU-HOME-continue)"
++ "10 learned words + ABC mastery: unlocks Reading" fail on the baseline
+(confirmed by stashing — independent of M10/M11). Likely a test session-expiry-
+on-reload timing issue, not a product regression. Worth a separate look.
+
 ---
 
 ### Suggested order
