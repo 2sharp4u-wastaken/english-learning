@@ -61,7 +61,7 @@ export function GameScreenShell({
           fitViewport ? 'min-h-0 pb-3' : 'pb-6',
         )}
       >
-        <GameHeader {...header} />
+        <GameHeader {...header} compact={compact} />
         <GameHero
           title={header.title}
           subtitle={header.subtitle}

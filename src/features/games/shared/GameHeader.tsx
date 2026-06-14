@@ -21,6 +21,9 @@ export interface GameHeaderProps {
   score?: number
   coins?: number
   onBack?: () => void
+  /** Short-viewport mode (M3) — tighter padding so the controls row costs less
+   *  height on small/landscape phones. Set by GameScreenShell. */
+  compact?: boolean
   className?: string
 }
 
@@ -28,6 +31,7 @@ export function GameHeader({
   score,
   coins,
   onBack,
+  compact,
   className,
 }: GameHeaderProps) {
   const navigate = useNavigate()
@@ -45,7 +49,8 @@ export function GameHeader({
   return (
     <header
       className={cn(
-        'flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-[color:var(--ink-900)]/80 px-4 py-3 backdrop-blur',
+        'flex items-center justify-between gap-3 rounded-2xl border border-white/5 bg-[color:var(--ink-900)]/80 px-4 backdrop-blur',
+        compact ? 'py-1.5' : 'py-3',
         className,
       )}
       data-testid="game-header"
@@ -53,7 +58,10 @@ export function GameHeader({
       <button
         type="button"
         onClick={handleBack}
-        className="flex items-center gap-1.5 rounded-full bg-white/5 px-3 py-2 text-sm font-medium text-[color:var(--slate-200)] transition hover:bg-white/10 hover:text-white"
+        className={cn(
+          'flex items-center gap-1.5 rounded-full bg-white/5 px-3 text-sm font-medium text-[color:var(--slate-200)] transition hover:bg-white/10 hover:text-white',
+          compact ? 'py-1' : 'py-2',
+        )}
         data-testid="game-header-back"
         aria-label="חזרה"
       >
@@ -68,7 +76,10 @@ export function GameHeader({
           data-testid="header-case-toggle"
           aria-pressed={caseMode === 'lowercase'}
           title="החלף רישיות (ABC / abc)"
-          className="flex h-9 items-center gap-1 rounded-full bg-white/5 px-3 text-xs font-bold text-[color:var(--slate-200)] transition hover:bg-white/10 hover:text-white"
+          className={cn(
+            'flex items-center gap-1 rounded-full bg-white/5 px-3 text-xs font-bold text-[color:var(--slate-200)] transition hover:bg-white/10 hover:text-white',
+            compact ? 'py-1.5' : 'py-2.5',
+          )}
         >
           <span className={caseMode === 'uppercase' ? 'text-white' : 'opacity-40'}>ABC</span>
           <span className="opacity-40">/</span>
@@ -80,7 +91,10 @@ export function GameHeader({
           data-testid="header-nikud-toggle"
           aria-pressed={showNikud}
           title="הצג/הסתר ניקוד (אֶ/א)"
-          className="flex h-9 min-w-[3.25rem] items-center justify-center gap-1 rounded-full bg-white/5 px-3 text-sm font-bold text-[color:var(--slate-200)] transition hover:bg-white/10 hover:text-white"
+          className={cn(
+            'flex min-w-[3.25rem] items-center justify-center gap-1 rounded-full bg-white/5 px-3 text-sm font-bold text-[color:var(--slate-200)] transition hover:bg-white/10 hover:text-white',
+            compact ? 'py-1.5' : 'py-2.5',
+          )}
         >
           <span className={showNikud ? 'text-white' : 'opacity-40'}>אֶ</span>
           <span className="opacity-40">/</span>
