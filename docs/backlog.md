@@ -228,8 +228,12 @@ question. Plan:
   portrait small phones and landscape with the same mechanism.**
 - **Scroll reset on question change**: reset `<main>` scrollTop when the
   question index advances (shared mechanism in the shell).
-- **WJ stage indicator**: compact dots-only variant of `WJStageBar` on narrow
-  screens (currently unreadable at phone width).
+- ✅ **WJ stage indicator (SHIPPED 2026-06-14):** was squeezed into the
+  `QuestionProgress` `center` slot (~80px on a phone → illegible blob). Moved to
+  a new full-width `below` slot under the fill bar; `WJStageBar` made responsive
+  — per-icon Hebrew labels + arrow connectors are `sm:`-only, narrow screens get
+  icons-only + the current stage named once (`wj-stage-current`). Verified at
+  360px.
 - **Content-fit audit** at ~360×640: shrink paddings/fonts on the biggest
   offenders (AnswerGrid media cards, MediaPromptCard) so `<main>` stops
   overflowing at all — scrolling mid-question is the failure mode to eliminate.

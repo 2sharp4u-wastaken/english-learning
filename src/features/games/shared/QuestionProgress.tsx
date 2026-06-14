@@ -8,13 +8,16 @@ export interface QuestionProgressProps {
   total: number
   onReset?: () => void
   /** Optional content centered in the top row, between the "שאלה N מתוך M"
-   *  label (right) and the reset button (left) — used by Word Journey to sit
-   *  its stage bar inside the progress strip (D1). */
+   *  label (right) and the reset button (left). */
   center?: ReactNode
+  /** Optional full-width content rendered BELOW the fill bar. Word Journey puts
+   *  its stage bar here so it gets the whole card width instead of being
+   *  squeezed into the cramped center slot on a phone (M3). */
+  below?: ReactNode
   className?: string
 }
 
-export function QuestionProgress({ current, total, onReset, center, className }: QuestionProgressProps) {
+export function QuestionProgress({ current, total, onReset, center, below, className }: QuestionProgressProps) {
   const nk = useNikud()
   const safeTotal = Math.max(total, 1)
   const safeCurrent = Math.max(0, Math.min(current, safeTotal))
@@ -58,6 +61,11 @@ export function QuestionProgress({ current, total, onReset, center, className }:
           data-testid="qp-fill"
         />
       </div>
+      {below ? (
+        <div className="pt-1" data-testid="qp-below">
+          {below}
+        </div>
+      ) : null}
     </div>
   )
 }
