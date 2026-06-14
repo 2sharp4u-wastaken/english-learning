@@ -323,6 +323,45 @@ central word-sharing:
   ever justifies it.
 This is the first real backend seam — keep it tiny; full accounts/sync remain §6.
 
+### M13 🟢 Parent picture upload → review → ship to everyone (design 2026-06-14)
+The image twin of M5 — crowdsource the missing/wrong vocab pictures (the C2/C3
+class) from parents, owner-reviewed before they reach prod. **What already
+exists:** `WordImagesPanel` + `bridge/customContent.setImageOverride` let a
+parent set a per-word image **locally** (base64 data-URL or URL → the
+`wordImageOverrides` map → `window.wordImageOverrides`, read synchronously by
+the render path). So local upload + live preview is DONE; only the share-back
+pipeline is missing. Proposed flow (shares M5's backend seam):
+- (a) **Upload UI:** add a file-pick + client-side downscale/crop (e.g. ≤256px,
+  re-encode to a small JPEG/WebP base64) to `WordImagesPanel` so a parent picks
+  a photo for a word; it applies locally immediately (today's override path).
+- (b) **Submit-to-owner:** a "שתפו את התמונה" button POSTs `{category, word,
+  imageBase64, device/profile id}` to `/.netlify/functions/image-submit`, which
+  stores it to **Netlify Blobs** (one entry per submission) for review. Cap
+  size + rate-limit (bills/stores to the project). Parent keeps the local
+  override regardless of submission state.
+- (c) **Owner review:** a private list (Netlify Blobs listing — minimal admin
+  page or just the dashboard/a script) shows pending images by word; approve →
+  the asset is written to `img/icons/<category>/<word>.<ext>` and `imageUrl`
+  added to the word in `data/categories/*` (the exact C2/C3 drop-in), then
+  `netlify deploy --prod` ships it to ALL users. Reject → discard.
+- (d) Automate the bake step only if volume justifies it; manual review first
+  (it's kids' content + a public bundle — keep a human gate).
+**Ties to M12:** the review/admin surface is `manager`-role (project owner), the
+same role M5 reserves — build both review queues (words + images) on one
+backend seam. Still client-trust on the parent side; not §6 security.
+
+### M14 ✅ Word Journey Discover spam-through (SHIPPED 2026-06-14)
+Stage 1 (Discover) only gated "next" behind a 1.4s dwell timer — kids who
+remember the pictures tapped through without listening/reading. Replaced the
+timer with a **listen-gate** (mirrors Vocabulary's `REQUIRED_PLAYS_BEFORE_REVEAL`
+idea): `REQUIRED_LISTENS = 2` — the auto-play on entry is listen #1, the child
+taps the speaker once more to enable "next". Friendly progress hint
+(`wj-discover-listen-hint`, `nk()`-wrapped) shows what to do; anti-softlock
+fallback advances if a tiny `audioPlaysAllowed` budget runs out first. User
+picked "listen twice" (over 3× / one-tap). Reading can't be machine-verified;
+the dwell-to-listen is the proxy. Test updated in `wj-step1.spec.js`; nikud map
++3.
+
 ### M6 ✅ Settings header buttons → parent area (SHIPPED 2026-06-11)
 Both buttons moved off the kid-visible settings header into a "תחזוקה"
 SectionCard in the protected כלי הורה tab (`AdvancedToolsTab`): **הורדת

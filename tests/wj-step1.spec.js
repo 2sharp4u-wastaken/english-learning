@@ -63,12 +63,19 @@ test('Discover audio button consumes the per-word listen budget', async ({ page 
   expect(await readBudget()).toBe(before - 1);
 });
 
-test('Discover advances to the next word once the Next button enables', async ({ page }) => {
+test('Discover gates Next behind a 2nd listen, then advances', async ({ page }) => {
   await seedAndStart(page);
   const counter = page.locator('[data-testid="wj-discover-counter"]');
   const next = page.locator('[data-testid="wj-discover-next"]');
   await expect(counter).toHaveAttribute('data-item', '1', { timeout: 6000 });
+
+  // The auto-play is listen #1; Next stays disabled and the hint is shown until
+  // the child taps the speaker for a 2nd listen.
+  await expect(page.locator('[data-testid="wj-discover-listen-hint"]')).toBeVisible({ timeout: 6000 });
+  await expect(next).toBeDisabled();
+  await page.locator('[data-testid="media-prompt-audio"]').click();
   await expect(next).toBeEnabled({ timeout: 6000 });
+
   await next.click();
   await expect(counter).toHaveAttribute('data-item', '2', { timeout: 6000 });
 });

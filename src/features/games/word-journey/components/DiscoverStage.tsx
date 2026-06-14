@@ -7,11 +7,15 @@ import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import { useNikud } from '@/bridge/nikud'
 import type { WJWord } from '@/bridge/word-journey'
 
-const MIN_DWELL_MS = 1400
+/** Listens required before "next" enables. The auto-play on entry counts as the
+ *  first; the child must tap the speaker once more to reach it. Replaced a bare
+ *  1.4s dwell timer that let kids spam "next" without ever hearing the word. */
+const REQUIRED_LISTENS = 2
 
 /** Stage 1 — passive exposure: see the word + picture, hear it (English, then
- *  Hebrew if vocalization is on). Unscored. "Next" enables after the word is
- *  spoken and a short dwell, so kids don't skip before hearing it. */
+ *  Hebrew if vocalization is on). Unscored. "Next" stays disabled until the word
+ *  has been heard REQUIRED_LISTENS times, so kids actually engage with the audio
+ *  instead of breezing through on memory of the pictures. */
 export function DiscoverStage({
   words,
   onComplete,
@@ -22,16 +26,16 @@ export function DiscoverStage({
   const { caseMode, showNikud } = useTextPrefs()
   const nk = useNikud()
   const [index, setIndex] = useState(0)
-  const [canAdvance, setCanAdvance] = useState(false)
+  // How many times the word has been heard this question (auto-play = 1).
+  const [listens, setListens] = useState(0)
   // Carried-forward Slice 3.0 parity: a visible play button with a per-word
   // listen budget (the auto-play exposure is free; manual replays are capped).
   const [playsLeft, setPlaysLeft] = useState<number>(() => getSettings().audioPlaysAllowed ?? 8)
   const word = words[index]
 
   useEffect(() => {
-    setCanAdvance(false)
+    setListens(0)
     setPlaysLeft(getSettings().audioPlaysAllowed ?? 8)
-    let cancelled = false
     // Defer the auto-play: React 18 StrictMode mounts→unmounts→remounts effects
     // in dev, so playing immediately fires twice. A deferred timer is cancelled
     // by the intermediate cleanup, leaving exactly one play.
@@ -46,17 +50,17 @@ export function DiscoverStage({
           /* ignore */
         }
       })()
+      setListens((n) => Math.max(n, 1)) // the auto-play is the first listen
     }, 200)
-    const dwellId = window.setTimeout(() => {
-      if (!cancelled) setCanAdvance(true)
-    }, MIN_DWELL_MS)
     return () => {
-      cancelled = true
       window.clearTimeout(playId)
-      window.clearTimeout(dwellId)
       cancelSpeech()
     }
   }, [word])
+
+  // Anti-softlock: if a parent set a tiny audio budget and it runs out before
+  // the threshold, let them advance rather than trap them on the word.
+  const canAdvance = listens >= REQUIRED_LISTENS || playsLeft <= 0
 
   const next = () => {
     if (index + 1 < words.length) setIndex((i) => i + 1)
@@ -84,6 +88,7 @@ export function DiscoverStage({
         onPlayAudio={() => {
           if (playsLeft <= 0) return
           setPlaysLeft((n) => Math.max(0, n - 1))
+          setListens((n) => n + 1)
           void speakWord(word.word.toLowerCase(), 'word-journey')
         }}
         audioDisabled={playsLeft <= 0}
@@ -91,6 +96,16 @@ export function DiscoverStage({
         audioHint={playsLeft > 0 ? `השמעות נותרו: ${playsLeft}` : 'נגמרו ההשמעות'}
         audioIconOnly
       />
+      {!canAdvance ? (
+        <p
+          dir="rtl"
+          data-testid="wj-discover-listen-hint"
+          data-listens={listens}
+          className="text-center text-sm font-semibold text-[color:var(--mint-300)]"
+        >
+          {nk('לחצו על הרמקול כדי לשמוע שוב')} ({listens}/{REQUIRED_LISTENS})
+        </p>
+      ) : null}
       <button
         type="button"
         onClick={next}
