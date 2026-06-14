@@ -247,9 +247,10 @@ question. Plan:
     Picture-Match, True-or-Not**. Verified at 800×370 (prompt right / options
     left, no scroll). Per-game change is ~mechanical: move the prompt card to
     the `prompt` prop, keep AnswerGrid as children.
-  - ⬜ **Batch 2 — text-prompt family** (Grammar, Fill-Blanks, BlankFill/
-    Articles+Progressive): no MediaPromptCard — the prompt is the sentence/
-    question block; wrap THAT in the `prompt` slot.
+  - ✅ **Batch 2 — text-prompt family (DONE 2026-06-14):** Grammar, Fill-Blanks,
+    BlankFill (Articles + Progressive) — moved the sentence/question card into
+    the `prompt` slot (key stays on it), AnswerGrid + WordTable as children.
+    Tests green (Grammar 5, Fill-Blanks 2, Articles/Progressive 2).
   - ⬜ **Batch 3 — special layouts:** Reading (LetterSlots), Word Journey (5
     stages + pin action buttons to the footer), Story Time, Sentence Scramble,
     ABC/Phonics. Each gets its own landscape arrangement on the same scaffold.

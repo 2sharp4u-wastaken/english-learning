@@ -361,10 +361,13 @@ export function BlankFillGamePage({
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
-        {current ? (
-          <div key={index} className="flex flex-1 flex-col gap-4">
-            <div className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-3xl border border-white/10 bg-[color:var(--ink-900)]/70 p-5 text-center backdrop-blur">
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        footer={footer}
+        prompt={
+          current ? (
+            <div key={index} className="mx-auto flex max-w-md flex-col items-center gap-3 rounded-3xl border border-white/10 bg-[color:var(--ink-900)]/70 p-5 text-center backdrop-blur">
               {current.emoji ? (
                 <span className="text-6xl leading-none" role="img" aria-hidden>
                   {current.emoji}
@@ -435,7 +438,11 @@ export function BlankFillGamePage({
                 </p>
               ) : null}
             </div>
-
+          ) : undefined
+        }
+      >
+        {current ? (
+          <>
             <AnswerGrid
               options={options}
               onSelect={handleSelect}
@@ -450,7 +457,7 @@ export function BlankFillGamePage({
             {phase === 'answered' && wordTableRows.length > 0 ? (
               <WordTable rows={wordTableRows} title="המילים" />
             ) : null}
-          </div>
+          </>
         ) : null}
       </GameScreenShell>
       {feedback ? (
