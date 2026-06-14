@@ -7,6 +7,19 @@ decision. This doc only tracks what is **not done**.
 
 Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ parked on the user.
 
+> **RESUME HERE (session 2026-06-14).** All work is committed + deployed live
+> (`netlify deploy --prod`; last commit `35f4b17`). This session shipped MOBILE1:
+> M1 (Android mic), M2 (names), M6 (settings→parent tab), M7 (greeting TTS code;
+> needs a Hebrew voice ON THE TABLET — device, not code), M9/M9b/M9c (Android
+> speech wedge), M10 (say-it matcher), M11 (no-emoji TTS), M14 (WJ Discover
+> listen-gate), and **M3 partially** (compact chrome + landscape two-pane for the
+> 8 answer-grid games). Plans added, not built: M5, M12, M13.
+> **NEXT: M3 batch 3** — give the landscape two-pane (the `prompt` slot) to the
+> special-layout games still stacking: Word Journey (+ pin its action buttons),
+> ABC, Phonics, Reading, Story Time, Sentence Scramble. See §7 M3.
+> Also waiting on the user: cert recalibration decision; install Hebrew TTS voice
+> on the tablet (M7); C2/C3 images.
+
 ---
 
 ## 1. Ship beyond localhost — **Slice INFRA1** ✅ SHIPPED (live 2026-06-10)
@@ -247,6 +260,10 @@ question. Plan:
     Picture-Match, True-or-Not**. Verified at 800×370 (prompt right / options
     left, no scroll). Per-game change is ~mechanical: move the prompt card to
     the `prompt` prop, keep AnswerGrid as children.
+  - ✅ **2-column options in landscape (commit 35f4b17):** the half-width
+    interaction pane forced the AnswerGrid to 2 cols (2×2) via
+    `.game-twopane-interaction [data-testid='answer-grid']` in globals.css —
+    a 4-across row was cramped.
   - ✅ **Batch 2 — text-prompt family (DONE 2026-06-14):** Grammar, Fill-Blanks,
     BlankFill (Articles + Progressive) — moved the sentence/question card into
     the `prompt` slot (key stays on it), AnswerGrid + WordTable as children.
