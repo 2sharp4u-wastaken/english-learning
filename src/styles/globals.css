@@ -158,4 +158,9 @@
   #react-root .game-twopane > .game-twopane-prompt {
     justify-content: center;
   }
+  /* The interaction pane is half-width, so a 4-across answer row is cramped —
+   * force the options into 2 columns (2×2) there. */
+  #react-root .game-twopane-interaction [data-testid='answer-grid'] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
