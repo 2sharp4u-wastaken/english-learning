@@ -217,17 +217,18 @@ All games already use `GameScreenShell fitViewport` (footer pinned, only
 GameHero + QuestionProgress) eats so much height that `<main>` overflows: the
 question top scrolls away, and the scroll offset persists into the next
 question. Plan:
-- **Compact chrome below a height breakpoint** in `GameScreenShell`: collapse
-  `GameHero` (game name moves as small text into the header row), slim the
-  header, thin progress strip. One change → every game inherits it. Static
-  compact mode, not scroll-triggered auto-hide (predictable for kids); iterate
-  visually on the device. **Confirmed worst case (2026-06-11 device test):
-  phone LANDSCAPE — chrome fills almost the whole ~350–400px height, leaving a
-  sliver of scrollable `<main>`. The breakpoint must be on viewport HEIGHT
-  (e.g. `@media (max-height: ~480px)` + a milder ~600px tier), which covers
-  portrait small phones and landscape with the same mechanism.**
-- **Scroll reset on question change**: reset `<main>` scrollTop when the
-  question index advances (shared mechanism in the shell).
+- ✅ **Compact chrome on short viewports (SHIPPED 2026-06-14):**
+  `useCompactViewport()` (`matchMedia('(max-height: 600px)')` — keyed on HEIGHT
+  so it catches landscape phones, which are wide but short) drives a compact
+  mode in `GameScreenShell`: `GameHero` collapses to a single slim line (small
+  inline icon + title, no big icon block, no divider), shell `gap`/`pt`/footer
+  padding tighten, and `QuestionProgress` slims its padding. One shared change →
+  every game inherits it. Verified at 720×360 landscape (Listening shows all 4
+  options without scrolling) + 360×600 small portrait. `data-compact` on the
+  shell for tests/debug.
+- ✅ **Scroll reset on question change (SHIPPED 2026-06-14):** `GameScreenShell`
+  resets `<main>` scrollTop on `progress.current` change, so a prior question's
+  scroll offset never hides the next question's top.
 - ✅ **WJ stage indicator (SHIPPED 2026-06-14):** was squeezed into the
   `QuestionProgress` `center` slot (~80px on a phone → illegible blob). Moved to
   a new full-width `below` slot under the fill bar; `WJStageBar` made responsive

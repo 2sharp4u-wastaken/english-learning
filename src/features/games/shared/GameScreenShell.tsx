@@ -1,8 +1,9 @@
-import type { ReactNode } from 'react'
+import { useEffect, useRef, type ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { GameHeader, type GameHeaderProps } from './GameHeader'
 import { GameHero } from './GameHero'
 import { QuestionProgress, type QuestionProgressProps } from './QuestionProgress'
+import { useCompactViewport } from './useCompactViewport'
 
 export interface GameScreenShellProps {
   /**
@@ -33,17 +34,30 @@ export function GameScreenShell({
   className,
   fitViewport = true,
 }: GameScreenShellProps) {
+  const compact = useCompactViewport()
+  const mainRef = useRef<HTMLElement>(null)
+
+  // M3: reset the scroll position when the question advances, so a previous
+  // question's scroll offset doesn't carry over and hide the new question's top
+  // (the small-phone failure mode). Keyed on the progress counter every game
+  // already passes; games without `progress` are single-screen and unaffected.
+  useEffect(() => {
+    if (mainRef.current) mainRef.current.scrollTop = 0
+  }, [progress?.current])
+
   return (
     <div
       data-theme="dark"
       data-testid="game-screen-shell"
       data-fit-viewport={fitViewport ? 'true' : 'false'}
+      data-compact={compact ? 'true' : 'false'}
       className={cn('flex flex-col', fitViewport ? 'h-[100dvh] overflow-hidden' : 'min-h-screen')}
       style={{ backgroundImage: 'var(--gradient-app)' }}
     >
       <div
         className={cn(
-          'mx-auto flex w-full max-w-3xl flex-1 flex-col gap-3 px-4 pt-4 sm:px-6',
+          'mx-auto flex w-full max-w-3xl flex-1 flex-col px-4 sm:px-6',
+          compact ? 'gap-1.5 pt-2' : 'gap-3 pt-4',
           fitViewport ? 'min-h-0 pb-3' : 'pb-6',
         )}
       >
@@ -53,9 +67,11 @@ export function GameScreenShell({
           subtitle={header.subtitle}
           icon={header.icon}
           aside={header.heroAside}
+          compact={compact}
         />
-        {progress ? <QuestionProgress {...progress} /> : null}
+        {progress ? <QuestionProgress {...progress} compact={compact} /> : null}
         <main
+          ref={mainRef}
           className={cn(
             'flex flex-1 flex-col',
             fitViewport && 'min-h-0 overflow-y-auto',
@@ -64,7 +80,7 @@ export function GameScreenShell({
         >
           {children}
         </main>
-        {footer ? <div className={cn('pt-2', fitViewport && 'shrink-0')}>{footer}</div> : null}
+        {footer ? <div className={cn(fitViewport && 'shrink-0', compact ? 'pt-1' : 'pt-2')}>{footer}</div> : null}
       </div>
     </div>
   )

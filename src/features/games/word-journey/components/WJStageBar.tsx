@@ -1,5 +1,6 @@
 import { cn } from '@/lib/cn'
 import { useNikud } from '@/bridge/nikud'
+import { useCompactViewport } from '@/features/games/shared/useCompactViewport'
 import type { WJStageId } from '@/bridge/word-journey'
 
 const STAGES: { id: WJStageId; icon: string; label: string }[] = [
@@ -19,6 +20,9 @@ const STAGES: { id: WJStageId; icon: string; label: string }[] = [
  *  see where they are without an illegible label blob. */
 export function WJStageBar({ activeStage }: { activeStage: WJStageId }) {
   const nk = useNikud()
+  // Short viewports (landscape phones) are wide but cramped — collapse to
+  // icons-only there too, not just on narrow width (M3).
+  const compact = useCompactViewport()
   const activeIndex = STAGES.findIndex((s) => s.id === activeStage)
   const active = STAGES[activeIndex]
   return (
@@ -48,10 +52,11 @@ export function WJStageBar({ activeStage }: { activeStage: WJStageId }) {
                 >
                   {state === 'done' ? '✓' : stage.icon}
                 </span>
-                {/* Per-icon labels only fit on wider screens. */}
+                {/* Per-icon labels only fit on wider AND tall-enough screens. */}
                 <span
                   className={cn(
-                    'hidden text-[0.6rem] font-medium sm:block sm:text-xs',
+                    'text-[0.6rem] font-medium sm:text-xs',
+                    compact ? 'hidden' : 'hidden sm:block',
                     state === 'active' ? 'text-white' : 'text-[color:var(--slate-300)]',
                   )}
                 >
@@ -59,7 +64,14 @@ export function WJStageBar({ activeStage }: { activeStage: WJStageId }) {
                 </span>
               </div>
               {i < STAGES.length - 1 ? (
-                <span className="hidden text-[color:var(--slate-300)] opacity-40 sm:inline">←</span>
+                <span
+                  className={cn(
+                    'text-[color:var(--slate-300)] opacity-40',
+                    compact ? 'hidden' : 'hidden sm:inline',
+                  )}
+                >
+                  ←
+                </span>
               ) : null}
             </div>
           )
@@ -68,7 +80,10 @@ export function WJStageBar({ activeStage }: { activeStage: WJStageId }) {
       {/* Narrow screens: the per-icon labels are hidden, so name the current
           stage once here instead. */}
       {active ? (
-        <span className="text-xs font-semibold text-white sm:hidden" data-testid="wj-stage-current">
+        <span
+          className={cn('text-xs font-semibold text-white', compact ? 'block' : 'sm:hidden')}
+          data-testid="wj-stage-current"
+        >
           {active.icon} {nk(active.label)}
         </span>
       ) : null}

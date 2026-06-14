@@ -14,10 +14,12 @@ export interface QuestionProgressProps {
    *  its stage bar here so it gets the whole card width instead of being
    *  squeezed into the cramped center slot on a phone (M3). */
   below?: ReactNode
+  /** Short-viewport mode (M3) — tighter padding/gap. Set by GameScreenShell. */
+  compact?: boolean
   className?: string
 }
 
-export function QuestionProgress({ current, total, onReset, center, below, className }: QuestionProgressProps) {
+export function QuestionProgress({ current, total, onReset, center, below, compact, className }: QuestionProgressProps) {
   const nk = useNikud()
   const safeTotal = Math.max(total, 1)
   const safeCurrent = Math.max(0, Math.min(current, safeTotal))
@@ -27,7 +29,8 @@ export function QuestionProgress({ current, total, onReset, center, below, class
   return (
     <div
       className={cn(
-        'flex flex-col gap-2 rounded-2xl border border-white/5 bg-white/[0.04] px-4 py-3',
+        'flex flex-col rounded-2xl border border-white/5 bg-white/[0.04] px-4',
+        compact ? 'gap-1 py-1.5' : 'gap-2 py-3',
         className,
       )}
       data-testid="question-progress"

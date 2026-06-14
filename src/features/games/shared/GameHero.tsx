@@ -13,6 +13,10 @@ export interface GameHeroProps {
    * screens so it never overlaps.
    */
   aside?: ReactNode
+  /** Short-viewport mode (M3): collapse to a single slim line — small inline
+   *  icon + title, no big icon block, no divider — to reclaim vertical space on
+   *  small/landscape phones. Set by GameScreenShell via useCompactViewport. */
+  compact?: boolean
   className?: string
 }
 
@@ -28,9 +32,28 @@ export interface GameHeroProps {
  * a section heading directly above the progress bar, and the question card
  * follows.
  */
-export function GameHero({ title, subtitle, icon, aside, className }: GameHeroProps) {
+export function GameHero({ title, subtitle, icon, aside, compact, className }: GameHeroProps) {
   const nk = useNikud()
   if (!title && !icon) return null
+  // Compact (short viewport): one slim line, no divider — saves ~70px so the
+  // question card isn't pushed off-screen on small/landscape phones.
+  if (compact) {
+    return (
+      <div
+        data-testid="game-hero"
+        data-compact="true"
+        className={cn('flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center', className)}
+      >
+        {icon ? (
+          <span className="text-lg leading-none" aria-hidden>
+            {icon}
+          </span>
+        ) : null}
+        <h1 className="text-base font-extrabold tracking-tight text-white">{nk(title)}</h1>
+        {aside ? <div className="w-full sm:w-auto">{aside}</div> : null}
+      </div>
+    )
+  }
   return (
     <div
       data-testid="game-hero"
