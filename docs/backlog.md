@@ -80,6 +80,59 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
 
 ## 2. Learning-flow loose ends (from `learning-path.md`)
 
+- 🔶 **PROG1 — Stats shows "0 מילים נלמדו" while Home shows 31 — Steps 1-3 SHIPPED (working tree, not committed), 2026-06-14.**
+  DONE: ✅ Step1 `src/engine/lifecycle.ts` (pure shared rule) + `ProgressManager`
+  delegates to it + `lifecycle.test.ts` (11) — engine tests prove Home/Profile/gates
+  unchanged. ✅ Step2 `bridge/stats.ts` `learnedCount`→introduced, new `masteredCount`,
+  cross-user `isWordDue` guard; `StatsPage` shows both "מילים נלמדו"(introduced) +
+  "מילים בשליטה"(mastered) in Overview + Words tab; HoF leaderboard auto-fixed (ranks
+  introduced). ✅ Step3 velocity: `firstSeen` stamp in `recordWordAttempt`/
+  `createDefaultWordStats`, `getLearningVelocity` rewritten (new words met/week,
+  forward-only). Regression `stats-lifecycle.test.ts` (4) reproduces the exact bug
+  (31 introduced / empty stamp → learnedCount 31, mastered 3, velocity 2). tsc clean,
+  85 unit tests pass.
+  LEFT: ⬜ **Step4** — (F) Reading-gate Home copy is a STATIC label
+  (`appState.ts:286` `'10 מילים + ABC 60%'`), always shows the full requirement even
+  when met; make it dynamic "what's left" from `requiredCount`/`requiredAbcMastery`/
+  `requiredTopics` vs current progress (HomePage change). (G) standardize labels +
+  re-run `build-nikud-map.py` for `מילים בשליטה`. Optional follow-up: snapshot-based
+  `isWordDue` so other users' Words-tab due flags work.
+- 🔴 **PROG1 (original) — Stats shows "0 מילים נלמדו" while Home shows 31 (design notes).**
+  Root cause: the V3 model derives "learned" from `wordMastery`, but the **Stats**
+  surface (`bridge/stats.ts`) still reads the legacy `learnedWords` stamp, which is
+  written *only* by full Word-Journey graduation (`graduateWord`) → ~always 0. One
+  field, `model.learnedCount`, feeds 6 broken sites (Overview tile `:196`, both
+  Words-tab tiles `:283/:410`, Hall-of-Fame leaderboard + totals `:539/:549/:611/:618`,
+  + `getLearningVelocity`). Home/Profile/gates are already correct (Profile is the
+  reference: `נלמדו`=introduced, `שליטה`=derived-Learned). Design intent
+  (`learning-path.md` L97-98, L111): **"words learned" = introduced (≥1 attempt);
+  "words mastered" = derived Learned; both exclude `category:'abc'`.** There are
+  currently **4 conflicting "learned" definitions** in code; collapse to **2**.
+  Plan (decisions locked with the user):
+  - **A. Pure module `src/engine/lifecycle.ts`** = single source of truth for the
+    per-word status + counts from a PLAIN progress snapshot (mastery ∪ grandfathered,
+    abc-excluded, sticky `reachedLearned`). WHY pure: Stats renders ANY selected user
+    from `loadUserProgress(userId)`, so it can't use the current-user `getApp()` PM.
+  - **B.** `ProgressManager.getWordStatus`/`_isDerivedLearned` delegate to it (no
+    behavior change — Home/Profile/gates provably untouched; that's the safety net).
+  - **C.** `bridge/stats.ts`: `learnedCount` → introduced; add `masteredCount` =
+    derived-Learned; fix the cross-user `isWordDue` PM call (compute from the snapshot).
+  - **D.** `StatsPage`: Overview shows BOTH tiles (introduced + mastered, distinct
+    labels); Words-tab "mastered" tile → canonical Learned (not the loose `≥0.8`);
+    **HoF "מילים נלמדו" leaderboard ranks introduced** (design L195).
+  - **E.** Velocity: add `firstSeen` in `recordWordAttempt` (+ `createDefaultWordStats`);
+    velocity = new words MET in last 7 days. Forward-only (existing entries lack the
+    date → ramps from 0); **no `lastSeen` fallback** (would conflate practiced with
+    newly-learned and inflate). Semantic: "קצב למידה" = new words met/week.
+  - **F.** Reading-gate copy (Home): show only UNMET requirements + ABC progress
+    (`ABC 45%→60%`); drop the already-met "10 מלים". (Reading is locked purely on
+    ABC<60%; introduced=31 already satisfies the word half.)
+  - **G.** Standardize labels to Profile's pair everywhere: introduced=`נלמדו`/
+    `מילים שנלמדו`, mastered=`שליטה`/`בשליטה`. Re-run `build-nikud-map.py` for new copy.
+  - **Tests:** unit-test `lifecycle.ts` (new/learning/learned, abc-exclusion,
+    grandfathered, sticky); regression asserting `Home.wordsLearned ===
+    Stats.introducedCount` for the same user + per-user isolation in the selector.
+  - **Sequence:** Step1 = A+B+tests (zero UI risk) → Step2 = C+D → Step3 = E → Step4 = F+G.
 - 🔴 **Milestone certs don't fire on React Word Journey completion** —
   `finishWordJourney` doesn't call `checkMilestoneCertificates`. Wire it (gated on
   the recalibration decision below). *This is a real bug, not just a decision.*
@@ -177,6 +230,31 @@ Cost class: weeks, not a slice — accounts, server-side auth, a data-sync model
 (it's kids' data), and migration of existing local progress. **Decision rule:
 don't start this for security alone; start it if/when cross-device sync becomes a
 real want, and fold the parent-password fix in.**
+
+### LB 🟢 Leaderboards — family + global (plan only, 2026-06-14; build after M3)
+User wants a **family** and a **global** leaderboard. The client-only architecture
+(§6 — each browser's localStorage is its own island) splits this cleanly into two
+very different cost classes:
+
+- **Family (this device) — buildable NOW, no backend.** A board ranking the
+  profiles already on one device. Source: `bridge/auth.ts` `users` + per-user
+  `v2_userProgress_<uid>` (score/coins/learnedWords/streak — pick the metric).
+  New `bridge/leaderboard.ts` reads all local users → sorted rows; a
+  `LeaderboardPage`/card (RTL, names marked `data-nikud-skip` per M2). Picks to
+  confirm when building: ranking metric (total score? coins? words learned?),
+  where it lives (Home tier / Stats tab / own route).
+- **Family across devices + Global — needs a backend (Tier-3, §6).** Both require
+  shared server state. Two paths: (1) fold into the full §6 backend (accounts +
+  sync) when that happens; or (2) a **lighter standalone** ride on the same
+  Netlify-Function seam M5/M13 introduce — a tiny function + store (Netlify Blobs)
+  that accepts `{displayName, score, …}` and returns top-N. Caveats: it's kids'
+  data (privacy posture — pseudonymous handles, no PII), and client-submitted
+  scores are trivially spoofable (devtools) without server-side validation, so a
+  global board is "fun, not authoritative." Decision rule mirrors §6: don't stand
+  up a backend for the leaderboard alone — bundle it with M5/M13 or the sync work.
+
+**Recommendation:** ship the **family/local** board after M3 (small, self-contained,
+no backend); design global into the M5/M13 backend seam rather than a bespoke server.
 
 ---
 
@@ -519,6 +597,37 @@ ZWJ/skin-tone/variation-selector handling) applied in `bridge/audio.ts`
 `speak`/`speakHebrew`, with a mirrored safety-net strip in `speechSynthesis.js`
 `speak()` (legacy chokepoint can't import the TS module — keep the two regexes
 in sync). Display text untouched. Tests: `src/lib/__tests__/stripEmoji.test.ts`.
+
+### M15 🟡 "Blank images" on answers — diagnosed 2026-06-14 (root cause: newer emoji tofu)
+Reported: some answer tiles show as blank images. **Audited the whole catalog:**
+- All 95 unique `imageUrl` paths in `data/` exist on disk **with correct case**
+  (checked case-sensitively because Netlify/Linux is case-sensitive — a common
+  "works locally, blank on deploy" trap; clean here). So it's NOT broken asset paths.
+- **Zero** words lack both `image` and `imageUrl` — so no true 🔤-fallback cases.
+- **50 words use a Unicode-12+ emoji** (block U+1FA70–1FAFF: 🪑🪨🫏🫁🩸🫘🪓🪟…).
+  Older **Android** system emoji fonts can't render these → they show as blank
+  "tofu" boxes. **This is the most likely cause of the device-only blank tiles.**
+  Full list generated by the audit (in this session's transcript) — e.g. chair/desk
+  🪑, stone/gravel 🪨, donkey 🫏, lung 🫁, blood 🩸, axe 🪓, window/curtain 🪟,
+  ladder 🪜, accordion 🪗, parachute 🪂, etc., across ~20 category files.
+
+Done this session:
+- ✅ **`onError`→emoji fallback in Picture Match** (`OptionPicture`, the only game
+  whose *answers* are images) so a broken image **file** never shows blank. NOTE:
+  this does NOT cure the emoji-tofu case (emoji is text, not an `<img>`). The other
+  6 games render the picture as the *prompt*, not the answer — same `onError` is a
+  cheap follow-up there if wanted.
+
+The real cure for the emoji tofu (decision needed):
+- **(a) Replace the 50 risky emoji with real images** — add `imageUrl` PNGs (e.g.
+  Twemoji's freely-licensed PNGs are tiny) for those words; deterministic across all
+  devices, ships via the existing build asset copy. Most reliable; ~50 small assets.
+- **(b) Bundle an emoji webfont** (Twemoji/Noto subset) so ALL emoji render
+  identically regardless of system font — broad fix but Noto Color Emoji is ~10 MB
+  (need a subset/SVG strategy); heavier.
+- **(c) Swap each risky emoji for an older-Unicode near-equivalent** — cheapest but
+  changes the picture's meaning; not recommended for a vocab app.
+Recommended: **(a)** — bounded, deterministic, reuses the C2/C3 / M13 image path.
 
 ### Pre-existing (NOT MOBILE1) — unrelated smoke failures
 `smoke.spec.js` "continue CTA target is stable across loads (FU-HOME-continue)"

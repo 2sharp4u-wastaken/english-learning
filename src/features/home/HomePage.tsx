@@ -12,6 +12,7 @@ import { useGameUnlocks } from '@/hooks/useGameUnlocks'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useContinueTarget } from '@/hooks/useContinueTarget'
 import { useExpressionUnlock } from '@/hooks/useExpressionUnlock'
+import { getUnlockRemainingText } from '@/bridge/progress'
 import { cn } from '@/lib/cn'
 
 type TierId = 'learn' | 'practice' | 'challenge' | 'test' | 'expressions'
@@ -95,6 +96,14 @@ export function HomePage() {
   const nextUnlock = useMemo(
     () => catalog.find((game) => unlocks[game.id]?.unlocked === false) ?? null,
     [catalog, unlocks],
+  )
+
+  // PROG1 (Step 4): show only what's LEFT to unlock the next game, not the full
+  // static requirement — so an already-met part (e.g. 31 introduced ≥ 10 for
+  // Reading) stops reading as if pending. Keyed on `summary` so it tracks progress.
+  const nextUnlockRemaining = useMemo(
+    () => (nextUnlock ? getUnlockRemainingText(nextUnlock.id, unlocks[nextUnlock.id] ?? {}) : ''),
+    [nextUnlock, unlocks, summary],
   )
 
   // Progress-aware encouragement, shown when there's no unlock teaser so a fully
@@ -222,7 +231,7 @@ export function HomePage() {
                 <span className="font-semibold text-text">
                   {nextUnlock.icon} {nextUnlock.name}
                 </span>
-                {unlocks[nextUnlock.id]?.requirement ? ` · ${unlocks[nextUnlock.id]?.requirement}` : ''}
+                {nextUnlockRemaining ? <span> · {nextUnlockRemaining}</span> : ''}
               </>
             ) : (
               encouragement

@@ -11,6 +11,8 @@
  * See docs/learning-flow-redesign.md for the lifecycle model.
  */
 
+import { deriveWordStatus, isDerivedLearned } from './lifecycle'
+
 export interface WordStats {
   word: string
   category: string
@@ -18,6 +20,10 @@ export interface WordStats {
   correctAttempts: number
   incorrectAttempts: number
   consecutiveCorrect: number
+  /** ISO timestamp of the word's FIRST attempt (PROG1: feeds weekly learning
+   *  velocity = new words met/week). Forward-only — backfilled to lastSeen-less
+   *  entries on their next attempt; absent on pre-PROG1 entries until re-practiced. */
+  firstSeen: string | null
   lastSeen: string | null
   lastResult: 'correct' | 'incorrect' | null
   masteryLevel: number
@@ -117,6 +123,10 @@ export class ProgressManager {
 
     const stats: WordStats = this.wordMastery[key] || this.createDefaultWordStats(word, category)
 
+    // Stamp the first-encounter time once (also backfills older entries that predate
+    // the field, on their next attempt) — drives weekly learning velocity.
+    if (!stats.firstSeen) stats.firstSeen = new Date().toISOString()
+
     stats.totalAttempts++
     if (isCorrect) {
       stats.correctAttempts++
@@ -177,6 +187,7 @@ export class ProgressManager {
       correctAttempts: 0,
       incorrectAttempts: 0,
       consecutiveCorrect: 0,
+      firstSeen: null,
       lastSeen: null,
       lastResult: null,
       masteryLevel: 0,
@@ -530,23 +541,16 @@ export class ProgressManager {
   }
 
   _isDerivedLearned(stats: WordStats | null): boolean {
-    if (!stats) return false
-    const t = this.thresholds
-    return (
-      (stats.totalAttempts || 0) >= t.minAttempts &&
-      (stats.masteryLevel || 0) >= t.mastered &&
-      (stats.consecutiveCorrect || 0) >= t.consecutiveForMastery
-    )
+    // Delegate to the shared pure rule (src/engine/lifecycle.ts) so the Stats page
+    // (which can't use this instance — it renders any selected user) classifies a
+    // word identically. See PROG1 / docs/learning-path.md.
+    return isDerivedLearned(stats, this.thresholds)
   }
 
   getWordStatus(word: string, category: string): 'new' | 'learning' | 'learned' {
     const grandfathered = this._key(word, category) in this.learnedWords
     const stats = this.getWordStats(word, category)
-    const introduced = grandfathered || (!!stats && (stats.totalAttempts || 0) > 0)
-    if (!introduced) return 'new'
-    const stickyLearned = !!stats && stats.reachedLearned === true
-    if (grandfathered || this._isDerivedLearned(stats) || stickyLearned) return 'learned'
-    return 'learning'
+    return deriveWordStatus(stats, grandfathered, this.thresholds)
   }
 
   reviewIntervalDays(reviewStage = 0): number {

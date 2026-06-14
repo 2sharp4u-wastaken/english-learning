@@ -2,6 +2,7 @@ import type { UserProgress } from './types'
 import { getApp } from '../engine/instances'
 import { v2Key } from './storage'
 import { getAllExpressions, type ExpressionType } from './expressions'
+import { deriveLifecycle } from '../engine/lifecycle'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -141,7 +142,15 @@ export interface UserStatsModel {
   memoryRecords: MemoryRecord[]
   hasMemory: boolean
   journeyRows: JourneyRow[]
+  /**
+   * "Words learned" = INTRODUCED count (status !== new — Learning ∪ Learned), per
+   * the design (`learning-path.md` L111). Derived from `wordMastery` via the shared
+   * pure lifecycle rule — NOT the legacy `learnedWords` stamp (PROG1: that stamp is
+   * written only by full Word-Journey graduation, so it read ~0 while Home showed 31).
+   */
   learnedCount: number
+  /** "Words mastered" = derived-Learned count (the rigorous gate metric / שליטה). */
+  masteredCount: number
   inProgressCount: number
   categoryRows: CategoryRow[]
   categoriesStartedCount: number
@@ -334,10 +343,10 @@ function getWordDisplayInfo(wordKey: string, vocabIndex: VocabIndex) {
 
 // ─── Word mastery stats ─────────────────────────────────────────────────────
 
-function getWordMasteryStats(progress: UserProgress): MasteryStats {
+function getWordMasteryStats(progress: UserProgress, isCurrentUser = true): MasteryStats {
   const wm = progress.wordMastery || {}
   const stats: MasteryStats = { total: 0, struggling: [], learning: [], mastered: [] }
-  const pm = getApp()?.progressManager
+  const pm = isCurrentUser ? getApp()?.progressManager : null
 
   for (const [wordKey, data] of Object.entries(wm)) {
     if (!data || typeof data !== 'object') continue
@@ -583,9 +592,20 @@ function buildCategoryCompletion(progress: UserProgress): {
 // ─── Learning velocity ──────────────────────────────────────────────────────
 
 function getLearningVelocity(progress: UserProgress): number {
-  const entries = Object.values(progress.learnedWords || {})
-  const weekThreshold = new Date(Date.now() - 6 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10)
-  return entries.filter((e) => e?.graduatedDate && e.graduatedDate >= weekThreshold).length
+  // PROG1: new words MET in the last 7 days (status crosses into the lifecycle),
+  // derived from each word's `firstSeen` stamp — NOT Word-Journey graduations (the
+  // old `learnedWords.graduatedDate` read ~0 for kids who don't grind Word Journey).
+  // Forward-only: entries predating the `firstSeen` field don't count until
+  // re-practiced (intentional — we won't fabricate a met-date we don't have).
+  const wm = progress.wordMastery || {}
+  const weekAgo = Date.now() - 7 * 24 * 60 * 60 * 1000
+  let count = 0
+  for (const s of Object.values(wm)) {
+    if (!s || s.category === 'abc') continue
+    const firstSeen = (s as { firstSeen?: string | null }).firstSeen
+    if (firstSeen && Date.parse(firstSeen) >= weekAgo) count++
+  }
+  return count
 }
 
 // ─── Public API ─────────────────────────────────────────────────────────────
@@ -633,12 +653,22 @@ export function buildUserStatsModel(userId: string, displayName: string): UserSt
         )
       : 0
 
-  const masteryStats = getWordMasteryStats(progress)
+  // PROG1: derive both UI metrics from the shared pure lifecycle rule over THIS
+  // user's snapshot (not the current-user PM — Stats renders any selected user).
+  // "words learned" = introduced; "words mastered" = derived Learned.
+  const lifecycle = deriveLifecycle(progress)
+  const learnedCount = lifecycle.introducedCount
+  const masteredCount = lifecycle.learnedCount
+
+  // The mastery bar's isWordDue() reads the *current-user* PM, so only trust it when
+  // the selected user IS the current user; otherwise it would show a different
+  // user's due flags. (A snapshot-based due calc is a later refinement.)
+  const isCurrentUser = userId === (localStorage.getItem('currentUser') || '')
+  const masteryStats = getWordMasteryStats(progress, isCurrentUser)
   const memoryRecords = loadMemoryRecords(userId)
   const journeyRows = buildJourneyRows(userId, progress)
   const categoryCompletion = buildCategoryCompletion(progress)
   const learningVelocity = getLearningVelocity(progress)
-  const learnedCount = Object.keys(progress.learnedWords || {}).length
   const inProgressCount = journeyRows.filter((r) => !r.isLearned).length
 
   return {
@@ -654,6 +684,7 @@ export function buildUserStatsModel(userId: string, displayName: string): UserSt
     hasMemory: memoryRecords.length > 0,
     journeyRows,
     learnedCount,
+    masteredCount,
     inProgressCount,
     categoryRows: categoryCompletion.rows,
     categoriesStartedCount: categoryCompletion.startedCount,

@@ -35,12 +35,15 @@ export interface WordStats {
   correctAttempts: number
   incorrectAttempts: number
   consecutiveCorrect: number
+  /** ISO timestamp of the first attempt (PROG1: weekly learning velocity). */
+  firstSeen?: string | null
   lastSeen: string | null
   lastResult: 'correct' | 'incorrect' | null
   masteryLevel: number
   gameTypeStats: Record<string, { correct: number; total: number }>
   responseTimes: number[]
   averageResponseTime: number | null
+  reachedLearned?: boolean
 }
 
 export interface LearnedWordEntry {

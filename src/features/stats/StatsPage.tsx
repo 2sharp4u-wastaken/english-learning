@@ -178,7 +178,7 @@ function OverviewPanel({ model }: { model: UserStatsModel }) {
   return (
     <div className="space-y-5">
       {/* Metric tiles */}
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <MetricTile
           icon={<Star className="h-6 w-6" />}
           value={(p.totalPoints ?? 0).toLocaleString()}
@@ -191,11 +191,18 @@ function OverviewPanel({ model }: { model: UserStatsModel }) {
           value={String(model.totalGamesPlayed)}
           label="משחקים שוחקו"
         />
+        {/* PROG1: "נלמדו" = introduced (words met); "בשליטה" = derived-Learned
+            (mastered). Two distinct metrics, matching the Profile page. */}
         <MetricTile
           icon={<Sparkles className="h-6 w-6" />}
           value={String(model.learnedCount)}
           label="מילים נלמדו"
           variant="green"
+        />
+        <MetricTile
+          icon={<Trophy className="h-6 w-6" />}
+          value={String(model.masteredCount)}
+          label="מילים בשליטה"
         />
         <MetricTile
           icon={<Clock className="h-6 w-6" />}
@@ -281,8 +288,8 @@ function WordsPanel({ model }: { model: UserStatsModel }) {
       {/* Overview tiles */}
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
         <MasteryTile value={model.learnedCount} label="מילים נלמדו" color="text-emerald-400" />
+        <MasteryTile value={model.masteredCount} label="מילים בשליטה" color="text-yellow-400" />
         <MasteryTile value={model.inProgressCount} label="מסעות בתהליך" color="text-blue-400" />
-        <MasteryTile value={model.masteryStats.total} label="מילים שתורגלו" color="text-accent-blue" />
         <MasteryTile value={model.learningVelocity} label="מילים השבוע" color="text-amber-400" />
       </div>
 

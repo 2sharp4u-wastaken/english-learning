@@ -148,6 +148,61 @@ export function getWordsMasteredCount(): number {
   return getDerivedLearnedCount()
 }
 
+/** ABC letter mastery as a percent (0–100) — the same metric the reading gate uses. */
+export function getAbcMasteryPercent(): number {
+  const wm = getApp()?.userProgress?.wordMastery ?? {}
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  const mastered = [...letters].filter((l) => ((wm[`${l}_abc`]?.masteryLevel as number) ?? 0) >= 0.8).length
+  return Math.round((mastered / 26) * 100)
+}
+
+/** Number of fully-completed course topics (drives the consolidation-tier gates). */
+export function getCompletedTopicCount(): number {
+  const pm = getApp()?.progressManager as { getCompletedTopicCount?: () => number } | undefined
+  return pm?.getCompletedTopicCount?.() ?? 0
+}
+
+// Consolidation-tier games gate on derived-Learned ("בשליטה"); every other gated
+// game gates on introduced ("נלמדו"). Keep in sync with checkAndUnlockGames.
+const CONSOLIDATION_GAMES = new Set(['story-time', 'fill-blanks', 'scramble', 'grammar'])
+
+/**
+ * PROG1 (Step 4): friendly "what's LEFT to unlock" text for a locked game — only
+ * the UNMET parts, so an already-satisfied requirement (e.g. 31 introduced ≥ 10 for
+ * Reading) stops showing as if pending. Reading then correctly reads just
+ * "ABC 45%→60%". Returns '' when nothing is outstanding.
+ */
+export function getUnlockRemainingText(
+  gameId: string,
+  entry: { requiredCount?: number; requiredAbcMastery?: number; requiredTopics?: number },
+): string {
+  const parts: string[] = []
+
+  const needCount = entry.requiredCount ?? 0
+  if (needCount > 0) {
+    const consolidation = CONSOLIDATION_GAMES.has(gameId)
+    const have = consolidation ? getDerivedLearnedCount() : getIntroducedCount()
+    const remaining = Math.max(0, needCount - have)
+    if (remaining > 0) parts.push(`עוד ${remaining} ${consolidation ? 'מילים בשליטה' : 'מילים'}`)
+  }
+
+  const needAbc = entry.requiredAbcMastery ?? 0
+  if (needAbc > 0) {
+    // entry stores a fraction (0.6); normalise to a percent to match the live metric.
+    const targetPct = needAbc <= 1 ? Math.round(needAbc * 100) : Math.round(needAbc)
+    const havePct = getAbcMasteryPercent()
+    if (havePct < targetPct) parts.push(`ABC ${havePct}%→${targetPct}%`)
+  }
+
+  const needTopics = entry.requiredTopics ?? 0
+  if (needTopics > 0) {
+    const remaining = Math.max(0, needTopics - getCompletedTopicCount())
+    if (remaining > 0) parts.push(`עוד ${remaining} ${remaining === 1 ? 'נושא' : 'נושאים'}`)
+  }
+
+  return parts.join(' · ')
+}
+
 /**
  * Get learned words map (graduated words with metadata).
  */
