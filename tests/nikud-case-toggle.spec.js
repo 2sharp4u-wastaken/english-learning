@@ -126,3 +126,33 @@ test('E5: Story Time sentences honor the case toggle', async ({ page }) => {
   const oneAllLower = before === before.toLowerCase() || after === after.toLowerCase();
   expect(oneAllCaps && oneAllLower, `expected one uppercase + one lowercase, got "${before}" / "${after}"`).toBe(true);
 });
+
+test('M2: Hebrew player name keeps exact spelling (never nikud-ized)', async ({ page }) => {
+  // עידן/זוהר lose matres lectionis when the word-keyed nikud map rewrites them
+  // (עידן→עדן). Names are marked data-nikud-skip so nikudDOM leaves them alone,
+  // while surrounding chrome ("שלום") still gets vocalized.
+  const NAME = 'עידן';
+  await page.goto('/');
+  await page.evaluate((name) => {
+    const userId = 'm2-hebrew-name';
+    localStorage.setItem('users', JSON.stringify({
+      [userId]: { id: userId, name, displayName: name, initial: name[0], password: null, created: new Date().toISOString(), lastLogin: null },
+    }));
+    localStorage.setItem('currentUser', userId);
+    localStorage.setItem('currentSession', JSON.stringify({ userId, userName: name, displayName: name, initial: name[0], authenticated: true, loginTime: Date.now(), lastActivity: Date.now() }));
+    localStorage.setItem('v2_userProgress_' + userId, JSON.stringify({ version: 4 }));
+  }, NAME);
+  await page.reload();
+  await page.waitForTimeout(2500);
+
+  // The greeting renders "שלום <name>!"; the name sits in a data-nikud-skip span.
+  const nameEl = page.locator('[data-testid="home-greeting"] [data-nikud-skip]');
+  await expect(nameEl).toBeVisible({ timeout: 5000 });
+  const rendered = (await nameEl.textContent()) || '';
+  expect(rendered).toBe(NAME);            // exact spelling — not עדן
+  expect(NIKUD_RE.test(rendered)).toBe(false); // and no vowel points added
+
+  // Sanity: the surrounding "שלום" chrome IS still vocalized (skip is scoped).
+  const greeting = (await page.locator('[data-testid="home-greeting"]').textContent()) || '';
+  expect(NIKUD_RE.test(greeting)).toBe(true);
+});

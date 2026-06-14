@@ -255,7 +255,7 @@ function UserRow({
         </div>
         <div className="min-w-0 space-y-0.5">
           <div className="flex items-center gap-2 text-sm font-medium text-text">
-            <span className="truncate">{user.name ?? user.displayName}</span>
+            <span className="truncate" data-nikud-skip>{user.name ?? user.displayName}</span>
             {isCurrent && (
               <span className="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] text-muted">אני</span>
             )}

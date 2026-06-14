@@ -194,7 +194,16 @@ on Android anyway. **Fix:** platform-gate BOTH off on Android (hide the
 "שמע את עצמך" button there); verify on both devices. If still silent after
 that, next suspects: recognition `lang`, Google-app speech service settings.
 
-### M2 🔴 Hebrew player names mangled (עידן→עדן, זוהר→זהר)
+### M2 ✅ Hebrew player names mangled (עידן→עדן, זוהר→זהר) — SHIPPED 2026-06-14
+Fixed: new `data-nikud-skip` marker in `utils/nikudDOM.js` (mirrors
+`data-react-nikud-owned` — `isNikudSkipped()` early-returns in `processTextNode`
++ both `onNikudChanged` loops). Marked every name-render site (home greeting —
+name wrapped so "שלום" still vocalizes; profile heading; login cards; stats
+selector; UsersTab rows). Name keeps the parent's exact spelling, no nikud
+added. Regression test: `tests/nikud-case-toggle.spec.js` "M2". Convention
+recorded in CLAUDE.md — any NEW name display needs the marker.
+
+Original finding:
 `utils/nikudDOM.js` still walks the non-game React pages and replaces the name
 text with its nikud-map form, which drops matres lectionis (same mechanism as
 the `testing_legacy_nikud_injection` memory). **Fix: names are NEVER

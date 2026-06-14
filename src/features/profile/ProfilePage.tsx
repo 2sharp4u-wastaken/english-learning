@@ -170,7 +170,7 @@ export function ProfilePage() {
               {initial ?? name.slice(0, 1)}
             </div>
             <div className="min-w-0 space-y-2">
-              <h1 className="font-display text-2xl font-semibold text-text sm:text-3xl">
+              <h1 className="font-display text-2xl font-semibold text-text sm:text-3xl" data-nikud-skip>
                 {name}
               </h1>
               <div className="flex items-center gap-2 text-sm text-muted">

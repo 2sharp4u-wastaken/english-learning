@@ -159,7 +159,7 @@ export function LoginPage() {
                   onClick={() => selectUser(user.id)}
                 >
                   <div className="user-select-avatar">{user.initial}</div>
-                  <span>{user.name}</span>
+                  <span data-nikud-skip>{user.name}</span>
                 </button>
               ))}
             </div>
@@ -171,7 +171,7 @@ export function LoginPage() {
             </button>
             <div className="user-login-info">
               <div className="login-avatar">{selectedUser?.initial}</div>
-              <h3>{selectedUser?.name}</h3>
+              <h3 data-nikud-skip>{selectedUser?.name}</h3>
             </div>
             <form className="login-form" onSubmit={handleSubmit}>
               <div className="form-group">

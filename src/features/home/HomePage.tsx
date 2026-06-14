@@ -186,7 +186,7 @@ export function HomePage() {
                   aria-label={`השמע שלום ${greetingName}`}
                   className="rounded-lg transition-transform hover:scale-[1.03] active:scale-95"
                 >
-                  שלום {greetingName}!{' '}
+                  שלום <span data-nikud-skip>{greetingName}</span>!{' '}
                   <span className="inline-block transition-transform hover:rotate-12" aria-hidden>
                     👋
                   </span>

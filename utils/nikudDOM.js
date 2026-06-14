@@ -34,6 +34,17 @@ function isReactNikudOwned(el) {
     return !!(el && el.closest && el.closest(REACT_NIKUD_OWNED));
 }
 
+// Subtrees marked `data-nikud-skip` hold user-entered text that must keep its
+// EXACT spelling — player names (M2). The nikud map is word-keyed and drops
+// matres lectionis (עידן→עדן, זוהר→זהר), which silently rewrites a name the
+// parent chose. Names are never vocalized; mark just the name node so
+// surrounding chrome ("שלום") still gets nikud.
+const NIKUD_SKIP = '[data-nikud-skip]';
+
+function isNikudSkipped(el) {
+    return !!(el && el.closest && el.closest(NIKUD_SKIP));
+}
+
 // ---------------------------------------------------------------------------
 // Local helpers — self-contained for pages that don't load _loader.js
 // ---------------------------------------------------------------------------
@@ -92,6 +103,7 @@ function processTextNode(node, map) {
     if (!parent) return;
     if (SKIP_TAGS.has(parent.tagName)) return;
     if (isReactNikudOwned(parent)) return; // React owns nikud in this subtree
+    if (isNikudSkipped(parent)) return; // never nikud-ize names (M2)
 
     // Case C — hint element (data-hebrew-hint set by game code)
     if (parent.dataset.hebrewHint !== undefined) {
@@ -193,6 +205,7 @@ function onNikudChanged() {
     // Update all data-hebrew-source elements; lazy-enrich if source is plain
     document.querySelectorAll('[data-hebrew-source]').forEach(el => {
         if (isReactNikudOwned(el)) return;
+        if (isNikudSkipped(el)) return;
         let src = el.dataset.hebrewSource;
         if (show && hasMap && !NIKUD_RE.test(src)) {
             const enriched = src.replace(HEBREW_WORD, w => map[w] || w);
@@ -204,6 +217,7 @@ function onNikudChanged() {
     // Update all data-hebrew-hint elements; lazy-enrich if hint is plain
     document.querySelectorAll('[data-hebrew-hint]').forEach(el => {
         if (isReactNikudOwned(el)) return;
+        if (isNikudSkipped(el)) return;
         let src = el.dataset.hebrewHint;
         if (show && hasMap && !NIKUD_RE.test(src)) {
             const enriched = src.replace(HEBREW_WORD, w => map[w] || w);

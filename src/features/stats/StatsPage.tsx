@@ -80,6 +80,7 @@ export function StatsPage() {
           <button
             key={user.id}
             onClick={() => handleSelectUser(user.id)}
+            data-nikud-skip
             className={cn(
               'rounded-full px-6 py-3 text-sm font-bold transition-all',
               selectedUserId === user.id && !showHallOfFame
