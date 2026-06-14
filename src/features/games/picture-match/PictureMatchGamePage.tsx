@@ -50,15 +50,20 @@ function OptionPicture({
   option: PictureMatchOption
   category: string
 }) {
+  // If the image URL/override 404s or otherwise fails to load, fall back to the
+  // emoji so the answer tile is never a blank box. (Does NOT cure emoji that the
+  // device font can't render — that's a separate fix, see backlog "blank images".)
+  const [imgFailed, setImgFailed] = useState(false)
   const overrides =
     ((window as any).wordImageOverrides as Record<string, string> | undefined) ?? {}
   const overrideKey = `${category}:${option.word}`
   const effectiveImageUrl = overrides[overrideKey] || option.imageUrl
-  if (effectiveImageUrl) {
+  if (effectiveImageUrl && !imgFailed) {
     return (
       <img
         src={effectiveImageUrl}
         alt={option.word}
+        onError={() => setImgFailed(true)}
         className="word-image max-h-24 rounded-xl object-contain"
       />
     )
