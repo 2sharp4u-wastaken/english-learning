@@ -423,9 +423,12 @@ export function PictureMatchGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
-        {current ? (
-          <div className="flex flex-1 flex-col gap-4">
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        footer={footer}
+        prompt={
+          current ? (
             <MediaPromptCard
               prompt="האזן ובחר את התמונה הנכונה"
               word={promptWord}
@@ -435,18 +438,21 @@ export function PictureMatchGamePage() {
               audioIconOnly
               audioHint={audioHint}
             />
-            <AnswerGrid
-              options={answerOptions}
-              onSelect={handleAnswer}
-              selectedIndex={selectedIndex}
-              correctIndex={current.correct}
-              revealed={phase === 'answered'}
-              hidden={optionsHidden}
-              variant="media"
-              columns={4}
-              autoFocusFirst
-            />
-          </div>
+          ) : undefined
+        }
+      >
+        {current ? (
+          <AnswerGrid
+            options={answerOptions}
+            onSelect={handleAnswer}
+            selectedIndex={selectedIndex}
+            correctIndex={current.correct}
+            revealed={phase === 'answered'}
+            hidden={optionsHidden}
+            variant="media"
+            columns={4}
+            autoFocusFirst
+          />
         ) : null}
       </GameScreenShell>
       {feedback ? (

@@ -406,9 +406,12 @@ export function ListeningGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
-        {current ? (
-          <div className="flex flex-1 flex-col gap-4">
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        footer={footer}
+        prompt={
+          current ? (
             <MediaPromptCard
               prompt="האזן ובחר את המילה הנכונה"
               media={<PromptMedia question={current} />}
@@ -419,16 +422,19 @@ export function ListeningGamePage() {
               audioIconOnly
               audioHint={audioHint}
             />
-            <AnswerGrid
-              options={answerOptions}
-              onSelect={handleAnswer}
-              selectedIndex={selectedIndex}
-              correctIndex={current.correct}
-              revealed={phase === 'answered'}
-              hidden={optionsHidden}
-              autoFocusFirst
-            />
-          </div>
+          ) : undefined
+        }
+      >
+        {current ? (
+          <AnswerGrid
+            options={answerOptions}
+            onSelect={handleAnswer}
+            selectedIndex={selectedIndex}
+            correctIndex={current.correct}
+            revealed={phase === 'answered'}
+            hidden={optionsHidden}
+            autoFocusFirst
+          />
         ) : null}
       </GameScreenShell>
       {feedback ? (

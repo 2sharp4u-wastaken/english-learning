@@ -235,13 +235,29 @@ question. Plan:
   — per-icon Hebrew labels + arrow connectors are `sm:`-only, narrow screens get
   icons-only + the current stage named once (`wj-stage-current`). Verified at
   360px.
-- **Content-fit audit** at ~360×640: shrink paddings/fonts on the biggest
-  offenders (AnswerGrid media cards, MediaPromptCard) so `<main>` stops
-  overflowing at all — scrolling mid-question is the failure mode to eliminate.
+- 🔶 **Landscape two-pane layout (IN PROGRESS 2026-06-14 — user agreed to the
+  plan).** Chrome compaction alone can't fix the single tall column that
+  overflows short-wide landscape; the agreed systemic fix is a `prompt` slot on
+  `GameScreenShell` → `<main>` splits into two columns (prompt | interaction)
+  via `@media (orientation: landscape) and (max-height: 600px)` (`.game-twopane`
+  in globals.css). Portrait/no-prompt unchanged. See
+  `feedback_landscape_needs_real_layout`.
+  - ✅ **Done (batch 1):** shell `prompt` slot + CSS; migrated the clean
+    "MediaPromptCard + AnswerGrid" family — **Vocabulary, Listening,
+    Picture-Match, True-or-Not**. Verified at 800×370 (prompt right / options
+    left, no scroll). Per-game change is ~mechanical: move the prompt card to
+    the `prompt` prop, keep AnswerGrid as children.
+  - ⬜ **Batch 2 — text-prompt family** (Grammar, Fill-Blanks, BlankFill/
+    Articles+Progressive): no MediaPromptCard — the prompt is the sentence/
+    question block; wrap THAT in the `prompt` slot.
+  - ⬜ **Batch 3 — special layouts:** Reading (LetterSlots), Word Journey (5
+    stages + pin action buttons to the footer), Story Time, Sentence Scramble,
+    ABC/Phonics. Each gets its own landscape arrangement on the same scaffold.
 - **Memory game (decision: rotate hint)**: portrait phone on big-grid levels
   shows a friendly rotate-the-device hint; landscape gets a wider grid via the
   existing `bridge/memory.ts` sizing knobs (no Screen-Orientation lock — only
-  works installed/fullscreen).
+  works installed/fullscreen). (May be reframed once landscape two-pane lands —
+  Memory's grid benefits from landscape width.)
 
 ### M4 🟡 First-run parent onboarding wizard
 Replace the bare create-first-profile form with a friendly first-run flow

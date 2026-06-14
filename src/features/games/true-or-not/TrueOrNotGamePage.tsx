@@ -384,9 +384,12 @@ export function TrueOrNotGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
-        {current ? (
-          <div className="flex flex-1 flex-col gap-4">
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        footer={footer}
+        prompt={
+          current ? (
             <MediaPromptCard
               prompt="האם התמונה מתאימה למילה?"
               word={promptWord}
@@ -397,16 +400,19 @@ export function TrueOrNotGamePage() {
               audioIconOnly
               audioHint={audioHint}
             />
-            <AnswerGrid
-              options={answerOptions}
-              onSelect={handleAnswer}
-              selectedIndex={selectedIndex}
-              correctIndex={current.correct}
-              revealed={phase === 'answered'}
-              columns={2}
-              autoFocusFirst
-            />
-          </div>
+          ) : undefined
+        }
+      >
+        {current ? (
+          <AnswerGrid
+            options={answerOptions}
+            onSelect={handleAnswer}
+            selectedIndex={selectedIndex}
+            correctIndex={current.correct}
+            revealed={phase === 'answered'}
+            columns={2}
+            autoFocusFirst
+          />
         ) : null}
       </GameScreenShell>
       {feedback ? (

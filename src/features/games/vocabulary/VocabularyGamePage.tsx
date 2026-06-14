@@ -402,9 +402,12 @@ export function VocabularyGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
-        {current ? (
-          <div className="flex flex-1 flex-col gap-4">
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        footer={footer}
+        prompt={
+          current ? (
             <MediaPromptCard
               word={displayedWord}
               onPlayAudio={handleManualPlay}
@@ -413,16 +416,19 @@ export function VocabularyGamePage() {
               audioIconOnly
               audioHint={audioHint}
             />
-            <AnswerGrid
-              options={answerOptions}
-              onSelect={handleAnswer}
-              selectedIndex={selectedIndex}
-              correctIndex={current.correct}
-              revealed={phase === 'answered'}
-              hidden={optionsHidden}
-              autoFocusFirst
-            />
-          </div>
+          ) : undefined
+        }
+      >
+        {current ? (
+          <AnswerGrid
+            options={answerOptions}
+            onSelect={handleAnswer}
+            selectedIndex={selectedIndex}
+            correctIndex={current.correct}
+            revealed={phase === 'answered'}
+            hidden={optionsHidden}
+            autoFocusFirst
+          />
         ) : null}
       </GameScreenShell>
       {feedback ? (

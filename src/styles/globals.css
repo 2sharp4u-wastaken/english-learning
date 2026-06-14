@@ -135,3 +135,27 @@
     transform: scale(1);
   }
 }
+
+/* ── Landscape two-pane game layout (M3) ─────────────────────────────────────
+ * Games stack a single tall column in portrait. On a short, wide LANDSCAPE
+ * viewport that column overflows while the sides sit empty, so GameScreenShell
+ * (when given a `prompt` slot) splits its <main> into two columns — prompt/media
+ * on one side, interaction (answers/Next) on the other — and nothing scrolls.
+ * Portrait keeps the default Tailwind flex-col stack. See
+ * feedback_landscape_needs_real_layout. */
+@media (orientation: landscape) and (max-height: 600px) {
+  #react-root .game-twopane {
+    flex-direction: row;
+    gap: 1.25rem;
+    overflow: hidden;
+  }
+  #react-root .game-twopane > .game-twopane-prompt,
+  #react-root .game-twopane > .game-twopane-interaction {
+    flex: 1 1 0%;
+    min-height: 0;
+    overflow-y: auto;
+  }
+  #react-root .game-twopane > .game-twopane-prompt {
+    justify-content: center;
+  }
+}

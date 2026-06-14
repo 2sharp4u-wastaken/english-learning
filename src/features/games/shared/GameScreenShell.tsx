@@ -14,6 +14,14 @@ export interface GameScreenShellProps {
   header: GameHeaderProps
   progress?: QuestionProgressProps
   children: ReactNode
+  /**
+   * Optional prompt/media block (the picture + word + audio). When provided,
+   * `<main>` becomes a two-pane layout in short LANDSCAPE viewports — prompt on
+   * one side, the interaction (`children`) on the other — so nothing scrolls
+   * off-screen (M3). Portrait stacks them as before. Games that don't pass it
+   * keep the single-column layout. See globals.css `.game-twopane`.
+   */
+  prompt?: ReactNode
   footer?: ReactNode
   className?: string
   /**
@@ -30,6 +38,7 @@ export function GameScreenShell({
   header,
   progress,
   children,
+  prompt,
   footer,
   className,
   fitViewport = true,
@@ -75,10 +84,21 @@ export function GameScreenShell({
           className={cn(
             'flex flex-1 flex-col',
             fitViewport && 'min-h-0 overflow-y-auto',
+            // Two-pane in short landscape (CSS in globals.css) when a prompt
+            // slot is given; portrait/no-prompt stays the single column. gap-4
+            // only in the prompt path so non-migrated games are untouched.
+            prompt && 'gap-4 game-twopane',
             className,
           )}
         >
-          {children}
+          {prompt ? (
+            <>
+              <div className="game-twopane-prompt flex flex-col items-center">{prompt}</div>
+              <div className="game-twopane-interaction flex flex-1 flex-col">{children}</div>
+            </>
+          ) : (
+            children
+          )}
         </main>
         {footer ? <div className={cn(fitViewport && 'shrink-0', compact ? 'pt-1' : 'pt-2')}>{footer}</div> : null}
       </div>
