@@ -107,6 +107,32 @@ not-set-up state: UsersTab "הוסף משתמש" routes through a 'setup-for-add
 pending kind first. Client-only gate = devtools-bypassable by design (Tier 3 = backend).
 ```
 
+## Beta Bug/Feedback Report (2026-06-16) — first backend seam
+
+```
+BugReportWidget (mounted in AppShell BOTH branches → on every page incl. games)
+  user taps 🐞 → modal: upload screenshot + Hebrew/English description → submit
+  └─ prepareScreenshot(file)  (bridge/bugReport)  canvas downscale ≤1280px JPEG
+  └─ submitBugReport()
+        ├─ bufferLocally()  → bugReports_local (capped; belt-and-suspenders)
+        └─ POST /api/report  (multipart: payload JSON + screenshot)
+              ↓ Cloudflare Worker (worker/index.ts, wired in wrangler.jsonc)
+              ├─ screenshot → R2 REPORTS_BUCKET (english-learning-reports)
+              │     → imageUrl = /api/report-image/:key  (served back from R2)
+              └─ GitHub Issue via REST (GITHUB_TOKEN secret, GITHUB_REPO var,
+                    label `beta-report`) ← the triage queue
+non-/api request → env.ASSETS.fetch(request)  (serves the static SPA)
+
+WHY this shape: GitHub Issues is the one queue both the user (Issues tab) and a
+Claude session (`gh`) can triage; R2 holds the image because the Issues API
+can't attach binaries. Worker is defensive — missing GITHUB_TOKEN ⇒ 200
+{queued:true} (no issue, no crash); missing bucket ⇒ 503 on /api only, assets
+keep serving. Details: docs/bug-report.md + project_bug_report_feature memory.
+GOTCHA: provision R2/secret BEFORE referencing a binding in wrangler.jsonc
+(a missing binding breaks the live auto-deploy = push). CLI logins need a REAL
+terminal (the `!` bridge can't answer wrangler's skills prompt / gh's menu).
+```
+
 ## Mic Keep-Alive (G1 cure, 2026-06-11)
 
 ```
