@@ -1,0 +1,20 @@
+{
+  // Cloudflare Workers static-assets config (the future-facing successor to Pages).
+  //
+  // Committing this is what stops Cloudflare's "C3" auto-setup from rewriting
+  // vite.config.ts to inject `@cloudflare/vite-plugin` (an ESM-only SSR plugin we
+  // don't need — it broke the first build). With an explicit config present, the
+  // Workers build just runs `npm run build` and uploads ./dist as static assets.
+  //
+  // There is NO `main` (no server Worker script): this is a pure static SPA today.
+  // When the M5/M13 backend lands, add `main` + a Functions entry here.
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "english-learning",
+  "compatibility_date": "2026-06-15",
+  "assets": {
+    "directory": "./dist",
+    // Serve real files first (/assets/*, /img/*, /data/*.json, /sw.js); fall back to
+    // index.html for unmatched paths (hash routing). Mirrors the Netlify SPA rule.
+    "not_found_handling": "single-page-application"
+  }
+}

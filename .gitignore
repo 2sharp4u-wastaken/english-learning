@@ -57,3 +57,6 @@ __pycache__/
 
 # Local Netlify folder
 .netlify
+
+# Cloudflare wrangler local cache
+.wrangler/

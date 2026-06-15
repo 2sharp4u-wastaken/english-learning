@@ -1,53 +1,50 @@
-# Cloudflare Pages deploy (prepped — not yet the primary host)
+# Cloudflare deploy (Workers static assets — prepped, not yet primary)
 
 The app currently lives on **Netlify** (`lomdim-anglit.netlify.app`,
-`netlify deploy --prod`). This repo is also **ready to deploy to Cloudflare Pages**
-with no code changes — everything below is already wired. Switching primary hosts
-is a separate decision (DNS / which URL you hand out); this doc just makes the
-Cloudflare deploy a one-command operation when you want it.
+`netlify deploy --prod`). This repo is also ready to deploy to **Cloudflare Workers**
+(static assets) — the future-facing successor to Cloudflare Pages, chosen so the
+M5/M13 backend can later run as Worker Functions in the same project. Switching the
+public URL is a separate decision; this doc makes the Cloudflare deploy reliable.
 
-## Why Cloudflare Pages
-Free tier with **no commercial restriction** + **unlimited bandwidth** + a good
-Israel edge presence, and **Pages Functions** (generous free serverless) to host the
-future M5/M13 backend seam. Vercel's free "Hobby" tier is non-commercial-only and
-bandwidth-capped, which is the main reason to prefer Cloudflare for a possibly-public
-kids' app. (See backlog §1 / the host-comparison.)
+> **Use Workers, not Pages, and not the "Vite framework" auto-detect.** The first
+> attempt failed because Cloudflare's C3 auto-setup rewrote `vite.config.ts` to
+> inject `@cloudflare/vite-plugin` (ESM-only → broke the build) and pushed a copy to
+> a throwaway `english-learning-v2` repo. Committing `wrangler.jsonc` (below) stops
+> that: with an explicit config present, the build just runs `npm run build` and
+> uploads `./dist`. Deploy from the canonical **`english-learning`** repo — don't
+> maintain `english-learning-v2` (connecting a host is read-only, so a second repo
+> is redundant and only drifts).
 
-## What's already prepped in the repo
-- `cloudflare/_headers` + `cloudflare/_redirects` — the equivalents of
-  `netlify.toml`'s caching headers + SPA fallback. The Vite build copy plugin
-  (`infra1-copy-static-assets` in `vite.config.ts`) emits them to `dist/` so a
-  `dist`-based deploy gets identical behaviour. (Harmless on Netlify, which keeps
-  using `netlify.toml`.)
-- `.node-version` = `20` — Cloudflare Pages reads it for the build image.
-- The build already produces a fully self-contained `dist/` (Vite bundle + the
-  runtime-served `data/*.json`, `img/`, legacy scripts, `sw.js`, `vendor/`), so the
-  publish directory is just `dist`. The app fetches absolute paths like
-  `/data/nikud-map.json`, which work on Cloudflare's root domain (this is why GitHub
-  Pages, which serves under `/<repo>/`, was ruled out).
+## What's prepped in the repo
+- **`wrangler.jsonc`** — static-assets config (`assets.directory = ./dist`,
+  `not_found_handling = single-page-application`). No `main`/Worker script yet (pure
+  static); add one when M5/M13 needs Functions.
+- `cloudflare/_headers` + `_redirects` — caching + SPA fallback, emitted into `dist/`
+  by the Vite copy plugin (Workers Assets honors both).
+- `.node-version` = 20.
 
-## Deploy — option A: direct CLI (fastest, no GitHub hookup)
+## Deploy — option A: dashboard "Workers Builds" (Git-connected, auto-deploys on push)
+1. Delete the broken **`english-learning-v2`** Worker (and the `english-learning-v2`
+   GitHub repo) if they exist.
+2. dash.cloudflare.com → **Workers & Pages** → **Create** → **Workers** → **Connect to
+   a Git repository** (NOT "Import a Vite app" / framework preset — leave preset
+   **None**).
+3. Pick **`english-learning`**, production branch **`v3-react-migration`**.
+4. Build command: `npm run build` · Deploy command: `npx wrangler deploy`.
+   (Cloudflare reads `wrangler.jsonc` → no C3 auto-config, no plugin injection.)
+5. Save & Deploy → you get `english-learning.<account>.workers.dev`.
+
+## Deploy — option B: direct CLI (needs a working `wrangler login` or API token)
 ```sh
-npm i -g wrangler            # or use npx wrangler ...
-wrangler login              # opens a browser to auth your Cloudflare account
-wrangler pages project create lomdim-anglit   # one-time; pick production branch = main
 npm run build
-wrangler pages deploy dist --project-name=lomdim-anglit
+npx wrangler deploy        # reads wrangler.jsonc, uploads ./dist
 ```
-Repeat deploys are just the last two lines.
+Note: interactive `wrangler login` (browser callback) has been unreliable from the
+agent shell; a `CLOUDFLARE_API_TOKEN` ("Workers Scripts: Edit" + "Account: Read") is
+the robust non-interactive alternative.
 
-## Deploy — option B: Git-connected (auto-deploy on push)
-In the Cloudflare dashboard → Workers & Pages → Create → Pages → Connect to Git →
-pick this repo, then set:
-- **Build command:** `npm run build`
-- **Build output directory:** `dist`
-- **Node version:** picked up from `.node-version` (20)
-
-Each push to the production branch then builds + deploys automatically (unlike the
-current Netlify setup, which is CLI-only / not dashboard-connected).
-
-## After verifying Cloudflare
-Spot-check the live Pages URL: `/`, `/sw.js` (must be `Cache-Control: max-age=0`),
-`/data/nikud-map.json`, a vocab image under `/img/...`, the PWA install, and a mic
-game over HTTPS. Only then decide whether to move the public URL/DNS over and retire
-the Netlify site.
+## After it's live — spot-check the *.workers.dev URL
+`/` loads · `/sw.js` returns `Cache-Control: max-age=0, must-revalidate` ·
+`/data/nikud-map.json` 200 · an `/img/...` picture 200 · deep-link SPA fallback ·
+PWA install + a mic game over HTTPS. Only then consider moving the public URL/DNS off
+Netlify.
