@@ -1,20 +1,34 @@
 {
-  // Cloudflare Workers static-assets config (the future-facing successor to Pages).
+  // Cloudflare Workers config (the future-facing successor to Pages).
   //
   // Committing this is what stops Cloudflare's "C3" auto-setup from rewriting
   // vite.config.ts to inject `@cloudflare/vite-plugin` (an ESM-only SSR plugin we
   // don't need — it broke the first build). With an explicit config present, the
-  // Workers build just runs `npm run build` and uploads ./dist as static assets.
+  // Workers build runs `npm run build`, bundles `main`, and uploads ./dist.
   //
-  // There is NO `main` (no server Worker script): this is a pure static SPA today.
-  // When the M5/M13 backend lands, add `main` + a Functions entry here.
+  // As of 2026-06-16 there IS a `main` Worker (the first backend seam): it serves
+  // the bug/feedback report queue (POST /api/report → R2 + GitHub Issue) and
+  // falls through to the static SPA via the ASSETS binding for everything else.
+  // See worker/index.ts + docs/bug-report.md.
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "english-learning",
+  "main": "worker/index.ts",
   "compatibility_date": "2026-06-15",
   "assets": {
     "directory": "./dist",
+    // The Worker serves static files via `env.ASSETS.fetch` for non-/api paths;
+    // this binding is required once a `main` script exists.
+    "binding": "ASSETS",
     // Serve real files first (/assets/*, /img/*, /data/*.json, /sw.js); fall back to
     // index.html for unmatched paths (hash routing). Mirrors the Netlify SPA rule.
     "not_found_handling": "single-page-application"
+  },
+  "r2_buckets": [
+    { "binding": "REPORTS_BUCKET", "bucket_name": "english-learning-reports" }
+  ],
+  "vars": {
+    // The repo whose Issues tab is the bug-report queue. GITHUB_TOKEN is a SECRET
+    // (set via `wrangler secret put` / dashboard), not here.
+    "GITHUB_REPO": "2sharp4u-wastaken/english-learning"
   }
 }
