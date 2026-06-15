@@ -48,6 +48,14 @@ function copyStaticAssets(): Plugin {
       }
       // img/: the full picture tree (referenced by imageUrl strings, not imports).
       fs.cpSync(path.resolve(root, 'img'), path.join(out, 'img'), { recursive: true })
+      // Cloudflare Pages reads _headers + _redirects from the build-output root
+      // (the equivalents of netlify.toml's [[headers]]/[[redirects]]). Copy them so
+      // a `wrangler pages deploy dist` gets the same caching + SPA fallback. Netlify
+      // keeps using netlify.toml (these are harmless there). See docs/cloudflare-deploy.md.
+      for (const file of ['_headers', '_redirects']) {
+        const src = path.resolve(root, 'cloudflare', file)
+        if (fs.existsSync(src)) fs.copyFileSync(src, path.join(out, file))
+      }
     },
   }
 }
