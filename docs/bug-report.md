@@ -34,11 +34,24 @@ BugReportWidget (src/features/feedback/BugReportWidget.tsx)
   ping) but can't be read/triaged from a Claude Code session; GitHub Issues can
   (`gh`). R2-only works too but has no ready triage UI.
 
-## Turning the backend ON (one-time provisioning)
+## Status: LIVE (2026-06-16)
 
-The Worker (`worker/index.ts`) is committed but **deliberately NOT referenced in
-`wrangler.jsonc`** — declaring an R2 binding/secret that doesn't exist would break
-the live auto-deploy. Do these first, then flip the config.
+Provisioned + verified end-to-end on account `2sharp4u@gmail.com`:
+- R2 bucket `english-learning-reports` created; `wrangler.jsonc` carries `main`,
+  the `ASSETS` + `REPORTS_BUCKET` bindings, and the `GITHUB_REPO` var.
+- `GITHUB_TOKEN` = a **no-expiry** fine-grained PAT (repo `english-learning`,
+  Issues: RW), set via `wrangler secret put`. **No-expiry by choice** — an
+  expiring token would silently stop issue creation when it lapsed (reports
+  would still buffer locally + screenshots still hit R2, but no issues). If it's
+  ever rotated, re-run `wrangler secret put GITHUB_TOKEN`.
+- `beta-report` label created in the repo.
+- Verified: a POST created issue #1 with the screenshot served from R2.
+
+## Re-provisioning from scratch (if ever needed)
+
+The steps that stood it up — for a fresh account/repo. (Historical note: the
+Worker was first committed *unwired* so a missing binding couldn't break the
+live auto-deploy; it's wired now.)
 
 1. **Authenticate** (so the CLI — and Claude — can act):
    ```sh

@@ -38,30 +38,29 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 
 ---
 
-## 0. Beta bug/feedback report — 🔶 FRONTEND SHIPPED 2026-06-16, backend pending provisioning
+## 0. Beta bug/feedback report — ✅ LIVE END-TO-END 2026-06-16
 
 A floating "דיווח על תקלה" report button on **every page** (hub + games) →
 modal with screenshot upload (downscaled client-side) + Hebrew/English
-description + submit. Full design + setup: **`docs/bug-report.md`**.
+description + submit. Full design + ops: **`docs/bug-report.md`**.
 - ✅ **Frontend LIVE** (`src/features/feedback/BugReportWidget.tsx` mounted in
-  `AppShell` both branches; `src/bridge/bugReport.ts`). Backend-agnostic: POSTs
-  to `/api/report` AND always writes a capped `bugReports_local` localStorage
-  buffer so **no report is lost before the backend exists**. Adult-utility chrome
-  → plain Hebrew, whole subtree `data-nikud-skip` (nikudDOM leaves it alone).
-- ✅ **Worker written** (`worker/index.ts`): `/api/report` → screenshot to R2 +
-  GitHub Issue (label `beta-report`) as the queue; `/api/report-image/:k` serves
-  it back; everything else → `env.ASSETS`. **Deliberately NOT yet referenced in
-  `wrangler.jsonc`** (declaring a missing R2 binding/secret would break the live
-  auto-deploy).
-- ⬜ **Backend turn-on (needs the USER — Cloudflare/GitHub access):** `wrangler
-  login` + `gh auth login`; create R2 bucket `english-learning-reports`; create a
-  fine-grained GitHub PAT (Issues RW) → `wrangler secret put GITHUB_TOKEN`; add
-  `main`/`r2_buckets`/`vars`/`assets.binding` to `wrangler.jsonc`;
-  `gh label create beta-report`; push to deploy + verify. Exact commands in
-  `docs/bug-report.md`. **Queue chosen = GitHub Issues** (triage via the Issues
-  tab or `gh issue list --label beta-report`; R2 holds the image because the
-  Issues API can't attach binaries). Chat-webhook was the runner-up (fast, phone
-  ping) but isn't readable from a Claude session.
+  `AppShell` both branches; `src/bridge/bugReport.ts`). POSTs to `/api/report`
+  AND always writes a capped `bugReports_local` localStorage buffer (belt-and-
+  suspenders). Adult-utility chrome → plain Hebrew, whole subtree
+  `data-nikud-skip` (nikudDOM leaves it alone).
+- ✅ **Backend LIVE** (`worker/index.ts`, wired in `wrangler.jsonc`): `main`
+  Worker with ASSETS + REPORTS_BUCKET (R2 bucket `english-learning-reports`) +
+  `GITHUB_REPO` var + `GITHUB_TOKEN` secret (no-expiry fine-grained PAT, Issues
+  RW). `/api/report` → screenshot to R2 + GitHub Issue (label `beta-report`);
+  `/api/report-image/:k` serves it back; else `env.ASSETS`. Verified live
+  (issue #1 created + screenshot served). Account `2sharp4u@gmail.com`.
+- **Queue = GitHub Issues** (`2sharp4u-wastaken/english-learning`): triage in the
+  Issues tab or `gh issue list --label beta-report`. R2 holds the image (Issues
+  API can't attach binaries). Chat-webhook was the runner-up (fast phone ping)
+  but isn't readable from a Claude session.
+- ⬜ Optional follow-ups: a private admin list page to triage in-app (vs the
+  Issues tab); strip the stray `img/.DS_Store` from the build copy plugin; set
+  up `gh auth login` so a Claude session can triage directly.
 
 ## 1. Ship beyond localhost — **Slice INFRA1** ✅ SHIPPED (live 2026-06-10)
 
