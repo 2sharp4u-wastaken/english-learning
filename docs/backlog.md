@@ -59,8 +59,9 @@ description + submit. Full design + ops: **`docs/bug-report.md`**.
   API can't attach binaries). Chat-webhook was the runner-up (fast phone ping)
   but isn't readable from a Claude session.
 - ⬜ Optional follow-ups: a private admin list page to triage in-app (vs the
-  Issues tab); strip the stray `img/.DS_Store` from the build copy plugin; set
-  up `gh auth login` so a Claude session can triage directly.
+  Issues tab); set up `gh auth login` so a Claude session can triage directly.
+  (✅ stray `img/.DS_Store` removed from the build copy plugin; ✅ QR committed at
+  `docs/beta-qr.png`.)
 
 ## 1. Ship beyond localhost — **Slice INFRA1** ✅ SHIPPED (live 2026-06-10)
 
