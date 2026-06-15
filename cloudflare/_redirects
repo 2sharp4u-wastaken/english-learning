@@ -1,5 +1,0 @@
-# Cloudflare Pages SPA fallback (mirrors netlify.toml [[redirects]]).
-# Routing is hash-based (/#/home) so the server path is almost always "/". Real
-# static files (/assets/*, /img/*, /data/*.json, /sw.js) are served first; only
-# unmatched paths fall through to index.html.
-/*    /index.html   200
