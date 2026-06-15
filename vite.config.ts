@@ -48,11 +48,13 @@ function copyStaticAssets(): Plugin {
       }
       // img/: the full picture tree (referenced by imageUrl strings, not imports).
       fs.cpSync(path.resolve(root, 'img'), path.join(out, 'img'), { recursive: true })
-      // Cloudflare Pages reads _headers + _redirects from the build-output root
-      // (the equivalents of netlify.toml's [[headers]]/[[redirects]]). Copy them so
-      // a `wrangler pages deploy dist` gets the same caching + SPA fallback. Netlify
-      // keeps using netlify.toml (these are harmless there). See docs/cloudflare-deploy.md.
-      for (const file of ['_headers', '_redirects']) {
+      // Cloudflare Workers/Pages reads _headers from the build-output root (the
+      // equivalent of netlify.toml's [[headers]]). Copy it so a Cloudflare deploy
+      // gets the same caching; Netlify keeps using netlify.toml (harmless there).
+      // NOTE: no _redirects — the SPA catch-all (/* /index.html 200) is REJECTED by
+      // Cloudflare ("infinite loop" [code 100324]); SPA fallback comes from
+      // wrangler.jsonc's not_found_handling instead. See docs/cloudflare-deploy.md.
+      for (const file of ['_headers']) {
         const src = path.resolve(root, 'cloudflare', file)
         if (fs.existsSync(src)) fs.copyFileSync(src, path.join(out, file))
       }

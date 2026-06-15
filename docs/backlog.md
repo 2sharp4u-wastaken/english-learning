@@ -7,18 +7,33 @@ decision. This doc only tracks what is **not done**.
 
 Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ parked on the user.
 
-> **RESUME HERE (session 2026-06-14).** All work is committed + deployed live
-> (`netlify deploy --prod`; last commit `35f4b17`). This session shipped MOBILE1:
-> M1 (Android mic), M2 (names), M6 (settings→parent tab), M7 (greeting TTS code;
-> needs a Hebrew voice ON THE TABLET — device, not code), M9/M9b/M9c (Android
-> speech wedge), M10 (say-it matcher), M11 (no-emoji TTS), M14 (WJ Discover
-> listen-gate), and **M3 partially** (compact chrome + landscape two-pane for the
-> 8 answer-grid games). Plans added, not built: M5, M12, M13.
-> **NEXT: M3 batch 3** — give the landscape two-pane (the `prompt` slot) to the
-> special-layout games still stacking: Word Journey (+ pin its action buttons),
-> ABC, Phonics, Reading, Story Time, Sentence Scramble. See §7 M3.
-> Also waiting on the user: cert recalibration decision; install Hebrew TTS voice
-> on the tablet (M7); C2/C3 images.
+> **RESUME HERE (session 2026-06-15).** All work committed + pushed to
+> `v3-react-migration` (last commit on push auto-deploys Cloudflare). **The app is now
+> LIVE on TWO hosts:** **Cloudflare Workers** —
+> https://english-learning.2sharp4u.workers.dev/ (Git-connected → **auto-deploys on
+> every push**) — and **Netlify** — https://lomdim-anglit.netlify.app (manual
+> `netlify deploy --prod` only). See `docs/cloudflare-deploy.md` for the Cloudflare
+> setup + gotchas. A QR of the Cloudflare URL was sent to the user for a
+> family/friends beta.
+>
+> This session shipped: **PROG1** (Home=31/Stats=0 fix — words-learned now derives
+> from the mastery lifecycle, Steps 1–4 all done; see §2 + `[[project_prog1_lifecycle_single_source]]`),
+> the **Picture Match emoji fallback** (M15 partial), **Google-Translate guard**
+> (`translate="no"` — was mangling English letter tiles into Hebrew), **WJ spell-stage
+> layout-shift fix** (reserve the word box via `wordHidden`), **data fixes** (Musketeer
+> 🤺, Clan 🛡️, "Adopt Me"→"Adopt"), **WJ say-word no-auto-advance** (replay your
+> recording first), and the **Cloudflare deploy** (Workers static assets).
+>
+> **NEXT (pick up here):** (1) **deploy parity** — push auto-updates Cloudflare but
+> NOT Netlify; decide whether to keep both in sync or retire Netlify. (2) **M3 batch 3**
+> — landscape two-pane for the special-layout games still stacking: Word Journey (+ pin
+> action buttons), ABC, Phonics, Reading, Story Time, Sentence Scramble (§7 M3). (3)
+> **M15** — the 50 newer-emoji "tofu" words (real cause of the device blank tiles; §5
+> M15) — pick fix (a) Twemoji PNGs. (4) **Leaderboard** family/local board (§ LB). Then
+> M12+M4 (parent account + onboarding), M7 (tablet Hebrew voice — device), M8 (PWA
+> install button), M5/M13 (backend on the new Cloudflare Worker Functions seam).
+> Waiting on the user: cert recalibration decision; install Hebrew TTS voice on the
+> tablet (M7); C2/C3 images.
 
 ---
 
@@ -30,14 +45,18 @@ account 2sharp4u@gmail.com; this folder is CLI-linked via `.netlify/`, gitignore
 dashboard-connected, so pushing alone does NOT deploy). Remaining: a real-device
 play-test over the live HTTPS URL (mic games + PWA install) — see §3.
 
-**🟢 Cloudflare Pages prepped (2026-06-15) — not yet primary.** The repo is now
-one-command deployable to Cloudflare Pages alongside Netlify: `cloudflare/_headers`
-+ `_redirects` (mirror `netlify.toml`, emitted into `dist/` by the Vite copy plugin),
-`.node-version=20`, recipes in **`docs/cloudflare-deploy.md`**. Chosen over Vercel for
-the free tier (no commercial restriction + unlimited bandwidth + generous Pages
-Functions for the future M5/M13 backend). The actual switch needs `wrangler login`
-(your Cloudflare auth) + spot-checks of the live Pages URL before moving the public
-URL/DNS; Netlify stays primary until then.
+**✅ Cloudflare Workers — LIVE 2026-06-15.** Second live host (alongside Netlify):
+**https://english-learning.2sharp4u.workers.dev/**. Git-connected to
+`english-learning` @ `v3-react-migration`, so **a push auto-deploys** (no CLI/manual
+step — unlike Netlify). Static-assets Worker via committed `wrangler.jsonc`
+(`assets=./dist`, SPA `not_found_handling`); `cloudflare/_headers` ships caching (NO
+`_redirects` — Cloudflare rejects the SPA catch-all). Chose Workers over Pages/Vercel
+(future-facing; native Functions for the M5/M13 backend; no commercial restriction;
+unlimited static serving). Full setup + the hard-won gotchas (C3 plugin injection,
+branch pinning, `_redirects` loop, v2 repo) in **`docs/cloudflare-deploy.md`**.
+**Open:** two live hosts now — keep both in sync (push = Cloudflare; `netlify deploy
+--prod` = Netlify) or retire Netlify. Shorter URL (custom domain) deferred — user
+rolled with a QR of the workers.dev URL for the beta.
 
 Chosen path: **public static deploy (Netlify/Vercel) + PWA layer**. A hosted deploy
 gives free HTTPS → solves the mic secure-context blocker automatically (no cert
@@ -89,23 +108,20 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
 
 ## 2. Learning-flow loose ends (from `learning-path.md`)
 
-- 🔶 **PROG1 — Stats shows "0 מילים נלמדו" while Home shows 31 — Steps 1-3 SHIPPED (working tree, not committed), 2026-06-14.**
-  DONE: ✅ Step1 `src/engine/lifecycle.ts` (pure shared rule) + `ProgressManager`
+- ✅ **PROG1 — Stats "0 מילים נלמדו" vs Home 31 — SHIPPED (Steps 1–4, commit `a6b7ebf`), 2026-06-14/15.**
+  ✅ Step1 `src/engine/lifecycle.ts` (the single pure rule) + `ProgressManager`
   delegates to it + `lifecycle.test.ts` (11) — engine tests prove Home/Profile/gates
   unchanged. ✅ Step2 `bridge/stats.ts` `learnedCount`→introduced, new `masteredCount`,
   cross-user `isWordDue` guard; `StatsPage` shows both "מילים נלמדו"(introduced) +
-  "מילים בשליטה"(mastered) in Overview + Words tab; HoF leaderboard auto-fixed (ranks
-  introduced). ✅ Step3 velocity: `firstSeen` stamp in `recordWordAttempt`/
-  `createDefaultWordStats`, `getLearningVelocity` rewritten (new words met/week,
-  forward-only). Regression `stats-lifecycle.test.ts` (4) reproduces the exact bug
-  (31 introduced / empty stamp → learnedCount 31, mastered 3, velocity 2). tsc clean,
-  85 unit tests pass.
-  LEFT: ⬜ **Step4** — (F) Reading-gate Home copy is a STATIC label
-  (`appState.ts:286` `'10 מילים + ABC 60%'`), always shows the full requirement even
-  when met; make it dynamic "what's left" from `requiredCount`/`requiredAbcMastery`/
-  `requiredTopics` vs current progress (HomePage change). (G) standardize labels +
-  re-run `build-nikud-map.py` for `מילים בשליטה`. Optional follow-up: snapshot-based
-  `isWordDue` so other users' Words-tab due flags work.
+  "מילים בשליטה"(mastered) in Overview + Words tab; HoF leaderboard auto-fixed. ✅ Step3
+  velocity: `firstSeen` stamp in `recordWordAttempt`/`createDefaultWordStats`,
+  `getLearningVelocity` rewritten (new words met/week, forward-only). ✅ Step4
+  `getUnlockRemainingText()` (`bridge/progress.ts`) → Home shows only UNMET unlock
+  requirements + ABC progress (Reading is gated on ABC<60%, not words). Regression
+  `stats-lifecycle.test.ts` reproduces the exact bug. See
+  `[[project_prog1_lifecycle_single_source]]`.
+  ⬜ Optional follow-up only: snapshot-based `isWordDue` so OTHER users' Words-tab due
+  flags work (current guard just hides them for non-current users — correct, not wrong).
 - 🔴 **PROG1 (original) — Stats shows "0 מילים נלמדו" while Home shows 31 (design notes).**
   Root cause: the V3 model derives "learned" from `wordMastery`, but the **Stats**
   surface (`bridge/stats.ts`) still reads the legacy `learnedWords` stamp, which is
