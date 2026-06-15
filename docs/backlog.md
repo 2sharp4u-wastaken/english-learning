@@ -30,6 +30,15 @@ account 2sharp4u@gmail.com; this folder is CLI-linked via `.netlify/`, gitignore
 dashboard-connected, so pushing alone does NOT deploy). Remaining: a real-device
 play-test over the live HTTPS URL (mic games + PWA install) — see §3.
 
+**🟢 Cloudflare Pages prepped (2026-06-15) — not yet primary.** The repo is now
+one-command deployable to Cloudflare Pages alongside Netlify: `cloudflare/_headers`
++ `_redirects` (mirror `netlify.toml`, emitted into `dist/` by the Vite copy plugin),
+`.node-version=20`, recipes in **`docs/cloudflare-deploy.md`**. Chosen over Vercel for
+the free tier (no commercial restriction + unlimited bandwidth + generous Pages
+Functions for the future M5/M13 backend). The actual switch needs `wrangler login`
+(your Cloudflare auth) + spot-checks of the live Pages URL before moving the public
+URL/DNS; Netlify stays primary until then.
+
 Chosen path: **public static deploy (Netlify/Vercel) + PWA layer**. A hosted deploy
 gives free HTTPS → solves the mic secure-context blocker automatically (no cert
 mgmt), reachable on any tablet; PWA adds install-to-home-screen + offline. LAN is
