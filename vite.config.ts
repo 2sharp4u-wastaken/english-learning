@@ -47,7 +47,11 @@ function copyStaticAssets(): Plugin {
         fs.copyFileSync(path.join(dataDir, entry), dest)
       }
       // img/: the full picture tree (referenced by imageUrl strings, not imports).
-      fs.cpSync(path.resolve(root, 'img'), path.join(out, 'img'), { recursive: true })
+      // Skip macOS .DS_Store junk so it doesn't ship as a served asset.
+      fs.cpSync(path.resolve(root, 'img'), path.join(out, 'img'), {
+        recursive: true,
+        filter: (src) => path.basename(src) !== '.DS_Store',
+      })
       // Cloudflare Workers/Pages reads _headers from the build-output root (the
       // equivalent of netlify.toml's [[headers]]). Copy it so a Cloudflare deploy
       // gets the same caching; Netlify keeps using netlify.toml (harmless there).
