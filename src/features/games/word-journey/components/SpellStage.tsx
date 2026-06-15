@@ -96,7 +96,12 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
       <MediaPromptCard
         prompt={showNikud ? 'הַרְכִּיבוּ אֶת הַמִּלָּה' : 'הרכיבו את המילה'}
         media={<WordJourneyPicture word={item.word} />}
-        word={wordVisible ? displayWord : undefined}
+        // Keep the word in the layout and just hide it (visibility) once revealed,
+        // so the card never contracts when it vanishes — a collapse here shoved the
+        // letter pile up mid-tap (mis-selected letters / accidental בדוק). Same
+        // reserve-space pattern the Reading game already uses.
+        word={displayWord}
+        wordHidden={!wordVisible}
         translation={hebrew || undefined}
         onPlayAudio={() => void speakWord(item.word.word.toLowerCase(), 'word-journey')}
         audioLabel="השמע מילה"

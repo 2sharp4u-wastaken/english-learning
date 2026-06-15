@@ -35,5 +35,5 @@ export const robloxWords = [
     { word: "Noob", translation: "נוב", category: "roblox", image: "🙈" },
     { word: "Pro", translation: "פרו", category: "roblox", image: "🥇" },
     { word: "VIP", translation: "אח״מ", category: "roblox", image: "⭐" },
-    { word: "Adopt Me", translation: "אַמֵץ אותי", category: "roblox", image: "👶" }
+    { word: "Adopt", translation: "לְאַמֵּץ", category: "roblox", image: "👶" }
 ];
