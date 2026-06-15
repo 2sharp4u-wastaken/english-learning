@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { Mic, MicOff, Volume2 } from 'lucide-react'
 import { MediaPromptCard } from '@/features/games/shared/MediaPromptCard'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
@@ -19,8 +19,6 @@ import { isBalancedSpeechMatch } from '@/lib/speechMatch'
 import { cn } from '@/lib/cn'
 import { POINTS, type WJWord } from '@/bridge/word-journey'
 
-const ADVANCE_MS = 1400
-
 interface Props {
   words: WJWord[]
   onAnswer: (word: WJWord, isCorrect: boolean, points: number) => void
@@ -40,7 +38,6 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
   // Object URL for the captured mic blob — kids tap "שמע את עצמך" to replay it.
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null)
   const supported = isSpeechRecognitionAvailable()
-  const advanceTimer = useRef<number | null>(null)
   const mic = useMicPlayback()
   const word = words[index]
 
@@ -59,7 +56,6 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
       window.clearTimeout(playId)
       cancelSpeech()
       if (isCurrentlyRecording()) void stopPronunciationRecording()
-      if (advanceTimer.current) window.clearTimeout(advanceTimer.current)
     }
   }, [word, mic])
 
@@ -99,9 +95,11 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
     setFeedback({ variant: correct ? 'correct' : 'incorrect', text: fb.text })
     onAnswer(word, correct, correct ? POINTS.say : 0)
     playAnswerSfx(correct ? 'correct' : 'incorrect')
+    // Do NOT auto-advance on a correct answer: the child taps "הבא" when ready, so
+    // they always get the chance to replay their recording ("שמע את עצמך") first —
+    // for a right answer just as much as a wrong one.
     if (correct) {
       if (getShowConfetti()) triggerConfetti('wj-say-word')
-      advanceTimer.current = window.setTimeout(advance, ADVANCE_MS)
     } else {
       void speakWord(word.word.toLowerCase(), 'word-journey', { allowOverlap: true })
     }
@@ -211,7 +209,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
           </div>
         </section>
       ) : null}
-      {phase === 'answered' && !isCorrect ? (
+      {phase === 'answered' ? (
         <button
           type="button"
           onClick={advance}
