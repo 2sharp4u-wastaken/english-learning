@@ -26,8 +26,9 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 >
 > **NEXT (pick up here):** (1) **deploy parity** — push auto-updates Cloudflare but
 > NOT Netlify; decide whether to keep both in sync or retire Netlify. (2) **M3 batch 3**
-> — landscape two-pane for the special-layout games still stacking: Word Journey (+ pin
-> action buttons), ABC, Phonics, Reading, Story Time, Sentence Scramble (§7 M3). (3)
+> — Reading/Sentence Scramble/ABC/Phonics/Story Time landscape two-pane DONE
+> (2026-06-16); **only Word Journey remains** (5 stages + pin action buttons —
+> its own per-stage refactor, §7 M3). (3)
 > **M15** — the 50 newer-emoji "tofu" words (real cause of the device blank tiles; §5
 > M15) — pick fix (a) Twemoji PNGs. (4) **Leaderboard** family/local board (§ LB). Then
 > M12+M4 (parent account + onboarding), M7 (tablet Hebrew voice — device), M8 (PWA
@@ -371,9 +372,22 @@ question. Plan:
     BlankFill (Articles + Progressive) — moved the sentence/question card into
     the `prompt` slot (key stays on it), AnswerGrid + WordTable as children.
     Tests green (Grammar 5, Fill-Blanks 2, Articles/Progressive 2).
-  - ⬜ **Batch 3 — special layouts:** Reading (LetterSlots), Word Journey (5
-    stages + pin action buttons to the footer), Story Time, Sentence Scramble,
-    ABC/Phonics. Each gets its own landscape arrangement on the same scaffold.
+  - 🔶 **Batch 3 — special layouts (IN PROGRESS 2026-06-16):**
+    - ✅ **Reading, Sentence Scramble, ABC, Phonics, Story Time (DONE
+      2026-06-16):** all reduced to the same `prompt`-slot split — the
+      MediaPromptCard / hint / instruction card moves to the `prompt` prop, the
+      interaction (LetterSlots+actions / answer-zone+word-bank / mic-or-AnswerGrid)
+      stays as children. **Story Time:** only the QUIZ phase splits — the
+      `StoryQuizPrompt` (title+question) goes to the `prompt` slot, `StoryQuizPhase`
+      is now AnswerGrid-only; the READ phase passes no `prompt` so it stays a
+      full-width single column (it's a reading experience, not a prompt+answers
+      screen). Typecheck clean; interaction assertions green (the only failures
+      are the pre-existing Dicta-Nakdan CORS console-error check, reproduced on
+      baseline).
+    - ⬜ **Word Journey (still TODO — its own piece):** 5 self-contained stage
+      components each own their layout AND need their action buttons pinned to a
+      footer; that's a per-stage refactor, not the mechanical `prompt`-slot move
+      the other games took. Left for a dedicated pass.
 - **Memory game (decision: rotate hint)**: portrait phone on big-grid levels
   shows a friendly rotate-the-device hint; landscape gets a wider grid via the
   existing `bridge/memory.ts` sizing knobs (no Screen-Orientation lock — only

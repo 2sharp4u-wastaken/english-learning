@@ -6,7 +6,7 @@ import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
 import { StoryReadPhase } from './components/StoryReadPhase'
-import { StoryQuizPhase } from './components/StoryQuizPhase'
+import { StoryQuizPhase, StoryQuizPrompt } from './components/StoryQuizPhase'
 import { StoryTimeLearnFirst } from './components/StoryTimeLearnFirst'
 import {
   abortStoryTimeSession,
@@ -277,11 +277,19 @@ export function StoryTimeGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        footer={footer}
+        prompt={
+          showQuiz && currentStory && currentQuestion ? (
+            <StoryQuizPrompt story={currentStory} question={currentQuestion} />
+          ) : undefined
+        }
+      >
         {currentStory ? (
           showQuiz && currentQuestion ? (
             <StoryQuizPhase
-              story={currentStory}
               question={currentQuestion}
               selectedIndex={selectedIndex}
               revealed={phase === 'answered'}

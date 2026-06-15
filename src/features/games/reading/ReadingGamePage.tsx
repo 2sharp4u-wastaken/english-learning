@@ -488,9 +488,11 @@ export function ReadingGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps}>
-        {current ? (
-          <div className="flex flex-1 flex-col items-center gap-4 pt-1">
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        prompt={
+          current ? (
             <MediaPromptCard
               prompt={showNikud ? 'הַרְכִּיבוּ אֶת הַמִּלָּה' : 'הרכיבו את המילה'}
               media={<ReadingPicture question={current} />}
@@ -504,7 +506,11 @@ export function ReadingGamePage() {
               audioHint={audioHint}
               className="mx-auto w-full max-w-md gap-2 p-4"
             />
-
+          ) : undefined
+        }
+      >
+        {current ? (
+          <div className="flex flex-1 flex-col items-center gap-4 pt-1">
             {phase === 'answered' && feedback?.variant === 'incorrect' ? (
               <SpellingComparison
                 target={current.word}

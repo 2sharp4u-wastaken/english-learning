@@ -363,9 +363,12 @@ export function SentenceScrambleGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
-        {current ? (
-          <div key={index} className="flex flex-1 flex-col gap-4">
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        footer={footer}
+        prompt={
+          current ? (
             <div className="mx-auto flex w-full max-w-md flex-col items-center gap-3 rounded-3xl border border-white/10 bg-[color:var(--ink-900)]/70 p-5 text-center backdrop-blur">
               <p
                 data-testid="scramble-hint"
@@ -384,7 +387,11 @@ export function SentenceScrambleGamePage() {
                 <Volume2 className="size-5" aria-hidden />
               </button>
             </div>
-
+          ) : undefined
+        }
+      >
+        {current ? (
+          <div key={index} className="flex flex-1 flex-col gap-4">
             {/* On a wrong answer, swap the attempt zone for the correct-above-
                 attempt comparison (D4). */}
             {showComparison ? (

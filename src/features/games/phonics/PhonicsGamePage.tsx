@@ -436,9 +436,12 @@ export function PhonicsGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
-        {current ? (
-          <div key={index} className="flex flex-1 flex-col gap-4">
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        footer={footer}
+        prompt={
+          current ? (
             <MediaPromptCard
               prompt={current.instruction}
               media={<PhonicsGlyph question={current} renderEnglish={renderEnglish} />}
@@ -447,7 +450,11 @@ export function PhonicsGamePage() {
               audioLabel="השמע שוב"
               audioIconOnly
             />
-
+          ) : undefined
+        }
+      >
+        {current ? (
+          <div key={index} className="flex flex-1 flex-col gap-4">
             {isSaySound ? (
               <div className="flex flex-col items-center gap-3">
                 <button

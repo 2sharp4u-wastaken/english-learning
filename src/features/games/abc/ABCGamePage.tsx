@@ -414,9 +414,12 @@ export function ABCGamePage() {
 
   return (
     <>
-      <GameScreenShell header={headerProps} progress={progressProps} footer={footer}>
-        {current ? (
-          <div key={index} className="flex flex-1 flex-col gap-4">
+      <GameScreenShell
+        header={headerProps}
+        progress={progressProps}
+        footer={footer}
+        prompt={
+          current ? (
             <MediaPromptCard
               prompt={current.instruction}
               media={<LetterGlyph question={current} />}
@@ -425,7 +428,11 @@ export function ABCGamePage() {
               audioLabel="השמע שוב"
               audioIconOnly
             />
-
+          ) : undefined
+        }
+      >
+        {current ? (
+          <div key={index} className="flex flex-1 flex-col gap-4">
             {isSayLetter ? (
               <div className="flex flex-col items-center gap-3">
                 <button
