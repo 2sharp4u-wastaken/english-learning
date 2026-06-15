@@ -38,6 +38,31 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 
 ---
 
+## 0. Beta bug/feedback report — 🔶 FRONTEND SHIPPED 2026-06-16, backend pending provisioning
+
+A floating "דיווח על תקלה" report button on **every page** (hub + games) →
+modal with screenshot upload (downscaled client-side) + Hebrew/English
+description + submit. Full design + setup: **`docs/bug-report.md`**.
+- ✅ **Frontend LIVE** (`src/features/feedback/BugReportWidget.tsx` mounted in
+  `AppShell` both branches; `src/bridge/bugReport.ts`). Backend-agnostic: POSTs
+  to `/api/report` AND always writes a capped `bugReports_local` localStorage
+  buffer so **no report is lost before the backend exists**. Adult-utility chrome
+  → plain Hebrew, whole subtree `data-nikud-skip` (nikudDOM leaves it alone).
+- ✅ **Worker written** (`worker/index.ts`): `/api/report` → screenshot to R2 +
+  GitHub Issue (label `beta-report`) as the queue; `/api/report-image/:k` serves
+  it back; everything else → `env.ASSETS`. **Deliberately NOT yet referenced in
+  `wrangler.jsonc`** (declaring a missing R2 binding/secret would break the live
+  auto-deploy).
+- ⬜ **Backend turn-on (needs the USER — Cloudflare/GitHub access):** `wrangler
+  login` + `gh auth login`; create R2 bucket `english-learning-reports`; create a
+  fine-grained GitHub PAT (Issues RW) → `wrangler secret put GITHUB_TOKEN`; add
+  `main`/`r2_buckets`/`vars`/`assets.binding` to `wrangler.jsonc`;
+  `gh label create beta-report`; push to deploy + verify. Exact commands in
+  `docs/bug-report.md`. **Queue chosen = GitHub Issues** (triage via the Issues
+  tab or `gh issue list --label beta-report`; R2 holds the image because the
+  Issues API can't attach binaries). Chat-webhook was the runner-up (fast, phone
+  ping) but isn't readable from a Claude session.
+
 ## 1. Ship beyond localhost — **Slice INFRA1** ✅ SHIPPED (live 2026-06-10)
 
 **The app is LIVE at https://lomdim-anglit.netlify.app** (Netlify site `lomdim-anglit`,

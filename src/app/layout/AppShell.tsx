@@ -4,6 +4,7 @@ import { TopNav } from './TopNav'
 import { MobileTopBar } from './MobileTopBar'
 import { MobileBottomNav } from './MobileBottomNav'
 import { PageContainer } from './PageContainer'
+import { BugReportWidget } from '@/features/feedback/BugReportWidget'
 import { isReactGame } from '@/features/games/reactGames'
 
 export function AppShell() {
@@ -49,7 +50,12 @@ export function AppShell() {
   }, [isReactDriven])
 
   if (isGameRoute) {
-    return <Outlet />
+    return (
+      <>
+        <Outlet />
+        <BugReportWidget />
+      </>
+    )
   }
 
   return (
@@ -64,6 +70,7 @@ export function AppShell() {
         <Outlet />
       </PageContainer>
       <MobileBottomNav />
+      <BugReportWidget />
     </div>
   )
 }
