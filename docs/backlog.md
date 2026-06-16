@@ -357,8 +357,15 @@ All games already use `GameScreenShell fitViewport` (footer pinned, only
 GameHero + QuestionProgress) eats so much height that `<main>` overflows: the
 question top scrolls away, and the scroll offset persists into the next
 question. Plan:
+- ✅ **Compact threshold raised 600→700 (2026-06-16, beta reports #3/#4):** a
+  320×680 portrait phone sat above the 600 cutoff, so Word Journey's chrome +
+  prompt + Next button overflowed and needed a scroll. Bumped
+  `useCompactViewport` default to 700 (+ WJ picture-shrink media queries) so
+  phones (browser innerHeight ≤~700) get compact while the 720 laptop/test
+  default keeps the full hero. Verified live at 320×680: compact, zero overflow,
+  Next in view.
 - ✅ **Compact chrome on short viewports (SHIPPED 2026-06-14):**
-  `useCompactViewport()` (`matchMedia('(max-height: 600px)')` — keyed on HEIGHT
+  `useCompactViewport()` (`matchMedia('(max-height: 700px)')` — keyed on HEIGHT
   so it catches landscape phones, which are wide but short) drives a compact
   mode in `GameScreenShell`: `GameHero` collapses to a single slim line (small
   inline icon + title, no big icon block, no divider), shell `gap`/`pt`/footer
