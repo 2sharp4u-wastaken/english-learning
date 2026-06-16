@@ -7,32 +7,39 @@ decision. This doc only tracks what is **not done**.
 
 Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ parked on the user.
 
-> **RESUME HERE (session 2026-06-15).** All work committed + pushed to
-> `v3-react-migration` (last commit on push auto-deploys Cloudflare). **The app is now
-> LIVE on TWO hosts:** **Cloudflare Workers** —
-> https://english-learning.2sharp4u.workers.dev/ (Git-connected → **auto-deploys on
-> every push**) — and **Netlify** — https://lomdim-anglit.netlify.app (manual
-> `netlify deploy --prod` only). See `docs/cloudflare-deploy.md` for the Cloudflare
-> setup + gotchas. A QR of the Cloudflare URL was sent to the user for a
-> family/friends beta.
+> **RESUME HERE (session 2026-06-16).** All work committed + pushed to
+> `v3-react-migration` (push auto-deploys Cloudflare; I also `npx wrangler deploy`
+> directly — **wrangler is now authenticated** on this machine). **LIVE on TWO
+> hosts:** Cloudflare Workers — https://english-learning.2sharp4u.workers.dev/
+> (Git-connected → auto-deploys on every push; QR at `docs/beta-qr.png`) — and
+> Netlify — https://lomdim-anglit.netlify.app (manual `netlify deploy --prod`).
+> Cloudflare setup/gotchas: `docs/cloudflare-deploy.md`.
 >
-> This session shipped: **PROG1** (Home=31/Stats=0 fix — words-learned now derives
-> from the mastery lifecycle, Steps 1–4 all done; see §2 + `[[project_prog1_lifecycle_single_source]]`),
-> the **Picture Match emoji fallback** (M15 partial), **Google-Translate guard**
-> (`translate="no"` — was mangling English letter tiles into Hebrew), **WJ spell-stage
-> layout-shift fix** (reserve the word box via `wordHidden`), **data fixes** (Musketeer
-> 🤺, Clan 🛡️, "Adopt Me"→"Adopt"), **WJ say-word no-auto-advance** (replay your
-> recording first), and the **Cloudflare deploy** (Workers static assets).
+> This session (2026-06-16) shipped: **M3 landscape two-pane COMPLETE** across
+> every game (batches 3+4: Reading/Scramble/ABC/Phonics/Story-Time-quiz + Word
+> Journey); the **beta bug-report feature LIVE end-to-end** (floating widget →
+> Worker `/api/report` → R2 + GitHub Issue queue; see
+> `[[project_bug_report_feature]]` + `docs/bug-report.md`); **M15 emoji-tofu
+> FIXED** (unicode-range Noto subset font, `[[project_emoji_tofu_fix]]`); and the
+> **first two beta reports (#3/#4)** — WJ overflow on a 320×680 phone — fixed by
+> raising the compact-chrome threshold 600→700.
+>
+> **Bug-report queue is now the live feedback channel** — a "fix issues" request
+> = read GitHub Issues labelled `beta-report` (repo public; `gh` is NOT authed in
+> the session, so read via `curl` the public API + the `/api/report-image/` URLs;
+> see `[[project_bug_report_feature]]` "HOW TO TRIAGE"). Issues #3/#4 left open for
+> the user to close (no triage auth).
 >
 > **NEXT (pick up here):** (1) **deploy parity** — push auto-updates Cloudflare but
-> NOT Netlify; decide whether to keep both in sync or retire Netlify. (2) ~~M3
-> landscape two-pane~~ **COMPLETE across every game (2026-06-16, incl. Word
-> Journey)**. (3) ~~M15 emoji tofu~~ **FIXED 2026-06-16** (unicode-range-scoped
-> Noto subset font; §7 M15 + `docs/emoji-tofu-fix.md`). (4) **Leaderboard** family/local board (§ LB). Then
-> M12+M4 (parent account + onboarding), M7 (tablet Hebrew voice — device), M8 (PWA
-> install button), M5/M13 (backend on the new Cloudflare Worker Functions seam).
-> Waiting on the user: cert recalibration decision; install Hebrew TTS voice on the
-> tablet (M7); C2/C3 images.
+> NOT Netlify; decide keep-in-sync vs retire Netlify. (2) **Leaderboard**
+> family/local board (§ LB). (3) **M12+M4** (parent/admin account + onboarding
+> wizard — the QA "unlock for testing" panel can ship first standalone). (4)
+> **M8** PWA install button. (5) **M5/M13** (more on the Worker backend seam the
+> bug-report feature established — parent word/image submission). Plus: wire
+> `gh auth login` (real terminal) so a Claude session can close/triage issues
+> directly; milestone-cert WJ bug (needs cert-recalibration decision).
+> Waiting on the user: cert recalibration; install Hebrew TTS voice on the tablet
+> (M7); C2/C3 images.
 
 ---
 
