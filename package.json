@@ -6,7 +6,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "cf-deploy": "npm run build && wrangler deploy",
+    "cf-deploy": "npm run build && npx wrangler deploy",
     "test": "npx playwright test",
     "test:ui": "npx playwright test --ui",
     "test:unit": "vitest run",
