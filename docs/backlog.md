@@ -27,9 +27,8 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 > **NEXT (pick up here):** (1) **deploy parity** — push auto-updates Cloudflare but
 > NOT Netlify; decide whether to keep both in sync or retire Netlify. (2) ~~M3
 > landscape two-pane~~ **COMPLETE across every game (2026-06-16, incl. Word
-> Journey)**. (3)
-> **M15** — the 50 newer-emoji "tofu" words (real cause of the device blank tiles; §5
-> M15) — pick fix (a) Twemoji PNGs. (4) **Leaderboard** family/local board (§ LB). Then
+> Journey)**. (3) ~~M15 emoji tofu~~ **FIXED 2026-06-16** (unicode-range-scoped
+> Noto subset font; §7 M15 + `docs/emoji-tofu-fix.md`). (4) **Leaderboard** family/local board (§ LB). Then
 > M12+M4 (parent account + onboarding), M7 (tablet Hebrew voice — device), M8 (PWA
 > install button), M5/M13 (backend on the new Cloudflare Worker Functions seam).
 > Waiting on the user: cert recalibration decision; install Hebrew TTS voice on the
@@ -668,7 +667,23 @@ ZWJ/skin-tone/variation-selector handling) applied in `bridge/audio.ts`
 `speak()` (legacy chokepoint can't import the TS module — keep the two regexes
 in sync). Display text untouched. Tests: `src/lib/__tests__/stripEmoji.test.ts`.
 
-### M15 🟡 "Blank images" on answers — diagnosed 2026-06-14 (root cause: newer emoji tofu)
+### M15 ✅ "Blank images" = newer emoji tofu — FIXED 2026-06-16
+**Cure shipped: a `unicode-range`-scoped web font** (chose a variant of option (b),
+NOT the per-word images of (a)). `src/styles/fonts/emoji-fix.woff2` = a 310 KB
+subset of Noto Color Emoji holding ONLY the risky glyphs; `@font-face` in
+`globals.css` scopes it with `unicode-range` (U+1FA70–1FAFF + the used 1F9xx), and
+`'EmojiFix'` is appended to `--font-ui`/`--font-display` (`tokens.css`). The
+browser uses it for exactly those codepoints on every device, leaving all other
+emoji/text on the system font — **zero changes to the ~14 emoji render sites, no
+logic risk**, and the whole U+1FA70–1FAFF block is covered so future words in it
+just work. Verified: font loads, covers the in-range glyphs (chair/donkey),
+EmojiFix is in the `#react-root` stack. Vite content-hashes the woff2 (one copy,
+dev + build). Full how/regen: **`docs/emoji-tofu-fix.md`**. (The earlier Picture
+Match `onError`→emoji fallback still stands for broken image *files* — a different
+case.)
+
+<details><summary>Original diagnosis (2026-06-14)</summary>
+
 Reported: some answer tiles show as blank images. **Audited the whole catalog:**
 - All 95 unique `imageUrl` paths in `data/` exist on disk **with correct case**
   (checked case-sensitively because Netlify/Linux is case-sensitive — a common
@@ -698,6 +713,8 @@ The real cure for the emoji tofu (decision needed):
 - **(c) Swap each risky emoji for an older-Unicode near-equivalent** — cheapest but
   changes the picture's meaning; not recommended for a vocab app.
 Recommended: **(a)** — bounded, deterministic, reuses the C2/C3 / M13 image path.
+
+</details>
 
 ### Pre-existing (NOT MOBILE1) — unrelated smoke failures
 `smoke.spec.js` "continue CTA target is stable across loads (FU-HOME-continue)"

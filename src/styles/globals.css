@@ -28,6 +28,23 @@
   font-display: swap;
 }
 
+/* M15 emoji-tofu fix: older Android system emoji fonts can't render the newer
+ * Unicode 12–15 emoji (the U+1FA70–1FAFF block + a few 1F9xx the app uses), so
+ * they showed as blank "tofu" boxes on the tablet/phone. This is a 310 KB
+ * subset of Noto Color Emoji holding ONLY those glyphs; `unicode-range` scopes
+ * it so the browser uses it exclusively for those codepoints and leaves every
+ * other emoji/character on the system font. 'EmojiFix' is appended to
+ * --font-ui/--font-display so emoji spans (which inherit them) pick it up.
+ * Regenerate: see docs/emoji-tofu-fix.md. Backlog §7 M15. */
+@font-face {
+  font-family: 'EmojiFix';
+  src: url('./fonts/emoji-fix.woff2') format('woff2');
+  unicode-range: U+1FA70-1FAFF, U+1F90F, U+1F912, U+1F917, U+1F91D, U+1F922,
+    U+1F924, U+1F929, U+1F92A, U+1F92B, U+1F930, U+1F932, U+1F934, U+1F935,
+    U+1F938, U+1F93A;
+  font-display: swap;
+}
+
 #react-root,
 #react-root *,
 #react-root *::before,

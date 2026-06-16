@@ -1,6 +1,8 @@
 #react-root {
-  --font-ui: 'Heebo', 'Arial Hebrew', 'Segoe UI', sans-serif;
-  --font-display: 'Fredoka', 'Heebo', 'Segoe UI', sans-serif;
+  /* 'EmojiFix' (unicode-range-scoped, see globals.css) supplies the newer
+   * Unicode 12–15 emoji that old Android can't render — M15 tofu fix. */
+  --font-ui: 'Heebo', 'Arial Hebrew', 'Segoe UI', 'EmojiFix', sans-serif;
+  --font-display: 'Fredoka', 'Heebo', 'Segoe UI', 'EmojiFix', sans-serif;
 
   --ink-950: #07101d;
   --ink-900: #0c1728;
