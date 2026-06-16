@@ -193,6 +193,36 @@
   #react-root .game-twopane > .game-twopane-prompt {
     justify-content: center;
   }
+  /* On a very short landscape phone (~320px tall) the prompt card's vertical
+   * stack — instruction + media + word + translation + audio button — is taller
+   * than the half-height pane, so the audio button sits below the fold and the
+   * child must scroll to reach it (beta #6, Word Journey). Tighten the card so
+   * the whole thing fits without scrolling: smaller media, gaps, padding, and a
+   * notch down on the type. Shared MediaPromptCard → fixes every two-pane game's
+   * prompt at once. */
+  #react-root .game-twopane-prompt [data-testid='media-prompt-card'] {
+    gap: 0.375rem;
+    padding: 0.625rem 0.75rem;
+  }
+  #react-root .game-twopane-prompt [data-testid='media-prompt-media'] img {
+    max-height: 3.5rem;
+  }
+  #react-root .game-twopane-prompt [data-testid='media-prompt-media'] [role='img'] {
+    font-size: 2.5rem;
+    line-height: 1;
+  }
+  #react-root .game-twopane-prompt [data-testid='media-prompt-text'] {
+    font-size: 0.9375rem;
+    line-height: 1.2;
+  }
+  #react-root .game-twopane-prompt [data-testid='media-prompt-word'] {
+    font-size: 1.625rem;
+    line-height: 1.1;
+  }
+  #react-root .game-twopane-prompt [data-testid='media-prompt-translation'] {
+    font-size: 1.375rem;
+    line-height: 1.1;
+  }
   /* The interaction pane is half-width, so a 4-across answer row is cramped —
    * force the options into 2 columns (2×2) there. */
   #react-root .game-twopane-interaction [data-testid='answer-grid'] {

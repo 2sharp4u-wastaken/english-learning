@@ -30,12 +30,23 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 > see `[[project_bug_report_feature]]` "HOW TO TRIAGE"). Issues #3/#4 left open for
 > the user to close (no triage auth).
 >
-> **NEW this session (2026-06-16b):** **M12 Slice A — QA "unlock for testing"
-> panel SHIPPED** (`QATestingPanel` in the כלי הורה tab + `src/bridge/qa.ts`;
-> seed learned words / open expression tier / unlock all games / clear; ships to
-> public site behind the parent password). Decisions locked with the user:
-> elevation model (already the de-facto), public-site scope, `manager` role
-> deferred to M5/M13. See M12 sub-item + `[[project_qa_testing_panel]]`.
+> **NEW this session (2026-06-16b) — 3 commits pushed (`73dc541`/`a8330c1`/
+> `27f6375`):**
+> 1. **M12 Slice A — QA "unlock for testing" panel SHIPPED** (`QATestingPanel`
+>    in the כלי הורה tab + `src/bridge/qa.ts`; seed learned words / open
+>    expression tier / unlock all games / clear; public site, behind the parent
+>    password). Decisions locked: elevation model (already de-facto), public
+>    scope, `manager` deferred to M5/M13. See M12 sub-item + `[[project_qa_testing_panel]]`.
+> 2. **Landscape chrome-hide** (§M3) — in short landscape (`orientation:
+>    landscape and max-height: 600px`) globals.css now hides the hero title +
+>    progress bar + WJ stage counter so `<main>` fills the height; user reported
+>    the Q/A area was still mostly off-screen. One rule, every game.
+> 3. **Bug-report version+device+logs** (§0) — Vite `define` build stamp
+>    (`__APP_VERSION__`/`__GIT_SHA__`/`__BUILD_TIME__`), platform + console-log
+>    tail in the report; Worker renders them into the issue title/table/details;
+>    widget shows `v<ver> · <sha>`. See `[[project_build_version_stamp]]`.
+>    **Bump `package.json` version on a real release so the stamp is useful (3.0.0 now).**
+> Netlify NOT redeployed this session (only Cloudflare auto-deploys on push).
 >
 > **NEXT (pick up here):** (1) **M12 Slice B** — promote the latent `parent`
 > role into the access model (gating reads role, not just the password hash) +
@@ -466,6 +477,18 @@ question. Plan:
     Verified at 740×360: ABC/WJ now show header-bar-only + a full-height two-pane.
     Caveat: tablet-landscape (height >600) is unaffected by design — it has the
     room for the full chrome.
+  - ✅ **Compact the prompt CARD in short landscape (DONE 2026-06-16, beta #6 +
+    #7 — Word Journey on a ~320px-tall landscape phone still needed to scroll to
+    reach the audio button; #7 is a re-report of the same Discover-stage card
+    overflow against the not-yet-deployed build).** Even with the chrome hidden, the shared `MediaPromptCard`
+    vertical stack (instruction + media + word + translation + audio) was taller
+    than the half-height prompt pane, so the speaker + "plays remaining" hint sat
+    below the fold. Fix is CSS only, in the SAME landscape query: shrink the card's
+    gap/padding, cap `[data-testid='media-prompt-media'] img` at 3.5rem + emoji at
+    2.5rem, and notch the prompt/word/translation type down — scoped to
+    `.game-twopane-prompt [data-testid='media-prompt-card']`, so it fixes every
+    two-pane game's prompt at once. Verified at 680×320: card height 310→233px, the
+    audio button bottom 321px (off-screen) → 261px (on-screen), pane scroll = 0.
 - **Memory game (decision: rotate hint)**: portrait phone on big-grid levels
   shows a friendly rotate-the-device hint; landscape gets a wider grid via the
   existing `bridge/memory.ts` sizing knobs (no Screen-Orientation lock — only
