@@ -121,7 +121,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
 
   return (
     <div className="flex flex-1 flex-col gap-4">
-      <p dir="rtl" className="text-center text-sm font-medium text-[color:var(--slate-300)]">
+      <p dir="rtl" className="wj-stage-counter text-center text-sm font-medium text-[color:var(--slate-300)]">
         {nk('פריט')} {index + 1} {nk('מתוך')} {words.length}
       </p>
       <div className="game-twopane flex flex-1 flex-col gap-4">

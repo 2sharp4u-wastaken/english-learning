@@ -161,6 +161,24 @@
  * Portrait keeps the default Tailwind flex-col stack. See
  * feedback_landscape_needs_real_layout. */
 @media (orientation: landscape) and (max-height: 600px) {
+  /* Reclaim vertical height for the question/answer area: a short landscape phone
+   * has so little height that the stacked chrome (hero title + question-progress
+   * bar) squeezes the two-pane <main> down to nothing. Hide the DECORATIVE chrome
+   * in short landscape — the hero title and the progress bar/counter — so <main>
+   * (flex-1) expands to fill. The control header (back + toggles + score) stays,
+   * it's the only in-game navigation. Applies to every game via the shared
+   * primitives. (M3 landscape follow-up, 2026-06-16: user reported the Q/A area
+   * was still mostly off-screen on a landscape phone.) */
+  #react-root [data-testid='game-screen-shell'][data-compact='true'] [data-testid='game-hero'],
+  #react-root [data-testid='game-screen-shell'][data-compact='true'] [data-testid='question-progress'] {
+    display: none;
+  }
+  /* Word Journey's stages render their own per-stage "פריט N מתוך M" counter
+   * (not the shared QuestionProgress); drop it too in short landscape. */
+  #react-root [data-testid='game-screen-shell'][data-compact='true'] .wj-stage-counter {
+    display: none;
+  }
+
   #react-root .game-twopane {
     flex-direction: row;
     gap: 1.25rem;

@@ -76,7 +76,7 @@ export function DiscoverStage({
         dir="rtl"
         data-testid="wj-discover-counter"
         data-item={index + 1}
-        className="text-center text-sm font-medium text-[color:var(--slate-300)]"
+        className="wj-stage-counter text-center text-sm font-medium text-[color:var(--slate-300)]"
       >
         {nk('פריט')} {index + 1} {nk('מתוך')} {words.length}
       </p>
