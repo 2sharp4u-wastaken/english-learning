@@ -92,40 +92,46 @@ export function ListenMatchStage({ items, onAnswer, onComplete }: Props) {
       <p dir="rtl" className="text-center text-sm font-medium text-[color:var(--slate-300)]">
         {nk('פריט')} {index + 1} {nk('מתוך')} {items.length}
       </p>
-      <MediaPromptCard
-        prompt="הקשיבו ובחרו את התמונה הנכונה"
-        onPlayAudio={replay}
-        audioDisabled={playsLeft <= 0}
-        audioLabel="השמע שוב"
-        audioHint={playsLeft > 0 ? `השמעות נותרו: ${playsLeft}` : 'נגמרו ההשמעות'}
-        audioIconOnly
-      />
-      <AnswerGrid
-        variant="media"
-        columns={item.options.length <= 2 ? 2 : 4}
-        hidden={!gateOpen}
-        revealed={revealed}
-        selectedIndex={selected}
-        correctIndex={revealed ? correctIndex : null}
-        disabled={revealed}
-        onSelect={handleSelect}
-        options={item.options.map((o) => ({
-          key: `${o.word}_${o.category}`,
-          ariaLabel: o.word,
-          media: <WordJourneyPicture word={o} className="max-h-20 rounded-xl object-contain" />,
-        }))}
-      />
-      {revealed && feedback?.variant === 'incorrect' ? (
-        <button
-          type="button"
-          onClick={advance}
-          data-testid="wj-listen-next"
-          className="mx-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
-        >
-          <Volume2 className="size-4" aria-hidden />
-          {nk('הבא')}
-        </button>
-      ) : null}
+      <div className="game-twopane flex flex-1 flex-col gap-4">
+        <div className="game-twopane-prompt flex flex-col items-center">
+          <MediaPromptCard
+            prompt="הקשיבו ובחרו את התמונה הנכונה"
+            onPlayAudio={replay}
+            audioDisabled={playsLeft <= 0}
+            audioLabel="השמע שוב"
+            audioHint={playsLeft > 0 ? `השמעות נותרו: ${playsLeft}` : 'נגמרו ההשמעות'}
+            audioIconOnly
+          />
+        </div>
+        <div className="game-twopane-interaction flex flex-1 flex-col gap-4">
+          <AnswerGrid
+            variant="media"
+            columns={item.options.length <= 2 ? 2 : 4}
+            hidden={!gateOpen}
+            revealed={revealed}
+            selectedIndex={selected}
+            correctIndex={revealed ? correctIndex : null}
+            disabled={revealed}
+            onSelect={handleSelect}
+            options={item.options.map((o) => ({
+              key: `${o.word}_${o.category}`,
+              ariaLabel: o.word,
+              media: <WordJourneyPicture word={o} className="max-h-20 rounded-xl object-contain" />,
+            }))}
+          />
+          {revealed && feedback?.variant === 'incorrect' ? (
+            <button
+              type="button"
+              onClick={advance}
+              data-testid="wj-listen-next"
+              className="mx-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
+            >
+              <Volume2 className="size-4" aria-hidden />
+              {nk('הבא')}
+            </button>
+          ) : null}
+        </div>
+      </div>
       {feedback ? (
         <FeedbackBanner variant={feedback.variant} message={feedback.text} visible />
       ) : null}

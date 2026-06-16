@@ -93,72 +93,77 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
       <p dir="rtl" className="text-center text-sm font-medium text-[color:var(--slate-300)]">
         {nk('פריט')} {index + 1} {nk('מתוך')} {items.length}
       </p>
-      <MediaPromptCard
-        prompt={showNikud ? 'הַרְכִּיבוּ אֶת הַמִּלָּה' : 'הרכיבו את המילה'}
-        media={<WordJourneyPicture word={item.word} />}
-        // Keep the word in the layout and just hide it (visibility) once revealed,
-        // so the card never contracts when it vanishes — a collapse here shoved the
-        // letter pile up mid-tap (mis-selected letters / accidental בדוק). Same
-        // reserve-space pattern the Reading game already uses.
-        word={displayWord}
-        wordHidden={!wordVisible}
-        translation={hebrew || undefined}
-        onPlayAudio={() => void speakWord(item.word.word.toLowerCase(), 'word-journey')}
-        audioLabel="השמע מילה"
-        audioIconOnly
-      />
-
-      {phase === 'wrong' ? (
-        <SpellingComparison
-          target={item.word.word}
-          attempt={built}
-          caseMode={caseMode}
-          showNikud={showNikud}
-        />
-      ) : (
-        <LetterSlots
-          target={item.word.word}
-          tiles={item.tiles}
-          caseMode={caseMode}
-          result={phase === 'correct' ? 'correct' : null}
-          disabled={phase !== 'building'}
-          resetKey={`${index}:${clearNonce}`}
-          onChange={setBuilt}
-          onPlaceLetter={(l) => void speak(l.toLowerCase())}
-        />
-      )}
-
-      {phase === 'building' ? (
-        <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-3">
-          <button
-            type="button"
-            onClick={() => setClearNonce((n) => n + 1)}
-            disabled={built.length === 0}
-            data-testid="wj-spell-clear"
-            className="rounded-full border border-white/20 bg-white/5 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
-          >
-            {nk('נקה')}
-          </button>
-          <button
-            type="button"
-            onClick={check}
-            disabled={built.length === 0}
-            data-testid="wj-spell-check"
-            className="rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {nk('בדוק')}
-          </button>
+      <div className="game-twopane flex flex-1 flex-col gap-4">
+        <div className="game-twopane-prompt flex flex-col items-center">
+          <MediaPromptCard
+            prompt={showNikud ? 'הַרְכִּיבוּ אֶת הַמִּלָּה' : 'הרכיבו את המילה'}
+            media={<WordJourneyPicture word={item.word} />}
+            // Keep the word in the layout and just hide it (visibility) once revealed,
+            // so the card never contracts when it vanishes — a collapse here shoved the
+            // letter pile up mid-tap (mis-selected letters / accidental בדוק). Same
+            // reserve-space pattern the Reading game already uses.
+            word={displayWord}
+            wordHidden={!wordVisible}
+            translation={hebrew || undefined}
+            onPlayAudio={() => void speakWord(item.word.word.toLowerCase(), 'word-journey')}
+            audioLabel="השמע מילה"
+            audioIconOnly
+          />
         </div>
-      ) : phase === 'wrong' ? (
-        <button
-          type="button"
-          onClick={advance}
-          data-testid="wj-spell-next"
-          className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
-        >
-          {nk('הבא')}
-        </button>
-      ) : null}
+        <div className="game-twopane-interaction flex flex-1 flex-col gap-4">
+          {phase === 'wrong' ? (
+            <SpellingComparison
+              target={item.word.word}
+              attempt={built}
+              caseMode={caseMode}
+              showNikud={showNikud}
+            />
+          ) : (
+            <LetterSlots
+              target={item.word.word}
+              tiles={item.tiles}
+              caseMode={caseMode}
+              result={phase === 'correct' ? 'correct' : null}
+              disabled={phase !== 'building'}
+              resetKey={`${index}:${clearNonce}`}
+              onChange={setBuilt}
+              onPlaceLetter={(l) => void speak(l.toLowerCase())}
+            />
+          )}
+
+          {phase === 'building' ? (
+            <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-3">
+              <button
+                type="button"
+                onClick={() => setClearNonce((n) => n + 1)}
+                disabled={built.length === 0}
+                data-testid="wj-spell-clear"
+                className="rounded-full border border-white/20 bg-white/5 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+              >
+                {nk('נקה')}
+              </button>
+              <button
+                type="button"
+                onClick={check}
+                disabled={built.length === 0}
+                data-testid="wj-spell-check"
+                className="rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+              >
+                {nk('בדוק')}
+              </button>
+            </div>
+          ) : phase === 'wrong' ? (
+            <button
+              type="button"
+              onClick={advance}
+              data-testid="wj-spell-next"
+              className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
+            >
+              {nk('הבא')}
+            </button>
+          ) : null}
+        </div>
+      </div>
 
       {feedback ? <FeedbackBanner variant={feedback.variant} message={feedback.text} visible /> : null}
     </div>

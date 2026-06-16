@@ -124,16 +124,20 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
       <p dir="rtl" className="text-center text-sm font-medium text-[color:var(--slate-300)]">
         {nk('פריט')} {index + 1} {nk('מתוך')} {words.length}
       </p>
-      <MediaPromptCard
-        prompt="לחצו על המיקרופון ואמרו את המילה"
-        media={<WordJourneyPicture word={word} />}
-        word={displayWord}
-        translation={hebrew || undefined}
-        onPlayAudio={() => void speakWord(word.word.toLowerCase(), 'word-journey')}
-        audioDisabled={recording}
-        audioLabel="השמע מילה"
-        audioIconOnly
-      />
+      <div className="game-twopane flex flex-1 flex-col gap-4">
+        <div className="game-twopane-prompt flex flex-col items-center">
+          <MediaPromptCard
+            prompt="לחצו על המיקרופון ואמרו את המילה"
+            media={<WordJourneyPicture word={word} />}
+            word={displayWord}
+            translation={hebrew || undefined}
+            onPlayAudio={() => void speakWord(word.word.toLowerCase(), 'word-journey')}
+            audioDisabled={recording}
+            audioLabel="השמע מילה"
+            audioIconOnly
+          />
+        </div>
+        <div className="game-twopane-interaction flex flex-1 flex-col gap-4">
       <div className="flex flex-col items-center gap-3">
         <button
           type="button"
@@ -209,17 +213,19 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
           </div>
         </section>
       ) : null}
-      {phase === 'answered' ? (
-        <button
-          type="button"
-          onClick={advance}
-          data-testid="wj-say-next"
-          className="mx-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
-        >
-          <Volume2 className="size-4" aria-hidden />
-          {nk('הבא')}
-        </button>
-      ) : null}
+          {phase === 'answered' ? (
+            <button
+              type="button"
+              onClick={advance}
+              data-testid="wj-say-next"
+              className="mx-auto flex items-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
+            >
+              <Volume2 className="size-4" aria-hidden />
+              {nk('הבא')}
+            </button>
+          ) : null}
+        </div>
+      </div>
       {feedback ? <FeedbackBanner variant={feedback.variant} message={feedback.text} visible /> : null}
     </div>
   )

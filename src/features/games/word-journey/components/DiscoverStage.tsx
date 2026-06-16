@@ -80,41 +80,47 @@ export function DiscoverStage({
       >
         {nk('פריט')} {index + 1} {nk('מתוך')} {words.length}
       </p>
-      <MediaPromptCard
-        prompt={showNikud ? 'הִכִּירוּ אֶת הַמִּלָּה' : 'הכירו את המילה'}
-        media={<WordJourneyPicture word={word} />}
-        word={displayWord}
-        translation={hebrew || undefined}
-        onPlayAudio={() => {
-          if (playsLeft <= 0) return
-          setPlaysLeft((n) => Math.max(0, n - 1))
-          setListens((n) => n + 1)
-          void speakWord(word.word.toLowerCase(), 'word-journey')
-        }}
-        audioDisabled={playsLeft <= 0}
-        audioLabel="השמע מילה"
-        audioHint={playsLeft > 0 ? `השמעות נותרו: ${playsLeft}` : 'נגמרו ההשמעות'}
-        audioIconOnly
-      />
-      {!canAdvance ? (
-        <p
-          dir="rtl"
-          data-testid="wj-discover-listen-hint"
-          data-listens={listens}
-          className="text-center text-sm font-semibold text-[color:var(--mint-300)]"
-        >
-          {nk('לחצו על הרמקול כדי לשמוע שוב')} ({listens}/{REQUIRED_LISTENS})
-        </p>
-      ) : null}
-      <button
-        type="button"
-        onClick={next}
-        disabled={!canAdvance}
-        data-testid="wj-discover-next"
-        className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {nk(index + 1 < words.length ? 'הבא' : 'בואו נתחיל!')}
-      </button>
+      <div className="game-twopane flex flex-1 flex-col gap-4">
+        <div className="game-twopane-prompt flex flex-col items-center">
+          <MediaPromptCard
+            prompt={showNikud ? 'הִכִּירוּ אֶת הַמִּלָּה' : 'הכירו את המילה'}
+            media={<WordJourneyPicture word={word} />}
+            word={displayWord}
+            translation={hebrew || undefined}
+            onPlayAudio={() => {
+              if (playsLeft <= 0) return
+              setPlaysLeft((n) => Math.max(0, n - 1))
+              setListens((n) => n + 1)
+              void speakWord(word.word.toLowerCase(), 'word-journey')
+            }}
+            audioDisabled={playsLeft <= 0}
+            audioLabel="השמע מילה"
+            audioHint={playsLeft > 0 ? `השמעות נותרו: ${playsLeft}` : 'נגמרו ההשמעות'}
+            audioIconOnly
+          />
+        </div>
+        <div className="game-twopane-interaction flex flex-1 flex-col gap-4">
+          {!canAdvance ? (
+            <p
+              dir="rtl"
+              data-testid="wj-discover-listen-hint"
+              data-listens={listens}
+              className="text-center text-sm font-semibold text-[color:var(--mint-300)]"
+            >
+              {nk('לחצו על הרמקול כדי לשמוע שוב')} ({listens}/{REQUIRED_LISTENS})
+            </p>
+          ) : null}
+          <button
+            type="button"
+            onClick={next}
+            disabled={!canAdvance}
+            data-testid="wj-discover-next"
+            className="mx-auto block rounded-full bg-gradient-to-r from-[color:var(--mint-400)] to-[color:var(--blue-400)] px-8 py-3 text-base font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            {nk(index + 1 < words.length ? 'הבא' : 'בואו נתחיל!')}
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

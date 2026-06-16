@@ -25,10 +25,9 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 > recording first), and the **Cloudflare deploy** (Workers static assets).
 >
 > **NEXT (pick up here):** (1) **deploy parity** — push auto-updates Cloudflare but
-> NOT Netlify; decide whether to keep both in sync or retire Netlify. (2) **M3 batch 3**
-> — Reading/Sentence Scramble/ABC/Phonics/Story Time landscape two-pane DONE
-> (2026-06-16); **only Word Journey remains** (5 stages + pin action buttons —
-> its own per-stage refactor, §7 M3). (3)
+> NOT Netlify; decide whether to keep both in sync or retire Netlify. (2) ~~M3
+> landscape two-pane~~ **COMPLETE across every game (2026-06-16, incl. Word
+> Journey)**. (3)
 > **M15** — the 50 newer-emoji "tofu" words (real cause of the device blank tiles; §5
 > M15) — pick fix (a) Twemoji PNGs. (4) **Leaderboard** family/local board (§ LB). Then
 > M12+M4 (parent account + onboarding), M7 (tablet Hebrew voice — device), M8 (PWA
@@ -397,7 +396,8 @@ question. Plan:
     BlankFill (Articles + Progressive) — moved the sentence/question card into
     the `prompt` slot (key stays on it), AnswerGrid + WordTable as children.
     Tests green (Grammar 5, Fill-Blanks 2, Articles/Progressive 2).
-  - 🔶 **Batch 3 — special layouts (IN PROGRESS 2026-06-16):**
+  - ✅ **Batch 3 + 4 — special layouts (DONE 2026-06-16): M3 landscape two-pane
+    is now COMPLETE across EVERY game.**
     - ✅ **Reading, Sentence Scramble, ABC, Phonics, Story Time (DONE
       2026-06-16):** all reduced to the same `prompt`-slot split — the
       MediaPromptCard / hint / instruction card moves to the `prompt` prop, the
@@ -409,10 +409,16 @@ question. Plan:
       screen). Typecheck clean; interaction assertions green (the only failures
       are the pre-existing Dicta-Nakdan CORS console-error check, reproduced on
       baseline).
-    - ⬜ **Word Journey (still TODO — its own piece):** 5 self-contained stage
-      components each own their layout AND need their action buttons pinned to a
-      footer; that's a per-stage refactor, not the mechanical `prompt`-slot move
-      the other games took. Left for a dedicated pass.
+    - ✅ **Word Journey (DONE 2026-06-16):** the 4 prompt+interaction stages
+      (Discover/ListenMatch/Spell/SayWord) wrap their prompt|interaction in the
+      SAME `.game-twopane`/`-prompt`/`-interaction` class names on an INNER div —
+      the globals.css selectors aren't scoped to GameScreenShell's `<main>`, so
+      the row-split works on any element. WJ stages are self-contained, so they
+      can't use the parent's `prompt` slot. Recall (memory grid) stays
+      single-column (already compact). Verified `flex-direction: row` in short
+      landscape; wj-step1 tests green. (Footer-pinning of the action buttons was
+      not needed — the interaction pane scrolls independently in landscape, and
+      the compact-chrome work covers small portrait.)
 - **Memory game (decision: rotate hint)**: portrait phone on big-grid levels
   shows a friendly rotate-the-device hint; landscape gets a wider grid via the
   existing `bridge/memory.ts` sizing knobs (no Screen-Orientation lock — only
