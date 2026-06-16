@@ -167,7 +167,10 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
         </p>
       </div>
       {phase === 'answered' && transcript !== null ? (
-        <section className="mx-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-white/10 bg-[color:var(--ink-900)]/70 p-4 backdrop-blur">
+        <section
+          data-testid="wj-say-result"
+          className="mx-auto flex w-full max-w-md flex-col gap-2 rounded-2xl border border-white/10 bg-[color:var(--ink-900)]/70 p-4 backdrop-blur"
+        >
           <div className="flex items-center justify-between text-sm text-[color:var(--slate-300)]">
             <span>{nk('המילה')}</span>
             <span dir="ltr" className="font-display text-lg font-bold text-white">

@@ -498,6 +498,21 @@ question. Plan:
     tighter gaps — so the action buttons stay on-screen. Shared → Reading's
     builder benefits too. Verified at 680×320 via a playthrough to the spell
     stage: בדוק button bottom 427px (off-screen) → 253px (on-screen).
+  - ✅ **Fit the say-word stage + pin the two-pane row (DONE 2026-06-16, beta #9
+    — at a ~300px-tall landscape the densest stage still needed scrolling).** Two
+    parts, both in the landscape query: (a) `.game-twopane` lacked `min-height:0`,
+    so the flex-col row grew to its content and the whole PAGE scrolled instead of
+    the panes — pinned it so each `overflow-y:auto` pane keeps its own content
+    in-bounds; (b) the say-word answered state (size-20 mic + result comparison +
+    Next) is the heaviest pane, so shrink `[data-testid='wj-say-record']` to 3rem,
+    slim `[data-testid='wj-say-result']` padding/gaps, and tighten the result/Next
+    button padding. Verified via playthrough to the answered state at 680×300: Next
+    button bottom 328px (off-screen) → 296px (on-screen), page scroll = 0.
+    **Not a bug — Android "hear yourself":** the report also asked why there's no
+    replay of the recording. `useMicPlayback` no-ops on Android by design (M1 — a
+    parallel capture starves Android speech recognition), so the "שמע את עצמך"
+    button (gated on the recording URL) never shows on Android; Pronunciation uses
+    the same hook so it's identical. Desktop-only by the documented invariant.
 - **Memory game (decision: rotate hint)**: portrait phone on big-grid levels
   shows a friendly rotate-the-device hint; landscape gets a wider grid via the
   existing `bridge/memory.ts` sizing knobs (no Screen-Orientation lock — only
