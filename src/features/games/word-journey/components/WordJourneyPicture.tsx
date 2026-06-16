@@ -6,7 +6,7 @@ export function WordJourneyPicture({
   word,
   // M3: shrink on short viewports (landscape/small phones) so the card + the
   // action button below it fit without scrolling.
-  className = 'max-h-32 rounded-2xl object-contain [@media(max-height:600px)]:max-h-20',
+  className = 'max-h-32 rounded-2xl object-contain [@media(max-height:700px)]:max-h-20',
 }: {
   word: WJWord
   className?: string
@@ -19,7 +19,7 @@ export function WordJourneyPicture({
     return <img src={effective} alt="" className={className} />
   }
   return (
-    <span className="text-6xl [@media(max-height:600px)]:text-4xl" role="img" aria-label={word.word}>
+    <span className="text-6xl [@media(max-height:700px)]:text-4xl" role="img" aria-label={word.word}>
       {word.picture || '🔤'}
     </span>
   )
