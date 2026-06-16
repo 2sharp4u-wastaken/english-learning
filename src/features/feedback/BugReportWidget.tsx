@@ -256,6 +256,15 @@ export function BugReportWidget() {
                     שליחה
                   </button>
                 </div>
+
+                {/* Version stamp — attached to every report so we know the exact
+                    bundle; shown here so the tester can read it aloud too. */}
+                <p className="mt-3 text-center text-[11px] text-white/35" dir="ltr">
+                  v{typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'}
+                  {typeof __GIT_SHA__ !== 'undefined' && __GIT_SHA__ !== 'dev'
+                    ? ` · ${__GIT_SHA__}`
+                    : ''}
+                </p>
               </>
             )}
           </div>

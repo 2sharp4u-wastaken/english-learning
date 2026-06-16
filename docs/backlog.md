@@ -30,14 +30,22 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 > see `[[project_bug_report_feature]]` "HOW TO TRIAGE"). Issues #3/#4 left open for
 > the user to close (no triage auth).
 >
-> **NEXT (pick up here):** (1) **deploy parity** — push auto-updates Cloudflare but
-> NOT Netlify; decide keep-in-sync vs retire Netlify. (2) **Leaderboard**
-> family/local board (§ LB). (3) **M12+M4** (parent/admin account + onboarding
-> wizard — the QA "unlock for testing" panel can ship first standalone). (4)
-> **M8** PWA install button. (5) **M5/M13** (more on the Worker backend seam the
-> bug-report feature established — parent word/image submission). Plus: wire
-> `gh auth login` (real terminal) so a Claude session can close/triage issues
-> directly; milestone-cert WJ bug (needs cert-recalibration decision).
+> **NEW this session (2026-06-16b):** **M12 Slice A — QA "unlock for testing"
+> panel SHIPPED** (`QATestingPanel` in the כלי הורה tab + `src/bridge/qa.ts`;
+> seed learned words / open expression tier / unlock all games / clear; ships to
+> public site behind the parent password). Decisions locked with the user:
+> elevation model (already the de-facto), public-site scope, `manager` role
+> deferred to M5/M13. See M12 sub-item + `[[project_qa_testing_panel]]`.
+>
+> **NEXT (pick up here):** (1) **M12 Slice B** — promote the latent `parent`
+> role into the access model (gating reads role, not just the password hash) +
+> migration (auto-create a `parent` user from an existing `parentPassword` hash);
+> then **Slice C = M4** first-run wizard + `/parent-guide`. (2) **deploy parity**
+> — push auto-updates Cloudflare but NOT Netlify; decide keep-in-sync vs retire
+> Netlify. (3) **Leaderboard** family/local board (§ LB). (4) **M8** PWA install
+> button. (5) **M5/M13** (Worker backend seam — parent word/image submission).
+> Plus: `gh auth login` IS now wired in-session (issues #3/#4 already closed);
+> milestone-cert WJ bug (needs cert-recalibration decision).
 > Waiting on the user: cert recalibration; install Hebrew TTS voice on the tablet
 > (M7); C2/C3 images.
 
@@ -63,6 +71,17 @@ description + submit. Full design + ops: **`docs/bug-report.md`**.
   Issues tab or `gh issue list --label beta-report`. R2 holds the image (Issues
   API can't attach binaries). Chat-webhook was the runner-up (fast phone ping)
   but isn't readable from a Claude session.
+- ✅ **Version + device + logs on every report (2026-06-16b, user ask).** The
+  report context now carries an injected **build stamp** — `appVersion`
+  (package version), `gitSha`, `buildTime` via Vite `define`
+  (`__APP_VERSION__`/`__GIT_SHA__`/`__BUILD_TIME__`, declared in
+  `src/vite-env.d.ts`) — plus a coarse `platform` (Android/iOS/desktop from UA)
+  and the **tail of the in-memory console log** (`window.consoleLogger.getLogs()`,
+  last 60 lines / 8 KB cap). The Worker renders version+platform into the **issue
+  title** (`[beta] (Android v3.0.0+cb179bf) …`), adds version/built/platform rows
+  to the table, and drops the logs into a collapsed `<details>`. The widget shows
+  `v<version> · <sha>` so a tester can read it aloud. (device info — UA/viewport/
+  language — was already captured; the gap was a real version + logs.)
 - ⬜ Optional follow-ups: a private admin list page to triage in-app (vs the
   Issues tab); set up `gh auth login` so a Claude session can triage directly.
   (✅ stray `img/.DS_Store` removed from the build copy plugin; ✅ QR committed at
@@ -432,6 +451,21 @@ question. Plan:
       landscape; wj-step1 tests green. (Footer-pinning of the action buttons was
       not needed — the interaction pane scrolls independently in landscape, and
       the compact-chrome work covers small portrait.)
+  - ✅ **Hide the decorative chrome in short landscape (DONE 2026-06-16b — user
+    follow-up: "on mobile landscape I still can't see most of the question/answer
+    area, remove the top parts — progress and bars").** Even with the two-pane,
+    the STACKED chrome above `<main>` (GameHero title + QuestionProgress bar +
+    WJ's per-stage `פריט N מתוך M` counter) ate too much of a ~360px-tall
+    landscape phone. Fix is ONE globals.css rule under the existing
+    `(orientation: landscape) and (max-height: 600px)` query: `display:none` the
+    `[data-testid='game-hero']` + `[data-testid='question-progress']` (+ the new
+    `.wj-stage-counter` class on the 4 WJ stage counters) inside the
+    `[data-compact='true']` game shell, so `<main>` (flex-1) expands to fill the
+    height. The control header (back/toggles/score) stays — it's the only in-game
+    nav. Systemic (one rule, every game), per `feedback_landscape_needs_real_layout`.
+    Verified at 740×360: ABC/WJ now show header-bar-only + a full-height two-pane.
+    Caveat: tablet-landscape (height >600) is unaffected by design — it has the
+    room for the full chrome.
 - **Memory game (decision: rotate hint)**: portrait phone on big-grid levels
   shows a friendly rotate-the-device hint; landscape gets a wider grid via the
   existing `bridge/memory.ts` sizing knobs (no Screen-Orientation lock — only
@@ -490,13 +524,25 @@ flagged):**
   organisation/UX, not real secrecy. Real multi-device parent identity + true
   enforcement = the §6 Tier-3 backend (fold in there if/when it happens).
 
-**Sub-item (the original ask) — 🟢 QA / "unlock for testing" panel.** In the
-parent area: open gated games without grinding to the thresholds — e.g. unlock
-the **ביטויים tier** (needs 50 derived-learned words; `getExpressionUnlock`),
-unlock individual locked games, optionally seed N learned words. Replaces the
-current console-only workaround (paste a `localStorage` snippet that fills
-`v2_userProgress_<uid>.learnedWords` from `window.vocabularyBank`). Keep it
-clearly a parent/QA tool, not kid-facing.
+**Sub-item (the original ask) — ✅ QA / "unlock for testing" panel — SHIPPED
+2026-06-16 (M12 Slice A).** `QATestingPanel` in the parent-gated כלי הורה tab
+(`AdvancedToolsTab`), driven by new `src/bridge/qa.ts`. Levers, all on the CURRENT
+user's live engine progress: **seed +10/+30/+50/all learned words** (3 correct
+`recordWordAttempt`s each → derived-learned, which also fills the word POOL so
+gated vocab games are actually playable), **פתיחת טירת ביטויים** (seeds to the
+50-word `getExpressionUnlock` gate — there is NO flag, the gate is derived), and
+**פתיחת כל המשחקים** (force-flips every `gameUnlocks` entry, the only way past the
+topic-gated fill-blanks/scramble/grammar). A live readout shows introduced /
+learned / bank / expressions-state; **ניקוי** undoes the seed (keeps ABC + scores).
+Ships to the **public site** (decision 2026-06-16), gated by the parent password.
+GOTCHA fixed along the way: `ProgressManager.initialize` only shares
+`wordMastery`/`learnedWords`/`gameUnlocks` with `userProgress` *by reference* when
+the key already exists, and `migrateUserProgress` (v4 path) doesn't ensure
+`wordMastery` — so `bridge/qa.ts` `commit()` re-points the three collections onto
+`userProgress` before `saveUserProgress()`. Tests: `src/bridge/__tests__/qa.test.ts`
+(6) + `react-routes.spec.js` "QA panel seeds…". See `[[project_qa_testing_panel]]`.
+Slice A is the standalone first step; Slice B = M12 role-as-access + migration,
+Slice C = M4 wizard + `/parent-guide`.
 
 **Decisions still needed from the user:** (a) elevation vs hard profile-switch
 (recommended: elevation); (b) does the QA panel ship to the public site or only
@@ -740,10 +786,10 @@ on-reload timing issue, not a product regression. Worth a separate look.
 
 ### Suggested order
 **MOBILE1 first — it's what the live play-test surfaced:** M1✅ → M6✅ → M9✅ →
-M10✅ → M11✅ done. Remaining: M2 (names — personal and visible) → M3 (layout) →
-**M12 + M4 together** (parent/admin account is where the onboarding wizard
-lands; the QA testing-unlock panel can ship first as a thin standalone if you
-want it sooner) → M7 (tablet TTS — likely just the device Hebrew-voice install)
+M10✅ → M11✅ → M2✅ → M3✅ done. **M12 Slice A (QA panel)✅** done. Remaining:
+**M12 Slice B + M4** (role-as-access + migration, then the onboarding wizard the
+parent/admin account is born in) → M7 (tablet TTS — likely just the device
+Hebrew-voice install)
 → M8 (PWA install button) → M5 (needs the Netlify function + project key, and
 its `manager` role overlaps M12). Then the milestone-cert bug (clear fix, but
 needs the recalibration decision first) → E2E backfill for the mic/WJ paths

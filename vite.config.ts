@@ -2,6 +2,30 @@ import { defineConfig, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'path'
 import fs from 'fs'
+import { execSync } from 'child_process'
+
+// Build/version stamp injected via `define` so a bug report can name the exact
+// bundle it came from (backlog: "log the deploy/build id"). package version +
+// git short SHA + build time. Resolved once at config load (= build time for a
+// `vite build`, server-start time in dev). Git may be unavailable in some CI —
+// fall back to 'unknown' rather than failing the build.
+const PKG_VERSION = (() => {
+  try {
+    return JSON.parse(fs.readFileSync(path.resolve(__dirname, 'package.json'), 'utf-8')).version
+  } catch {
+    return '0.0.0'
+  }
+})()
+const GIT_SHA = (() => {
+  try {
+    return execSync('git rev-parse --short HEAD', { stdio: ['ignore', 'pipe', 'ignore'] })
+      .toString()
+      .trim()
+  } catch {
+    return 'unknown'
+  }
+})()
+const BUILD_TIME = new Date().toISOString()
 
 // INFRA1: `publicDir` is false (legacy assets are served from the project root by
 // the dev server), so `vite build` emits only the bundled module graph. These
@@ -69,6 +93,11 @@ function copyStaticAssets(): Plugin {
 export default defineConfig({
   plugins: [react(), copyStaticAssets()],
   root: '.',
+  define: {
+    __APP_VERSION__: JSON.stringify(PKG_VERSION),
+    __GIT_SHA__: JSON.stringify(GIT_SHA),
+    __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+  },
   publicDir: false, // legacy assets served from project root directly
   resolve: {
     alias: {

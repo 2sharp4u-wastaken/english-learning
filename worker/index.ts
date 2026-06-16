@@ -90,7 +90,21 @@ async function handleReport(request: Request, env: Env, origin: string): Promise
   //    blocked — but flag it so we know triage isn't wired yet.
   let issueUrl: string | null = null
   if (env.GITHUB_TOKEN && env.GITHUB_REPO) {
-    const title = `[beta] ${description.slice(0, 70)}${description.length > 70 ? '…' : ''}`
+    // Version + platform in the title so the Issues list shows them at a glance.
+    const version = String(context.appVersion ?? '?')
+    const sha = String(context.gitSha ?? '')
+    const platform = String(context.platform ?? '')
+    const tag = [platform, `v${version}${sha && sha !== 'dev' ? `+${sha}` : ''}`]
+      .filter(Boolean)
+      .join(' ')
+    const title = `[beta] ${tag ? `(${tag}) ` : ''}${description.slice(0, 60)}${description.length > 60 ? '…' : ''}`
+
+    // Recent console logs (optional) → collapsed block so the issue stays readable.
+    const logs = String(context.recentLogs ?? '').trim()
+    const logsBlock = logs
+      ? ['', '<details><summary>recent logs</summary>', '', '```', logs, '```', '', '</details>']
+      : []
+
     const body = [
       description,
       '',
@@ -99,6 +113,9 @@ async function handleReport(request: Request, env: Env, origin: string): Promise
       '',
       '| field | value |',
       '| --- | --- |',
+      `| version | \`v${version}${sha ? ` (${sha})` : ''}\` |`,
+      `| built | ${String(context.buildTime ?? '')} |`,
+      `| platform | ${platform} |`,
       `| route | \`${String(context.route ?? '')}\` |`,
       `| user | \`${String(context.userId ?? 'anon')}\` |`,
       `| viewport | ${String(context.viewport ?? '')} |`,
@@ -106,6 +123,7 @@ async function handleReport(request: Request, env: Env, origin: string): Promise
       `| build | ${String(context.buildMode ?? '')} |`,
       `| at | ${String(context.createdAt ?? '')} |`,
       `| UA | ${String(context.userAgent ?? '')} |`,
+      ...logsBlock,
     ].join('\n')
 
     const res = await fetch(`https://api.github.com/repos/${env.GITHUB_REPO}/issues`, {

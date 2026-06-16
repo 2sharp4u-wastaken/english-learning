@@ -24,8 +24,43 @@ export interface BugReportContext {
   viewport: string
   language: string
   buildMode: string
+  /** App version + build stamp so a report names the exact bundle it came from. */
+  appVersion: string
+  gitSha: string
+  buildTime: string
+  /** Coarse platform string (Android/iOS/desktop) for quick triage. */
+  platform: string
   userId: string | null
   createdAt: string
+  /** Tail of the in-memory console log (newest last), for triage. */
+  recentLogs?: string
+}
+
+/** How many recent console-log lines to attach, and the overall char cap. */
+const LOG_TAIL_LINES = 60
+const LOG_MAX_CHARS = 8000
+
+/** Coarse device class from the UA — enough to triage Android/iOS/desktop. */
+function detectPlatform(ua: string): string {
+  if (/android/i.test(ua)) return 'Android'
+  if (/iphone|ipad|ipod/i.test(ua)) return 'iOS'
+  if (/macintosh|mac os x/i.test(ua)) return 'macOS'
+  if (/windows/i.test(ua)) return 'Windows'
+  if (/linux/i.test(ua)) return 'Linux'
+  return 'unknown'
+}
+
+/** Grab the tail of the in-memory console log (utils/consoleLogger.js). */
+function gatherRecentLogs(): string | undefined {
+  try {
+    const logger = (window as unknown as { consoleLogger?: { getLogs?: () => string[] } }).consoleLogger
+    const logs = logger?.getLogs?.()
+    if (!Array.isArray(logs) || logs.length === 0) return undefined
+    const tail = logs.slice(-LOG_TAIL_LINES).join('\n')
+    return tail.length > LOG_MAX_CHARS ? tail.slice(-LOG_MAX_CHARS) : tail
+  } catch {
+    return undefined
+  }
 }
 
 export interface BugReportInput {
@@ -50,15 +85,21 @@ function gatherContext(): BugReportContext {
   } catch {
     /* ignore */
   }
+  const userAgent = typeof navigator !== 'undefined' ? navigator.userAgent : ''
   return {
     route: typeof location !== 'undefined' ? location.hash || location.pathname : '',
-    userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : '',
+    userAgent,
     viewport:
       typeof window !== 'undefined' ? `${window.innerWidth}x${window.innerHeight}` : '',
     language: typeof navigator !== 'undefined' ? navigator.language : '',
     buildMode: import.meta.env.MODE,
+    appVersion: typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev',
+    gitSha: typeof __GIT_SHA__ !== 'undefined' ? __GIT_SHA__ : 'dev',
+    buildTime: typeof __BUILD_TIME__ !== 'undefined' ? __BUILD_TIME__ : '',
+    platform: detectPlatform(userAgent),
     userId,
     createdAt: new Date().toISOString(),
+    recentLogs: gatherRecentLogs(),
   }
 }
 
