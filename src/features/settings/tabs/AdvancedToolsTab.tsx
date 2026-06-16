@@ -4,6 +4,7 @@ import { useSettings } from '@/hooks/useSettings'
 import { SectionCard } from '../components/SectionCard'
 import { CustomWordsPanel } from './components/CustomWordsPanel'
 import { WordImagesPanel } from './components/WordImagesPanel'
+import { QATestingPanel } from './components/QATestingPanel'
 
 export function AdvancedToolsTab() {
   const { resetSettings } = useSettings()
@@ -35,6 +36,15 @@ export function AdvancedToolsTab() {
         description="החלפת תמונות ותרגומים למילים קיימות. הכול נשמר בדפדפן — ללא צורך בשרת."
       >
         <WordImagesPanel />
+      </SectionCard>
+
+      {/* M12 Slice A: parent/QA testing affordance — opens locked content without
+          grinding to the thresholds. Behind the parent password (this tab). */}
+      <SectionCard
+        title="כלי בדיקה (QA)"
+        description="פתיחת תוכן נעול לצורך בדיקה, בלי לשחק עד הסף. הכלי משנה את ההתקדמות של המשתמש הנוכחי — לא מיועד לילדים."
+      >
+        <QATestingPanel />
       </SectionCard>
 
       {/* M6: moved here from the kid-visible settings header. */}

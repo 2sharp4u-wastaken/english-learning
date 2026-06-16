@@ -611,6 +611,31 @@ test.describe('Slice 1.6: Settings', () => {
     await expect(page.locator('#react-root a[href="settings.html"]')).toHaveCount(0);
   });
 
+  // M12 Slice A: parent/QA "unlock for testing" panel.
+  test('advanced-tools: QA panel seeds learned words and reflects in the live status', async ({ page }) => {
+    await openAdvancedTools(page);
+
+    const status = page.locator('[data-testid="qa-status"]');
+    await expect(status).toBeVisible();
+    // nikudDOM injects vowels into the chrome, so match nikud-stripped text.
+    await expect
+      .poll(async () => stripNikud((await status.textContent()) || ''))
+      .toContain('נלמדו: 0');
+
+    // Seed +10 words → both introduced and derived-learned jump to 10.
+    await page.locator('[data-testid="qa-seed-10"]').click();
+    await expect
+      .poll(async () => stripNikud((await status.textContent()) || ''))
+      .toContain('בשליטה: 10');
+
+    // It also persists to the current user's progress (the lever drives the engine).
+    const learned = await page.evaluate(() => {
+      const p = JSON.parse(localStorage.getItem('v2_userProgress_smoketest') || '{}');
+      return Object.keys(p.wordMastery || {}).length;
+    });
+    expect(learned).toBe(10);
+  });
+
   test('advanced-tools: Custom Words panel lists a seeded word and deletes it', async ({ page }) => {
     await openAdvancedTools(page);
 
