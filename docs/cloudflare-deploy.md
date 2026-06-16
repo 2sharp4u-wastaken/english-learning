@@ -6,9 +6,16 @@
 every push**). Chosen as the future-facing successor to Pages so the M5/M13 backend
 can later run as Worker Functions in the same project.
 
-**Netlify (`lomdim-anglit.netlify.app`) is still live too** and is NOT auto-connected —
-it only updates on a manual `netlify deploy --prod`. So pushing updates Cloudflare
-automatically; Netlify lags until you redeploy it (keep them in sync or retire one).
+**Cloudflare is the SOLE host (Netlify retired 2026-06-17).** Two ways to ship:
+- **Just push** to `v3-react-migration` → the Git-connected Workers Build runs
+  `npm run build` + `npx wrangler deploy` and goes live in ~2–4 min (confirmed via
+  the Deployments → Version History: each push shows a build authored by the git
+  committer with the branch chip — distinct from CLI deploys labelled "Wrangler").
+  NOTE: the integration uses the **GitHub App**, so there is NO classic webhook
+  under repo → Settings → Webhooks — that's expected, not a fault.
+- **Fast path (~30s):** `npm run cf-deploy` (= `npm run build && wrangler deploy`)
+  publishes the current tree immediately without waiting for the CI build.
+
 Verified live on Cloudflare: `/` (with `translate="no"`), `/sw.js`
 (`max-age=0,must-revalidate`), `/data/nikud-map.json`, `/img/*`, `/assets/*`
 (immutable), SPA deep-link fallback — all 200.
@@ -72,5 +79,4 @@ the robust non-interactive alternative.
 ## After it's live — spot-check the *.workers.dev URL
 `/` loads · `/sw.js` returns `Cache-Control: max-age=0, must-revalidate` ·
 `/data/nikud-map.json` 200 · an `/img/...` picture 200 · deep-link SPA fallback ·
-PWA install + a mic game over HTTPS. Only then consider moving the public URL/DNS off
-Netlify.
+PWA install + a mic game over HTTPS.

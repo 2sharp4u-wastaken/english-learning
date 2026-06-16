@@ -7,13 +7,16 @@ decision. This doc only tracks what is **not done**.
 
 Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ parked on the user.
 
-> **RESUME HERE (session 2026-06-16).** All work committed + pushed to
-> `v3-react-migration` (push auto-deploys Cloudflare; I also `npx wrangler deploy`
-> directly — **wrangler is now authenticated** on this machine). **LIVE on TWO
-> hosts:** Cloudflare Workers — https://english-learning.2sharp4u.workers.dev/
-> (Git-connected → auto-deploys on every push; QR at `docs/beta-qr.png`) — and
-> Netlify — https://lomdim-anglit.netlify.app (manual `netlify deploy --prod`).
-> Cloudflare setup/gotchas: `docs/cloudflare-deploy.md`.
+> **RESUME HERE (session 2026-06-17).** All work committed + pushed to
+> `v3-react-migration`. **Cloudflare Workers is the SOLE host** (Netlify RETIRED
+> 2026-06-17 — `netlify.toml` deleted; stale site still on the dashboard, delete
+> when convenient): https://english-learning.2sharp4u.workers.dev/ (Git-connected →
+> **push auto-deploys in ~2-4 min**; QR at `docs/beta-qr.png`). Fast path that skips
+> the CI wait: **`npm run cf-deploy`** (= `npm run build && wrangler deploy`;
+> wrangler is authenticated on this machine). NOTE: auto-deploy uses the GitHub App,
+> so there's NO classic repo webhook — that's expected, not a fault (a brief "it's
+> not firing" scare 2026-06-17 was just build latency). Setup/gotchas:
+> `docs/cloudflare-deploy.md`.
 >
 > This session (2026-06-16) shipped: **M3 landscape two-pane COMPLETE** across
 > every game (batches 3+4: Reading/Scramble/ABC/Phonics/Story-Time-quiz + Word
@@ -46,14 +49,15 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 >    tail in the report; Worker renders them into the issue title/table/details;
 >    widget shows `v<ver> · <sha>`. See `[[project_build_version_stamp]]`.
 >    **Bump `package.json` version on a real release so the stamp is useful (3.0.0 now).**
-> Netlify NOT redeployed this session (only Cloudflare auto-deploys on push).
+> Beta reports #5–#9 (nikud + short-landscape overflow on Word Journey) fixed &
+> deployed this session; Netlify retired (Cloudflare is the only host now).
 >
 > **NEXT (pick up here):** (1) **M12 Slice B** — promote the latent `parent`
 > role into the access model (gating reads role, not just the password hash) +
 > migration (auto-create a `parent` user from an existing `parentPassword` hash);
-> then **Slice C = M4** first-run wizard + `/parent-guide`. (2) **deploy parity**
-> — push auto-updates Cloudflare but NOT Netlify; decide keep-in-sync vs retire
-> Netlify. (3) **Leaderboard** family/local board (§ LB). (4) **M8** PWA install
+> then **Slice C = M4** first-run wizard + `/parent-guide`. (2) ✅ **deploy parity
+> DONE** — Netlify retired 2026-06-17; Cloudflare is the sole host (`npm run
+> cf-deploy` fast path added). (3) **Leaderboard** family/local board (§ LB). (4) **M8** PWA install
 > button. (5) **M5/M13** (Worker backend seam — parent word/image submission).
 > Plus: `gh auth login` IS now wired in-session (issues #3/#4 already closed);
 > milestone-cert WJ bug (needs cert-recalibration decision).
@@ -100,24 +104,26 @@ description + submit. Full design + ops: **`docs/bug-report.md`**.
 
 ## 1. Ship beyond localhost — **Slice INFRA1** ✅ SHIPPED (live 2026-06-10)
 
-**The app is LIVE at https://lomdim-anglit.netlify.app** (Netlify site `lomdim-anglit`,
-account 2sharp4u@gmail.com; this folder is CLI-linked via `.netlify/`, gitignored).
-**Redeploy = `netlify deploy --prod`** (builds + publishes; the GitHub repo is NOT
-dashboard-connected, so pushing alone does NOT deploy). Remaining: a real-device
-play-test over the live HTTPS URL (mic games + PWA install) — see §3.
-
-**✅ Cloudflare Workers — LIVE 2026-06-15.** Second live host (alongside Netlify):
-**https://english-learning.2sharp4u.workers.dev/**. Git-connected to
-`english-learning` @ `v3-react-migration`, so **a push auto-deploys** (no CLI/manual
-step — unlike Netlify). Static-assets Worker via committed `wrangler.jsonc`
-(`assets=./dist`, SPA `not_found_handling`); `cloudflare/_headers` ships caching (NO
-`_redirects` — Cloudflare rejects the SPA catch-all). Chose Workers over Pages/Vercel
-(future-facing; native Functions for the M5/M13 backend; no commercial restriction;
-unlimited static serving). Full setup + the hard-won gotchas (C3 plugin injection,
-branch pinning, `_redirects` loop, v2 repo) in **`docs/cloudflare-deploy.md`**.
-**Open:** two live hosts now — keep both in sync (push = Cloudflare; `netlify deploy
---prod` = Netlify) or retire Netlify. Shorter URL (custom domain) deferred — user
+**The app is LIVE at https://english-learning.2sharp4u.workers.dev/** on **Cloudflare
+Workers — the SOLE host (Netlify retired 2026-06-17).** Static-assets Worker via
+committed `wrangler.jsonc` (`assets=./dist`, SPA `not_found_handling`);
+`cloudflare/_headers` ships caching (NO `_redirects` — Cloudflare rejects the SPA
+catch-all). Git-connected to `english-learning` @ `v3-react-migration`, so **a push
+auto-deploys in ~2-4 min** (CI runs `npm run build` + `npx wrangler deploy`); the
+**`npm run cf-deploy`** fast path (~30s) publishes the current tree without waiting for
+CI. Auto-deploy is via the GitHub App (no classic repo webhook — expected). Chose
+Workers over Pages/Vercel (future-facing; native Functions for the M5/M13 backend; no
+commercial restriction; unlimited static serving). Full setup + the hard-won gotchas
+(C3 plugin injection, branch pinning, `_redirects` loop, v2 repo) in
+**`docs/cloudflare-deploy.md`**. Remaining: a real-device play-test over the live HTTPS
+URL (mic games + PWA install) — see §3. Shorter URL (custom domain) deferred — user
 rolled with a QR of the workers.dev URL for the beta.
+
+**RETIRED — Netlify (`lomdim-anglit.netlify.app`).** Was the first host (CLI-linked,
+manual `netlify deploy --prod`, never git-connected); retired 2026-06-17 because it
+drifted from Cloudflare and the dual-host story confused which build was live.
+`netlify.toml` deleted; the dashboard site still serves a stale build — delete/unpublish
+it there when convenient. The local `.netlify/` link folder is gitignored and harmless.
 
 Chosen path: **public static deploy (Netlify/Vercel) + PWA layer**. A hosted deploy
 gives free HTTPS → solves the mic secure-context blocker automatically (no cert
@@ -600,8 +606,13 @@ with M4 → the QA panel can land first as a thin standalone if you want the
 testing unlock sooner.
 
 ### M5 🟢 Custom words without a parent API key (decision: server-assisted + share-back)
+> ⚠️ **PLATFORM UPDATE (2026-06-17): host is now Cloudflare Workers (Netlify retired).**
+> The "Netlify Function / Netlify Blobs" wording in M5/M13 below predates that — read it
+> as the generic serverless pattern and implement on **Cloudflare Workers + R2/KV**
+> instead (the bug-report backend already runs as a Worker + R2 bucket — reuse that seam).
+
 Today `CustomWordsPanel` requires the parent's own Anthropic key
-(browser-direct call). Decision — Netlify Function with the project key, plus
+(browser-direct call). Decision — a serverless function with the project key, plus
 central word-sharing:
 - (a) `/.netlify/functions/word-import` proxy holding the project's Anthropic
   key (Netlify env var) — parents never need a key; drop the key field from the

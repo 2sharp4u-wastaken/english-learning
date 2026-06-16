@@ -76,9 +76,9 @@ function copyStaticAssets(): Plugin {
         recursive: true,
         filter: (src) => path.basename(src) !== '.DS_Store',
       })
-      // Cloudflare Workers/Pages reads _headers from the build-output root (the
-      // equivalent of netlify.toml's [[headers]]). Copy it so a Cloudflare deploy
-      // gets the same caching; Netlify keeps using netlify.toml (harmless there).
+      // Cloudflare Workers/Pages reads _headers from the build-output root for
+      // per-asset caching (immutable hashed assets, must-revalidate sw.js/index).
+      // Cloudflare is the sole host (Netlify retired 2026-06-17); see docs.
       // NOTE: no _redirects — the SPA catch-all (/* /index.html 200) is REJECTED by
       // Cloudflare ("infinite loop" [code 100324]); SPA fallback comes from
       // wrangler.jsonc's not_found_handling instead. See docs/cloudflare-deploy.md.
