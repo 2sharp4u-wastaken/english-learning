@@ -489,6 +489,15 @@ question. Plan:
     `.game-twopane-prompt [data-testid='media-prompt-card']`, so it fixes every
     two-pane game's prompt at once. Verified at 680×320: card height 310→233px, the
     audio button bottom 321px (off-screen) → 261px (on-screen), pane scroll = 0.
+  - ✅ **Shrink the INTERACTION pane's letter builder in short landscape (DONE
+    2026-06-16, beta #8 — once the prompt card fit, the spell stage's left pane
+    was now the overflow: big `size-14` tiles + slot row pushed the נקה/בדוק
+    buttons below the fold).** Same landscape query: shrink shared `LetterSlots`
+    `[data-testid='letter-tile']` to 2.5rem (was size-14/56px), `letter-slot` to
+    2.5rem height (overrides the inline `height:3.25rem` with `!important`) +
+    tighter gaps — so the action buttons stay on-screen. Shared → Reading's
+    builder benefits too. Verified at 680×320 via a playthrough to the spell
+    stage: בדוק button bottom 427px (off-screen) → 253px (on-screen).
 - **Memory game (decision: rotate hint)**: portrait phone on big-grid levels
   shows a friendly rotate-the-device hint; landscape gets a wider grid via the
   existing `bridge/memory.ts` sizing knobs (no Screen-Orientation lock — only

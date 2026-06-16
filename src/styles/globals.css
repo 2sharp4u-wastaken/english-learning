@@ -228,4 +228,23 @@
   #react-root .game-twopane-interaction [data-testid='answer-grid'] {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
+  /* The letter-builder games (Word Journey spell, Reading) put a slot row + a
+   * full tile bank in the interaction pane. On a wide screen the tiles are
+   * size-14 and the bank wraps to two rows, which together with the slots is
+   * taller than the short-landscape pane — pushing the נקה/בדוק buttons below
+   * the fold (beta #8). Shrink the slots, tiles, and gaps so the action buttons
+   * stay on-screen. Shared LetterSlots → Reading gets it too. */
+  #react-root .game-twopane-interaction [data-testid='letter-slots'] {
+    gap: 0.5rem;
+  }
+  #react-root .game-twopane-interaction [data-testid='letter-slot'] {
+    height: 2.5rem !important; /* overrides the inline style height */
+    width: 1.75rem;
+    font-size: 1.375rem;
+  }
+  #react-root .game-twopane-interaction [data-testid='letter-tile'] {
+    width: 2.5rem;
+    height: 2.5rem;
+    font-size: 1.375rem;
+  }
 }
