@@ -668,6 +668,35 @@ test.describe('Slice 1.6: Settings', () => {
     await expect(page.locator('#react-root a[href="settings.html"]')).toHaveCount(0);
   });
 
+  // Issue #10: parent password is changed from INSIDE the parent area (already
+  // authenticated) — there is no unauthenticated "forgot password" reset.
+  test('advanced-tools: change parent password (authenticated); no forgot-reset in the gate', async ({ page }) => {
+    // The verify prompt no longer offers a kid-reachable reset link.
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedUser(page);
+    await seedParentPassword(page);
+    await gotoHash(page, '/settings');
+    await page.locator('[data-testid="open-parent-settings"]').click();
+    await expect(page.locator('#parent-password')).toBeVisible();
+    await expect(page.getByText('שכחתי סיסמה')).toHaveCount(0);
+
+    // Unlock, open the tools tab, change the password.
+    await page.locator('#parent-password').fill(PARENT_PASSWORD);
+    await page.locator('#parent-password').press('Enter');
+    await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
+
+    await page.locator('#new-parent-pw').fill('changed-pass');
+    await page.locator('#new-parent-pw2').fill('changed-pass');
+    await page.locator('[data-testid="change-parent-password"] button[type="submit"]').click();
+
+    // The device parent credential now matches the new password's hash.
+    const ok = await page.evaluate(() => {
+      const SALT = 'englishlearning2024';
+      return localStorage.getItem('parentPassword') === btoa(SALT + 'changed-pass' + SALT);
+    });
+    expect(ok).toBe(true);
+  });
+
   // M12 Slice A: parent/QA "unlock for testing" panel.
   test('advanced-tools: QA panel seeds learned words and reflects in the live status', async ({ page }) => {
     await openAdvancedTools(page);

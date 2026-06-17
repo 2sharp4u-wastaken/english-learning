@@ -105,13 +105,18 @@ SettingsPage:
           STAY open across navigation (the per-component useState re-locked before)
   session re-locks while a protected tab active → snaps back to display (render guard)
 
-<ParentPasswordModal> create/verify/"שכחתי סיסמה" flow unchanged (TIER2): create mode
-  when hasParentPassword() false → setParentPassword(pw) [hash → UNPREFIXED key].
+<ParentPasswordModal> standard-admin model (issue #10): VERIFY-only once a password
+  exists; CREATE mode ONLY when hasParentPassword() false (onboarding/migration).
+  NO unauthenticated "forgot password" reset (a kid could reset+re-create). Change
+  the password from INSIDE the parent area: כלי הורה → "סיסמת הורה" →
+  changeParentPassword(new) [updates BOTH the parentPassword key AND the parent
+  user's account password — one credential]. Forgotten-entirely recovery = clear
+  app data (offline app, no email channel).
 
 Parent account (M4 wizard): createParentAccount(id,name,pw) → role:'parent' user +
   parentPassword = same hash (one credential). UsersTab destructive actions, once
   elevated, use unguarded admin* mutators + a plain confirm (no password re-type);
-  AddUserModal requirePassword={false}.
+  AddUserModal requirePassword={false}. Player-facing copy says שחקן/ית, never ילד.
 
 Expose-all: settings.gameUnlockOverride → getAllGameUnlocks()/getGameUnlockState()/
   getExpressionUnlock() report everything unlocked READ-TIME (no stored-progress

@@ -1,11 +1,14 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Download, RotateCcw, BookOpen } from 'lucide-react'
+import { Download, RotateCcw, BookOpen, KeyRound } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
+import { changeParentPassword } from '@/bridge/auth'
 import { SectionCard } from '../components/SectionCard'
 import { CustomWordsPanel } from './components/CustomWordsPanel'
 import { WordImagesPanel } from './components/WordImagesPanel'
 import { QATestingPanel } from './components/QATestingPanel'
+
+const MIN_PASSWORD = 4
 
 export function AdvancedToolsTab() {
   const { resetSettings } = useSettings()
@@ -44,15 +47,26 @@ export function AdvancedToolsTab() {
           grinding to the thresholds. Behind the parent password (this tab). */}
       <SectionCard
         title="כלי בדיקה (QA)"
-        description="פתיחת תוכן נעול לצורך בדיקה, בלי לשחק עד הסף. הכלי משנה את ההתקדמות של המשתמש הנוכחי — לא מיועד לילדים."
+        description="פתיחת תוכן נעול לצורך בדיקה, בלי לשחק עד הסף. הכלי משנה את ההתקדמות של המשתמש הנוכחי — לא מיועד לשחקנים/ות."
       >
         <QATestingPanel />
+      </SectionCard>
+
+      {/* Issue #10: change the parent password from inside the parent area
+          (already authenticated — the standard "change password while logged
+          in"). There is no unauthenticated reset; a forgotten password is
+          recovered by clearing the app's data. */}
+      <SectionCard
+        title="סיסמת הורה"
+        description="שינוי סיסמת ההורה. הסיסמה מגנה על כל ההגדרות והאזור הזה. אם שכחתם אותה לגמרי — ניתן לאפס דרך מחיקת נתוני האפליקציה במכשיר."
+      >
+        <ChangeParentPassword />
       </SectionCard>
 
       {/* M4: in-app parent guide (offline, app-styled). */}
       <SectionCard
         title="מדריך להורה"
-        description="הסבר קצר על אזור ההורה, הסיסמה, פתיחת תכנים וניהול הילדים."
+        description="הסבר קצר על אזור ההורה, הסיסמה, פתיחת תכנים וניהול השחקנים/ות."
       >
         <button
           type="button"
@@ -68,7 +82,7 @@ export function AdvancedToolsTab() {
       {/* M6: moved here from the kid-visible settings header. */}
       <SectionCard
         title="תחזוקה"
-        description="הורדת יומן האפליקציה לדיווח על תקלה, ואיפוס ההגדרות לברירת המחדל (לא נוגע בהתקדמות הילדים)."
+        description="הורדת יומן האפליקציה לדיווח על תקלה, ואיפוס ההגדרות לברירת המחדל (לא נוגע בהתקדמות השחקנים/ות)."
       >
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -116,5 +130,80 @@ export function AdvancedToolsTab() {
         ) : null}
       </SectionCard>
     </div>
+  )
+}
+
+const inputClass =
+  'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-text outline-none transition-colors focus:border-white/25'
+
+function ChangeParentPassword() {
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [msg, setMsg] = useState<{ kind: 'ok' | 'err'; text: string } | null>(null)
+
+  function submit(e: React.FormEvent) {
+    e.preventDefault()
+    if (password.length < MIN_PASSWORD) {
+      setMsg({ kind: 'err', text: `סיסמה קצרה מדי — לפחות ${MIN_PASSWORD} תווים` })
+      return
+    }
+    if (password !== confirm) {
+      setMsg({ kind: 'err', text: 'הסיסמאות אינן תואמות' })
+      setConfirm('')
+      return
+    }
+    changeParentPassword(password)
+    setPassword('')
+    setConfirm('')
+    setMsg({ kind: 'ok', text: 'הסיסמה עודכנה' })
+  }
+
+  return (
+    <form onSubmit={submit} className="space-y-3" data-testid="change-parent-password">
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-1">
+          <label htmlFor="new-parent-pw" className="block text-xs font-medium text-muted">
+            סיסמה חדשה
+          </label>
+          <input
+            id="new-parent-pw"
+            type="password"
+            autoComplete="new-password"
+            value={password}
+            onChange={(e) => {
+              setPassword(e.target.value)
+              if (msg) setMsg(null)
+            }}
+            className={inputClass}
+          />
+        </div>
+        <div className="space-y-1">
+          <label htmlFor="new-parent-pw2" className="block text-xs font-medium text-muted">
+            אימות סיסמה
+          </label>
+          <input
+            id="new-parent-pw2"
+            type="password"
+            autoComplete="new-password"
+            value={confirm}
+            onChange={(e) => {
+              setConfirm(e.target.value)
+              if (msg) setMsg(null)
+            }}
+            className={inputClass}
+          />
+        </div>
+      </div>
+      {msg && (
+        <p className={msg.kind === 'ok' ? 'text-xs text-learn' : 'text-xs text-coral-400'}>{msg.text}</p>
+      )}
+      <button
+        type="submit"
+        className="flex items-center gap-1.5 rounded-lg bg-learn/90 px-3 py-1.5 text-sm font-medium text-ink-950 transition-colors hover:bg-learn"
+      >
+        <KeyRound size={14} />
+        <span>עדכון סיסמה</span>
+      </button>
+    </form>
   )
 }

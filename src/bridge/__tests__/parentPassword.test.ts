@@ -2,8 +2,10 @@ import { describe, it, expect, beforeEach } from 'vitest'
 import {
   hasParentPassword,
   setParentPassword,
-  resetParentPassword,
+  changeParentPassword,
   verifyAdminPassword,
+  createParentAccount,
+  getUser,
 } from '../auth'
 
 /**
@@ -42,12 +44,14 @@ describe('parent password lifecycle', () => {
     expect(verifyAdminPassword('')).toBe(false)
   })
 
-  it('resetParentPassword wipes only the parent password', () => {
-    setParentPassword('my-secret')
-    localStorage.setItem('users', '{}')
-    resetParentPassword()
-    expect(hasParentPassword()).toBe(false)
-    expect(verifyAdminPassword('my-secret')).toBe(false)
-    expect(localStorage.getItem('users')).toBe('{}')
+  it('changeParentPassword updates the device credential AND the parent user (issue #10)', () => {
+    createParentAccount('parent', 'אבא', 'old-pass')
+    expect(verifyAdminPassword('old-pass')).toBe(true)
+
+    changeParentPassword('new-pass')
+    expect(verifyAdminPassword('old-pass')).toBe(false)
+    expect(verifyAdminPassword('new-pass')).toBe(true)
+    // The parent account's own password is kept in sync (one credential).
+    expect(getUser('parent')?.password).toBe(btoa(SALT + 'new-pass' + SALT))
   })
 })

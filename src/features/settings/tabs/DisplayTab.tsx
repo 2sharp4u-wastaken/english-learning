@@ -29,7 +29,7 @@ export function DisplayTab() {
           />
           <Toggle
             label="קונפטי על תשובה נכונה"
-            description="אנימציית חגיגה כאשר ילד עונה נכון"
+            description="אנימציית חגיגה על תשובה נכונה"
             checked={settings.showConfetti !== false}
             onChange={(v) => updateSettings({ showConfetti: v })}
           />

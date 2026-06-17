@@ -13,7 +13,7 @@ import { ExpressionsPanel } from './components/ExpressionsPanel'
 
 const REGISTER_COPY: Record<Register, { label: string; description: string }> = {
   'kid-friendly': {
-    label: 'ידידותי לילדים',
+    label: 'ידידותי לגיל הרך',
     description: 'ניבים ופעלים נפוצים ומתאימים לכל גיל (למשל "give up", "piece of cake").',
   },
   casual: {
@@ -40,7 +40,7 @@ export function ExpressionsTab() {
     <div className="space-y-4">
       <SectionCard
         title="ביטויים, ניבים וסלנג"
-        description="הפעלה וכיבוי של תוכן הביטויים ובחירת הסגנונות שיוצגו לילד. כברירת מחדל מוצגים רק ביטויים ידידותיים לילדים."
+        description="הפעלה וכיבוי של תוכן הביטויים ובחירת הסגנונות שיוצגו לשחקן/ית. כברירת מחדל מוצגים רק ביטויים ידידותיים לגיל הרך."
       >
         <div className="space-y-2">
           <Toggle

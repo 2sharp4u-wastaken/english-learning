@@ -79,14 +79,14 @@ export function FirstRunWizard({ onComplete }: { onComplete: () => void }) {
     e.preventDefault()
     const names = kidNames.map((n) => n.trim()).filter(Boolean)
     if (names.length === 0) {
-      setError('נא להוסיף לפחות פרופיל אחד לילד')
+      setError('נא להוסיף לפחות פרופיל שחקן/ית אחד')
       return
     }
     for (let i = 0; i < names.length; i++) {
       const name = names[i]
       const result = adminAddUser(`player${i + 1}`, name, name, name.charAt(0))
       if (!result.success) {
-        setError(result.error ?? 'שגיאה ביצירת פרופיל הילד')
+        setError(result.error ?? 'שגיאה ביצירת פרופיל השחקן/ית')
         return
       }
     }
@@ -129,8 +129,8 @@ export function FirstRunWizard({ onComplete }: { onComplete: () => void }) {
           <div className="auth-screen" data-testid="wizard-welcome">
             <h3>ברוכים הבאים!</h3>
             <p className="password-hint" style={{ marginTop: 12 }}>
-              אפליקציה ללימוד אנגלית לילדים דוברי עברית. בכמה צעדים קצרים ניצור חשבון
-              הורה לניהול ההגדרות, ופרופיל לכל ילד. ההתקדמות נשמרת על המכשיר הזה.
+              אפליקציה ללימוד אנגלית לדוברי עברית. בכמה צעדים קצרים ניצור חשבון
+              הורה לניהול ההגדרות, ופרופיל לכל שחקן/ית. ההתקדמות נשמרת על המכשיר הזה.
             </p>
             <button
               type="button"
@@ -217,16 +217,16 @@ export function FirstRunWizard({ onComplete }: { onComplete: () => void }) {
               <div className="login-avatar">
                 <Users size={34} aria-hidden />
               </div>
-              <h3>פרופילים לילדים</h3>
+              <h3>פרופילים לשחקנים/ות</h3>
             </div>
             <p className="password-hint">
-              הוסיפו פרופיל לכל ילד. כל פרופיל שומר התקדמות נפרדת. הילד יבחר סיסמה
+              הוסיפו פרופיל לכל שחקן/ית. כל פרופיל שומר התקדמות נפרדת. הסיסמה תיבחר
               בהתחברות הראשונה. אפשר להוסיף עוד פרופילים מאוחר יותר.
             </p>
             <form className="login-form" onSubmit={submitKids} style={{ marginTop: 16 }}>
               {kidNames.map((name, idx) => (
                 <div className="form-group" key={idx}>
-                  <label htmlFor={`wiz-kid-${idx}`}>שם הילד {kidNames.length > 1 ? idx + 1 : ''}</label>
+                  <label htmlFor={`wiz-kid-${idx}`}>שם השחקן/ית {kidNames.length > 1 ? idx + 1 : ''}</label>
                   <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     <input
                       id={`wiz-kid-${idx}`}
@@ -270,7 +270,7 @@ export function FirstRunWizard({ onComplete }: { onComplete: () => void }) {
                   }}
                 >
                   <Plus size={16} aria-hidden />
-                  <span>הוספת ילד</span>
+                  <span>הוספת שחקן/ית</span>
                 </button>
               )}
               {error && (

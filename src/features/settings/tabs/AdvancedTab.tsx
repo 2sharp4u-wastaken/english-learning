@@ -25,7 +25,7 @@ export function AdvancedTab() {
 
       <SectionCard
         title="מתקדם להורה"
-        description="הפעלה עלולה להפר את מסלול הלמידה המובנה של הילד."
+        description="הפעלה עלולה להפר את מסלול הלמידה המובנה של השחקן/ית."
       >
         <div className="grid gap-2 sm:grid-cols-2">
           <Toggle
@@ -36,7 +36,7 @@ export function AdvancedTab() {
           />
           <Toggle
             label="התאמת אורך מילים אוטומטית"
-            description="ילד מתחיל מקבל מילים קצרות; הסינון נפתח עם ההתקדמות"
+            description="בתחילת הדרך מוצגות מילים קצרות; הסינון נפתח עם ההתקדמות"
             checked={settings.difficultyAutoGate !== false}
             onChange={(v) => updateSettings({ difficultyAutoGate: v })}
           />

@@ -65,7 +65,12 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 > the parent tabs are HIDDEN (not shown padlocked), with one "הגדרות הורה" button
 > that opens the password prompt; the parent tabs appear only once elevated.
 > `categories` moved behind the gate. In-app **`/parent-guide`** (`ParentGuidePage`,
-> no nikud) linked from the wizard + כלי הורה. See `[[project_m12b_m4_parent_account]]`.
+> no nikud) linked from the wizard + כלי הורה. **Issue #10 follow-up (same day):**
+> standard admin model — VERIFY-only, **no unauthenticated reset** (deleted the
+> "שכחתי סיסמה" self-reset a kid could abuse), change password while authenticated
+> via כלי הורה → "סיסמת הורה" (`changeParentPassword`), recover-forgotten = clear
+> app data; **all player-facing copy now says שחקן/ית, never ילד.**
+> See `[[project_m12b_m4_parent_account]]`.
 > (2) ✅ **deploy parity DONE** — Netlify retired 2026-06-17; Cloudflare is the sole
 > host (`npm run cf-deploy` fast path added). (3) **Leaderboard** family/local board
 > (§ LB). (4) **M8** PWA install button. (5) **M5/M13** (Worker backend seam — parent

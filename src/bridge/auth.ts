@@ -331,13 +331,26 @@ export function setParentPassword(password: string): void {
 }
 
 /**
- * Wipe ONLY the parent password ("שכחתי סיסמה"). The create wizard re-runs on
- * the next protected access. Deliberately reachable without the old password —
- * the gate is against a wandering kid, not an attacker, and a no-reset design
- * risks permanent parent lockout.
+ * Change the parent password from WITHIN the parent area (the caller is already
+ * authenticated/elevated — standard "change password while logged in"). Updates
+ * both the device parent credential AND the parent/manager user's account
+ * password so the two stay the one credential `createParentAccount` set up.
+ *
+ * NOTE: there is intentionally NO unauthenticated "forgot password" reset
+ * anymore (issue #10) — like any standard admin account, you can't reset the
+ * password without first authenticating. A truly-forgotten password is recovered
+ * by clearing the app's data (offline app, no email recovery channel).
  */
-export function resetParentPassword(): void {
-  localStorage.removeItem(PARENT_PASSWORD_KEY)
+export function changeParentPassword(newPassword: string): void {
+  const hashed = hashPassword(newPassword)
+  localStorage.setItem(PARENT_PASSWORD_KEY, hashed)
+  const users = getUsers()
+  if (users) {
+    for (const u of Object.values(users)) {
+      if (u.role === 'parent' || u.role === 'manager') u.password = hashed
+    }
+    saveUsers(users)
+  }
 }
 
 /** Verify the admin (parent) password. False when none is set up yet. */
