@@ -138,6 +138,16 @@
   border: 2px solid rgba(255, 255, 255, 0.18);
 }
 
+/* Build stamp at the bottom of the login card — confirm the deployed bundle */
+.auth-build-stamp {
+  margin-top: 22px;
+  text-align: center;
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  color: rgba(180, 194, 216, 0.5);
+  direction: ltr;
+}
+
 /* Parent/admin badge on a login card (M12 Slice B) */
 .user-select-role {
   display: inline-flex;

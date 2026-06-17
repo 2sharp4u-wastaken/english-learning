@@ -157,7 +157,20 @@ export function LoginPage() {
             </form>
           </div>
         )}
+
+        {/* Build stamp — lets a tester confirm they're on the latest deploy by
+            comparing the sha to the latest commit (see BugReportWidget too). */}
+        <div className="auth-build-stamp" data-nikud-skip data-testid="login-build-stamp">
+          {buildStamp()}
+        </div>
       </div>
     </div>
   )
+}
+
+/** "v3.0.0 · <sha>" — the deployed bundle's version + git commit (Vite define). */
+function buildStamp(): string {
+  const v = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'
+  const sha = typeof __GIT_SHA__ !== 'undefined' ? __GIT_SHA__ : 'dev'
+  return sha && sha !== 'dev' ? `v${v} · ${sha}` : `v${v}`
 }
