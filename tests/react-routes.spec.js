@@ -458,16 +458,19 @@ test.describe('Slice 1.6: Settings', () => {
     await seedUser(page); // plain kid, no role, no parent password
     await gotoHash(page, '/settings');
 
-    // Wait for the tab rail to mount
-    await expect(page.locator('[data-tab-id="display"]').first()).toBeAttached({ timeout: 5000 });
+    // Wait for the kid customization surface to mount. The single-tab rail is
+    // intentionally NOT rendered for a kid (one pill is just a redundant label),
+    // so we wait on the content, not a tab pill.
+    await expect(page.locator('[data-testid="player-customization"]')).toBeVisible({ timeout: 5000 });
 
-    // Only the unprotected display tab is present — the parent tabs are NOT
-    // rendered for a kid (no padlock wall). A single "parent settings" entry
-    // point opens the password prompt.
+    // None of the parent tabs are rendered for a kid (no padlock wall), and the
+    // lone display pill is dropped too. There is NO inline "parent settings"
+    // entry point either — protected settings are reached by signing in with the
+    // parent profile.
     for (const id of ['categories', 'game', 'advanced', 'expressions', 'users', 'advanced-tools']) {
       await expect(page.locator(`[data-tab-id="${id}"]`)).toHaveCount(0);
     }
-    await expect(page.locator('[data-testid="open-parent-settings"]').first()).toBeVisible();
+    await expect(page.locator('[data-testid="open-parent-settings"]')).toHaveCount(0);
 
     // The kid customization surface renders without any password.
     await expect(page.locator('[data-testid="player-customization"]')).toBeVisible();
@@ -528,47 +531,6 @@ test.describe('Slice 1.6: Settings', () => {
     await expect(page.locator('[data-testid="open-parent-settings"]')).toHaveCount(0);
   });
 
-  test('protected tab opens password modal and unlocks on correct password', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await seedUser(page);
-    await seedParentPassword(page);
-    await gotoHash(page, '/settings');
-
-    // A kid sees a single "parent settings" entry point, not the locked tabs.
-    await page.locator('[data-testid="open-parent-settings"]').click();
-
-    // Password modal should appear in verify mode (no confirm input)
-    await expect(page.locator('#parent-password')).toBeVisible();
-    await expect(page.locator('#parent-password-confirm')).toHaveCount(0);
-
-    // Submit the seeded per-device parent password
-    await page.locator('#parent-password').fill(PARENT_PASSWORD);
-    await page.locator('#parent-password').press('Enter');
-
-    // Modal closes, the full rail appears → the Game tab is now reachable.
-    await expect(page.locator('#parent-password')).not.toBeVisible();
-    await page.locator('[data-tab-id="game"]:visible').first().click();
-    await expect.poll(() => hasText(page, 'מכניקת'), { timeout: 5000 }).toBe(true);
-  });
-
-  test('one unlock opens a second protected tab without re-prompting (M12 Slice B)', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await seedUser(page);
-    await seedParentPassword(page);
-    await gotoHash(page, '/settings');
-
-    // Unlock once via the parent-settings entry point.
-    await page.locator('[data-testid="open-parent-settings"]').click();
-    await page.locator('#parent-password').fill(PARENT_PASSWORD);
-    await page.locator('#parent-password').press('Enter');
-    await expect(page.locator('#parent-password')).not.toBeVisible();
-
-    // A different protected tab opens immediately — NO second password prompt.
-    await page.locator('[data-tab-id="advanced"]:visible').first().click();
-    await expect(page.locator('#parent-password')).toHaveCount(0);
-    await expect.poll(() => hasText(page, 'פתיחת כל התכנים'), { timeout: 5000 }).toBe(true);
-  });
-
   test('parent-role session auto-unlocks protected tabs (no password)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await seedUser(page, { role: 'parent' });
@@ -578,36 +540,6 @@ test.describe('Slice 1.6: Settings', () => {
     await page.locator('[data-tab-id="game"]:visible').first().click();
     await expect(page.locator('#parent-password')).toHaveCount(0);
     await expect.poll(() => hasText(page, 'מכניקת'), { timeout: 5000 }).toBe(true);
-  });
-
-  test('first protected access (no stored password) runs the create wizard', async ({ page }) => {
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await seedUser(page);
-    await gotoHash(page, '/settings');
-
-    await page.locator('[data-testid="open-parent-settings"]').click();
-
-    // Create mode: password + confirm inputs
-    await expect(page.locator('#parent-password')).toBeVisible();
-    await expect(page.locator('#parent-password-confirm')).toBeVisible();
-
-    // Mismatched confirm is rejected and the modal stays open
-    await page.locator('#parent-password').fill('new-pass-1');
-    await page.locator('#parent-password-confirm').fill('different');
-    await page.locator('#parent-password-confirm').press('Enter');
-    await expect(page.locator('#parent-password')).toBeVisible();
-
-    // Matching entries store the hash and unlock — the full rail appears.
-    await page.locator('#parent-password').fill('new-pass-1');
-    await page.locator('#parent-password-confirm').fill('new-pass-1');
-    await page.locator('#parent-password-confirm').press('Enter');
-    await expect(page.locator('#parent-password')).not.toBeVisible();
-    await page.locator('[data-tab-id="game"]:visible').first().click();
-    await expect.poll(() => hasText(page, 'מכניקת'), { timeout: 5000 }).toBe(true);
-
-    // Stored hash matches the bridge scheme
-    const stored = await page.evaluate(() => localStorage.getItem('parentPassword'));
-    expect(stored).toBe(Buffer.from('englishlearning2024new-pass-1englishlearning2024').toString('base64'));
   });
 
   test('changing a setting persists to both legacy localStorage keys', async ({ page }) => {
@@ -680,16 +612,10 @@ test.describe('Slice 1.6: Settings', () => {
   // advanced-tools tab no longer links to legacy settings.html at all.
   async function openAdvancedTools(page) {
     await page.setViewportSize({ width: 1280, height: 800 });
-    await seedUser(page);
-    await seedParentPassword(page);
+    // Parent settings are reached by signing in with the parent profile (role
+    // auto-elevates) — there's no inline unlock from a kid session anymore.
+    await seedUser(page, { role: 'parent' });
     await gotoHash(page, '/settings');
-    // Kids see only the "parent settings" entry point; unlock, then the full
-    // rail (incl. advanced-tools) appears.
-    await page.locator('[data-testid="open-parent-settings"]').click();
-    await expect(page.locator('#parent-password')).toBeVisible();
-    await page.locator('#parent-password').fill(PARENT_PASSWORD);
-    await page.locator('#parent-password').press('Enter');
-    await expect(page.locator('#parent-password')).not.toBeVisible();
     await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
   }
 
@@ -709,21 +635,9 @@ test.describe('Slice 1.6: Settings', () => {
   });
 
   // Issue #10: parent password is changed from INSIDE the parent area (already
-  // authenticated) — there is no unauthenticated "forgot password" reset.
-  test('advanced-tools: change parent password (authenticated); no forgot-reset in the gate', async ({ page }) => {
-    // The verify prompt no longer offers a kid-reachable reset link.
-    await page.setViewportSize({ width: 1280, height: 800 });
-    await seedUser(page);
-    await seedParentPassword(page);
-    await gotoHash(page, '/settings');
-    await page.locator('[data-testid="open-parent-settings"]').click();
-    await expect(page.locator('#parent-password')).toBeVisible();
-    await expect(page.getByText('שכחתי סיסמה')).toHaveCount(0);
-
-    // Unlock, open the tools tab, change the password.
-    await page.locator('#parent-password').fill(PARENT_PASSWORD);
-    await page.locator('#parent-password').press('Enter');
-    await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
+  // signed in as the parent) — there is no unauthenticated "forgot password" reset.
+  test('advanced-tools: change parent password (authenticated)', async ({ page }) => {
+    await openAdvancedTools(page);
 
     await page.locator('#new-parent-pw').fill('changed-pass');
     await page.locator('#new-parent-pw2').fill('changed-pass');

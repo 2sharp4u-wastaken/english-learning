@@ -22,11 +22,15 @@ export type CelebrationLevel = 'calm' | 'normal' | 'party'
 export type SoundId =
   | 'arpeggio' | 'bell' | 'chord' | 'fanfare' | 'twinkle' | 'adventure' | 'bloop'
   | 'rise' | 'descend' | 'marimba' | 'robot' | 'magic' | 'bubble' | 'eightbit' | 'harp'
+  | 'laser' | 'siren' | 'thump' | 'pop' | 'wobble' | 'zen'
 export type SoundChoice = SoundId | 'none'
 
 export const SOUND_IDS: SoundId[] = [
   'arpeggio', 'bell', 'chord', 'fanfare', 'twinkle', 'adventure', 'bloop',
   'rise', 'descend', 'marimba', 'robot', 'magic', 'bubble', 'eightbit', 'harp',
+  // Distinct timbres added 2026-06-17 (sweeps/percussive/buzzy) so the picker
+  // isn't all similar melodic arpeggios — MUST match AUDIO_SOUND_PRESETS.
+  'laser', 'siren', 'thump', 'pop', 'wobble', 'zen',
 ]
 
 /** An emoji per sound for the icon-only picker grid (no text labels). */
@@ -34,6 +38,7 @@ export const SOUND_EMOJI: Record<SoundId, string> = {
   arpeggio: '🎵', bell: '🔔', chord: '🎹', fanfare: '🎺', twinkle: '✨',
   adventure: '🗺️', bloop: '💧', rise: '📈', descend: '📉', marimba: '🪵',
   robot: '🤖', magic: '🪄', bubble: '🫧', eightbit: '🕹️', harp: '🎼',
+  laser: '⚡', siren: '🚨', thump: '🥁', pop: '🎈', wobble: '🌀', zen: '🎐',
 }
 
 /** Mascot characters (emoji). owl is the original. */
@@ -47,13 +52,15 @@ export const MASCOTS: Record<MascotId, string> = {
 export const MASCOT_IDS = Object.keys(MASCOTS) as MascotId[]
 
 /** Sound pack for the 3 home score pills (streak/words/coins). */
-export type SoundPackId = 'classic' | 'arcade' | 'nature' | 'space'
+export type SoundPackId = 'classic' | 'arcade' | 'nature' | 'space' | 'retro' | 'zen'
 export const SOUND_PACKS: Record<SoundPackId, { label: string; streak: SoundId; sparkle: SoundId; coin: SoundId }> = {
   // 'classic' = the legacy per-pill signatures (handled in feedback.ts).
   classic: { label: 'קלאסי', streak: 'fanfare', sparkle: 'twinkle', coin: 'bell' },
   arcade: { label: 'ארקייד', streak: 'eightbit', sparkle: 'magic', coin: 'bubble' },
   nature: { label: 'טבע', streak: 'harp', sparkle: 'twinkle', coin: 'bloop' },
   space: { label: 'חלל', streak: 'robot', sparkle: 'rise', coin: 'descend' },
+  retro: { label: 'רטרו', streak: 'laser', sparkle: 'wobble', coin: 'pop' },
+  zen: { label: 'רגיעה', streak: 'zen', sparkle: 'harp', coin: 'bloop' },
 }
 export const SOUND_PACK_IDS = Object.keys(SOUND_PACKS) as SoundPackId[]
 

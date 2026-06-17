@@ -24,6 +24,14 @@ const AUDIO_SOUND_PRESETS = {
     bubble:    { notes: [[880,0.08],[1047,0.08],[1319,0.12]], type: 'sine', gap: 0.02 },
     eightbit:  { notes: [[523,0.1],[659,0.1],[523,0.1],[784,0.1],[659,0.28]], type: 'square', gap: 0.02 },
     harp:      { notes: [[262,0.18],[330,0.18],[392,0.18],[494,0.18],[523,0.18],[659,0.4]], type: 'sine', gap: 0.01 },
+    // More DISTINCT timbres (beta feedback: the melodic presets above sound alike).
+    // These use sweeps / percussive shapes / buzzy waves so they're clearly different.
+    laser:     { sweep: [1400, 180], type: 'sawtooth', dur: 0.3 },                       // pew! downward zap
+    siren:     { sweeps: [[440, 920, 0.26], [920, 440, 0.26]], type: 'sine' },           // up-then-down wail
+    thump:     { notes: [[90,0.13],[70,0.2]], type: 'square', gap: 0 },                  // percussive low drum
+    pop:       { notes: [[700,0.05],[1320,0.09]], type: 'sine', gap: 0 },                // quick balloon pop
+    wobble:    { notes: [[330,0.07],[247,0.07],[330,0.07],[247,0.07],[330,0.2]], type: 'sawtooth', gap: 0 }, // buzzy wobble
+    zen:       { bell: [196.00, 261.63, 329.63, 392.00] },                               // calm low bell (vs the high 'bell')
 };
 
 class AudioEffectsManager {
@@ -32,6 +40,7 @@ class AudioEffectsManager {
         this.enabled = true;
         this.volume = 0.3;
         this.initAudioContext();
+        this.installGestureUnlock();
     }
 
     initAudioContext() {
@@ -44,10 +53,42 @@ class AudioEffectsManager {
         }
     }
 
-    // Ensure audio context is running (browsers require user interaction first)
+    /**
+     * Keep the AudioContext live across the whole session. Mobile browsers create
+     * it suspended (autoplay policy) and re-suspend it after the page is
+     * backgrounded or the screen sleeps; the next tap then schedules oscillators
+     * against a suspended context and is SILENT (the reported "occasional" no-play
+     * — sound/pack preview clicks that did nothing). Resuming SYNCHRONOUSLY on
+     * every pointer/touch/key gesture means the context is already running by the
+     * time the click handler's playSound() runs, so the first sound after a
+     * suspension isn't dropped. resume() is a no-op when already running, so the
+     * listeners are cheap. Passive + capture so we win the race with the click.
+     */
+    installGestureUnlock() {
+        if (typeof window === 'undefined') return;
+        const unlock = () => { void this.resume(); };
+        ['pointerdown', 'touchstart', 'mousedown', 'keydown'].forEach((evt) => {
+            window.addEventListener(evt, unlock, { capture: true, passive: true });
+        });
+        // Also re-arm when the tab returns to the foreground.
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') void this.resume();
+        });
+    }
+
+    // Ensure the audio context exists and is running. Browsers require a user
+    // gesture for the first resume; a context can also be left 'closed' — recreate
+    // it so audio recovers instead of silently failing forever.
     async resume() {
-        if (this.audioContext && this.audioContext.state === 'suspended') {
-            await this.audioContext.resume();
+        try {
+            if (!this.audioContext || this.audioContext.state === 'closed') {
+                this.initAudioContext();
+            }
+            if (this.audioContext && this.audioContext.state === 'suspended') {
+                await this.audioContext.resume();
+            }
+        } catch (e) {
+            /* best-effort — audio is a nice-to-have */
         }
     }
 
@@ -388,6 +429,21 @@ class AudioEffectsManager {
         });
     }
 
+    // A pitch glide (used by sweep-style presets: laser, siren).
+    _playSweep(from, to, type, dur, startTime) {
+        const osc = this.audioContext.createOscillator();
+        const gain = this.audioContext.createGain();
+        osc.connect(gain);
+        gain.connect(this.audioContext.destination);
+        osc.type = type || 'sine';
+        osc.frequency.setValueAtTime(from, startTime);
+        osc.frequency.exponentialRampToValueAtTime(Math.max(1, to), startTime + dur);
+        gain.gain.setValueAtTime(this.volume * 0.5, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+        osc.start(startTime);
+        osc.stop(startTime + dur);
+    }
+
     // Play a named sound preset (AUDIO_SOUND_PRESETS). Used by the login/logout
     // chimes and the score-pill sound packs.
     async playSound(id) {
@@ -399,6 +455,14 @@ class AudioEffectsManager {
             this._playBell(preset.bell, now);
         } else if (preset.chord) {
             this._playChord(preset.chord, preset.type, preset.dur || 0.8, now);
+        } else if (preset.sweep) {
+            this._playSweep(preset.sweep[0], preset.sweep[1], preset.type, preset.dur || 0.3, now);
+        } else if (preset.sweeps) {
+            let t = now;
+            preset.sweeps.forEach(([f0, f1, d]) => {
+                this._playSweep(f0, f1, preset.type, d, t);
+                t += d;
+            });
         } else {
             this._playMelody(
                 preset.notes.map(([freq, dur]) => ({ freq, dur, type: preset.type })),

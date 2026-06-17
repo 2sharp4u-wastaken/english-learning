@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { AnimatePresence, motion, useAnimationControls } from 'framer-motion'
 import { speakHebrew } from '@/bridge/audio'
 import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
@@ -28,17 +28,21 @@ const GENERIC_PHRASES = [
   'הדמיון שלכם מדהים! 🌈',
 ]
 
+function shuffle<T>(arr: T[]): T[] {
+  const a = [...arr]
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[a[i], a[j]] = [a[j], a[i]]
+  }
+  return a
+}
+
 /** Build the candidate-phrase pool (progress-aware lines + the generic pool). */
 function phrasePool(streakDays: number, wordsLearned: number): string[] {
   const pool = [...GENERIC_PHRASES]
   if (streakDays >= 2) pool.push(`כל הכבוד! ${streakDays} ימים ברצף! 🔥`)
   if (wordsLearned >= 1) pool.push(`כבר למדנו ${wordsLearned} מילים! ממשיכים? 🌟`)
   return pool
-}
-
-function pickPhrase(streakDays: number, wordsLearned: number): string {
-  const pool = phrasePool(streakDays, wordsLearned)
-  return pool[Math.floor(Math.random() * pool.length)]
 }
 
 // font-size drives the emoji size. It's an inline style (not a Tailwind class)
@@ -55,6 +59,17 @@ const IDLE = {
   rotate: [0, -3, 3, 0],
   transition: { duration: 3, repeat: Infinity, ease: 'easeInOut' as const },
 }
+
+// A few distinct tap reactions so the character doesn't just do the same spin
+// every time — it feels alive (beta feedback: "more lively, not just rotating").
+// One is picked at random on each tap.
+const TAP_REACTIONS = [
+  { scale: [1, 1.3, 0.95, 1.12, 1], rotate: [0, -16, 12, -6, 0], y: [0, -18, 0] }, // big cheer
+  { scale: [1, 1.18, 1], rotate: [0, 360], y: [0, -10, 0] }, // happy spin
+  { y: [0, -22, 0, -12, 0], scale: [1, 1.1, 1, 1.06, 1] }, // double hop
+  { rotate: [0, -14, 14, -14, 14, 0], scale: [1, 1.1, 1] }, // excited wiggle
+  { scale: [1, 1.28, 0.92, 1.1, 1], rotate: [0, 10, -10, 0] }, // nod + squash
+]
 
 const SPARKLES = ['✨', '⭐', '💫', '🌟', '⚡']
 
@@ -86,45 +101,63 @@ function SparkleBurst() {
 }
 
 /**
- * Home page owl mascot. Idle-floats continuously; on tap it does a bouncy
- * cheer with a sparkle burst, pops an encouragement bubble keyed to the
- * child's streak/words, and speaks it aloud — a reactive mascot, not a static
- * emoji.
+ * Home page mascot. Idle-floats continuously, throws in a spontaneous little
+ * wiggle now and then so it feels alive, and on tap does one of several random
+ * bouncy reactions with a sparkle burst and *speaks* a fresh encouragement —
+ * the lines are rotated (cycled) so consecutive taps never repeat. No on-screen
+ * text bubble: the encouragement is spoken aloud only (beta feedback).
+ *
+ * `prefs.avatarColor` ("צבע הדמות") tints the character's halo + ring so the
+ * colour choice has a visible effect on the mascot itself, not just the small
+ * profile avatar.
  */
 export function HomeMascot({ streakDays, wordsLearned, size = 'lg' }: HomeMascotProps) {
   const { prefs } = usePlayerPrefs()
   const controls = useAnimationControls()
-  const [bubbleVisible, setBubbleVisible] = useState(false)
+  const cheerControls = useAnimationControls()
   const [cheerKey, setCheerKey] = useState(0)
-  const [message, setMessage] = useState(() => pickPhrase(streakDays, wordsLearned))
-  const bubbleTimer = useRef<number | null>(null)
   const mascotEmoji = MASCOTS[prefs.mascotCharacter] ?? '🦉'
+  const accent = prefs.avatarColor || '#63e6c6'
+
+  // Rotated phrase pool: shuffle once per progress snapshot, then cycle through
+  // it so we exhaust all lines before any repeats.
+  const pool = useMemo(() => shuffle(phrasePool(streakDays, wordsLearned)), [streakDays, wordsLearned])
+  const phraseIdx = useRef(0)
 
   useEffect(() => {
     void controls.start(IDLE)
-    return () => {
-      if (bubbleTimer.current) window.clearTimeout(bubbleTimer.current)
-    }
   }, [controls])
 
+  // Spontaneous idle wiggle every 7–12s so the character looks alive between
+  // taps (respecting reduced-motion).
+  useEffect(() => {
+    if (prefs.reducedMotion) return
+    let timer: number
+    const schedule = () => {
+      timer = window.setTimeout(async () => {
+        await cheerControls.start({
+          rotate: [0, -8, 8, -8, 0],
+          scale: [1, 1.07, 1],
+          transition: { duration: 0.9, ease: 'easeInOut' },
+        })
+        schedule()
+      }, 7000 + Math.random() * 5000)
+    }
+    schedule()
+    return () => window.clearTimeout(timer)
+  }, [cheerControls, prefs.reducedMotion])
+
   const handleTap = useCallback(() => {
-    const next = pickPhrase(streakDays, wordsLearned) // a fresh line each tap
-    setMessage(next)
-    setBubbleVisible(true)
+    const next = pool[phraseIdx.current % pool.length]
+    phraseIdx.current += 1
     setCheerKey((k) => k + 1)
-    if (bubbleTimer.current) window.clearTimeout(bubbleTimer.current)
-    bubbleTimer.current = window.setTimeout(() => setBubbleVisible(false), 3800)
     void speakHebrew(next).catch(() => {})
+    const reaction = TAP_REACTIONS[Math.floor(Math.random() * TAP_REACTIONS.length)]
     void (async () => {
-      await controls.start({
-        scale: [1, 1.3, 0.95, 1.12, 1],
-        rotate: [0, -16, 12, -6, 0],
-        y: [0, -18, 0],
-        transition: { duration: 0.7, ease: 'easeInOut' },
-      })
+      await controls.start({ ...reaction, transition: { duration: 0.7, ease: 'easeInOut' } })
       void controls.start(IDLE) // resume the idle float
     })()
-  }, [controls, streakDays, wordsLearned])
+  }, [controls, pool])
 
   return (
     <div className="relative shrink-0">
@@ -133,23 +166,23 @@ export function HomeMascot({ streakDays, wordsLearned, size = 'lg' }: HomeMascot
         onClick={handleTap}
         data-testid="home-mascot"
         aria-label="לחצו לעידוד מהדמות"
+        animate={cheerControls}
         className={
           size === 'sm'
-            ? 'relative flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-white/15 to-white/5 shadow-glow sm:size-16'
-            : 'relative flex size-24 items-center justify-center rounded-full bg-gradient-to-br from-white/15 to-white/5 shadow-glow sm:size-28'
+            ? 'relative flex size-14 items-center justify-center rounded-full shadow-glow sm:size-16'
+            : 'relative flex size-24 items-center justify-center rounded-full shadow-glow sm:size-28'
         }
+        // Tint the halo with the chosen character colour (falls back to mint).
+        style={{ background: `radial-gradient(circle at 35% 30%, ${accent}38, ${accent}0d 70%)` }}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.93 }}
       >
-        {/* pulsing glow ring */}
+        {/* pulsing glow ring (uses the character colour) */}
         <motion.span
           aria-hidden
           className="absolute inset-0 rounded-full"
           animate={{
-            boxShadow: [
-              '0 0 0 0 rgba(99,230,198,0.45)',
-              '0 0 0 16px rgba(99,230,198,0)',
-            ],
+            boxShadow: [`0 0 0 0 ${accent}73`, `0 0 0 16px ${accent}00`],
           }}
           transition={{ duration: 2.4, repeat: Infinity, ease: 'easeOut' }}
         />
@@ -162,22 +195,6 @@ export function HomeMascot({ streakDays, wordsLearned, size = 'lg' }: HomeMascot
         </motion.span>
         <AnimatePresence>{cheerKey > 0 ? <SparkleBurst key={cheerKey} /> : null}</AnimatePresence>
       </motion.button>
-
-      <AnimatePresence>
-        {bubbleVisible ? (
-          <motion.div
-            dir="rtl"
-            data-testid="home-mascot-bubble"
-            initial={{ opacity: 0, y: -6, scale: 0.92 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.92 }}
-            transition={{ type: 'spring', stiffness: 400, damping: 22 }}
-            className="absolute start-0 top-full z-10 mt-2 w-max max-w-[min(15rem,75vw)] rounded-2xl border border-white/10 bg-surface px-4 py-2 text-center text-sm font-semibold text-text shadow-panel"
-          >
-            {message}
-          </motion.div>
-        ) : null}
-      </AnimatePresence>
     </div>
   )
 }

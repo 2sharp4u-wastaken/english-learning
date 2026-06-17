@@ -98,17 +98,17 @@ src/bridge/parentMode.ts = the single elevation source (module-level, like onAut
        (any password elevation is dropped when the session changes)
 useParentPassword() = thin React wrapper over the store (keeps {unlocked,unlock,lock})
 
-SettingsPage:
+SettingsPage (2026-06-17 — inline gate REMOVED):
   visibleTabs = unlocked ? TABS : TABS.filter(!protected)   ← kids see ONLY תצוגה
-  not unlocked → one "הגדרות הורה" button (open-parent-settings) → <ParentPasswordModal>
-       └─ elevateParent(pw) → unlocked flips true (module store) → ALL surfaces open,
-          STAY open across navigation (the per-component useState re-locked before)
+  unlocked is now ROLE-driven only: a parent reaches protected settings by SIGNING IN
+  with the parent profile (password-gated at the login screen) → role auto-elevates.
+  NO inline "הגדרות הורה" button / <ParentPasswordModal> in Settings anymore (the
+  password+timeout elevation path is no longer triggered from the UI).
+  visibleTabs.length === 1 (kid) → the tab rail is NOT rendered (the lone "המשחק שלי"
+       pill is just a redundant label) → customization content shows directly.
   session re-locks while a protected tab active → snaps back to display (render guard)
 
-<ParentPasswordModal> standard-admin model (issue #10): VERIFY-only once a password
-  exists; CREATE mode ONLY when hasParentPassword() false (onboarding/migration).
-  NO unauthenticated "forgot password" reset (a kid could reset+re-create). Change
-  the password from INSIDE the parent area: כלי הורה → "סיסמת הורה" →
+Change the parent password from INSIDE the parent area: כלי הורה → "סיסמת הורה" →
   changeParentPassword(new) [updates BOTH the parentPassword key AND the parent
   user's account password — one credential]. Forgotten-entirely recovery = clear
   app data (offline app, no email channel). In-app "התחלה מחדש" (כלי הורה,
