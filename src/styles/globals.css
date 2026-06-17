@@ -276,4 +276,18 @@
     padding-top: 0.375rem;
     padding-bottom: 0.375rem;
   }
+  /* The floating feedback banner is fixed at top:5rem — on a short landscape
+   * phone that lands in the MIDDLE of the play area and (in the wrong phase, which
+   * persists until "next") sits on top of the letters/comparison the child needs
+   * to read (beta #12, Word Journey spell: the "Not quite" banner covered ARROW).
+   * Pin it to the top edge and slim it so it overlaps only the thin control header
+   * instead of the learning content; it's already pointer-events:none so taps pass
+   * through. Shared FeedbackBanner → every game gets it. */
+  #react-root [data-testid='feedback-banner'] {
+    top: 0.35rem;
+    max-width: 22rem;
+    padding-top: 0.4rem;
+    padding-bottom: 0.4rem;
+    font-size: 0.95rem;
+  }
 }
