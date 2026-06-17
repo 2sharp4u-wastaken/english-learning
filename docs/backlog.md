@@ -7,75 +7,56 @@ decision. This doc only tracks what is **not done**.
 
 Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ parked on the user.
 
-> **RESUME HERE (session 2026-06-17).** All work committed + pushed to
-> `v3-react-migration`. **Cloudflare Workers is the SOLE host** (Netlify RETIRED
-> 2026-06-17 — `netlify.toml` deleted; stale site still on the dashboard, delete
-> when convenient): https://english-learning.2sharp4u.workers.dev/ (Git-connected →
-> **push auto-deploys in ~2-4 min**; QR at `docs/beta-qr.png`). Fast path that skips
-> the CI wait: **`npm run cf-deploy`** (= `npm run build && wrangler deploy`;
-> wrangler is authenticated on this machine). NOTE: auto-deploy uses the GitHub App,
-> so there's NO classic repo webhook — that's expected, not a fault (a brief "it's
-> not firing" scare 2026-06-17 was just build latency). Setup/gotchas:
-> `docs/cloudflare-deploy.md`.
+> **RESUME HERE (updated end of session 2026-06-17).** All work committed + pushed
+> to `v3-react-migration` (latest `1c08aea`); **NOT merged to `main`.**
+> **Cloudflare Workers is the SOLE host** (Netlify retired): 
+> https://english-learning.2sharp4u.workers.dev/ — Git-connected, **push auto-deploys
+> ~2-4 min**; fast path **`npm run cf-deploy`** (wrangler authenticated on this
+> machine). Login screen shows a `v<ver> · <sha>` build stamp to confirm the live
+> bundle (SW serves cached first → close+reopen to pick up a deploy). Deploy
+> gotchas: `docs/cloudflare-deploy.md`; bug-report triage (gh IS authed now):
+> `[[project_bug_report_feature]]`.
 >
-> This session (2026-06-16) shipped: **M3 landscape two-pane COMPLETE** across
-> every game (batches 3+4: Reading/Scramble/ABC/Phonics/Story-Time-quiz + Word
-> Journey); the **beta bug-report feature LIVE end-to-end** (floating widget →
-> Worker `/api/report` → R2 + GitHub Issue queue; see
-> `[[project_bug_report_feature]]` + `docs/bug-report.md`); **M15 emoji-tofu
-> FIXED** (unicode-range Noto subset font, `[[project_emoji_tofu_fix]]`); and the
-> **first two beta reports (#3/#4)** — WJ overflow on a 320×680 phone — fixed by
-> raising the compact-chrome threshold 600→700.
+> **This session (2026-06-17) shipped THREE big things — all live except where noted:**
+> 1. **M12 Slice B + M4 — parent admin account.** First-run wizard (`FirstRunWizard`,
+>    parent picks name+password = the device parent credential, `createParentAccount`);
+>    **one-unlock parent mode** (`src/bridge/parentMode.ts`, role OR password, 15-min
+>    timeout, survives nav); kids see ONLY the unprotected "המשחק שלי" settings tab
+>    (parent tabs hidden until elevated, one "הגדרות הורה" unlock button); `categories`
+>    gated; in-app `/parent-guide`; "פתיחת כל התכנים" expose-all toggle. **Issue #10:**
+>    standard admin password model (VERIFY-only, NO unauthenticated reset; change via
+>    כלי הורה → "סיסמת הורה" `changeParentPassword`; factory-reset "התחלה מחדש" in
+>    כלי הורה; recover-forgotten = clear app data) + all player copy says שחקן/ית
+>    never ילד. **Issue #11:** auth modal scrollable on short phones.
+>    See `[[project_m12b_m4_parent_account]]`.
+> 2. **Per-kid customization "המשחק שלי"** — per-user `playerPrefs` blob
+>    (`v2_playerPrefs_<userId>`, `usePlayerPrefs`, distinct from global AppSettings):
+>    5 themes, 15 distinct sounds (icon-only grid + preview; FIXED the bell/chord
+>    fell-through-to-arpeggio bug), login + logout sounds, 12 mascot animals + many
+>    rotating phrases, score-pill sound packs, motion/celebration, avatar color,
+>    bigText/contrast. See `[[project_player_customization]]`.
+> 3. **Cloud backend Tier-3 Phase A — LIVE.** Cloudflare D1 `english-learning-db` +
+>    Worker `/api/auth/*` + `/api/players` (PBKDF2 + JWT, `worker/auth.ts`) +
+>    offline-first `src/bridge/cloudAccount.ts` + "חשבון בענן וגיבוי" card in כלי הורה.
+>    Provisioned, deployed, verified live. See `[[project_cloud_backend]]` +
+>    `docs/cloud-backend.md`. **121 unit tests + the settings/auth/customization
+>    Playwright specs green.**
 >
-> **Bug-report queue is now the live feedback channel** — a "fix issues" request
-> = read GitHub Issues labelled `beta-report` (repo public; `gh` is NOT authed in
-> the session, so read via `curl` the public API + the `/api/report-image/` URLs;
-> see `[[project_bug_report_feature]]` "HOW TO TRIAGE"). Issues #3/#4 left open for
-> the user to close (no triage auth).
->
-> **NEW this session (2026-06-16b) — 3 commits pushed (`73dc541`/`a8330c1`/
-> `27f6375`):**
-> 1. **M12 Slice A — QA "unlock for testing" panel SHIPPED** (`QATestingPanel`
->    in the כלי הורה tab + `src/bridge/qa.ts`; seed learned words / open
->    expression tier / unlock all games / clear; public site, behind the parent
->    password). Decisions locked: elevation model (already de-facto), public
->    scope, `manager` deferred to M5/M13. See M12 sub-item + `[[project_qa_testing_panel]]`.
-> 2. **Landscape chrome-hide** (§M3) — in short landscape (`orientation:
->    landscape and max-height: 600px`) globals.css now hides the hero title +
->    progress bar + WJ stage counter so `<main>` fills the height; user reported
->    the Q/A area was still mostly off-screen. One rule, every game.
-> 3. **Bug-report version+device+logs** (§0) — Vite `define` build stamp
->    (`__APP_VERSION__`/`__GIT_SHA__`/`__BUILD_TIME__`), platform + console-log
->    tail in the report; Worker renders them into the issue title/table/details;
->    widget shows `v<ver> · <sha>`. See `[[project_build_version_stamp]]`.
->    **Bump `package.json` version on a real release so the stamp is useful (3.0.0 now).**
-> Beta reports #5–#9 (nikud + short-landscape overflow on Word Journey) fixed &
-> deployed this session; Netlify retired (Cloudflare is the only host now).
->
-> **NEXT (pick up here):** (1) ✅ **M12 Slice B + M4 — SHIPPED 2026-06-17.** Parent
-> is now a real **admin account** created in a **first-run wizard** (`FirstRunWizard`:
-> welcome → parent name+password → player profiles → finish + guide link); its
-> password IS the device parent credential (`createParentAccount` in `bridge/auth.ts`).
-> Access = **one-unlock parent mode** (`src/bridge/parentMode.ts` — role OR password
-> elevation with a 15-min timeout, survives navigation; `useParentPassword` delegates
-> to it; UsersTab destructive actions confirm-only, no password retype). Parent
-> **"פתיחת כל התכנים"** toggle (`gameUnlockOverride`) now opens Home tiles + the
-> expression tier read-time (`getAllGameUnlocks`/`getExpressionUnlock` overlay, no
-> stored-progress mutation). Kids see **only** the new unprotected **תצוגה** tab —
-> the parent tabs are HIDDEN (not shown padlocked), with one "הגדרות הורה" button
-> that opens the password prompt; the parent tabs appear only once elevated.
-> `categories` moved behind the gate. In-app **`/parent-guide`** (`ParentGuidePage`,
-> no nikud) linked from the wizard + כלי הורה. **Issue #10 follow-up (same day):**
-> standard admin model — VERIFY-only, **no unauthenticated reset** (deleted the
-> "שכחתי סיסמה" self-reset a kid could abuse), change password while authenticated
-> via כלי הורה → "סיסמת הורה" (`changeParentPassword`), recover-forgotten = clear
-> app data; **all player-facing copy now says שחקן/ית, never ילד.**
-> See `[[project_m12b_m4_parent_account]]`.
-> (2) ✅ **deploy parity DONE** — Netlify retired 2026-06-17; Cloudflare is the sole
-> host (`npm run cf-deploy` fast path added). (3) **Leaderboard** family/local board
-> (§ LB). (4) **M8** PWA install button. (5) **M5/M13** (Worker backend seam — parent
-> word/image submission; `manager` role still reserved for these). Plus:
-> milestone-cert WJ bug (needs cert-recalibration decision).
+> **NEXT (pick up here):**
+> (1) **Cloud Phase B** — back up + sync each profile's progress (`v2_userProgress_<id>`)
+>     + `playerPrefs` blobs to the cloud account (push on change, pull on a fresh
+>     device); map local user ids ↔ cloud player ids at link time. This is what makes
+>     "same profile on tablet + laptop" real. Roadmap in `docs/cloud-backend.md`.
+> (2) **Cloud guardrails BEFORE any public launch of the cloud layer** — sign-up is
+>     currently OPEN (anyone can register a family on the public URL): add rate-limiting
+>     + email verification + a data export/delete path (it's kids' data). Noted in
+>     `docs/cloud-backend.md` "Privacy".
+> (3) **Deferred customization:** coin-earned cosmetic unlocks (tie themes/avatars/
+>     sound-packs to `CoinManager`); nikud/case becoming per-kid (still global).
+> (4) **Leaderboard** (§ LB — now has the D1 seam), **M8** PWA install button,
+>     **M5/M13** parent word/image submission (reuse the D1/Worker backend; `manager`
+>     role reserved for these), milestone-cert WJ bug (needs cert-recalibration decision).
+> GitHub issues #10/#11 left OPEN for the user to close after on-device verification.
 > Waiting on the user: cert recalibration; install Hebrew TTS voice on the tablet
 > (M7); C2/C3 images.
 
