@@ -116,7 +116,16 @@ export function getContinueTarget(): ContinueTarget | null {
   // inside the review games, so they need no separate nudge.) When reviewing,
   // rotate among the unlocked review games rather than always opening Listening.
   const pm = getApp()?.progressManager
-  const dueCount: number = pm?.getLifecycleCounts ? pm.getLifecycleCounts().due : 0
+  const lc = pm?.getLifecycleCounts?.() ?? { introduced: -1, learned: -1, due: 0 }
+  const dueCount: number = lc.due ?? 0
+  // Diagnostic (cold path — runs on Home mount + on `engine-ready`, NOT polled):
+  // records the lifecycle inputs + the chosen CTA so a "wrong continue button"
+  // report shows whether the data or the decision is off. In-memory logger ring.
+  const logContinue = (result: ContinueTarget, extra: string) =>
+    console.log(
+      `[continue] introduced=${lc.introduced} learned=${lc.learned} due=${dueCount} ${extra} ` +
+        `→ ${result.label} (${result.gameId})`,
+    )
   if (dueCount > 0) {
     const unlocks = progress.gameUnlocks ?? {}
     // "Available" uses the SAME rule the home grid uses (`unlocked !== false`, so
@@ -130,11 +139,15 @@ export function getContinueTarget(): ContinueTarget | null {
       const pool = choices.length > 0 ? choices : open
       const pick = pool[Math.floor(Math.random() * pool.length)]
       lastReviewPick = pick
-      return { gameId: pick, label: 'תרגול מילים', icon: '🔁' }
+      const result: ContinueTarget = { gameId: pick, label: 'תרגול מילים', icon: '🔁' }
+      logContinue(result, `openReview=[${open.join(',')}]`)
+      return result
     }
   }
 
-  return { gameId: 'word-journey', label: 'מסע המילים', icon: '🗺️' }
+  const result: ContinueTarget = { gameId: 'word-journey', label: 'מסע המילים', icon: '🗺️' }
+  logContinue(result, dueCount > 0 ? 'noOpenReviewGames' : 'noDueWords')
+  return result
 }
 
 /**

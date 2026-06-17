@@ -688,6 +688,19 @@ export class ProgressManager {
     tryUnlock('scramble', learned >= 30 && topicsDone >= 2)
     tryUnlock('grammar', learned >= 50 && topicsDone >= 3)
 
+    // Diagnostic (cold path — runs once per game finish, not in a loop): records
+    // the INPUTS that drive every gate so a bug report shows whether a tile stayed
+    // locked because of bad data (progress/seeding) or the gate logic. Captured by
+    // the in-memory console logger (5000-entry ring) and surfaced in bug reports.
+    console.log(
+      `[gating] introduced=${introduced} learned=${learned} topics=${topicsDone} abc=${abcMastery}% ` +
+        `→ newlyUnlocked=${newlyUnlocked.length ? newlyUnlocked.join(',') : 'none'} ` +
+        `| gates intro≥5(listen/picmatch/trueornot)=${introduced >= 5} ` +
+        `intro≥10(vocab/pron)=${introduced >= 10} reading(intro≥10&abc≥60)=${introduced >= 10 && abcMastery >= 60} ` +
+        `story(learned≥15)=${learned >= 15} fill/scramble(learned≥30&topics≥2)=${learned >= 30 && topicsDone >= 2} ` +
+        `grammar(learned≥50&topics≥3)=${learned >= 50 && topicsDone >= 3}`,
+    )
+
     return newlyUnlocked
   }
 

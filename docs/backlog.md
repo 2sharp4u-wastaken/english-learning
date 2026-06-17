@@ -52,11 +52,15 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 >     + email verification + a data export/delete path (it's kids' data). Noted in
 >     `docs/cloud-backend.md` "Privacy".
 > (3) **Deferred customization:** coin-earned cosmetic unlocks (tie themes/avatars/
->     sound-packs to `CoinManager`); nikud/case becoming per-kid (still global).
+>     sound-packs to `CoinManager`); nikud/case becoming per-kid (still global);
+>     richer non-emoji mascot (Lottie/SVG/rigged — blink/wave/walk, vs today's
+>     animated emoji). See `[[project_player_customization]]`.
 > (4) **Leaderboard** (§ LB — now has the D1 seam), **M8** PWA install button,
 >     **M5/M13** parent word/image submission (reuse the D1/Worker backend; `manager`
 >     role reserved for these), milestone-cert WJ bug (needs cert-recalibration decision).
-> GitHub issues #10/#11 left OPEN for the user to close after on-device verification.
+> GitHub issues #10/#11/#12 left OPEN for the user to close after on-device verification.
+> Two PRE-EXISTING smoke failures (clean tree): smoke.spec.js:180 (ABC→Reading
+> unlock) + :351 (continue CTA label) — not root-caused. See `[[testing_preexisting_smoke_failures]]`.
 > Waiting on the user: cert recalibration; install Hebrew TTS voice on the tablet
 > (M7); C2/C3 images.
 
