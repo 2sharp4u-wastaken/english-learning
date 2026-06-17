@@ -734,6 +734,12 @@ test.describe('Slice 1.6: Settings', () => {
     expect(usersGone).toBe(true);
   });
 
+  // Tier-3 Phase A: optional cloud account card renders in the parent area.
+  test('advanced-tools: cloud account form renders (offline-first, optional)', async ({ page }) => {
+    await openAdvancedTools(page);
+    await expect(page.locator('[data-testid="cloud-account-form"]')).toBeVisible();
+  });
+
   // M12 Slice A: parent/QA "unlock for testing" panel.
   test('advanced-tools: QA panel seeds learned words and reflects in the live status', async ({ page }) => {
     await openAdvancedTools(page);

@@ -7,6 +7,7 @@ import { SectionCard } from '../components/SectionCard'
 import { CustomWordsPanel } from './components/CustomWordsPanel'
 import { WordImagesPanel } from './components/WordImagesPanel'
 import { QATestingPanel } from './components/QATestingPanel'
+import { CloudAccountPanel } from './components/CloudAccountPanel'
 
 const MIN_PASSWORD = 4
 
@@ -62,6 +63,14 @@ export function AdvancedToolsTab() {
         description="שינוי סיסמת ההורה. הסיסמה מגנה על כל ההגדרות והאזור הזה. אם שכחתם אותה לגמרי — ניתן לאפס דרך מחיקת נתוני האפליקציה במכשיר."
       >
         <ChangeParentPassword />
+      </SectionCard>
+
+      {/* Tier-3 Phase A: optional cloud family account (multi-device + backup). */}
+      <SectionCard
+        title="חשבון בענן וגיבוי"
+        description="חשבון משפחה (אימייל וסיסמה) שיאפשר שימוש בכמה מכשירים וגיבוי ההתקדמות. אופציונלי — המשחק עובד גם בלי חיבור."
+      >
+        <CloudAccountPanel />
       </SectionCard>
 
       {/* M4: in-app parent guide (offline, app-styled). */}

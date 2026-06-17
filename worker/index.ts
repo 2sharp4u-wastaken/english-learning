@@ -20,12 +20,15 @@
  * the site.
  */
 
-interface Env {
+import { handleCloudApi, type AuthEnv } from './auth'
+
+interface Env extends AuthEnv {
   ASSETS: { fetch: (req: Request) => Promise<Response> }
   REPORTS_BUCKET?: R2Bucket
   GITHUB_TOKEN?: string
   /** "owner/repo", e.g. "2sharp4u-wastaken/english-learning". */
   GITHUB_REPO?: string
+  // DB (D1) + AUTH_SECRET come from AuthEnv — cloud accounts (Phase A).
 }
 
 // Minimal R2 shape (avoids depending on @cloudflare/workers-types here).
@@ -167,6 +170,12 @@ export default {
     if (path === '/api/report') return handleReport(request, env, url.origin)
     if (path.startsWith('/api/report-image/')) {
       return handleReportImage(decodeURIComponent(path.slice('/api/report-image/'.length)), env)
+    }
+    // Cloud accounts (Phase A): /api/auth/* + /api/players. Returns null if the
+    // path isn't one of those, so we fall through to the 404 below.
+    if (path.startsWith('/api/auth/') || path === '/api/players' || path.startsWith('/api/players/')) {
+      const res = await handleCloudApi(request, env, path)
+      if (res) return res
     }
     if (path.startsWith('/api/')) return json({ error: 'unknown endpoint' }, 404)
 

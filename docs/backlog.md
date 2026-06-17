@@ -318,6 +318,17 @@ The rest of that doc is shipped; only these remain:
 
 ## 6. Architecture horizon — backend / accounts ("Tier 3") 🟢
 
+> **UPDATE 2026-06-17: Phase A SHIPPED (code), not yet live.** The cloud-account
+> backend has started — `worker/auth.ts` (Cloudflare D1 + `/api/auth/*` +
+> `/api/players`, PBKDF2 + JWT) + offline-first `src/bridge/cloudAccount.ts` + a
+> "חשבון בענן וגיבוי" card in כלי הורה. Deploy-safe (Worker 503s until
+> provisioned; D1 binding left COMMENTED in `wrangler.jsonc`). Roadmap (A done →
+> B progress/prefs backup → C bidirectional sync → D leaderboards) + the go-live
+> runbook live in **`docs/cloud-backend.md`**. See `[[project_cloud_backend]]`.
+> NEXT for this: provision D1 + `AUTH_SECRET` and uncomment the binding to go
+> live; then Phase B (push/pull the per-user progress + `playerPrefs` blobs).
+
+
 Everything today is client-only: each browser's localStorage is its own island
 (users, progress, settings), and the static deploy (INFRA1) keeps it that way on
 purpose — free hosting, zero ops, fully offline-capable. A backend redesign only

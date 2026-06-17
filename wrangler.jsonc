@@ -26,6 +26,20 @@
   "r2_buckets": [
     { "binding": "REPORTS_BUCKET", "bucket_name": "english-learning-reports" }
   ],
+  // ── Cloud accounts (Phase A — worker/auth.ts) ────────────────────────────────
+  // DELIBERATELY NOT ACTIVE YET: a push auto-deploys, and a d1_databases binding
+  // pointing at a non-existent DB would break the live deploy. The Worker 503s
+  // ("backend not configured") while DB/AUTH_SECRET are absent, so the code is
+  // safe to ship now. To go live, provision then UNCOMMENT the binding below:
+  //   1. wrangler d1 create english-learning-db
+  //        → copy the printed database_id into the block below
+  //   2. wrangler d1 execute english-learning-db --file=migrations/0001_cloud_accounts.sql --remote
+  //   3. wrangler secret put AUTH_SECRET        (paste a long random string)
+  //   4. uncomment "d1_databases" → commit/push (auto-deploys) OR `npm run cf-deploy`
+  // Full runbook: docs/cloud-backend.md.
+  // "d1_databases": [
+  //   { "binding": "DB", "database_name": "english-learning-db", "database_id": "PASTE_ID_HERE" }
+  // ],
   "vars": {
     // The repo whose Issues tab is the bug-report queue. GITHUB_TOKEN is a SECRET
     // (set via `wrangler secret put` / dashboard), not here.

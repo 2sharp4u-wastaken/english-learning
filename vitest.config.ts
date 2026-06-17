@@ -23,6 +23,8 @@ export default defineConfig({
     // progress), so give jsdom a real origin to back a working Storage.
     environmentOptions: { jsdom: { url: 'http://localhost/' } },
     setupFiles: ['src/test/setup.ts'],
-    include: ['src/**/*.test.ts'],
+    // `src/**` for the app; `worker/**` for the Cloudflare Worker handlers
+    // (cloud accounts — pure logic, no Playwright files live there).
+    include: ['src/**/*.test.ts', 'worker/**/*.test.ts'],
   },
 })
