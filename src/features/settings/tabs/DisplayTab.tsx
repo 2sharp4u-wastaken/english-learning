@@ -1,8 +1,19 @@
 import { useSettings } from '@/hooks/useSettings'
 import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
 import { useNikud } from '@/bridge/nikud'
-import { THEME_NAMES, AVATAR_COLORS, type ThemeName } from '@/bridge/playerPrefs'
-import { playLoginChime, playEffect } from '@/bridge/feedback'
+import {
+  THEME_NAMES,
+  AVATAR_COLORS,
+  SOUND_IDS,
+  SOUND_EMOJI,
+  MASCOTS,
+  MASCOT_IDS,
+  SOUND_PACKS,
+  SOUND_PACK_IDS,
+  type ThemeName,
+  type SoundChoice,
+} from '@/bridge/playerPrefs'
+import { playSoundPreview, playEffect } from '@/bridge/feedback'
 import { cn } from '@/lib/cn'
 import { SectionCard } from '../components/SectionCard'
 import { Toggle } from '../components/Toggle'
@@ -10,13 +21,11 @@ import { RadioCards, type RadioOption } from '../components/RadioCards'
 
 /**
  * "המשחק שלי" — the ONLY kid-facing (unprotected) settings tab. Per-profile
- * customization (playerPrefs): colors/theme, sounds, motion, mascot — each
- * applies live and is saved per-player. Player-facing copy says שחקן/ית; chrome
- * is nk()-wrapped. The global nikud/case display toggles (parent-shared) stay in
- * a small group at the bottom.
+ * customization (playerPrefs): colors/theme, sounds (icon-only picker grids),
+ * motion, mascot — each applies live and is saved per-player. Player-facing copy
+ * says שחקן/ית; chrome is nk()-wrapped.
  */
 
-// Representative accent per theme for the swatch preview (mirrors themes.css).
 const THEME_SWATCH: Record<ThemeName, { label: string; color: string }> = {
   dark: { label: 'כהה', color: '#63e6c6' },
   ocean: { label: 'ים', color: '#34d6c0' },
@@ -25,22 +34,71 @@ const THEME_SWATCH: Record<ThemeName, { label: string; color: string }> = {
   candy: { label: 'ממתק', color: '#b18cff' },
 }
 
+/** Compact icon-only sound picker: a grid of emoji buttons (no text), plus a
+ *  mute option. Tapping selects AND previews the sound. */
+function SoundGrid({
+  value,
+  onChange,
+  ariaLabel,
+}: {
+  value: SoundChoice
+  onChange: (v: SoundChoice) => void
+  ariaLabel: string
+}) {
+  const choose = (v: SoundChoice) => {
+    onChange(v)
+    if (v !== 'none') playSoundPreview(v)
+  }
+  return (
+    <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-8" role="radiogroup" aria-label={ariaLabel}>
+      {SOUND_IDS.map((id) => (
+        <button
+          key={id}
+          type="button"
+          role="radio"
+          aria-checked={value === id}
+          aria-label={id}
+          data-testid={`sound-${id}`}
+          onClick={() => choose(id)}
+          className={cn(
+            'flex aspect-square items-center justify-center rounded-lg border text-lg transition-transform hover:scale-110',
+            value === id ? 'border-learn bg-learn/15' : 'border-white/10 bg-white/5 hover:bg-white/10',
+          )}
+        >
+          <span aria-hidden>{SOUND_EMOJI[id]}</span>
+        </button>
+      ))}
+      <button
+        type="button"
+        role="radio"
+        aria-checked={value === 'none'}
+        aria-label="none"
+        onClick={() => choose('none')}
+        className={cn(
+          'flex aspect-square items-center justify-center rounded-lg border text-lg transition-transform hover:scale-110',
+          value === 'none' ? 'border-coral-400 bg-coral-400/15' : 'border-white/10 bg-white/5 hover:bg-white/10',
+        )}
+      >
+        <span aria-hidden>🔇</span>
+      </button>
+    </div>
+  )
+}
+
 export function DisplayTab() {
   const nk = useNikud()
   const { settings, updateSettings } = useSettings()
   const { prefs, updatePrefs } = usePlayerPrefs()
 
-  const loginSoundOptions: RadioOption<'arpeggio' | 'bell' | 'chord' | 'none'>[] = [
-    { value: 'arpeggio', label: nk('מנגינה') },
-    { value: 'bell', label: nk('פעמון') },
-    { value: 'chord', label: nk('אקורד') },
-    { value: 'none', label: nk('ללא') },
-  ]
   const celebrationOptions: RadioOption<'calm' | 'normal' | 'party'>[] = [
     { value: 'calm', label: nk('רגוע') },
     { value: 'normal', label: nk('רגיל') },
     { value: 'party', label: nk('מסיבה') },
   ]
+  const packOptions: RadioOption<(typeof SOUND_PACK_IDS)[number]>[] = SOUND_PACK_IDS.map((id) => ({
+    value: id,
+    label: nk(SOUND_PACKS[id].label),
+  }))
 
   return (
     <div className="space-y-4" data-testid="player-customization">
@@ -63,11 +121,7 @@ export function DisplayTab() {
                     : 'border-white/10 bg-white/5 text-muted hover:bg-white/10',
                 )}
               >
-                <span
-                  className="h-4 w-4 rounded-full"
-                  style={{ background: THEME_SWATCH[t].color }}
-                  aria-hidden
-                />
+                <span className="h-4 w-4 rounded-full" style={{ background: THEME_SWATCH[t].color }} aria-hidden />
                 {THEME_SWATCH[t].label}
               </button>
             ))}
@@ -87,9 +141,7 @@ export function DisplayTab() {
                     'h-8 w-8 rounded-full border-2 transition-transform hover:scale-110',
                     prefs.avatarColor === c ? 'border-white' : 'border-white/20',
                   )}
-                  style={{
-                    background: c || 'linear-gradient(135deg,#63e6c6,#68a8ff)',
-                  }}
+                  style={{ background: c || 'linear-gradient(135deg,#63e6c6,#68a8ff)' }}
                 />
               ))}
             </div>
@@ -111,8 +163,8 @@ export function DisplayTab() {
       </SectionCard>
 
       {/* Sounds */}
-      <SectionCard title={nk('צלילים')} description={nk('בחרו אילו צלילים יושמעו במשחק.')}>
-        <div className="space-y-2">
+      <SectionCard title={nk('צלילים')} description={nk('בחרו אילו צלילים יושמעו. הקישו על צליל כדי לשמוע אותו.')}>
+        <div className="space-y-3">
           <Toggle
             label={nk('צלילים פעילים')}
             description={nk('מתג ראשי לכל הצלילים')}
@@ -121,13 +173,29 @@ export function DisplayTab() {
           />
           <div className="space-y-1.5">
             <span className="block text-xs font-medium text-muted">{nk('צליל כניסה')}</span>
+            <SoundGrid
+              value={prefs.loginSound}
+              ariaLabel={nk('צליל כניסה')}
+              onChange={(v) => updatePrefs({ loginSound: v })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <span className="block text-xs font-medium text-muted">{nk('צליל יציאה')}</span>
+            <SoundGrid
+              value={prefs.logoutSound}
+              ariaLabel={nk('צליל יציאה')}
+              onChange={(v) => updatePrefs({ logoutSound: v })}
+            />
+          </div>
+          <div className="space-y-1.5">
+            <span className="block text-xs font-medium text-muted">{nk('חבילת צלילים (פסי הניקוד)')}</span>
             <RadioCards
               columns={2}
-              options={loginSoundOptions}
-              value={prefs.loginSound}
+              options={packOptions}
+              value={prefs.soundPack}
               onChange={(v) => {
-                updatePrefs({ loginSound: v })
-                if (prefs.soundOn && v !== 'none') setTimeout(playLoginChime, 0) // preview
+                updatePrefs({ soundPack: v })
+                if (prefs.soundOn) setTimeout(() => playEffect('sparkle'), 0) // preview
               }}
             />
           </div>
@@ -143,10 +211,7 @@ export function DisplayTab() {
             description={nk('צלילים בלחיצה על הפסים והכפתורים')}
             checked={prefs.heroSounds}
             disabled={!prefs.soundOn}
-            onChange={(v) => {
-              updatePrefs({ heroSounds: v })
-              if (prefs.soundOn && v) setTimeout(() => playEffect('sparkle'), 0)
-            }}
+            onChange={(v) => updatePrefs({ heroSounds: v })}
           />
           <Toggle
             label={nk('צליל מטבעות')}
@@ -192,16 +257,44 @@ export function DisplayTab() {
       </SectionCard>
 
       {/* Mascot */}
-      <SectionCard title={nk('הדמות')} description={nk('הינשוף שמקפץ בראש מסך הבית.')}>
-        <Toggle
-          label={nk('הצגת הינשוף')}
-          description={nk('הינשוף הידידותי במסך הבית')}
-          checked={prefs.mascot}
-          onChange={(v) => updatePrefs({ mascot: v })}
-        />
+      <SectionCard title={nk('הדמות')} description={nk('הדמות שמקפצת בראש מסך הבית ומעודדת.')}>
+        <div className="space-y-3">
+          <Toggle
+            label={nk('הצגת הדמות')}
+            description={nk('דמות ידידותית במסך הבית')}
+            checked={prefs.mascot}
+            onChange={(v) => updatePrefs({ mascot: v })}
+          />
+          {prefs.mascot && (
+            <div className="space-y-1.5">
+              <span className="block text-xs font-medium text-muted">{nk('בחירת חיה')}</span>
+              <div className="grid grid-cols-6 gap-1.5 sm:grid-cols-8" role="radiogroup" aria-label={nk('בחירת חיה')}>
+                {MASCOT_IDS.map((id) => (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={prefs.mascotCharacter === id}
+                    aria-label={id}
+                    data-testid={`mascot-${id}`}
+                    onClick={() => updatePrefs({ mascotCharacter: id })}
+                    className={cn(
+                      'flex aspect-square items-center justify-center rounded-lg border text-xl transition-transform hover:scale-110',
+                      prefs.mascotCharacter === id
+                        ? 'border-learn bg-learn/15'
+                        : 'border-white/10 bg-white/5 hover:bg-white/10',
+                    )}
+                  >
+                    <span aria-hidden>{MASCOTS[id]}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       </SectionCard>
 
-      {/* Global display (parent-shared) — kept here for convenience. */}
+      {/* Global display (parent-shared) */}
       <SectionCard title={nk('תצוגת מילים')} description={nk('הגדרות אלו משותפות לכל השחקנים/ות.')}>
         <div className="grid gap-2 sm:grid-cols-2">
           <Toggle

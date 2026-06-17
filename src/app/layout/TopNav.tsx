@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom'
 import { Home, User, BookOpen, BarChart3, Settings, LogOut, Coins, Trophy } from 'lucide-react'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useUserProgress } from '@/hooks/useUserProgress'
+import { playLogoutChime } from '@/bridge/feedback'
 import { cn } from '@/lib/cn'
 import { NikudToggle } from './NikudToggle'
 
@@ -41,6 +42,7 @@ export function TopNav() {
 
   function handleLogout() {
     setMenuOpen(false)
+    playLogoutChime()
     logout()
   }
 

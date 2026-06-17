@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { AnimatePresence, motion, useAnimationControls } from 'framer-motion'
 import { speakHebrew } from '@/bridge/audio'
+import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
+import { MASCOTS } from '@/bridge/playerPrefs'
 
 interface HomeMascotProps {
   streakDays: number
@@ -9,11 +11,34 @@ interface HomeMascotProps {
   size?: 'sm' | 'lg'
 }
 
-/** Pick a Hebrew encouragement based on the child's current progress. */
-function buildMessage(streakDays: number, wordsLearned: number): string {
-  if (streakDays >= 2) return `כל הכבוד! ${streakDays} ימים ברצף! 🔥`
-  if (wordsLearned >= 1) return `כבר למדת ${wordsLearned} מילים! ממשיכים? 🌟`
-  return 'יאללה, בוא נלמד מילים חדשות! 🚀'
+// A rotating pool of gender-neutral Hebrew encouragements (the mascot says more
+// than one line now). Progress-aware lines are added when they apply.
+const GENERIC_PHRASES = [
+  'יאללה, מתחילים! 🚀',
+  'איזה כיף ללמוד! 🌟',
+  'כל מילה חדשה היא הצלחה! 💪',
+  'כל הכבוד! 🎉',
+  'בואו נשחק ונלמד! 🎮',
+  'אלופים אמיתיים! ⭐',
+  'עוד קצת ונהיה מומחים! 🧠',
+  'מצוין! ממשיכים! ✨',
+  'אנגלית זה קסם! 🪄',
+  'מקשיבים, חוזרים — וזוכרים! 🎤',
+  'איזה יופי! עוד מילה? 📚',
+  'הדמיון שלכם מדהים! 🌈',
+]
+
+/** Build the candidate-phrase pool (progress-aware lines + the generic pool). */
+function phrasePool(streakDays: number, wordsLearned: number): string[] {
+  const pool = [...GENERIC_PHRASES]
+  if (streakDays >= 2) pool.push(`כל הכבוד! ${streakDays} ימים ברצף! 🔥`)
+  if (wordsLearned >= 1) pool.push(`כבר למדנו ${wordsLearned} מילים! ממשיכים? 🌟`)
+  return pool
+}
+
+function pickPhrase(streakDays: number, wordsLearned: number): string {
+  const pool = phrasePool(streakDays, wordsLearned)
+  return pool[Math.floor(Math.random() * pool.length)]
 }
 
 // font-size drives the emoji size. It's an inline style (not a Tailwind class)
@@ -67,11 +92,13 @@ function SparkleBurst() {
  * emoji.
  */
 export function HomeMascot({ streakDays, wordsLearned, size = 'lg' }: HomeMascotProps) {
+  const { prefs } = usePlayerPrefs()
   const controls = useAnimationControls()
   const [bubbleVisible, setBubbleVisible] = useState(false)
   const [cheerKey, setCheerKey] = useState(0)
+  const [message, setMessage] = useState(() => pickPhrase(streakDays, wordsLearned))
   const bubbleTimer = useRef<number | null>(null)
-  const message = buildMessage(streakDays, wordsLearned)
+  const mascotEmoji = MASCOTS[prefs.mascotCharacter] ?? '🦉'
 
   useEffect(() => {
     void controls.start(IDLE)
@@ -81,11 +108,13 @@ export function HomeMascot({ streakDays, wordsLearned, size = 'lg' }: HomeMascot
   }, [controls])
 
   const handleTap = useCallback(() => {
+    const next = pickPhrase(streakDays, wordsLearned) // a fresh line each tap
+    setMessage(next)
     setBubbleVisible(true)
     setCheerKey((k) => k + 1)
     if (bubbleTimer.current) window.clearTimeout(bubbleTimer.current)
     bubbleTimer.current = window.setTimeout(() => setBubbleVisible(false), 3800)
-    void speakHebrew(message).catch(() => {})
+    void speakHebrew(next).catch(() => {})
     void (async () => {
       await controls.start({
         scale: [1, 1.3, 0.95, 1.12, 1],
@@ -95,7 +124,7 @@ export function HomeMascot({ streakDays, wordsLearned, size = 'lg' }: HomeMascot
       })
       void controls.start(IDLE) // resume the idle float
     })()
-  }, [controls, message])
+  }, [controls, streakDays, wordsLearned])
 
   return (
     <div className="relative shrink-0">
@@ -103,7 +132,7 @@ export function HomeMascot({ streakDays, wordsLearned, size = 'lg' }: HomeMascot
         type="button"
         onClick={handleTap}
         data-testid="home-mascot"
-        aria-label="לחץ לעידוד מהינשוף"
+        aria-label="לחצו לעידוד מהדמות"
         className={
           size === 'sm'
             ? 'relative flex size-14 items-center justify-center rounded-full bg-gradient-to-br from-white/15 to-white/5 shadow-glow sm:size-16'
@@ -129,7 +158,7 @@ export function HomeMascot({ streakDays, wordsLearned, size = 'lg' }: HomeMascot
           animate={controls}
           style={{ fontSize: OWL_SIZE[size], lineHeight: 1, display: 'inline-block' }}
         >
-          🦉
+          {mascotEmoji}
         </motion.span>
         <AnimatePresence>{cheerKey > 0 ? <SparkleBurst key={cheerKey} /> : null}</AnimatePresence>
       </motion.button>

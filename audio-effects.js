@@ -1,6 +1,31 @@
 // Audio Effects Manager for English Learning Games
 // Uses Web Audio API for sound effects (no file dependencies)
 
+/**
+ * Selectable sound presets — used for the login/logout chimes and the home
+ * score-pill sound packs (playerPrefs). Each id is a DISTINCT short sound
+ * (pitch + waveform + shape); `notes` are [freq, dur] pairs. Kept in sync with
+ * SOUND_IDS in src/bridge/playerPrefs.ts. (Was a 5-case switch where the prefs'
+ * 'bell'/'chord' fell through to 'arpeggio' — that's why they sounded the same.)
+ */
+const AUDIO_SOUND_PRESETS = {
+    arpeggio:  { notes: [[261.63,0.2],[329.63,0.2],[392.00,0.2],[523.25,0.5]], type: 'sine', gap: 0.05 },
+    bell:      { bell: [261.63, 329.63, 392.00, 523.25] },
+    chord:     { chord: [261.63, 329.63, 392.00, 523.25], type: 'sine', dur: 0.9 },
+    fanfare:   { notes: [[392,0.12],[392,0.12],[392,0.12],[329.63,0.18],[392,0.45]], type: 'square', gap: 0.04 },
+    twinkle:   { notes: [[523.25,0.15],[659.25,0.15],[783.99,0.15],[987.77,0.15],[1046.5,0.45]], type: 'triangle', gap: 0.04 },
+    adventure: { notes: [[261.63,0.15],[392,0.15],[659.25,0.15],[783.99,0.15],[523.25,0.5]], type: 'square', gap: 0.04 },
+    bloop:     { notes: [[196,0.12],[147,0.16]], type: 'sine', gap: 0.03 },
+    rise:      { notes: [[262,0.07],[294,0.07],[330,0.07],[349,0.07],[392,0.07],[440,0.07],[494,0.07],[523,0.2]], type: 'sine', gap: 0 },
+    descend:   { notes: [[659,0.12],[587,0.12],[523,0.12],[440,0.12],[392,0.3]], type: 'triangle', gap: 0.02 },
+    marimba:   { notes: [[330,0.1],[392,0.1],[494,0.1],[392,0.1],[587,0.3]], type: 'triangle', gap: 0.03 },
+    robot:     { notes: [[110,0.12],[138,0.12],[110,0.12],[165,0.22]], type: 'square', gap: 0.02 },
+    magic:     { notes: [[784,0.1],[988,0.1],[1175,0.1],[988,0.1],[1319,0.3]], type: 'triangle', gap: 0.02 },
+    bubble:    { notes: [[880,0.08],[1047,0.08],[1319,0.12]], type: 'sine', gap: 0.02 },
+    eightbit:  { notes: [[523,0.1],[659,0.1],[523,0.1],[784,0.1],[659,0.28]], type: 'square', gap: 0.02 },
+    harp:      { notes: [[262,0.18],[330,0.18],[392,0.18],[494,0.18],[523,0.18],[659,0.4]], type: 'sine', gap: 0.01 },
+};
+
 class AudioEffectsManager {
     constructor() {
         this.audioContext = null;
@@ -330,79 +355,62 @@ class AudioEffectsManager {
         });
     }
 
-    // Play welcome theme chime on login (5 selectable types)
-    async playWelcomeChime(type = 'arpeggio') {
+    // Play a simultaneous chord (all notes at once).
+    _playChord(freqs, type, dur, startTime) {
+        freqs.forEach(freq => {
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+            osc.frequency.value = freq;
+            osc.type = type || 'sine';
+            gain.gain.setValueAtTime(this.volume * 0.32, startTime);
+            gain.gain.exponentialRampToValueAtTime(0.001, startTime + dur);
+            osc.start(startTime);
+            osc.stop(startTime + dur);
+        });
+    }
+
+    // Gentle bell — notes struck in quick succession with a long tail.
+    _playBell(freqs, startTime) {
+        freqs.forEach((freq, i) => {
+            const osc = this.audioContext.createOscillator();
+            const gain = this.audioContext.createGain();
+            osc.connect(gain);
+            gain.connect(this.audioContext.destination);
+            osc.frequency.value = freq;
+            osc.type = 'sine';
+            const t = startTime + i * 0.07;
+            gain.gain.setValueAtTime(this.volume * 0.35, t);
+            gain.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
+            osc.start(t);
+            osc.stop(t + 1.4);
+        });
+    }
+
+    // Play a named sound preset (AUDIO_SOUND_PRESETS). Used by the login/logout
+    // chimes and the score-pill sound packs.
+    async playSound(id) {
         if (!this.enabled) return;
         await this.resume();
-
+        const preset = AUDIO_SOUND_PRESETS[id] || AUDIO_SOUND_PRESETS.arpeggio;
         const now = this.audioContext.currentTime;
-
-        switch (type) {
-            case 'arpeggio':
-                // Warm C major arpeggio: C4 E4 G4 C5
-                this._playMelody([
-                    { freq: 261.63, dur: 0.2, type: 'sine' },
-                    { freq: 329.63, dur: 0.2, type: 'sine' },
-                    { freq: 392.00, dur: 0.2, type: 'sine' },
-                    { freq: 523.25, dur: 0.5, type: 'sine' },
-                ], now, 0.05);
-                break;
-
-            case 'fanfare':
-                // Short triumphant fanfare: G4 G4 G4 E4 G4
-                this._playMelody([
-                    { freq: 392.00, dur: 0.12, type: 'square' },
-                    { freq: 392.00, dur: 0.12, type: 'square' },
-                    { freq: 392.00, dur: 0.12, type: 'square' },
-                    { freq: 329.63, dur: 0.18, type: 'square' },
-                    { freq: 392.00, dur: 0.45, type: 'square' },
-                ], now, 0.04);
-                break;
-
-            case 'magical':
-                // Twinkling star ascending: C5 E5 G5 B5 C6
-                this._playMelody([
-                    { freq: 523.25, dur: 0.15, type: 'triangle' },
-                    { freq: 659.25, dur: 0.15, type: 'triangle' },
-                    { freq: 783.99, dur: 0.15, type: 'triangle' },
-                    { freq: 987.77, dur: 0.15, type: 'triangle' },
-                    { freq: 1046.50, dur: 0.5, type: 'triangle' },
-                ], now, 0.04);
-                break;
-
-            case 'soft-bell': {
-                // Gentle bell chord: C4 E4 G4 C5 played in quick succession
-                const bellFreqs = [261.63, 329.63, 392.00, 523.25];
-                bellFreqs.forEach((freq, i) => {
-                    const osc = this.audioContext.createOscillator();
-                    const gain = this.audioContext.createGain();
-                    osc.connect(gain);
-                    gain.connect(this.audioContext.destination);
-                    osc.frequency.value = freq;
-                    osc.type = 'sine';
-                    const t = now + i * 0.07;
-                    gain.gain.setValueAtTime(this.volume * 0.35, t);
-                    gain.gain.exponentialRampToValueAtTime(0.001, t + 1.4);
-                    osc.start(t);
-                    osc.stop(t + 1.4);
-                });
-                break;
-            }
-
-            case 'adventure':
-                // Heroic adventure start: C4 G4 E5 G5 C5
-                this._playMelody([
-                    { freq: 261.63, dur: 0.15, type: 'square' },
-                    { freq: 392.00, dur: 0.15, type: 'square' },
-                    { freq: 659.25, dur: 0.15, type: 'square' },
-                    { freq: 783.99, dur: 0.15, type: 'square' },
-                    { freq: 523.25, dur: 0.5, type: 'square' },
-                ], now, 0.04);
-                break;
-
-            default:
-                this.playWelcomeChime('arpeggio');
+        if (preset.bell) {
+            this._playBell(preset.bell, now);
+        } else if (preset.chord) {
+            this._playChord(preset.chord, preset.type, preset.dur || 0.8, now);
+        } else {
+            this._playMelody(
+                preset.notes.map(([freq, dur]) => ({ freq, dur, type: preset.type })),
+                now,
+                preset.gap == null ? 0.04 : preset.gap,
+            );
         }
+    }
+
+    // Historical name kept for the login chime — both go through playSound.
+    async playWelcomeChime(type = 'arpeggio') {
+        return this.playSound(type);
     }
 
     // Set volume (0.0 to 1.0)

@@ -4,6 +4,7 @@ import { Coins, LogOut, Settings, Trophy, User } from 'lucide-react'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
+import { playLogoutChime } from '@/bridge/feedback'
 import { NikudToggle } from './NikudToggle'
 
 export function MobileTopBar() {
@@ -80,6 +81,7 @@ export function MobileTopBar() {
                 type="button"
                 onClick={() => {
                   setMenuOpen(false)
+                  playLogoutChime()
                   logout()
                 }}
                 className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-sm text-coral-400 transition-colors hover:bg-white/5"

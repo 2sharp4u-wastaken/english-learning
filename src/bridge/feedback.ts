@@ -1,5 +1,5 @@
 import { getSettings } from './settings'
-import { getPlayerPrefs } from './playerPrefs'
+import { getPlayerPrefs, SOUND_PACKS } from './playerPrefs'
 
 export interface GameFeedback {
   text: string
@@ -46,6 +46,7 @@ interface AudioEffects {
   playStreak(): Promise<void>
   playSparkle(): Promise<void>
   playWelcomeChime(type?: string): Promise<void>
+  playSound(id: string): Promise<void>
 }
 
 // Per-kid sound gating (playerPrefs): master switch + per-category. correct/wrong
@@ -77,6 +78,22 @@ export function playEffect(effect: SoundEffect): void {
   const fx = (window as any).audioEffects as AudioEffects | undefined
   if (!fx) return
   if (!soundAllowed(effect)) return
+  // Home score-pill sound packs: remap streak/sparkle/coin to the chosen pack's
+  // preset (playerPrefs.soundPack); 'classic' keeps the legacy signatures below.
+  if (effect === 'streak' || effect === 'sparkle' || effect === 'coin') {
+    const pack = getPlayerPrefs().soundPack
+    if (pack && pack !== 'classic') {
+      const id = SOUND_PACKS[pack]?.[effect]
+      if (id) {
+        try {
+          fx.playSound?.(id)?.catch?.(() => {})
+        } catch {
+          /* swallow */
+        }
+        return
+      }
+    }
+  }
   const map: Record<SoundEffect, (() => Promise<void>) | undefined> = {
     correct: fx.playCorrect,
     wrong: fx.playWrong,
@@ -154,6 +171,29 @@ export function playLoginChime(): void {
   const fx = (window as any).audioEffects as AudioEffects | undefined
   try {
     fx?.playWelcomeChime?.(prefs.loginSound)?.catch?.(() => {})
+  } catch {
+    /* swallow */
+  }
+}
+
+/** Play the per-kid logout sound (playerPrefs.logoutSound). Call before logout. */
+export function playLogoutChime(): void {
+  const prefs = getPlayerPrefs()
+  if (!prefs.soundOn || prefs.logoutSound === 'none') return
+  const fx = (window as any).audioEffects as AudioEffects | undefined
+  try {
+    fx?.playSound?.(prefs.logoutSound)?.catch?.(() => {})
+  } catch {
+    /* swallow */
+  }
+}
+
+/** Preview any sound preset by id (the customization picker). Gated by soundOn. */
+export function playSoundPreview(id: string): void {
+  if (!getPlayerPrefs().soundOn) return
+  const fx = (window as any).audioEffects as AudioEffects | undefined
+  try {
+    fx?.playSound?.(id)?.catch?.(() => {})
   } catch {
     /* swallow */
   }

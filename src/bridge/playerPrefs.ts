@@ -16,16 +16,56 @@ import { getCurrentUserId } from './auth'
  */
 
 export type ThemeName = 'dark' | 'ocean' | 'sunset' | 'forest' | 'candy'
-export type LoginSound = 'arpeggio' | 'bell' | 'chord' | 'none'
 export type CelebrationLevel = 'calm' | 'normal' | 'party'
+
+/** Selectable sound presets — MUST match AUDIO_SOUND_PRESETS in audio-effects.js. */
+export type SoundId =
+  | 'arpeggio' | 'bell' | 'chord' | 'fanfare' | 'twinkle' | 'adventure' | 'bloop'
+  | 'rise' | 'descend' | 'marimba' | 'robot' | 'magic' | 'bubble' | 'eightbit' | 'harp'
+export type SoundChoice = SoundId | 'none'
+
+export const SOUND_IDS: SoundId[] = [
+  'arpeggio', 'bell', 'chord', 'fanfare', 'twinkle', 'adventure', 'bloop',
+  'rise', 'descend', 'marimba', 'robot', 'magic', 'bubble', 'eightbit', 'harp',
+]
+
+/** An emoji per sound for the icon-only picker grid (no text labels). */
+export const SOUND_EMOJI: Record<SoundId, string> = {
+  arpeggio: '🎵', bell: '🔔', chord: '🎹', fanfare: '🎺', twinkle: '✨',
+  adventure: '🗺️', bloop: '💧', rise: '📈', descend: '📉', marimba: '🪵',
+  robot: '🤖', magic: '🪄', bubble: '🫧', eightbit: '🕹️', harp: '🎼',
+}
+
+/** Mascot characters (emoji). owl is the original. */
+export type MascotId =
+  | 'owl' | 'cat' | 'dog' | 'fox' | 'panda' | 'frog' | 'monkey'
+  | 'unicorn' | 'dragon' | 'robot' | 'penguin' | 'lion'
+export const MASCOTS: Record<MascotId, string> = {
+  owl: '🦉', cat: '🐱', dog: '🐶', fox: '🦊', panda: '🐼', frog: '🐸',
+  monkey: '🐵', unicorn: '🦄', dragon: '🐲', robot: '🤖', penguin: '🐧', lion: '🦁',
+}
+export const MASCOT_IDS = Object.keys(MASCOTS) as MascotId[]
+
+/** Sound pack for the 3 home score pills (streak/words/coins). */
+export type SoundPackId = 'classic' | 'arcade' | 'nature' | 'space'
+export const SOUND_PACKS: Record<SoundPackId, { label: string; streak: SoundId; sparkle: SoundId; coin: SoundId }> = {
+  // 'classic' = the legacy per-pill signatures (handled in feedback.ts).
+  classic: { label: 'קלאסי', streak: 'fanfare', sparkle: 'twinkle', coin: 'bell' },
+  arcade: { label: 'ארקייד', streak: 'eightbit', sparkle: 'magic', coin: 'bubble' },
+  nature: { label: 'טבע', streak: 'harp', sparkle: 'twinkle', coin: 'bloop' },
+  space: { label: 'חלל', streak: 'robot', sparkle: 'rise', coin: 'descend' },
+}
+export const SOUND_PACK_IDS = Object.keys(SOUND_PACKS) as SoundPackId[]
 
 export interface PlayerPrefs {
   // sounds
   soundOn: boolean
-  loginSound: LoginSound
+  loginSound: SoundChoice
+  logoutSound: SoundChoice
   answerSounds: boolean
   heroSounds: boolean
   coinSounds: boolean
+  soundPack: SoundPackId
   // colors / theme
   theme: ThemeName
   avatarColor: string // hex; '' = default gradient
@@ -36,6 +76,7 @@ export interface PlayerPrefs {
   reducedMotion: boolean
   // mascot / text
   mascot: boolean
+  mascotCharacter: MascotId
   bigText: boolean
   highContrast: boolean
 }
@@ -47,9 +88,11 @@ export const AVATAR_COLORS = ['', '#63e6c6', '#68a8ff', '#ffb454', '#ff7a66', '#
 export const DEFAULT_PLAYER_PREFS: PlayerPrefs = {
   soundOn: true,
   loginSound: 'arpeggio',
+  logoutSound: 'descend',
   answerSounds: true,
   heroSounds: true,
   coinSounds: true,
+  soundPack: 'classic',
   theme: 'dark',
   avatarColor: '',
   confetti: true,
@@ -57,6 +100,7 @@ export const DEFAULT_PLAYER_PREFS: PlayerPrefs = {
   celebration: 'normal',
   reducedMotion: false,
   mascot: true,
+  mascotCharacter: 'owl',
   bigText: false,
   highContrast: false,
 }

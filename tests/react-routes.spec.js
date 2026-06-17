@@ -499,6 +499,23 @@ test.describe('Slice 1.6: Settings', () => {
     expect(theme).toBe('ocean');
   });
 
+  test('kid customization: sound + mascot pickers persist per profile', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/settings');
+    await expect(page.locator('[data-testid="player-customization"]')).toBeVisible();
+
+    // Pick a distinct login sound (first grid = login) and a mascot animal.
+    await page.locator('[data-testid="sound-bell"]').first().click();
+    await page.locator('[data-testid="mascot-cat"]').click();
+
+    const prefs = await page.evaluate(
+      (uid) => JSON.parse(localStorage.getItem(`v2_playerPrefs_${uid}`) || '{}'),
+      TEST_USER_ID,
+    );
+    expect(prefs.loginSound).toBe('bell');
+    expect(prefs.mascotCharacter).toBe('cat');
+  });
+
   test('parent-role session sees the full tab rail (no unlock prompt)', async ({ page }) => {
     await page.setViewportSize({ width: 1280, height: 800 });
     await seedUser(page, { role: 'parent' });
