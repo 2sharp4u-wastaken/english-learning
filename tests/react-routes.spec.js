@@ -3541,6 +3541,31 @@ test.describe('Integration (known issues)', () => {
     await expect(page.locator('[data-testid="first-run-wizard"]')).toHaveCount(0);
   });
 
+  // Beta #11: on a short phone the auth modal (login + wizard) must be scrollable
+  // so the buttons aren't cut off below the fold.
+  test('auth modal is scrollable on a small screen (beta #11)', async ({ page }) => {
+    await page.setViewportSize({ width: 320, height: 600 });
+    await page.goto('/');
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+
+    await expect(page.locator('[data-testid="first-run-wizard"]')).toBeVisible();
+    // The overlay scrolls (overflow-y:auto) instead of clipping overflow.
+    const overflowY = await page.evaluate(() => {
+      const el = document.querySelector('.auth-modal');
+      return el ? getComputedStyle(el).overflowY : null;
+    });
+    expect(overflowY).toBe('auto');
+
+    // The flow is completable end-to-end at this size (buttons reachable).
+    await page.locator('[data-testid="wizard-start"]').click();
+    await page.locator('#wiz-parent-name').fill('אבא');
+    await page.locator('#wiz-parent-pw').fill('parent-pass');
+    await page.locator('#wiz-parent-pw2').fill('parent-pass');
+    await page.locator('[data-testid="wizard-create-parent"]').click();
+    await expect(page.locator('[data-testid="wizard-kids"]')).toBeVisible();
+  });
+
   // The classic select-user → password flow, against an existing (seeded) user.
   test('React login flow: select user + enter password → app renders', async ({ page }) => {
     await seedUser(page);
