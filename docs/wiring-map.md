@@ -179,6 +179,22 @@ The "שמע את עצמך" button self-hides there (it's gated on the captured U
 ANY future parallel-capture feature must respect the same gate.
 ```
 
+## Per-Player Customization ("המשחק שלי", 2026-06-17)
+
+```
+DisplayTab (unprotected kid tab) → usePlayerPrefs().updatePrefs(patch)
+  └─ savePlayerPrefs → v2_playerPrefs_<userId> blob + 'player-prefs-changed' event
+       └─ subscribePlayerPrefs consumers re-read (also on 'auth-changed' = profile switch):
+            ├─ AppShell effect → #react-root data-theme / data-contrast / data-reduced-motion
+            │     + html.app-big-text (themes.css overrides Tailwind --color-* vars)
+            ├─ AppShell mount → playLoginChime() once per sign-in (prefs.loginSound variant)
+            ├─ bridge/feedback.ts → soundAllowed()/getShowConfetti() gate every sound + confetti;
+            │     triggerConfetti scales by celebration, skips on reducedMotion
+            └─ HomePage → mascot/sparkles gated; ProfilePage/MobileTopBar → avatarColor
+DISTINCT from global AppSettings (bridge/settings.ts). One opaque blob → syncs unchanged
+in the future cloud backend (Phase B). See [[project_player_customization]].
+```
+
 ## Daily Login
 
 ```

@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Coins, LogOut, Settings, Trophy, User } from 'lucide-react'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useUserProgress } from '@/hooks/useUserProgress'
+import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
 import { NikudToggle } from './NikudToggle'
 
 export function MobileTopBar() {
@@ -10,6 +11,7 @@ export function MobileTopBar() {
   const navigate = useNavigate()
   const { displayName, initial, isAuthenticated, logout } = useAuthSession()
   const { coins, totalScore } = useUserProgress()
+  const { prefs } = usePlayerPrefs()
   const [menuOpen, setMenuOpen] = useState(false)
   const menuRef = useRef<HTMLDivElement>(null)
 
@@ -40,7 +42,10 @@ export function MobileTopBar() {
             onClick={() => setMenuOpen((prev) => !prev)}
             className="flex items-center gap-2 rounded-lg px-1.5 py-1 transition-colors hover:bg-white/5"
           >
-            <div className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-text">
+            <div
+              className="flex h-7 w-7 items-center justify-center rounded-full bg-white/10 text-xs font-semibold text-text"
+              style={prefs.avatarColor ? { background: prefs.avatarColor, color: '#07101d' } : undefined}
+            >
               {initial ?? displayName?.charAt(0) ?? '?'}
             </div>
             <span className="text-sm font-medium text-text">{displayName}</span>

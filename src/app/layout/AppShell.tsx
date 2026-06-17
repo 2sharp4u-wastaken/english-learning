@@ -6,11 +6,41 @@ import { MobileBottomNav } from './MobileBottomNav'
 import { PageContainer } from './PageContainer'
 import { BugReportWidget } from '@/features/feedback/BugReportWidget'
 import { isReactGame } from '@/features/games/reactGames'
+import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
+import { playLoginChime } from '@/bridge/feedback'
 
 export function AppShell() {
   const { pathname } = useLocation()
+  const { prefs } = usePlayerPrefs()
   const isGameRoute = pathname.startsWith('/game/')
   const gameId = isGameRoute ? pathname.slice('/game/'.length) : null
+
+  // Apply the logged-in player's look (theme/contrast/motion/text) to #react-root
+  // so it covers every authenticated route (hub + games). The element themes.css
+  // targets is #react-root itself; bigText scales the rem base via an <html>
+  // class (the #react-root scope can't move rem). Resets on logout (unmount).
+  useEffect(() => {
+    const root = document.getElementById('react-root')
+    if (!root) return
+    root.setAttribute('data-theme', prefs.theme)
+    root.setAttribute('data-contrast', String(prefs.highContrast))
+    root.setAttribute('data-reduced-motion', String(prefs.reducedMotion))
+    document.documentElement.classList.toggle('app-big-text', prefs.bigText)
+    return () => {
+      root.setAttribute('data-theme', 'dark')
+      root.removeAttribute('data-contrast')
+      root.removeAttribute('data-reduced-motion')
+      document.documentElement.classList.remove('app-big-text')
+    }
+  }, [prefs.theme, prefs.highContrast, prefs.reducedMotion, prefs.bigText])
+
+  // Login/welcome chime — once when the authenticated shell mounts (i.e. per
+  // sign-in; the shell persists across hub/game navigation and unmounts only on
+  // logout). The login button is a user gesture, so audio is allowed to start.
+  useEffect(() => {
+    playLoginChime()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
   // A "React-driven" route is anything that renders inside #react-root —
   // i.e. every hub route plus any game whose ID is in REACT_GAME_IDS. Legacy
   // games need the class removed so their DOM (#listening-game etc.) shows.
@@ -60,7 +90,6 @@ export function AppShell() {
 
   return (
     <div
-      data-theme="dark"
       className="flex min-h-screen flex-col"
       style={{ backgroundImage: 'var(--gradient-app)' }}
     >

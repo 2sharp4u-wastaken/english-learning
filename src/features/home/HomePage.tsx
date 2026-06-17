@@ -12,6 +12,7 @@ import { useGameUnlocks } from '@/hooks/useGameUnlocks'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useContinueTarget } from '@/hooks/useContinueTarget'
 import { useExpressionUnlock } from '@/hooks/useExpressionUnlock'
+import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
 import { getUnlockRemainingText } from '@/bridge/progress'
 import { cn } from '@/lib/cn'
 
@@ -66,6 +67,7 @@ export function HomePage() {
   const summary = useUserProgress()
   const unlocks = useGameUnlocks()
   const exprUnlock = useExpressionUnlock()
+  const { prefs } = usePlayerPrefs()
 
   // Expression games are gated by the 50-learned-words expression gate, NOT the
   // per-game `unlocks` map (which has no expr-* entries → would read as unlocked).
@@ -182,11 +184,13 @@ export function HomePage() {
             so the band stays one line. The old subtitle + full-width giant button were
             removed; the CTA stays prominent via bg-learn. */}
         <div className="relative rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(99,230,198,0.22),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.18),transparent_40%)] p-3 sm:p-4">
-          <HeroSparkles />
+          {prefs.sparkles && !prefs.reducedMotion && <HeroSparkles />}
           <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 sm:flex-nowrap sm:justify-between">
             {/* Greeting + mascot */}
             <div className="flex shrink-0 items-center gap-2.5">
-              <HomeMascot streakDays={summary.streakDays} wordsLearned={summary.wordsLearned} size="sm" />
+              {prefs.mascot && (
+                <HomeMascot streakDays={summary.streakDays} wordsLearned={summary.wordsLearned} size="sm" />
+              )}
               <h1 className="font-display text-xl font-bold text-text sm:text-2xl">
                 <button
                   type="button"

@@ -1,4 +1,5 @@
 import { getSettings } from './settings'
+import { getPlayerPrefs } from './playerPrefs'
 
 export interface GameFeedback {
   text: string
@@ -26,7 +27,10 @@ export function getGameFeedback(
 // reads the unprefixed key only — broken when only the v2 key is populated.
 export function getShowConfetti(): boolean {
   try {
-    return getSettings().showConfetti !== false
+    // Honor BOTH the parent-global setting AND the per-kid customization
+    // (playerPrefs.confetti). Every call site gates on this before
+    // triggerConfetti(), so it's the one place the per-kid toggle takes effect.
+    return getSettings().showConfetti !== false && getPlayerPrefs().confetti !== false
   } catch {
     return true
   }
@@ -41,6 +45,19 @@ interface AudioEffects {
   playCoin(): Promise<void>
   playStreak(): Promise<void>
   playSparkle(): Promise<void>
+  playWelcomeChime(type?: string): Promise<void>
+}
+
+// Per-kid sound gating (playerPrefs): master switch + per-category. correct/wrong
+// → answerSounds; coin → coinSounds; click/streak/sparkle (home pills) →
+// heroSounds; celebration sounds (levelUp/victory) ride the master switch only.
+function soundAllowed(effect: SoundEffect): boolean {
+  const p = getPlayerPrefs()
+  if (!p.soundOn) return false
+  if (effect === 'correct' || effect === 'wrong') return p.answerSounds !== false
+  if (effect === 'coin') return p.coinSounds !== false
+  if (effect === 'click' || effect === 'streak' || effect === 'sparkle') return p.heroSounds !== false
+  return true
 }
 
 /** Named UI sound effects (legacy `window.audioEffects`), e.g. for tappable
@@ -59,6 +76,7 @@ export type SoundEffect =
 export function playEffect(effect: SoundEffect): void {
   const fx = (window as any).audioEffects as AudioEffects | undefined
   if (!fx) return
+  if (!soundAllowed(effect)) return
   const map: Record<SoundEffect, (() => Promise<void>) | undefined> = {
     correct: fx.playCorrect,
     wrong: fx.playWrong,
@@ -85,6 +103,7 @@ export function playEffect(effect: SoundEffect): void {
 export function playAnswerSfx(kind: 'correct' | 'incorrect'): void {
   const fx = (window as any).audioEffects as AudioEffects | undefined
   if (!fx) return
+  if (!soundAllowed(kind === 'correct' ? 'correct' : 'wrong')) return
   const fn = kind === 'correct' ? fx.playCorrect : fx.playWrong
   try {
     fn.call(fx)?.catch?.(() => {})
@@ -102,6 +121,11 @@ export function playAnswerSfx(kind: 'correct' | 'incorrect'): void {
 export function triggerConfetti(label?: string): void {
   const confetti = (window as any).confetti as ConfettiFn | undefined
   if (typeof confetti !== 'function') return
+  // Per-kid motion prefs: skip entirely in reduced-motion, scale the burst by
+  // the celebration level (calm / normal / party).
+  const prefs = getPlayerPrefs()
+  if (prefs.reducedMotion) return
+  const particleCount = prefs.celebration === 'party' ? 180 : prefs.celebration === 'calm' ? 40 : 100
   // G1 profiling: when window.__PROFILE_CONFETTI__ is set, record frame timing +
   // long tasks for the burst. DEV-only so it tree-shakes out of prod builds.
   if (import.meta.env.DEV) {
@@ -109,13 +133,29 @@ export function triggerConfetti(label?: string): void {
   }
   try {
     confetti({
-      particleCount: 100,
+      particleCount,
       spread: 70,
       origin: { y: 0.6 },
       colors: ['#667eea', '#764ba2', '#4facfe', '#00f2fe', '#ffd700'],
     })
   } catch {
     /* swallow — visual nice-to-have */
+  }
+}
+
+/**
+ * Play the per-kid login/welcome chime (playerPrefs.loginSound) once at sign-in.
+ * Skips when sound is off or the child chose 'none'. The audio engine already
+ * supports the variants (arpeggio/bell/chord).
+ */
+export function playLoginChime(): void {
+  const prefs = getPlayerPrefs()
+  if (!prefs.soundOn || prefs.loginSound === 'none') return
+  const fx = (window as any).audioEffects as AudioEffects | undefined
+  try {
+    fx?.playWelcomeChime?.(prefs.loginSound)?.catch?.(() => {})
+  } catch {
+    /* swallow */
   }
 }
 

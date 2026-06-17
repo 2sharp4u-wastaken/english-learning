@@ -469,11 +469,34 @@ test.describe('Slice 1.6: Settings', () => {
     }
     await expect(page.locator('[data-testid="open-parent-settings"]').first()).toBeVisible();
 
-    // Display content renders without any password.
-    await expect.poll(() => hasText(page, 'העדפות תצוגה'), { timeout: 5000 }).toBe(true);
+    // The kid customization surface renders without any password.
+    await expect(page.locator('[data-testid="player-customization"]')).toBeVisible();
+    await expect.poll(() => hasText(page, 'צבעים'), { timeout: 5000 }).toBe(true);
 
     const critical = filterCritical(errors);
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('kid customization: changing the theme applies live and persists per profile', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/settings');
+
+    // The kid customization surface is the default (unprotected) tab.
+    await expect(page.locator('[data-testid="player-customization"]')).toBeVisible();
+
+    await page.locator('[data-testid="theme-ocean"]').click();
+
+    // Live: #react-root carries the chosen theme.
+    await expect.poll(() =>
+      page.evaluate(() => document.getElementById('react-root')?.getAttribute('data-theme')),
+    ).toBe('ocean');
+
+    // Persisted to the per-player blob.
+    const theme = await page.evaluate(
+      (uid) => JSON.parse(localStorage.getItem(`v2_playerPrefs_${uid}`) || '{}').theme,
+      TEST_USER_ID,
+    );
+    expect(theme).toBe('ocean');
   });
 
   test('parent-role session sees the full tab rail (no unlock prompt)', async ({ page }) => {

@@ -16,6 +16,7 @@ import {
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useGameUnlocks } from '@/hooks/useGameUnlocks'
+import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
 import {
   getCertificates,
   getWordsMasteredCount,
@@ -133,6 +134,7 @@ export function ProfilePage() {
   const { displayName, initial } = useAuthSession()
   const summary = useUserProgress()
   const unlocks = useGameUnlocks()
+  const { prefs } = usePlayerPrefs()
 
   const certificates = useMemo(() => getCertificates(), [summary])
   const wordsMastered = useMemo(() => getWordsMasteredCount(), [summary])
@@ -166,7 +168,10 @@ export function ProfilePage() {
       <section className="overflow-hidden rounded-2xl border border-white/10 bg-surface shadow-panel">
         <div className="bg-[radial-gradient(circle_at_top_right,rgba(99,230,198,0.15),transparent_30%)] p-5 sm:p-6">
           <div className="flex items-start gap-4 sm:gap-5">
-            <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 font-display text-2xl font-semibold text-text sm:h-20 sm:w-20 sm:text-3xl">
+            <div
+              className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-white/10 font-display text-2xl font-semibold text-text sm:h-20 sm:w-20 sm:text-3xl"
+              style={prefs.avatarColor ? { background: prefs.avatarColor, color: '#07101d' } : undefined}
+            >
               {initial ?? name.slice(0, 1)}
             </div>
             <div className="min-w-0 space-y-2">

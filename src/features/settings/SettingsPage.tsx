@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { Eye, Library, Gamepad2, SlidersHorizontal, Users, Wrench, MessagesSquare, Lock } from 'lucide-react'
+import { Palette, Library, Gamepad2, SlidersHorizontal, Users, Wrench, MessagesSquare, Lock } from 'lucide-react'
 import { useParentPassword } from '@/hooks/useParentPassword'
 import { SettingsTabRail, type TabDef } from './components/SettingsTabRail'
 import { ParentPasswordModal } from './components/ParentPasswordModal'
@@ -17,7 +17,7 @@ type TabId = 'display' | 'categories' | 'game' | 'advanced' | 'users' | 'advance
 // mechanics, or accounts is parent-gated — incl. קטגוריות (content selection),
 // which moved behind the gate in M12 Slice B.
 const TABS: TabDef[] = [
-  { id: 'display',        label: 'תצוגה',       icon: <Eye size={16} />,              protected: false },
+  { id: 'display',        label: 'המשחק שלי',   icon: <Palette size={16} />,          protected: false },
   { id: 'categories',     label: 'קטגוריות',    icon: <Library size={16} />,          protected: true  },
   { id: 'game',           label: 'משחק',        icon: <Gamepad2 size={16} />,         protected: true  },
   { id: 'advanced',       label: 'מתקדם',       icon: <SlidersHorizontal size={16} />, protected: true  },

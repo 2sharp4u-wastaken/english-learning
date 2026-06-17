@@ -1827,6 +1827,21 @@ Promoted the latent `parent` role (from TIER2) into the **real access model** an
 - **Tests:** unit `{createParentAccount,parentMode,exposeContent}.test.ts` (13); Playwright first-run rewritten for the wizard + one-unlock/auto-unlock specs; `seedUser` gained `role`. Ran `build-nikud-map.py` (+77) for the new chrome. The `settings renders tab rail` Dicta-CORS console failure is pre-existing on baseline (boot `enrichVocabularyBank` fetch), not this slice.
 - **Follow-up — issue #10 (standard admin model + naming, 2026-06-17):** the parent reported a kid could choose the parent password. Made it behave like any admin account: VERIFY-only once a password exists, **no unauthenticated "forgot password" reset** (deleted `resetParentPassword` + the modal's forgot UI — a kid could reset then re-create), password **changed only while authenticated** in כלי הורה → "סיסמת הורה" (`changeParentPassword` keeps the device password and the parent user's password in sync), CREATE mode only when no password exists (onboarding/migration), recovery-when-forgotten = clear app data. Also renamed all player/parent-facing copy from ילד → **שחקן/ית** (the vocab word ילד=child stays). Tests + nikud map updated.
 
+### Slice CUSTOM1: Per-kid customization "המשחק שלי" — ✅ SHIPPED (2026-06-17)
+
+Each child customizes their own look/feel, saved per-profile, applied live. New per-user store
+`src/bridge/playerPrefs.ts` (blob at `v2_playerPrefs_<userId>`, `usePlayerPrefs`) — **a single
+opaque JSON blob, distinct from the parent-global `AppSettings`**, designed to sync unchanged in the
+cloud-backend Phase B. Buckets: sounds (master + login-chime variant + answer/hero/coin), colors
+(5 themes via `data-theme` + new `themes.css` blocks overriding the Tailwind `--color-*` vars;
+avatar color), motion (confetti/sparkles/celebration-intensity/reduced-motion), mascot/text
+(mascot on/off, bigText via `html.app-big-text`, highContrast). Wiring: `AppShell` applies
+theme/contrast/motion/text + fires `playLoginChime` once per sign-in; `bridge/feedback.ts` is the
+single sound/confetti gate (`soundAllowed`/`getShowConfetti` read `playerPrefs`); `HomePage` gates
+mascot/sparkles; avatar color in ProfilePage + MobileTopBar. UI = `DisplayTab` reworked into the
+kid hub. Tests: `playerPrefs.test.ts` + Playwright live-theme/per-profile. Deferred: coin-earned
+cosmetic unlocks. See `[[project_player_customization]]`.
+
 ## Phase 4: Cleanup and Consolidation
 
 Objective: remove dead legacy code and shrink maintenance burden.

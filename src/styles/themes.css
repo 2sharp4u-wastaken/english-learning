@@ -13,3 +13,74 @@
   --gradient-app: radial-gradient(circle at top, rgba(104, 168, 255, 0.2), transparent 34%),
     linear-gradient(160deg, rgba(7, 16, 29, 0.98), rgba(20, 35, 58, 0.96));
 }
+
+/* Per-player themes (playerPrefs.theme, set as data-theme on #react-root).
+   Each keeps a DARK canvas so the existing light text stays readable — they only
+   re-tint the accents + background, low risk. Tailwind maps these --color-* vars
+   (tailwind.config.ts), so overriding them re-skins the whole app. */
+#react-root[data-theme='ocean'] {
+  --color-canvas: #04141f;
+  --color-surface-1: rgba(8, 30, 45, 0.9);
+  --color-surface-2: rgba(12, 42, 62, 0.92);
+  --color-learn: #34d6c0;
+  --color-practice: #4aa8ff;
+  --color-challenge: #56c5e8;
+  --color-test: #ff8a7a;
+  --gradient-app: radial-gradient(circle at top, rgba(52, 214, 192, 0.18), transparent 34%),
+    linear-gradient(160deg, #04141f, #082a3e);
+}
+#react-root[data-theme='sunset'] {
+  --color-canvas: #1a0e1f;
+  --color-surface-1: rgba(40, 18, 40, 0.9);
+  --color-surface-2: rgba(56, 24, 52, 0.92);
+  --color-learn: #ffb454;
+  --color-practice: #ff7a9c;
+  --color-challenge: #ffd166;
+  --color-test: #ff6f61;
+  --gradient-app: radial-gradient(circle at top, rgba(255, 122, 156, 0.2), transparent 34%),
+    linear-gradient(160deg, #1a0e1f, #3a1830);
+}
+#react-root[data-theme='forest'] {
+  --color-canvas: #08160e;
+  --color-surface-1: rgba(12, 32, 20, 0.9);
+  --color-surface-2: rgba(18, 44, 28, 0.92);
+  --color-learn: #5fd97a;
+  --color-practice: #4ec9a0;
+  --color-challenge: #c0e860;
+  --color-test: #ff9166;
+  --gradient-app: radial-gradient(circle at top, rgba(95, 217, 122, 0.16), transparent 34%),
+    linear-gradient(160deg, #08160e, #122c1c);
+}
+#react-root[data-theme='candy'] {
+  --color-canvas: #1a0f24;
+  --color-surface-1: rgba(40, 20, 56, 0.9);
+  --color-surface-2: rgba(54, 28, 74, 0.92);
+  --color-learn: #f59ee8;
+  --color-practice: #b18cff;
+  --color-challenge: #ffd166;
+  --color-test: #ff7aa8;
+  --gradient-app: radial-gradient(circle at top, rgba(177, 140, 255, 0.2), transparent 34%),
+    linear-gradient(160deg, #1a0f24, #361c4a);
+}
+
+/* High-contrast: brighten text + muted so it stands off any theme. */
+#react-root[data-contrast='true'] {
+  --color-text-primary: #ffffff;
+  --color-text-muted: #e6edf8;
+}
+
+/* Reduced motion: kill decorative animation/transition app-wide (paired with
+   JS gates that skip confetti/sparkles in playerPrefs). */
+#react-root[data-reduced-motion='true'] *,
+#react-root[data-reduced-motion='true'] *::before,
+#react-root[data-reduced-motion='true'] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+}
+
+/* Bigger text: scale the rem base (Tailwind text-* are rem). Toggled as a class
+   on <html> so rem actually scales (the #react-root scope can't move rem). */
+html.app-big-text {
+  font-size: 18px;
+}
