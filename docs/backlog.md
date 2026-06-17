@@ -318,15 +318,14 @@ The rest of that doc is shipped; only these remain:
 
 ## 6. Architecture horizon — backend / accounts ("Tier 3") 🟢
 
-> **UPDATE 2026-06-17: Phase A SHIPPED (code), not yet live.** The cloud-account
-> backend has started — `worker/auth.ts` (Cloudflare D1 + `/api/auth/*` +
-> `/api/players`, PBKDF2 + JWT) + offline-first `src/bridge/cloudAccount.ts` + a
-> "חשבון בענן וגיבוי" card in כלי הורה. Deploy-safe (Worker 503s until
-> provisioned; D1 binding left COMMENTED in `wrangler.jsonc`). Roadmap (A done →
-> B progress/prefs backup → C bidirectional sync → D leaderboards) + the go-live
-> runbook live in **`docs/cloud-backend.md`**. See `[[project_cloud_backend]]`.
-> NEXT for this: provision D1 + `AUTH_SECRET` and uncomment the binding to go
-> live; then Phase B (push/pull the per-user progress + `playerPrefs` blobs).
+> **UPDATE 2026-06-17: Phase A LIVE.** The cloud-account backend is provisioned
+> and deployed — `worker/auth.ts` (Cloudflare D1 `english-learning-db` + `/api/auth/*`
+> + `/api/players`, PBKDF2 + JWT) + offline-first `src/bridge/cloudAccount.ts` + the
+> "חשבון בענן וגיבוי" card in כלי הורה. Verified live (register/login/me/players, 401
+> on bad password). Roadmap (A done → B progress/prefs backup → C bidirectional sync
+> → D leaderboards) + runbook in **`docs/cloud-backend.md`**. See
+> `[[project_cloud_backend]]`. **NEXT: Phase B** — push/pull the per-user progress +
+> `playerPrefs` blobs (map local user ids ↔ cloud player ids at link time).
 
 
 Everything today is client-only: each browser's localStorage is its own island

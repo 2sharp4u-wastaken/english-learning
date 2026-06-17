@@ -1,7 +1,10 @@
 # Cloud backend — accounts + multi-device progress sync (Tier-3)
 
-Status: **Phase A code SHIPPED 2026-06-17** (not yet provisioned/live). Phases B–D
-are the roadmap. This is the §6 "Tier-3" work the backlog flagged. Everything stays
+Status: **Phase A LIVE 2026-06-17.** D1 `english-learning-db`
+(`2e813bd2-689d-46ac-9889-c8263c868f0c`, region EEUR) + `AUTH_SECRET` provisioned,
+schema applied, `d1_databases` binding active in `wrangler.jsonc`, deployed. Verified
+live: register → token, `/me`, 401 on wrong password, player CRUD. Phases B–D are
+the roadmap. This is the §6 "Tier-3" work the backlog flagged. Everything stays
 **offline-first** — the cloud account is an optional layer; the app plays fully
 offline with on-device profiles regardless.
 
@@ -42,9 +45,8 @@ leaderboards (backlog § LB) and the M5/M13 word/image review queues.
   sets, sum-safe coins), last-write-wins for prefs/settings.
 - **D — leaderboards** (family + global) on the same DB (backlog § LB).
 
-## Go-live runbook (Phase A) — NOT done yet
-The Worker 503s ("backend not configured") while unprovisioned, so the code is
-already safe to deploy. To turn it on:
+## Go-live runbook (Phase A) — ✅ DONE 2026-06-17 (kept for reference / re-provisioning)
+The Worker 503s ("backend not configured") while unprovisioned. The steps that were run:
 ```
 wrangler d1 create english-learning-db
 #   → copy the printed database_id
