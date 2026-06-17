@@ -16,11 +16,16 @@ import {
   abortWordJourney,
   beginWordJourney,
   finishWordJourney,
+  loadWJProgress,
   recordWJAttempt,
+  resumeWordJourney,
+  saveWJProgress,
   setReplayMode,
+  type WJSavedProgress,
   type WJStageId,
   type WJSummaryEntry,
   type WJWord,
+  type WordJourneyReady,
   type WordJourneyResult,
 } from '@/bridge/word-journey'
 
@@ -37,21 +42,79 @@ export function WordJourneyGamePage() {
   const correctRef = useRef(0)
   const totalScoredRef = useRef(0)
   const isActiveRef = useRef(false)
+  // Mirrors of the live session/progress, read by the unmount cleanup to persist
+  // resumable state (the reported "resets on exit" fix). Refs because the cleanup
+  // closure must see the latest values without re-subscribing.
+  const sessionRef = useRef<WordJourneyReady | null>(null)
+  const stageRef = useRef(0)
+  const scoreRef = useRef(0)
+  const phaseRef = useRef<'playing' | 'celebrating'>('playing')
+  const replayRef = useRef(false)
+
+  /** Persist the current journey so a return continues it, unless we're in a
+   * replay/practice run, celebrating, or there's no live session. */
+  const saveResume = useCallback(() => {
+    if (replayRef.current) return
+    if (phaseRef.current !== 'playing') return
+    const s = sessionRef.current
+    if (!s || s.kind !== 'ready') return
+    if (stageRef.current >= STAGE_ORDER.length) return
+    saveWJProgress({
+      session: s,
+      stageIndex: stageRef.current,
+      score: scoreRef.current,
+      correct: correctRef.current,
+      totalScored: totalScoredRef.current,
+    })
+  }, [])
 
   const start = useCallback((opts?: { replay?: boolean }) => {
     hardResetSpeech()
     cancelSpeech()
     setReplayMode(!!opts?.replay)
+    replayRef.current = !!opts?.replay
     const result = beginWordJourney()
     setSession(result)
     setStageIndex(0)
     setPhase('playing')
     setScore(0)
     setSummary([])
+    sessionRef.current = result.kind === 'ready' ? result : null
+    stageRef.current = 0
+    scoreRef.current = 0
+    phaseRef.current = 'playing'
     correctRef.current = 0
     totalScoredRef.current = 0
     isActiveRef.current = result.kind === 'ready'
   }, [])
+
+  const resume = useCallback(
+    (saved: WJSavedProgress) => {
+      hardResetSpeech()
+      cancelSpeech()
+      setReplayMode(false)
+      replayRef.current = false
+      const ready = resumeWordJourney(saved)
+      if (!ready) {
+        start()
+        return
+      }
+      const result: WordJourneyResult = ready
+      setSession(result)
+      setStageIndex(saved.stageIndex)
+      setPhase('playing')
+      setScore(saved.score)
+      setSummary([])
+      sessionRef.current = ready
+      stageRef.current = saved.stageIndex
+      scoreRef.current = saved.score
+      phaseRef.current = 'playing'
+      correctRef.current = saved.correct
+      totalScoredRef.current = saved.totalScored
+      isActiveRef.current = true
+    },
+    [start],
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -69,18 +132,21 @@ export function WordJourneyGamePage() {
         window.setTimeout(tryStart, 100)
         return
       }
-      start()
+      const saved = loadWJProgress()
+      if (saved) resume(saved)
+      else start()
     }
     tryStart()
     return () => {
       cancelled = true
       if (isActiveRef.current) {
+        saveResume()
         abortWordJourney()
         isActiveRef.current = false
       }
       cancelSpeech()
     }
-  }, [start])
+  }, [start, resume, saveResume])
 
   const words: WJWord[] = session?.kind === 'ready' ? session.words : []
 
@@ -89,6 +155,7 @@ export function WordJourneyGamePage() {
     totalScoredRef.current += 1
     if (isCorrect) {
       correctRef.current += 1
+      scoreRef.current += points
       setScore((s) => s + points)
     }
   }, [])
@@ -97,6 +164,7 @@ export function WordJourneyGamePage() {
     if (!isActiveRef.current) return
     const res = finishWordJourney(words, correctRef.current, totalScoredRef.current)
     isActiveRef.current = false
+    phaseRef.current = 'celebrating'
     setSummary(res.summary)
     setPhase('celebrating')
   }, [words])
@@ -108,6 +176,7 @@ export function WordJourneyGamePage() {
         finishNow()
         return prev
       }
+      stageRef.current = next
       return next
     })
   }, [finishNow])
@@ -125,11 +194,12 @@ export function WordJourneyGamePage() {
   const confirmExit = useCallback(() => {
     setExitOpen(false)
     if (isActiveRef.current) {
+      saveResume()
       abortWordJourney()
       isActiveRef.current = false
     }
     navigate('/home')
-  }, [navigate])
+  }, [navigate, saveResume])
   const cancelExit = useCallback(() => setExitOpen(false), [])
 
   const stage = phase === 'playing' ? STAGE_ORDER[stageIndex] : null

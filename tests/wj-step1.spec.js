@@ -31,7 +31,7 @@ async function seedAndStart(page) {
       authenticated: true, loginTime: Date.now(), lastActivity: Date.now(),
     }));
     localStorage.setItem(`${prefix}userProgress_${userId}`, JSON.stringify({ version: 4, gameUnlockOverride: true }));
-    localStorage.setItem(`${prefix}englishLearningSettings`, JSON.stringify({ gameUnlockOverride: true }));
+    localStorage.setItem(`${prefix}englishLearningSettings`, JSON.stringify({ gameUnlockOverride: true, learningPace: 'slow' }));
   }, { userId: TEST_USER_ID, prefix: V2_PREFIX });
   await page.reload();
   await page.waitForTimeout(2500);
@@ -78,4 +78,35 @@ test('Discover gates Next behind a 2nd listen, then advances', async ({ page }) 
 
   await next.click();
   await expect(counter).toHaveAttribute('data-item', '2', { timeout: 6000 });
+});
+
+test('resumes the same stage after exiting and returning', async ({ page }) => {
+  await seedAndStart(page);
+  const stageBar = page.locator('[data-testid="wj-stage-bar"]');
+  await expect(stageBar.locator('[data-stage="discover"][data-state="active"]')).toBeVisible({ timeout: 6000 });
+
+  // Complete the Discover stage (3 words on the slow pace) so we advance off it.
+  const counter = page.locator('[data-testid="wj-discover-counter"]');
+  const next = page.locator('[data-testid="wj-discover-next"]');
+  const audio = page.locator('[data-testid="media-prompt-audio"]');
+  for (let i = 1; i <= 3; i++) {
+    await expect(counter).toHaveAttribute('data-item', String(i), { timeout: 6000 });
+    await audio.click(); // 2nd listen unlocks Next
+    await expect(next).toBeEnabled({ timeout: 6000 });
+    await next.click();
+    await page.waitForTimeout(200);
+  }
+
+  // We should now be on the Listen-Match stage.
+  await expect(stageBar.locator('[data-stage="listen-match"][data-state="active"]')).toBeVisible({ timeout: 6000 });
+
+  // Leave to Home, then come back — the journey must resume on Listen-Match, not
+  // reshuffle a fresh Discover (the reported "resets on exit" bug).
+  await page.evaluate(() => { window.location.hash = '/home'; });
+  await page.waitForTimeout(800);
+  await page.evaluate(() => { window.location.hash = '/game/word-journey'; });
+  await page.waitForTimeout(1500);
+
+  await expect(stageBar.locator('[data-stage="listen-match"][data-state="active"]')).toBeVisible({ timeout: 6000 });
+  await expect(stageBar.locator('[data-stage="discover"][data-state="active"]')).toHaveCount(0);
 });

@@ -718,8 +718,12 @@ Resume is intentionally unsupported in the React port: legacy story-time persist
 ```
 React route /#/game/word-journey
   └─ GameHostPage.tsx → REACT_GAMES['word-journey'] → WordJourneyGamePage.tsx
+      ├─ on mount: loadWJProgress() → resumeWordJourney(saved) if an in-progress
+      │   journey exists (savedWJ_<userId>, 24h TTL), else beginWordJourney() fresh
       ├─ beginWordJourney()  (src/bridge/word-journey.ts)
-      │   ├─ setGameContext('word-journey') + deleteGameState (no resume)
+      │   ├─ setGameContext('word-journey') + deleteGameState + clearWJProgress
+      │   │   (resume saved to savedWJ_<userId> on exit; stage-level granularity —
+      │   │    saveWJProgress on unmount, cleared on finish/Reset; replay not saved)
       │   ├─ words = gameManager.getWordJourneyWords() (mastery-aware, paced
       │   │   3/5/8 by learningPace); <3 → kind:'no-words'
       │   ├─ Pre-builds per-stage data: listen-match options (selectDistractors),

@@ -126,8 +126,13 @@ Fixed product rules the React port honors:
 - **Selection** — free-play picks a mastery-aware batch from active categories (weak/
   unlearned preferred; words learned today deprioritized). Topic-scoped uses the topic word
   list with the same pace.
-- **Banking** — points bank only on completion; leaving mid-run clears without banking. No
-  mid-journey resume (per-word mastery is already saved for each stage played).
+- **Banking** — points bank only on completion (per-word mastery is saved per stage played).
+- **Resume** — leaving mid-journey persists the built session + current stage to
+  `savedWJ_<userId>` (24h TTL); returning continues the *same* journey at that stage
+  (stage-level granularity — the current stage restarts, earlier stages stay done).
+  Cleared on completion or the Reset button; replay/practice runs are not persisted.
+  (Originally resume-less by design; re-added because reshuffling a brand-new journey on
+  every re-entry read as data loss to kids/parents — beta feedback 2026-06-17.)
 - **Completion guidance** — free-play biases toward more learning / a newly unlocked game;
   topic-scoped biases back to the next topic activity (don't show two buttons that both
   restart Word Journey).

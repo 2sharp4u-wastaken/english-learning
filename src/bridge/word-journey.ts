@@ -41,6 +41,22 @@ export interface WordJourneyReady {
 
 export type WordJourneyResult = WordJourneyReady | { kind: 'no-words' }
 
+/**
+ * Persisted mid-journey state so leaving and returning continues the same
+ * journey instead of reshuffling a brand-new one (the reported "resets on
+ * exit" bug). Stage-level granularity: the current stage restarts, earlier
+ * stages stay done. The whole built session is stored so the words + per-stage
+ * options stay identical on return.
+ */
+export interface WJSavedProgress {
+  session: WordJourneyReady
+  stageIndex: number
+  score: number
+  correct: number
+  totalScored: number
+  timestamp: number
+}
+
 export type WJStatus = 'new' | 'learning' | 'learned'
 
 export interface WJSummaryEntry extends WJWord {
@@ -224,12 +240,75 @@ function abcMasteryPercent(): number {
   return Math.round((mastered / 26) * 100)
 }
 
+// ─── Resume persistence ──────────────────────────────────────────────────────
+
+const WJ_STAGE_COUNT = 5
+const WJ_SAVE_TTL_MS = 24 * 60 * 60 * 1000 // parity with legacy loadGameState
+
+function wjUserId(): string {
+  return localStorage.getItem('currentUser') ?? 'default'
+}
+
+function wjSaveKey(): string {
+  return `savedWJ_${wjUserId()}`
+}
+
+export function clearWJProgress(): void {
+  try {
+    localStorage.removeItem(wjSaveKey())
+  } catch {
+    /* ignore */
+  }
+}
+
+/** Persist mid-journey state so re-entering resumes instead of reshuffling. */
+export function saveWJProgress(p: Omit<WJSavedProgress, 'timestamp'>): void {
+  if (!p.session || p.session.kind !== 'ready') return
+  if (p.stageIndex < 0 || p.stageIndex >= WJ_STAGE_COUNT) return
+  try {
+    localStorage.setItem(wjSaveKey(), JSON.stringify({ ...p, timestamp: Date.now() }))
+  } catch {
+    /* quota — fall back to no-resume */
+  }
+}
+
+/** Load a valid in-progress journey, or null (also clears stale/invalid state). */
+export function loadWJProgress(): WJSavedProgress | null {
+  let raw: string | null = null
+  try {
+    raw = localStorage.getItem(wjSaveKey())
+  } catch {
+    return null
+  }
+  if (!raw) return null
+  try {
+    const p = JSON.parse(raw) as WJSavedProgress
+    const ok =
+      p?.session?.kind === 'ready' &&
+      Array.isArray(p.session.words) &&
+      p.session.words.length >= 3 &&
+      typeof p.stageIndex === 'number' &&
+      p.stageIndex >= 0 &&
+      p.stageIndex < WJ_STAGE_COUNT &&
+      typeof p.timestamp === 'number' &&
+      Date.now() - p.timestamp <= WJ_SAVE_TTL_MS
+    if (!ok) {
+      clearWJProgress()
+      return null
+    }
+    return p
+  } catch {
+    clearWJProgress()
+    return null
+  }
+}
+
 // ─── Session ─────────────────────────────────────────────────────────────────
 
 /**
- * Start a Word Journey. No mid-journey resume (graduation is now per-word and
- * continuous, so an abandoned journey still banks the mastery earned in played
- * stages — there is nothing to "lose" that warrants resume bookkeeping).
+ * Start a fresh Word Journey. Clears any saved mid-journey state so a new run
+ * begins clean. (Resume of an in-progress journey goes through
+ * `resumeWordJourney` instead — see `loadWJProgress`.)
  */
 export function beginWordJourney(): WordJourneyResult {
   const mgr = getMgr()
@@ -237,6 +316,7 @@ export function beginWordJourney(): WordJourneyResult {
 
   setGameContext(GAME_TYPE)
   mgr.deleteGameState?.(GAME_TYPE)
+  clearWJProgress()
 
   const raw = mgr.getWordJourneyWords?.() ?? []
   const words = raw.map(normalize)
@@ -264,6 +344,34 @@ export function beginWordJourney(): WordJourneyResult {
     spell: shuffle(words).map((word) => ({ word, tiles: buildSpellTiles(word.word) })),
     recall: words,
   }
+}
+
+/**
+ * Re-establish legacy engine state for an in-progress journey loaded from
+ * storage, WITHOUT reshuffling. Restores the saved score so finish-time
+ * totalPoints reconciliation stays correct. Returns the saved session, or null
+ * if the engine isn't available (caller should fall back to a fresh begin).
+ */
+export function resumeWordJourney(saved: WJSavedProgress): WordJourneyReady | null {
+  const mgr = getMgr()
+  if (!mgr) return null
+
+  setGameContext(GAME_TYPE)
+  mgr.deleteGameState?.(GAME_TYPE)
+  mgr.isResuming = true
+  mgr.currentGame = GAME_TYPE
+  mgr.currentQuestionIndex = saved.stageIndex
+  mgr.shuffledQuestions = ['discover', 'listen-match', 'spell-tiles', 'say-word', 'recall']
+  mgr.totalQuestions = WJ_STAGE_COUNT
+  mgr.scoreManager?.resetScore(GAME_TYPE)
+  if (saved.score > 0) mgr.scoreManager?.addPoints(GAME_TYPE, saved.score)
+  if (mgr.lastPersistedScores) mgr.lastPersistedScores[GAME_TYPE] = 0
+  mgr.gameElapsedMs = 0
+  mgr.gameSessionStartAt = Date.now()
+  mgr.gameCoinHistoryStartIndex = getApp()?.userProgress?.coinHistory?.length ?? 0
+  mgr.isGameActive = true
+
+  return saved.session
 }
 
 /** Record one word attempt + award stage points on success. */
@@ -313,6 +421,8 @@ export function finishWordJourney(
     totalScored > 0 ? Math.min(100, Math.round((correct / totalScored) * 100)) : 0
 
   const summary: WJSummaryEntry[] = words.map((w) => ({ ...w, status: getWJStatus(w) }))
+
+  clearWJProgress()
 
   if (!mgr) return { percentage, newlyUnlocked: [], summary }
 
