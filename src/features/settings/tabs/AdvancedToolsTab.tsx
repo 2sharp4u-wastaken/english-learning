@@ -1,8 +1,8 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Download, RotateCcw, BookOpen, KeyRound } from 'lucide-react'
+import { Download, RotateCcw, BookOpen, KeyRound, AlertTriangle } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
-import { changeParentPassword } from '@/bridge/auth'
+import { changeParentPassword, factoryReset } from '@/bridge/auth'
 import { SectionCard } from '../components/SectionCard'
 import { CustomWordsPanel } from './components/CustomWordsPanel'
 import { WordImagesPanel } from './components/WordImagesPanel'
@@ -14,6 +14,7 @@ export function AdvancedToolsTab() {
   const { resetSettings } = useSettings()
   const navigate = useNavigate()
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
+  const [factoryConfirm, setFactoryConfirm] = useState(false)
 
   const handleDownloadLogs = useCallback(() => {
     const logger = (window as any).consoleLogger
@@ -128,6 +129,51 @@ export function AdvancedToolsTab() {
             </div>
           </div>
         ) : null}
+      </SectionCard>
+
+      {/* Full device reset (issue #10 recovery / clean-slate testing). Wipes ALL
+          profiles + progress + the parent password and returns to the first-run
+          wizard. Behind the parent area; two-step confirm because it's
+          irreversible. */}
+      <SectionCard
+        title="התחלה מחדש"
+        description="מחיקת כל הפרופילים, כל ההתקדמות, ההגדרות וסיסמת ההורה — המכשיר חוזר למצב התחלתי ולאשף ההגדרה הראשוני. אין ביטול."
+      >
+        {!factoryConfirm ? (
+          <button
+            type="button"
+            onClick={() => setFactoryConfirm(true)}
+            data-testid="tools-factory-reset"
+            className="flex items-center gap-1.5 rounded-lg border border-coral-400/40 bg-coral-400/10 px-3 py-1.5 text-xs font-medium text-coral-400 transition-colors hover:bg-coral-400/15"
+          >
+            <AlertTriangle size={14} />
+            <span>מחיקת הכול והתחלה מחדש</span>
+          </button>
+        ) : (
+          <div className="space-y-2 rounded-lg border border-coral-400/40 bg-coral-400/5 p-3">
+            <p className="flex items-center gap-1.5 text-sm font-medium text-coral-400">
+              <AlertTriangle size={15} />
+              למחוק את כל הפרופילים והנתונים במכשיר? לא ניתן לבטל.
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setFactoryConfirm(false)}
+                className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-white/5 hover:text-text"
+              >
+                ביטול
+              </button>
+              <button
+                type="button"
+                onClick={() => factoryReset()}
+                data-testid="tools-factory-reset-confirm"
+                className="rounded-lg bg-coral-400/90 px-3 py-1.5 text-sm font-medium text-ink-950 transition-colors hover:bg-coral-400"
+              >
+                כן, מחק הכול
+              </button>
+            </div>
+          </div>
+        )}
       </SectionCard>
     </div>
   )

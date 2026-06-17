@@ -6,6 +6,8 @@ import {
   verifyAdminPassword,
   createParentAccount,
   getUser,
+  getAllUsers,
+  factoryReset,
 } from '../auth'
 
 /**
@@ -53,5 +55,17 @@ describe('parent password lifecycle', () => {
     expect(verifyAdminPassword('new-pass')).toBe(true)
     // The parent account's own password is kept in sync (one credential).
     expect(getUser('parent')?.password).toBe(btoa(SALT + 'new-pass' + SALT))
+  })
+
+  it('factoryReset wipes every profile + the parent password (fresh device)', () => {
+    createParentAccount('parent', 'אבא', 'pw1234')
+    localStorage.setItem('v2_userProgress_player1', '{"version":4}')
+    expect(getAllUsers().length).toBeGreaterThan(0)
+
+    factoryReset(false) // no reload in the test
+
+    expect(hasParentPassword()).toBe(false)
+    expect(getAllUsers()).toEqual([])
+    expect(localStorage.getItem('v2_userProgress_player1')).toBeNull()
   })
 })

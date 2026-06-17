@@ -697,6 +697,20 @@ test.describe('Slice 1.6: Settings', () => {
     expect(ok).toBe(true);
   });
 
+  // Issue #10 follow-up: in-app "התחלה מחדש" wipes the device and returns to the
+  // first-run wizard (the standard-admin recovery, one tap inside the parent area).
+  test('advanced-tools: factory reset wipes profiles and returns to the first-run wizard', async ({ page }) => {
+    await openAdvancedTools(page);
+
+    await page.locator('[data-testid="tools-factory-reset"]').click();
+    await page.locator('[data-testid="tools-factory-reset-confirm"]').click();
+
+    // The wipe + reload lands on the empty-DB first-run wizard; localStorage cleared.
+    await expect(page.locator('[data-testid="first-run-wizard"]')).toBeVisible({ timeout: 8000 });
+    const usersGone = await page.evaluate(() => localStorage.getItem('users') === null);
+    expect(usersGone).toBe(true);
+  });
+
   // M12 Slice A: parent/QA "unlock for testing" panel.
   test('advanced-tools: QA panel seeds learned words and reflects in the live status', async ({ page }) => {
     await openAdvancedTools(page);

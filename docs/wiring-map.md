@@ -111,7 +111,10 @@ SettingsPage:
   the password from INSIDE the parent area: כלי הורה → "סיסמת הורה" →
   changeParentPassword(new) [updates BOTH the parentPassword key AND the parent
   user's account password — one credential]. Forgotten-entirely recovery = clear
-  app data (offline app, no email channel).
+  app data (offline app, no email channel). In-app "התחלה מחדש" (כלי הורה,
+  two-step confirm) → factoryReset() [localStorage.clear() + reload] → first-run
+  wizard (reinstalling the PWA does NOT clear localStorage). Login screen shows a
+  v<ver>·<sha> build stamp so a tester can confirm the deployed bundle.
 
 Parent account (M4 wizard): createParentAccount(id,name,pw) → role:'parent' user +
   parentPassword = same hash (one credential). UsersTab destructive actions, once

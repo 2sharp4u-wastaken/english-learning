@@ -353,6 +353,23 @@ export function changeParentPassword(newPassword: string): void {
   }
 }
 
+/**
+ * "התחלה מחדש" — wipe ALL local data (every profile, all progress, settings,
+ * custom content, the parent password) and return the device to a fresh first-run
+ * state, then reload so boot rebuilds from an empty DB → the first-run wizard.
+ * Behind the parent area (the caller is already elevated). This is the
+ * device-level reset the standard-admin recovery story points to; localStorage
+ * is the only store (no backend), so clearing it is a true factory reset.
+ *
+ * `keepReload=false` is for tests (assert the wipe without navigating away).
+ */
+export function factoryReset(keepReload = true): void {
+  localStorage.clear()
+  if (keepReload && typeof window !== 'undefined') {
+    window.location.reload()
+  }
+}
+
 /** Verify the admin (parent) password. False when none is set up yet. */
 export function verifyAdminPassword(password: string): boolean {
   const stored = localStorage.getItem(PARENT_PASSWORD_KEY)
