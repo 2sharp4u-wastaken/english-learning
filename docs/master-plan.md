@@ -1842,6 +1842,19 @@ mascot/sparkles; avatar color in ProfilePage + MobileTopBar. UI = `DisplayTab` r
 kid hub. Tests: `playerPrefs.test.ts` + Playwright live-theme/per-profile. Deferred: coin-earned
 cosmetic unlocks. See `[[project_player_customization]]`.
 
+### Slice CLOUD-A: Cloud accounts Phase A — family auth + players API — ✅ SHIPPED code (2026-06-17, not live)
+
+First real backend identity (§6 Tier-3): a family account (parent email+password) on
+**Cloudflare D1**, added to the existing Worker. `worker/auth.ts` = `/api/auth/{register,
+login,me}` + `/api/players` CRUD (scoped to the token's family), PBKDF2-SHA256 hashing +
+HMAC-SHA256 JWT via Web Crypto. `migrations/0001_cloud_accounts.sql` (families/players +
+Phase-B progress/prefs blobs). Client `src/bridge/cloudAccount.ts` (OPTIONAL, offline-first,
+separate from local `bridge/auth.ts`) + "חשבון בענן וגיבוי" card in כלי הורה. **Deploy-safe:**
+the `d1_databases` binding is left COMMENTED in `wrangler.jsonc` (a push auto-deploys; binding
+a non-existent DB would break it) and the Worker 503s until provisioned. Go-live runbook +
+roadmap (B backup → C sync → D leaderboards) in `docs/cloud-backend.md`. Tests: `worker/__tests__/
+auth.test.ts` (8, mock D1) + `cloudAccount.test.ts` (4). See `[[project_cloud_backend]]`.
+
 ## Phase 4: Cleanup and Consolidation
 
 Objective: remove dead legacy code and shrink maintenance burden.

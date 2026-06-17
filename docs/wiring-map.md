@@ -179,6 +179,21 @@ The "שמע את עצמך" button self-hides there (it's gated on the captured U
 ANY future parallel-capture feature must respect the same gate.
 ```
 
+## Cloud Account (Tier-3 Phase A, 2026-06-17 — code, not live)
+
+```
+CloudAccountPanel (כלי הורה) → bridge/cloudAccount.ts (OPTIONAL, offline-first)
+  └─ POST /api/auth/{register,login} → Worker handleCloudApi (worker/auth.ts)
+       ├─ PBKDF2-SHA256 hash (per-account salt) → families table (Cloudflare D1)
+       └─ HMAC-SHA256 JWT (AUTH_SECRET) → stored client-side at `cloudToken`
+  └─ authed calls send Authorization: Bearer → familyFromRequest verifies JWT
+       └─ /api/players GET/POST/DELETE scoped to token.sub (family id)
+SEPARATE from local-first bridge/auth.ts (app plays fully offline regardless).
+DEPLOY-SAFE: d1_databases binding COMMENTED in wrangler.jsonc; Worker 503s until
+provisioned (env.DB/AUTH_SECRET absent). Go-live + Phases B–D: docs/cloud-backend.md.
+See [[project_cloud_backend]].
+```
+
 ## Per-Player Customization ("המשחק שלי", 2026-06-17)
 
 ```
