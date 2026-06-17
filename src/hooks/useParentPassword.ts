@@ -1,32 +1,28 @@
 import { useState, useEffect, useCallback } from 'react'
-import { isCurrentUserAdmin, verifyAdminPassword } from '@/bridge/auth'
+import {
+  isParentElevated,
+  elevateParent,
+  lockParent,
+  subscribeParentMode,
+} from '@/bridge/parentMode'
 
 /**
- * Session-scoped parent-password gate for protected settings.
+ * Parent-password gate for protected settings, backed by the shared module-level
+ * parent-mode store (`src/bridge/parentMode.ts`).
  *
- * Unlock state is kept in memory for the lifetime of the page:
- * - Auto-unlocked when the current user has role `parent` or `manager`.
- * - Otherwise unlocks only after a correct admin password submission.
- * - Locks on page reload (no persisted unlock) to match the legacy UX.
+ * - Auto-unlocked when the current user has role `parent`/`manager`.
+ * - Otherwise unlocks after a correct admin password submission — and STAYS
+ *   unlocked across navigation/screens for the timeout window (M12 Slice B).
+ *   Previously this was per-component state that re-locked on every navigation.
+ * - Drops on logout / user switch and on the elevation timeout.
  */
 export function useParentPassword() {
-  const [unlocked, setUnlocked] = useState<boolean>(() => isCurrentUserAdmin())
+  const [unlocked, setUnlocked] = useState<boolean>(() => isParentElevated())
 
-  useEffect(() => {
-    // Keep auto-unlock fresh if the session user changes (e.g. after login)
-    if (unlocked) return
-    if (isCurrentUserAdmin()) setUnlocked(true)
-  }, [unlocked])
+  useEffect(() => subscribeParentMode(setUnlocked), [])
 
-  const unlock = useCallback((password: string): boolean => {
-    if (verifyAdminPassword(password)) {
-      setUnlocked(true)
-      return true
-    }
-    return false
-  }, [])
-
-  const lock = useCallback(() => setUnlocked(false), [])
+  const unlock = useCallback((password: string): boolean => elevateParent(password), [])
+  const lock = useCallback(() => lockParent(), [])
 
   return { unlocked, unlock, lock }
 }

@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
-import { Download, RotateCcw } from 'lucide-react'
+import { useNavigate } from 'react-router-dom'
+import { Download, RotateCcw, BookOpen } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { SectionCard } from '../components/SectionCard'
 import { CustomWordsPanel } from './components/CustomWordsPanel'
@@ -8,6 +9,7 @@ import { QATestingPanel } from './components/QATestingPanel'
 
 export function AdvancedToolsTab() {
   const { resetSettings } = useSettings()
+  const navigate = useNavigate()
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
 
   const handleDownloadLogs = useCallback(() => {
@@ -45,6 +47,22 @@ export function AdvancedToolsTab() {
         description="פתיחת תוכן נעול לצורך בדיקה, בלי לשחק עד הסף. הכלי משנה את ההתקדמות של המשתמש הנוכחי — לא מיועד לילדים."
       >
         <QATestingPanel />
+      </SectionCard>
+
+      {/* M4: in-app parent guide (offline, app-styled). */}
+      <SectionCard
+        title="מדריך להורה"
+        description="הסבר קצר על אזור ההורה, הסיסמה, פתיחת תכנים וניהול הילדים."
+      >
+        <button
+          type="button"
+          onClick={() => navigate('/parent-guide')}
+          data-testid="tools-open-guide"
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-white/8 hover:text-text"
+        >
+          <BookOpen size={14} />
+          <span>פתיחת המדריך</span>
+        </button>
       </SectionCard>
 
       {/* M6: moved here from the kid-visible settings header. */}

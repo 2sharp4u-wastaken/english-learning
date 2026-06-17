@@ -1813,6 +1813,19 @@ Replaced the hard-coded `ADMIN_PASSWORD` constant in `bridge/auth.ts` (which shi
 - **Copy:** gender-neutral ("יש להזין" replaced the masculine "הזן" across the UsersTab prompts); nikud map regenerated (`scripts/build-nikud-map.py`).
 - **Tests:** unit (`src/bridge/__tests__/parentPassword.test.ts` pins the storage scheme + lifecycle); Playwright specs now **seed the hash** (`seedParentPassword` helper in `react-routes.spec.js`) instead of typing a constant, plus a new create-wizard spec (mismatch rejected → match stores hash + unlocks pending tab).
 
+### Slice M12B+M4: Parent admin account + first-run wizard + one-unlock — ✅ SHIPPED (2026-06-17)
+
+Promoted the latent `parent` role (from TIER2) into the **real access model** and added first-run onboarding, in one slice (the user asked to combine M12 Slice B + M4). Builds directly on TIER2's per-device password — the parent account's password now IS that `parentPassword`.
+
+- **Parent account** (`bridge/auth.ts` `createParentAccount`): a `role:'parent'` user whose hashed password is mirrored into the `parentPassword` key (one credential). Refuses a second parent. New **unguarded** `adminAddUser`/`adminResetUserPassword`/`adminDeleteUser` (the password-gated variants delegate to them) let an already-elevated UsersTab confirm destructive actions without re-typing the password.
+- **One-unlock parent mode** (`src/bridge/parentMode.ts`): a module-level elevation store (mirrors `onAuthChange`) — `isParentElevated()` = role parent/manager OR a password elevation inside a 15-min timeout; survives navigation (the old per-component `useState` re-locked); drops on `auth-changed`. `useParentPassword` delegates to it; SettingsPage unchanged.
+- **First-run wizard** (`src/features/auth/FirstRunWizard.tsx`, shown by `LoginPage` on an empty DB): welcome → parent (name+password×2) → player profiles (auto-gen ids, cap parent+3) → finish + guide link. Adult-facing, **no nikud**, reuses `.auth-*`. Parent card gets a "הורה" badge.
+- **Expose-all-content**: the `gameUnlockOverride` setting is now the parent toggle **"פתיחת כל התכנים"**; `getAllGameUnlocks`/`getGameUnlockState`/`getExpressionUnlock` apply it as a **read-time overlay** (every tile + expression tier unlocked, stored progress untouched — toggle off restores gates). Cleaner than QA's permanent `unlockAllGames()`.
+- **Kid settings**: new unprotected `DisplayTab` (תצוגה: nikud/case/confetti) is the default + only kid tab; `categories` moved to `protected:true`. A kid does **not** see a wall of padlocked tabs — `SettingsPage` renders `unlocked ? TABS : [displayTab]` plus one "הגדרות הורה" unlock button; the parent tabs appear only once elevated.
+- **`/parent-guide`** (`ParentGuidePage`, pure — `ParentGuideRoute` wraps for the route; wizard uses it as an overlay since LoginPage is outside the Router). Hebrew, no nikud, offline.
+- **Decisions (user):** elevation not profile-switch; QA panel public; **`manager` reserved for M5/M13**; parent picks name+password in the wizard; existing devices keep password-elevation (no fabricated named parent).
+- **Tests:** unit `{createParentAccount,parentMode,exposeContent}.test.ts` (13); Playwright first-run rewritten for the wizard + one-unlock/auto-unlock specs; `seedUser` gained `role`. Ran `build-nikud-map.py` (+77) for the new chrome. The `settings renders tab rail` Dicta-CORS console failure is pre-existing on baseline (boot `enrichVocabularyBank` fetch), not this slice.
+
 ## Phase 4: Cleanup and Consolidation
 
 Objective: remove dead legacy code and shrink maintenance burden.

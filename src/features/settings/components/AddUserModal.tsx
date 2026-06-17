@@ -5,6 +5,9 @@ import { cn } from '@/lib/cn'
 interface Props {
   open: boolean
   onClose: () => void
+  // When false (the parent is already unlocked / elevated), the parent-password
+  // field is hidden — no re-typing once the parent area is open (M12 Slice B).
+  requirePassword?: boolean
   onSubmit: (args: {
     id: string
     name: string
@@ -14,7 +17,7 @@ interface Props {
   }) => Promise<string | null>   // null on success, or error message
 }
 
-export function AddUserModal({ open, onClose, onSubmit }: Props) {
+export function AddUserModal({ open, onClose, onSubmit, requirePassword = true }: Props) {
   const [id, setId] = useState('')
   const [name, setName] = useState('')
   const [initial, setInitial] = useState('')
@@ -52,7 +55,7 @@ export function AddUserModal({ open, onClose, onSubmit }: Props) {
     }
     if (!name.trim()) return 'נא להזין שם תצוגה.'
     if (!initial || initial.length !== 1) return 'יש להזין אות אחת בלבד לראשי תיבות.'
-    if (!password) return 'נא להזין סיסמת הורה.'
+    if (requirePassword && !password) return 'נא להזין סיסמת הורה.'
     return null
   }
 
@@ -137,14 +140,16 @@ export function AddUserModal({ open, onClose, onSubmit }: Props) {
               className={cn(inputClass, 'w-16 text-center')}
             />
           </Field>
-          <Field label="סיסמת הורה" hint="נדרשת לאישור יצירת המשתמש">
-            <input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className={inputClass}
-            />
-          </Field>
+          {requirePassword && (
+            <Field label="סיסמת הורה" hint="נדרשת לאישור יצירת המשתמש">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className={inputClass}
+              />
+            </Field>
+          )}
 
           {error && <p className="text-xs text-coral-400">{error}</p>}
 

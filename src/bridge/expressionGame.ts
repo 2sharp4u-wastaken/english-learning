@@ -16,6 +16,7 @@ import { setGameContext, cancelSpeech } from './audio'
 import { getApp, getGameManager } from '../engine/instances'
 import { getDerivedLearnedCount } from './progress'
 import { getExpressionBank, getExpressionPlainForm, type Expression } from './expressions'
+import { getSettings } from './settings'
 
 export type ExpressionMode = 'meaning' | 'truefalse' | 'blank' | 'build' | 'swap'
 
@@ -54,8 +55,11 @@ export interface ExpressionUnlock {
 export function getExpressionUnlock(): ExpressionUnlock {
   const learnedCount = getDerivedLearnedCount()
   const hasContent = getExpressionBank().length > 0
+  // The parent "expose all content" toggle opens the expression tier too (M12
+  // Slice B) — as long as there's content to show. Read-time, mirrors games.ts.
+  const exposed = getSettings().gameUnlockOverride === true
   return {
-    unlocked: learnedCount >= EXPRESSION_UNLOCK_WORDS && hasContent,
+    unlocked: hasContent && (exposed || learnedCount >= EXPRESSION_UNLOCK_WORDS),
     learnedCount,
     needed: EXPRESSION_UNLOCK_WORDS,
     hasContent,

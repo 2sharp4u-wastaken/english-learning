@@ -7,21 +7,19 @@ import {
   Trash2,
   Shield,
   ShieldCheck,
+  X,
 } from 'lucide-react'
 import type { User } from '@/bridge/types'
 import {
   getAllUsers,
   getCurrentUserId,
-  addUser as bridgeAddUser,
-  resetUserPassword,
-  deleteUser as bridgeDeleteUser,
+  adminAddUser,
+  adminResetUserPassword,
+  adminDeleteUser,
   setUserRole,
-  verifyAdminPassword,
-  hasParentPassword,
 } from '@/bridge/auth'
 import { resetUserPractice, resetUserStats } from '@/bridge/progress'
 import { SectionCard } from '../components/SectionCard'
-import { ParentPasswordModal } from '../components/ParentPasswordModal'
 import { AddUserModal } from '../components/AddUserModal'
 import { cn } from '@/lib/cn'
 
@@ -33,43 +31,38 @@ type PendingAction =
   | { kind: 'reset-practice'; user: User }
   | { kind: 'delete'; user: User }
   | { kind: 'toggle-role'; user: User }
-  // Add-user needs the parent password typed inline (AddUserModal), so when no
-  // parent password exists yet (admin-role users auto-unlock the tab and skip
-  // the gate) we run the create wizard first, then open AddUserModal.
-  | { kind: 'setup-for-add' }
 
-const PROMPTS: Record<PendingAction['kind'], { title: string; description: string; submitLabel: string }> = {
+// The Users tab only renders once the parent area is unlocked (it's a protected
+// tab gated by SettingsPage + the shared one-unlock parent mode), so these
+// destructive actions confirm but no longer re-ask for the parent password
+// (M12 Slice B). Copy reflects that the password prompt is gone.
+const PROMPTS: Record<PendingAction['kind'], { title: string; description: string; submitLabel: string; danger?: boolean }> = {
   'reset-password': {
     title: 'איפוס סיסמה',
-    description: 'ההורה יגדיר סיסמה חדשה בהתחברות הבאה. יש להזין את סיסמת ההורה לאישור.',
+    description: 'ההורה יגדיר סיסמה חדשה בהתחברות הבאה.',
     submitLabel: 'אפס סיסמה',
   },
   'reset-stats': {
     title: 'איפוס כל הסטטיסטיקות',
-    description: 'כל ציוני המשחקים, ההיסטוריה, המטבעות, התעודות והמילים הנלמדות יימחקו. אין ביטול. יש להזין את סיסמת ההורה לאישור.',
+    description: 'כל ציוני המשחקים, ההיסטוריה, המטבעות, התעודות והמילים הנלמדות יימחקו. אין ביטול.',
     submitLabel: 'אפס סטטיסטיקות',
+    danger: true,
   },
   'reset-practice': {
     title: 'איפוס נתוני תרגול',
-    description: 'מונה מילים הנאבקות יאופס. הציונים יישמרו. יש להזין את סיסמת ההורה לאישור.',
+    description: 'מונה מילים הנאבקות יאופס. הציונים יישמרו.',
     submitLabel: 'אפס תרגול',
   },
   delete: {
     title: 'מחיקת משתמש',
-    description: 'המשתמש ונתוניו יימחקו לצמיתות. אין ביטול. יש להזין את סיסמת ההורה לאישור.',
+    description: 'המשתמש ונתוניו יימחקו לצמיתות. אין ביטול.',
     submitLabel: 'מחק משתמש',
+    danger: true,
   },
   'toggle-role': {
     title: 'שינוי תפקיד',
-    description: 'החלפת סטטוס הורה. יש להזין את סיסמת ההורה לאישור.',
+    description: 'החלפת סטטוס הורה עבור המשתמש.',
     submitLabel: 'החלף תפקיד',
-  },
-  // Only ever shown in the modal's create mode (which renders its own wizard
-  // copy) — reached solely when no parent password exists yet.
-  'setup-for-add': {
-    title: 'סיסמת הורה',
-    description: 'יש להזין את סיסמת ההורה לאישור.',
-    submitLabel: 'המשך',
   },
 }
 
@@ -89,53 +82,31 @@ export function UsersTab() {
 
   const atCapacity = users.length >= MAX_USERS
 
-  const handleAction = useCallback(
-    async (password: string): Promise<string | null> => {
-      if (!pending) return null
-      if (!verifyAdminPassword(password)) return 'סיסמה שגויה'
-
-      try {
-        switch (pending.kind) {
-          case 'reset-password': {
-            const r = resetUserPassword(pending.user.id, password)
-            if (!r.success) return r.error ?? r.message ?? 'שגיאה'
-            break
-          }
-          case 'delete': {
-            const r = bridgeDeleteUser(pending.user.id, password)
-            if (!r.success) return r.error ?? r.message ?? 'שגיאה'
-            break
-          }
-          case 'reset-practice': {
-            resetUserPractice(pending.user.id)
-            break
-          }
-          case 'reset-stats': {
-            resetUserStats(pending.user.id)
-            break
-          }
-          case 'toggle-role': {
-            const nextRole = pending.user.role === 'parent' ? null : 'parent'
-            const r = setUserRole(pending.user.id, nextRole)
-            if (!r.success) return r.error ?? 'שגיאה'
-            break
-          }
-          case 'setup-for-add': {
-            setPending(null)
-            setAddOpen(true)
-            return null
-          }
-        }
-      } catch (err) {
-        return err instanceof Error ? err.message : 'שגיאה בלתי צפויה'
+  const handleConfirm = useCallback(() => {
+    if (!pending) return
+    try {
+      switch (pending.kind) {
+        case 'reset-password':
+          adminResetUserPassword(pending.user.id)
+          break
+        case 'delete':
+          adminDeleteUser(pending.user.id)
+          break
+        case 'reset-practice':
+          resetUserPractice(pending.user.id)
+          break
+        case 'reset-stats':
+          resetUserStats(pending.user.id)
+          break
+        case 'toggle-role':
+          setUserRole(pending.user.id, pending.user.role === 'parent' ? null : 'parent')
+          break
       }
-
+    } finally {
       setPending(null)
       refresh()
-      return null
-    },
-    [pending, refresh],
-  )
+    }
+  }, [pending, refresh])
 
   const handleAdd = useCallback(
     async ({
@@ -143,7 +114,6 @@ export function UsersTab() {
       name,
       displayName,
       initial,
-      password,
     }: {
       id: string
       name: string
@@ -154,8 +124,7 @@ export function UsersTab() {
       if (users.length >= MAX_USERS) {
         return `הגעת למקסימום (${MAX_USERS}) משתמשים. מחק משתמש קיים לפני הוספת חדש.`
       }
-      if (!verifyAdminPassword(password)) return 'סיסמה שגויה'
-      const r = bridgeAddUser(id, name, displayName, initial, password)
+      const r = adminAddUser(id, name, displayName, initial)
       if (!r.success) return r.error ?? r.message ?? 'שגיאה ביצירת המשתמש'
       setAddOpen(false)
       refresh()
@@ -174,9 +143,7 @@ export function UsersTab() {
         actions={
           <button
             type="button"
-            onClick={() =>
-              hasParentPassword() ? setAddOpen(true) : setPending({ kind: 'setup-for-add' })
-            }
+            onClick={() => setAddOpen(true)}
             disabled={atCapacity}
             className="flex items-center gap-1.5 rounded-lg bg-learn/90 px-3 py-1.5 text-sm font-medium text-ink-950 transition-colors hover:bg-learn disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -208,18 +175,88 @@ export function UsersTab() {
 
       <AddUserModal
         open={addOpen}
+        requirePassword={false}
         onClose={() => setAddOpen(false)}
         onSubmit={handleAdd}
       />
 
-      <ParentPasswordModal
-        open={pending !== null}
-        title={prompt?.title}
-        description={prompt?.description}
-        submitLabel={prompt?.submitLabel}
-        onClose={() => setPending(null)}
-        onSubmit={handleAction}
-      />
+      {pending && prompt && (
+        <ConfirmDialog
+          title={prompt.title}
+          description={prompt.description}
+          confirmLabel={prompt.submitLabel}
+          danger={prompt.danger}
+          onConfirm={handleConfirm}
+          onCancel={() => setPending(null)}
+        />
+      )}
+    </div>
+  )
+}
+
+interface ConfirmProps {
+  title: string
+  description: string
+  confirmLabel: string
+  danger?: boolean
+  onConfirm: () => void
+  onCancel: () => void
+}
+
+function ConfirmDialog({ title, description, confirmLabel, danger, onConfirm, onCancel }: ConfirmProps) {
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if (e.key === 'Escape') onCancel()
+    }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
+  }, [onCancel])
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm"
+      onClick={onCancel}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        className="w-full max-w-sm overflow-hidden rounded-2xl border border-white/10 bg-surface shadow-panel"
+      >
+        <div className="flex items-center justify-between border-b border-white/8 px-5 py-4">
+          <span className="font-display text-base font-semibold text-text">{title}</span>
+          <button
+            type="button"
+            onClick={onCancel}
+            className="rounded-lg p-1 text-muted transition-colors hover:bg-white/5 hover:text-text"
+            aria-label="סגור"
+          >
+            <X size={18} />
+          </button>
+        </div>
+        <div className="space-y-4 p-5">
+          <p className="text-sm text-muted">{description}</p>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-white/5 hover:text-text"
+            >
+              ביטול
+            </button>
+            <button
+              type="button"
+              onClick={onConfirm}
+              className={cn(
+                'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+                danger
+                  ? 'bg-coral-400/90 text-ink-950 hover:bg-coral-400'
+                  : 'bg-learn/90 text-ink-950 hover:bg-learn',
+              )}
+            >
+              {confirmLabel}
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

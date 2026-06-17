@@ -52,14 +52,24 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 > Beta reports #5–#9 (nikud + short-landscape overflow on Word Journey) fixed &
 > deployed this session; Netlify retired (Cloudflare is the only host now).
 >
-> **NEXT (pick up here):** (1) **M12 Slice B** — promote the latent `parent`
-> role into the access model (gating reads role, not just the password hash) +
-> migration (auto-create a `parent` user from an existing `parentPassword` hash);
-> then **Slice C = M4** first-run wizard + `/parent-guide`. (2) ✅ **deploy parity
-> DONE** — Netlify retired 2026-06-17; Cloudflare is the sole host (`npm run
-> cf-deploy` fast path added). (3) **Leaderboard** family/local board (§ LB). (4) **M8** PWA install
-> button. (5) **M5/M13** (Worker backend seam — parent word/image submission).
-> Plus: `gh auth login` IS now wired in-session (issues #3/#4 already closed);
+> **NEXT (pick up here):** (1) ✅ **M12 Slice B + M4 — SHIPPED 2026-06-17.** Parent
+> is now a real **admin account** created in a **first-run wizard** (`FirstRunWizard`:
+> welcome → parent name+password → player profiles → finish + guide link); its
+> password IS the device parent credential (`createParentAccount` in `bridge/auth.ts`).
+> Access = **one-unlock parent mode** (`src/bridge/parentMode.ts` — role OR password
+> elevation with a 15-min timeout, survives navigation; `useParentPassword` delegates
+> to it; UsersTab destructive actions confirm-only, no password retype). Parent
+> **"פתיחת כל התכנים"** toggle (`gameUnlockOverride`) now opens Home tiles + the
+> expression tier read-time (`getAllGameUnlocks`/`getExpressionUnlock` overlay, no
+> stored-progress mutation). Kids see **only** the new unprotected **תצוגה** tab —
+> the parent tabs are HIDDEN (not shown padlocked), with one "הגדרות הורה" button
+> that opens the password prompt; the parent tabs appear only once elevated.
+> `categories` moved behind the gate. In-app **`/parent-guide`** (`ParentGuidePage`,
+> no nikud) linked from the wizard + כלי הורה. See `[[project_m12b_m4_parent_account]]`.
+> (2) ✅ **deploy parity DONE** — Netlify retired 2026-06-17; Cloudflare is the sole
+> host (`npm run cf-deploy` fast path added). (3) **Leaderboard** family/local board
+> (§ LB). (4) **M8** PWA install button. (5) **M5/M13** (Worker backend seam — parent
+> word/image submission; `manager` role still reserved for these). Plus:
 > milestone-cert WJ bug (needs cert-recalibration decision).
 > Waiting on the user: cert recalibration; install Hebrew TTS voice on the tablet
 > (M7); C2/C3 images.
@@ -525,7 +535,18 @@ question. Plan:
   works installed/fullscreen). (May be reframed once landscape two-pane lands —
   Memory's grid benefits from landscape width.)
 
-### M4 🟡 First-run parent onboarding wizard
+### M4 ✅ First-run parent onboarding wizard — SHIPPED 2026-06-17
+Done with M12 Slice B (one slice). `src/features/auth/FirstRunWizard.tsx` replaces
+the bare create-first-profile form on an empty DB: welcome → **create the parent/
+admin account** (name + password = the device parent credential) → **create player
+profile(s)** (up to 3, parent + 3 = the 4-user cap) → finish (pointer to the parent
+area + link to the in-app guide). Adult-facing, **no nikud** (`data-nikud-skip`),
+reuses the `.auth-*` styles. Guide = in-app **`/parent-guide`** route
+(`ParentGuidePage`, offline, app-styled), opened as an overlay from the wizard
+finish and as a route from כלי הורה. See `[[project_m12b_m4_parent_account]]`.
+
+<details><summary>Original plan</summary>
+
 Replace the bare create-first-profile form with a friendly first-run flow
 (Hebrew, **no nikud** — adult-facing; beautiful, not wordy): welcome / what the
 app is → **create the parent/admin account (M12)** → create player profile(s) →
@@ -535,6 +556,25 @@ route** — offline-capable, app-styled, linked from the wizard and parent area.
 **Now coupled to M12** — the wizard is where the parent account is born; build
 M12's model first (or together) so the wizard creates a real account, not just
 a device password.
+
+</details>
+
+### M12 ✅ Slice B SHIPPED 2026-06-17 — Parent/Admin account is the access model
+**Slice A** (QA panel) shipped 2026-06-16; **Slice B + M4** shipped together
+2026-06-17. The latent `parent` role is now the real access model: one-unlock
+parent mode (`src/bridge/parentMode.ts` — role OR password elevation, 15-min
+timeout, survives navigation, drops on logout), the parent account is born in the
+M4 wizard (`createParentAccount` — its password IS the `parentPassword`), kids get
+only the unprotected תצוגה tab, and the `gameUnlockOverride` toggle is the
+parent-facing "פתיחת כל התכנים" (opens Home tiles + expression tier read-time).
+**Migration:** existing devices keep working via the password elevation path — we
+do NOT fabricate a named parent on them (no name source without the wizard); the
+device `parentPassword` stays the credential. **Decisions resolved with the user:**
+elevation (not profile-switch); QA panel ships public; **`manager` deferred to
+M5/M13**; create the parent account now but let the parent choose name+password
+(the wizard). See `[[project_m12b_m4_parent_account]]`.
+
+<details><summary>Original design (2026-06-14)</summary>
 
 ### M12 🟢 Parent/Admin account — own the protected "backend" area (design 2026-06-14)
 **Goal (user, 2026-06-14):** promote the protected/parent area from a bare
@@ -604,6 +644,8 @@ with M5. **Cost:** a medium slice — touches auth gating, the wizard (M4), the
 settings entry point, and a migration; no backend. Sequence: design M12 → build
 with M4 → the QA panel can land first as a thin standalone if you want the
 testing unlock sooner.
+
+</details>
 
 ### M5 🟢 Custom words without a parent API key (decision: server-assisted + share-back)
 > ⚠️ **PLATFORM UPDATE (2026-06-17): host is now Cloudflare Workers (Netlify retired).**
@@ -844,10 +886,9 @@ on-reload timing issue, not a product regression. Worth a separate look.
 
 ### Suggested order
 **MOBILE1 first — it's what the live play-test surfaced:** M1✅ → M6✅ → M9✅ →
-M10✅ → M11✅ → M2✅ → M3✅ done. **M12 Slice A (QA panel)✅** done. Remaining:
-**M12 Slice B + M4** (role-as-access + migration, then the onboarding wizard the
-parent/admin account is born in) → M7 (tablet TTS — likely just the device
-Hebrew-voice install)
+M10✅ → M11✅ → M2✅ → M3✅ done. **M12 Slice A (QA panel)✅**, **M12 Slice B + M4
+(parent account + wizard + one-unlock + expose-all + kid settings + guide)✅** done.
+Remaining: M7 (tablet TTS — likely just the device Hebrew-voice install)
 → M8 (PWA install button) → M5 (needs the Netlify function + project key, and
 its `manager` role overlaps M12). Then the milestone-cert bug (clear fix, but
 needs the recalibration decision first) → E2E backfill for the mic/WJ paths

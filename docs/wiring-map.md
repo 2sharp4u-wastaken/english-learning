@@ -88,23 +88,37 @@ bridge/auth.ts = standalone owner (no window.authService):
   logout() = clear session + dispatch 'auth-changed' (NO page reload)
 ```
 
-## Parent (Admin) Gate — per-device password (Tier 2, 2026-06-10)
+## Parent (Admin) Gate — one-unlock parent mode (M12 Slice B, 2026-06-17)
 
 ```
-Protected surface (settings tab / reset / UsersTab action)
-  └─ <ParentPasswordModal> opens → mode decided per open:
-      ├─ hasParentPassword() false → CREATE wizard (enter twice, min 4)
-      │     └─ setParentPassword(pw) [hash → UNPREFIXED 'parentPassword' key]
-      │           └─ flows into the SAME onSubmit → pending action proceeds
-      └─ true → verify prompt → verifyAdminPassword(pw) checks stored hash
-            └─ "שכחתי סיסמה" → resetParentPassword() (wipes ONLY that key)
-                  └─ modal flips to create mode in place
+src/bridge/parentMode.ts = the single elevation source (module-level, like onAuthChange)
+  isParentElevated() = isCurrentUserAdmin() (role parent/manager — TIER2)
+                       OR elevateParent(pw) succeeded within a 15-min timeout
+  └─ subscribeParentMode(cb) fires on elevate/lock + 'auth-changed'
+       (any password elevation is dropped when the session changes)
+useParentPassword() = thin React wrapper over the store (keeps {unlocked,unlock,lock})
 
-No hard-coded admin password exists; verifyAdminPassword() = false until set up.
-isCurrentUserAdmin() (role parent/manager) auto-unlocks tabs WITHOUT the modal →
-any surface collecting the password inline (AddUserModal) must guard the
-not-set-up state: UsersTab "הוסף משתמש" routes through a 'setup-for-add'
-pending kind first. Client-only gate = devtools-bypassable by design (Tier 3 = backend).
+SettingsPage:
+  visibleTabs = unlocked ? TABS : TABS.filter(!protected)   ← kids see ONLY תצוגה
+  not unlocked → one "הגדרות הורה" button (open-parent-settings) → <ParentPasswordModal>
+       └─ elevateParent(pw) → unlocked flips true (module store) → ALL surfaces open,
+          STAY open across navigation (the per-component useState re-locked before)
+  session re-locks while a protected tab active → snaps back to display (render guard)
+
+<ParentPasswordModal> create/verify/"שכחתי סיסמה" flow unchanged (TIER2): create mode
+  when hasParentPassword() false → setParentPassword(pw) [hash → UNPREFIXED key].
+
+Parent account (M4 wizard): createParentAccount(id,name,pw) → role:'parent' user +
+  parentPassword = same hash (one credential). UsersTab destructive actions, once
+  elevated, use unguarded admin* mutators + a plain confirm (no password re-type);
+  AddUserModal requirePassword={false}.
+
+Expose-all: settings.gameUnlockOverride → getAllGameUnlocks()/getGameUnlockState()/
+  getExpressionUnlock() report everything unlocked READ-TIME (no stored-progress
+  mutation; toggle off restores gates).
+
+Client-only gate = devtools-bypassable by design (Tier 3 = backend). manager role
+reserved for M5/M13. See [[project_m12b_m4_parent_account]].
 ```
 
 ## Beta Bug/Feedback Report (2026-06-16) — first backend seam

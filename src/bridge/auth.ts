@@ -112,6 +112,49 @@ export function createFirstUser(id: string, name: string, initial: string): Admi
   return { success: true, message: `User ${name} created successfully` }
 }
 
+/**
+ * Create the device's parent/admin account (M12 Slice B + M4 onboarding wizard).
+ *
+ * Unlike kid profiles, the parent picks a password up front in the wizard, and
+ * that password IS the device parent credential — one secret, no second prompt:
+ * we store the user with role `parent` AND mirror the same hash into the
+ * `parentPassword` key that `verifyAdminPassword`/parent-mode elevation read.
+ * So the parent can either log into this account (auto-elevated by role) or, on
+ * a kid's session, type the same password to elevate (backlog §M12).
+ *
+ * Refuses if a parent account already exists (the wizard only runs on a fresh
+ * device). Existing devices that have a `parentPassword` hash but no parent user
+ * are NOT migrated here — they keep working via password elevation; we never
+ * fabricate a name for them.
+ */
+export function createParentAccount(id: string, name: string, password: string): AdminResult {
+  if (!/^[a-zA-Z0-9_]+$/.test(id)) {
+    return { success: false, error: 'Invalid user id' }
+  }
+  const users = getUsers() ?? {}
+  if (users[id]) {
+    return { success: false, error: 'User already exists' }
+  }
+  if (Object.values(users).some((u) => u.role === 'parent' || u.role === 'manager')) {
+    return { success: false, error: 'A parent account already exists' }
+  }
+  const hashed = hashPassword(password)
+  users[id] = {
+    id,
+    name,
+    displayName: name,
+    initial: name.charAt(0).toUpperCase(),
+    password: hashed,
+    created: new Date().toISOString(),
+    lastLogin: null,
+    role: 'parent',
+  }
+  saveUsers(users)
+  // One credential: the parent password equals the account password.
+  localStorage.setItem(PARENT_PASSWORD_KEY, hashed)
+  return { success: true, message: `Parent account ${name} created successfully` }
+}
+
 // ─── Password ─────────────────────────────────────────────────────────────────
 
 /** Simple obfuscation — not cryptographically secure, sufficient for local parental controls. */
@@ -312,17 +355,21 @@ export function isCurrentUserAdmin(): boolean {
   return user?.role === 'parent' || user?.role === 'manager'
 }
 
-/** Create a new user account. Requires the admin password. */
-export function addUser(
+// The admin mutators below come in two flavours: a password-gated public
+// function (kept for back-compat + the no-password-yet AddUser path + tests) and
+// an unguarded `admin*` variant for callers that are already parent-elevated
+// (M12 Slice B — once the parent area is unlocked, destructive actions confirm
+// but don't re-type the password). Authorization for the unguarded variants is
+// the caller's responsibility (`isParentElevated()` in the UsersTab). This is a
+// child-gate, not a security boundary (devtools-bypassable regardless).
+
+/** Create a new user account (unguarded — caller must be parent-elevated). */
+export function adminAddUser(
   id: string,
   name: string,
   displayName: string,
   initial: string,
-  adminPassword: string,
 ): AdminResult {
-  if (!verifyAdminPassword(adminPassword)) {
-    return { success: false, error: 'Incorrect admin password' }
-  }
   const users = getUsers() ?? {}
   if (users[id]) {
     return { success: false, error: 'User already exists' }
@@ -340,11 +387,22 @@ export function addUser(
   return { success: true, message: `User ${displayName} created successfully` }
 }
 
-/** Reset a user's password (they set a new one on next login). Requires admin password. */
-export function resetUserPassword(userId: string, adminPassword: string): AdminResult {
+/** Create a new user account. Requires the admin password. */
+export function addUser(
+  id: string,
+  name: string,
+  displayName: string,
+  initial: string,
+  adminPassword: string,
+): AdminResult {
   if (!verifyAdminPassword(adminPassword)) {
     return { success: false, error: 'Incorrect admin password' }
   }
+  return adminAddUser(id, name, displayName, initial)
+}
+
+/** Reset a user's password (unguarded — caller must be parent-elevated). */
+export function adminResetUserPassword(userId: string): AdminResult {
   const users = getUsers()
   if (!users || !users[userId]) {
     return { success: false, error: 'User not found' }
@@ -357,11 +415,16 @@ export function resetUserPassword(userId: string, adminPassword: string): AdminR
   }
 }
 
-/** Delete a user and their localStorage data. Requires admin password. */
-export function deleteUser(userId: string, adminPassword: string): AdminResult {
+/** Reset a user's password (they set a new one on next login). Requires admin password. */
+export function resetUserPassword(userId: string, adminPassword: string): AdminResult {
   if (!verifyAdminPassword(adminPassword)) {
-    return { success: false, message: 'Incorrect admin password' }
+    return { success: false, error: 'Incorrect admin password' }
   }
+  return adminResetUserPassword(userId)
+}
+
+/** Delete a user and their localStorage data (unguarded — caller must be parent-elevated). */
+export function adminDeleteUser(userId: string): AdminResult {
   const users = getUsers()
   if (!users || !users[userId]) {
     return { success: false, message: 'User not found' }
@@ -378,6 +441,14 @@ export function deleteUser(userId: string, adminPassword: string): AdminResult {
   gameTypes.forEach((game) => localStorage.removeItem(`scoreHistory_${userId}_${game}`))
 
   return { success: true, message: 'User deleted successfully' }
+}
+
+/** Delete a user and their localStorage data. Requires admin password. */
+export function deleteUser(userId: string, adminPassword: string): AdminResult {
+  if (!verifyAdminPassword(adminPassword)) {
+    return { success: false, message: 'Incorrect admin password' }
+  }
+  return adminDeleteUser(userId)
 }
 
 /**

@@ -14,29 +14,6 @@ export function AdvancedTab() {
 
   return (
     <div className="space-y-4">
-      <SectionCard title="תצוגה">
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Toggle
-            label="ניקוד עברי"
-            description="הצג סימני ניקוד על מילים בעברית"
-            checked={settings.showNikud !== false}
-            onChange={(v) => updateSettings({ showNikud: v })}
-          />
-          <Toggle
-            label="אותיות קטנות באנגלית"
-            description="הצג מילים באנגלית באותיות קטנות כברירת מחדל"
-            checked={settings.lowercaseMode === true}
-            onChange={(v) => updateSettings({ lowercaseMode: v })}
-          />
-          <Toggle
-            label="קונפטי על תשובה נכונה"
-            description="אנימציית חגיגה כאשר ילד עונה נכון"
-            checked={settings.showConfetti !== false}
-            onChange={(v) => updateSettings({ showConfetti: v })}
-          />
-        </div>
-      </SectionCard>
-
       <SectionCard title="התנהגות יציאה ממשחק">
         <RadioCards
           columns={2}
@@ -52,8 +29,8 @@ export function AdvancedTab() {
       >
         <div className="grid gap-2 sm:grid-cols-2">
           <Toggle
-            label="עקיפת נעילות משחקים"
-            description="אפשר לילד לגשת לכל המשחקים ללא תלות ברמות נעילה"
+            label="פתיחת כל התכנים"
+            description="פתיחת כל המשחקים והביטויים מיד, ללא תלות בהתקדמות. כיבוי מחזיר את הנעילות הרגילות."
             checked={settings.gameUnlockOverride === true}
             onChange={(v) => updateSettings({ gameUnlockOverride: v })}
           />

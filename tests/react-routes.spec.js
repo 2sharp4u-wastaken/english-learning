@@ -17,9 +17,9 @@ function stripNikud(s) {
   return (s || '').replace(/[֑-ׇ]/g, '');
 }
 
-async function seedUser(page, { progressPatch = {} } = {}) {
+async function seedUser(page, { progressPatch = {}, role } = {}) {
   await page.goto('/');
-  await page.evaluate(({ userId, prefix, patch }) => {
+  await page.evaluate(({ userId, prefix, patch, role }) => {
     // auth.js stores users at the unprefixed 'users' key.
     localStorage.setItem('users', JSON.stringify({
       [userId]: {
@@ -30,6 +30,7 @@ async function seedUser(page, { progressPatch = {} } = {}) {
         password: null,
         created: new Date().toISOString(),
         lastLogin: null,
+        ...(role ? { role } : {}),
       },
     }));
     localStorage.setItem('currentUser', userId);
@@ -45,7 +46,7 @@ async function seedUser(page, { progressPatch = {} } = {}) {
     const key = `${prefix}userProgress_${userId}`;
     const existing = JSON.parse(localStorage.getItem(key) || '{}');
     localStorage.setItem(key, JSON.stringify({ version: 4, ...existing, ...patch }));
-  }, { userId: TEST_USER_ID, prefix: V2_PREFIX, patch: progressPatch });
+  }, { userId: TEST_USER_ID, prefix: V2_PREFIX, patch: progressPatch, role });
   await page.reload();
   await page.waitForTimeout(2500);
 }
@@ -83,7 +84,13 @@ function filterCritical(errors) {
     // Transient `fetch` failures hitting the dev server under parallel test
     // load (phonetic index in particular) — not a product bug.
     !e.text.includes('[PHONETICS] Failed to load') &&
-    !(e.text.includes('TypeError: Failed to fetch') && e.text.includes('phonetic'))
+    !(e.text.includes('TypeError: Failed to fetch') && e.text.includes('phonetic')) &&
+    // Boot-time Dicta-Nakdan CORS: enrichVocabularyBank fetches nikud for any
+    // vocab translation missing from the static data/nikud-map.json. The runtime
+    // is Python-free (the Dicta proxy is maintainer-only), so this preflight is
+    // blocked in the browser — a content-completeness gap, not a code bug, and
+    // pre-existing on baseline (documented in docs/backlog.md).
+    !e.text.includes('nakdan-u1-0.loadbalancer.dicta.org.il')
   );
 }
 
@@ -446,26 +453,39 @@ test.describe('Slice 1.5: Stats', () => {
 // ─── Slice 1.6: Settings ────────────────────────────────────────────────────
 
 test.describe('Slice 1.6: Settings', () => {
-  test('settings renders tab rail with all 5 tabs', async ({ page }) => {
+  test('kid session sees only the display tab, not a wall of locked tabs (M12 Slice B)', async ({ page }) => {
     const errors = captureErrors(page);
-    await seedUser(page);
+    await seedUser(page); // plain kid, no role, no parent password
     await gotoHash(page, '/settings');
 
     // Wait for the tab rail to mount
-    await expect(page.locator('[data-tab-id="categories"]').first()).toBeAttached({ timeout: 5000 });
+    await expect(page.locator('[data-tab-id="display"]').first()).toBeAttached({ timeout: 5000 });
 
-    for (const id of ['categories', 'game', 'advanced', 'users', 'advanced-tools']) {
-      const tabs = await page.locator(`[data-tab-id="${id}"]`).count();
-      expect(tabs, `Missing settings tab: ${id}`).toBeGreaterThan(0);
+    // Only the unprotected display tab is present — the parent tabs are NOT
+    // rendered for a kid (no padlock wall). A single "parent settings" entry
+    // point opens the password prompt.
+    for (const id of ['categories', 'game', 'advanced', 'expressions', 'users', 'advanced-tools']) {
+      await expect(page.locator(`[data-tab-id="${id}"]`)).toHaveCount(0);
     }
+    await expect(page.locator('[data-testid="open-parent-settings"]').first()).toBeVisible();
 
-    // Categories is the default active tab — its content should render.
-    // Substring chosen to survive legacy nikud-script spelling normalization
-    // (the script replaces some matres lectionis with vowel marks).
-    await expect.poll(() => hasText(page, 'קטגוריות אוצר'), { timeout: 5000 }).toBe(true);
+    // Display content renders without any password.
+    await expect.poll(() => hasText(page, 'העדפות תצוגה'), { timeout: 5000 }).toBe(true);
 
     const critical = filterCritical(errors);
     expect(critical, JSON.stringify(critical, null, 2)).toHaveLength(0);
+  });
+
+  test('parent-role session sees the full tab rail (no unlock prompt)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedUser(page, { role: 'parent' });
+    await gotoHash(page, '/settings');
+
+    for (const id of ['display', 'categories', 'game', 'advanced', 'expressions', 'users', 'advanced-tools']) {
+      await expect(page.locator(`[data-tab-id="${id}"]`).first()).toBeAttached({ timeout: 5000 });
+    }
+    // No "parent settings" unlock prompt — already elevated by role.
+    await expect(page.locator('[data-testid="open-parent-settings"]')).toHaveCount(0);
   });
 
   test('protected tab opens password modal and unlocks on correct password', async ({ page }) => {
@@ -474,8 +494,8 @@ test.describe('Slice 1.6: Settings', () => {
     await seedParentPassword(page);
     await gotoHash(page, '/settings');
 
-    // Click the visible "game" tab (mobile pill is hidden at desktop viewport)
-    await page.locator('[data-tab-id="game"]:visible').first().click();
+    // A kid sees a single "parent settings" entry point, not the locked tabs.
+    await page.locator('[data-testid="open-parent-settings"]').click();
 
     // Password modal should appear in verify mode (no confirm input)
     await expect(page.locator('#parent-password')).toBeVisible();
@@ -485,8 +505,38 @@ test.describe('Slice 1.6: Settings', () => {
     await page.locator('#parent-password').fill(PARENT_PASSWORD);
     await page.locator('#parent-password').press('Enter');
 
-    // Modal should close and Game tab content should render
+    // Modal closes, the full rail appears → the Game tab is now reachable.
     await expect(page.locator('#parent-password')).not.toBeVisible();
+    await page.locator('[data-tab-id="game"]:visible').first().click();
+    await expect.poll(() => hasText(page, 'מכניקת'), { timeout: 5000 }).toBe(true);
+  });
+
+  test('one unlock opens a second protected tab without re-prompting (M12 Slice B)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedUser(page);
+    await seedParentPassword(page);
+    await gotoHash(page, '/settings');
+
+    // Unlock once via the parent-settings entry point.
+    await page.locator('[data-testid="open-parent-settings"]').click();
+    await page.locator('#parent-password').fill(PARENT_PASSWORD);
+    await page.locator('#parent-password').press('Enter');
+    await expect(page.locator('#parent-password')).not.toBeVisible();
+
+    // A different protected tab opens immediately — NO second password prompt.
+    await page.locator('[data-tab-id="advanced"]:visible').first().click();
+    await expect(page.locator('#parent-password')).toHaveCount(0);
+    await expect.poll(() => hasText(page, 'פתיחת כל התכנים'), { timeout: 5000 }).toBe(true);
+  });
+
+  test('parent-role session auto-unlocks protected tabs (no password)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedUser(page, { role: 'parent' });
+    await gotoHash(page, '/settings');
+
+    // No parentPassword seeded, no modal, no unlock prompt — role elevates.
+    await page.locator('[data-tab-id="game"]:visible').first().click();
+    await expect(page.locator('#parent-password')).toHaveCount(0);
     await expect.poll(() => hasText(page, 'מכניקת'), { timeout: 5000 }).toBe(true);
   });
 
@@ -495,7 +545,7 @@ test.describe('Slice 1.6: Settings', () => {
     await seedUser(page);
     await gotoHash(page, '/settings');
 
-    await page.locator('[data-tab-id="game"]:visible').first().click();
+    await page.locator('[data-testid="open-parent-settings"]').click();
 
     // Create mode: password + confirm inputs
     await expect(page.locator('#parent-password')).toBeVisible();
@@ -507,11 +557,12 @@ test.describe('Slice 1.6: Settings', () => {
     await page.locator('#parent-password-confirm').press('Enter');
     await expect(page.locator('#parent-password')).toBeVisible();
 
-    // Matching entries store the hash and unlock the pending tab
+    // Matching entries store the hash and unlock — the full rail appears.
     await page.locator('#parent-password').fill('new-pass-1');
     await page.locator('#parent-password-confirm').fill('new-pass-1');
     await page.locator('#parent-password-confirm').press('Enter');
     await expect(page.locator('#parent-password')).not.toBeVisible();
+    await page.locator('[data-tab-id="game"]:visible').first().click();
     await expect.poll(() => hasText(page, 'מכניקת'), { timeout: 5000 }).toBe(true);
 
     // Stored hash matches the bridge scheme
@@ -520,8 +571,11 @@ test.describe('Slice 1.6: Settings', () => {
   });
 
   test('changing a setting persists to both legacy localStorage keys', async ({ page }) => {
-    await seedUser(page);
+    // Categories is parent-protected (M12 Slice B); a parent-role session
+    // auto-elevates, so we can open the categories tab without a password.
+    await seedUser(page, { role: 'parent' });
     await gotoHash(page, '/settings');
+    await page.locator('[data-tab-id="categories"]:visible').first().click();
 
     // Wait for the weather category button (nikud-stripped match) and click it.
     // 'weather' is NOT in DEFAULT_SETTINGS — first click adds it.
@@ -589,11 +643,14 @@ test.describe('Slice 1.6: Settings', () => {
     await seedUser(page);
     await seedParentPassword(page);
     await gotoHash(page, '/settings');
-    await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
+    // Kids see only the "parent settings" entry point; unlock, then the full
+    // rail (incl. advanced-tools) appears.
+    await page.locator('[data-testid="open-parent-settings"]').click();
     await expect(page.locator('#parent-password')).toBeVisible();
     await page.locator('#parent-password').fill(PARENT_PASSWORD);
     await page.locator('#parent-password').press('Enter');
     await expect(page.locator('#parent-password')).not.toBeVisible();
+    await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
   }
 
   test('advanced-tools: both tools render natively with no settings.html escape hatch', async ({ page }) => {
@@ -3384,12 +3441,12 @@ test.describe('Integration (known issues)', () => {
     expect(hasLegacyGlobal).toBe(false);
   });
 
-  // Slice 4.4.b2 + INFRA1 (2026-06-10): the bridge no longer seeds default users
-  // (a published deploy must start with an EMPTY user database). A truly fresh
-  // device shows the first-run create-profile form, which flows into the normal
-  // first-login password setup. Exercises createFirstUser + bridge/auth.login +
-  // the AuthGate flip end-to-end.
-  test('React first-run flow: empty DB → create profile + set password → app renders', async ({ page }) => {
+  // M4 + M12 Slice B (2026-06-17): a fresh device runs the first-run WIZARD —
+  // create the parent/admin account (name + password) → create player profile(s)
+  // → finish → the normal selection grid. The parent password IS the account
+  // credential. Exercises createParentAccount + adminAddUser + bridge/auth.login
+  // + the AuthGate flip end-to-end.
+  test('React first-run wizard: empty DB → create parent + kid → login → app renders', async ({ page }) => {
     await page.goto('/');
     await page.evaluate(() => {
       // Truly fresh device: no users, no session.
@@ -3397,24 +3454,48 @@ test.describe('Integration (known issues)', () => {
     });
     await page.reload();
 
-    // No seeded users: first-run screen, zero user cards.
-    await expect(page.locator('[data-testid="login-modal"]')).toBeVisible();
-    await expect(page.locator('[data-testid="first-run-screen"]')).toBeVisible();
+    // No seeded users: the wizard welcome, zero user cards.
+    await expect(page.locator('[data-testid="first-run-wizard"]')).toBeVisible();
+    await expect(page.locator('[data-testid="wizard-welcome"]')).toBeVisible();
     await expect(page.locator('[data-testid="user-select-card"]')).toHaveCount(0);
+    await page.locator('[data-testid="wizard-start"]').click();
 
-    // Create the first profile → flows straight into password setup.
-    await page.locator('#first-user-id').fill('dana');
-    await page.locator('#first-user-name').fill('דנה');
-    await page.locator('[data-testid="create-first-user"]').click();
+    // Parent step: name + password + confirm.
+    await expect(page.locator('[data-testid="wizard-parent"]')).toBeVisible();
+    await page.locator('#wiz-parent-name').fill('אבא');
+    await page.locator('#wiz-parent-pw').fill('parent-pass');
+    await page.locator('#wiz-parent-pw2').fill('parent-pass');
+    await page.locator('[data-testid="wizard-create-parent"]').click();
+
+    // Kids step: one player profile.
+    await expect(page.locator('[data-testid="wizard-kids"]')).toBeVisible();
+    await page.locator('[data-testid="wizard-kid-input"]').first().fill('דנה');
+    await page.locator('[data-testid="wizard-create-kids"]').click();
+
+    // Done → back to the selection grid (parent + kid cards, parent badge shown).
+    await expect(page.locator('[data-testid="wizard-done"]')).toBeVisible();
+    await page.locator('[data-testid="wizard-finish"]').click();
+    await expect(page.locator('[data-testid="user-selection-screen"]')).toBeVisible();
+    const cards = page.locator('[data-testid="user-select-card"]');
+    expect(await cards.count()).toBe(2);
+    await expect(page.locator('[data-testid="user-role-badge"]')).toHaveCount(1);
+
+    // Verify the device parent password equals the wizard password.
+    const parentOk = await page.evaluate(() => {
+      const SALT = 'englishlearning2024';
+      return localStorage.getItem('parentPassword') === btoa(SALT + 'parent-pass' + SALT);
+    });
+    expect(parentOk).toBe(true);
+
+    // Log in as the kid (sets the kid password on first login) → app renders.
+    const kidCard = page.locator('[data-testid="user-select-card"]', { hasText: 'דנה' });
+    await kidCard.click();
     await expect(page.locator('[data-testid="password-entry-screen"]')).toBeVisible();
-
-    // First login adopts the entered password.
-    await page.locator('#password-input').fill('test1234');
+    await page.locator('#password-input').fill('kid1234');
     await page.locator('[data-testid="login-submit"]').click();
 
-    // AuthGate flips to the app.
     await expect(page.locator('[data-testid="home-hero"]')).toBeVisible();
-    await expect(page.locator('[data-testid="login-modal"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="first-run-wizard"]')).toHaveCount(0);
   });
 
   // The classic select-user → password flow, against an existing (seeded) user.
@@ -3427,9 +3508,9 @@ test.describe('Integration (known issues)', () => {
     });
     await page.reload();
 
-    // Login screen shows the existing user's card (not the first-run form).
+    // Login screen shows the existing user's card (not the first-run wizard).
     await expect(page.locator('[data-testid="login-modal"]')).toBeVisible();
-    await expect(page.locator('[data-testid="first-run-screen"]')).toHaveCount(0);
+    await expect(page.locator('[data-testid="first-run-wizard"]')).toHaveCount(0);
     const cards = page.locator('[data-testid="user-select-card"]');
     expect(await cards.count()).toBeGreaterThan(0);
 

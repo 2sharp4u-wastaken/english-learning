@@ -2,6 +2,7 @@ import type { GameDefinition, GameUnlockEntry, ContinueTarget } from './types'
 import { getApp, getGameManager as getEngineGameManager } from '../engine/instances'
 import { gameRegistry } from '../engine/gameRegistry'
 import { getUserProgress } from './progress'
+import { getSettings } from './settings'
 
 // ─── Legacy global access ────────────────────────────────────────────────────
 
@@ -56,19 +57,41 @@ export function getGameCatalog(): GameDefinition[] {
 }
 
 /**
+ * Whether the parent has flipped on "expose all content" (`gameUnlockOverride`).
+ * When true, every game tile reads as unlocked (and the expression tier opens —
+ * see `getExpressionUnlock`). It already widened in-game word pools; M12 Slice B
+ * makes it also open the Home tiles + expression tier so a parent can show any
+ * content. Read-time only — the stored `gameUnlocks` map is never mutated, so
+ * toggling it off restores the real progress gates.
+ */
+export function isContentFullyExposed(): boolean {
+  return getSettings().gameUnlockOverride === true
+}
+
+/**
  * Get the unlock state for a specific game.
  */
 export function getGameUnlockState(gameId: string): GameUnlockEntry | null {
+  if (isContentFullyExposed()) {
+    return { unlocked: true, unlockedDate: null }
+  }
   const progress = getUserProgress()
   return progress?.gameUnlocks?.[gameId] ?? null
 }
 
 /**
- * Get all game unlock states.
+ * Get all game unlock states. When "expose all content" is on, every known entry
+ * is reported unlocked (read-time overlay — see `isContentFullyExposed`).
  */
 export function getAllGameUnlocks(): Record<string, GameUnlockEntry> {
   const progress = getUserProgress()
-  return progress?.gameUnlocks ?? {}
+  const unlocks = progress?.gameUnlocks ?? {}
+  if (!isContentFullyExposed()) return unlocks
+  const exposed: Record<string, GameUnlockEntry> = {}
+  for (const [id, entry] of Object.entries(unlocks)) {
+    exposed[id] = { ...entry, unlocked: true }
+  }
+  return exposed
 }
 
 // Non-mic recognition/recall review games we rotate through for Due-word

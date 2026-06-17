@@ -1,8 +1,9 @@
 import { useState } from 'react'
-import { GraduationCap, ArrowRight, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react'
-import { createFirstUser, getAllUsers, getUser, needsPasswordSetup, login } from '@/bridge/auth'
+import { GraduationCap, ArrowRight, Eye, EyeOff, LogIn, ShieldCheck } from 'lucide-react'
+import { getAllUsers, getUser, needsPasswordSetup, login } from '@/bridge/auth'
 import { useNikud } from '@/bridge/nikud'
 import type { User } from '@/bridge/types'
+import { FirstRunWizard } from './FirstRunWizard'
 import './login.css'
 
 /**
@@ -17,11 +18,11 @@ import './login.css'
  * On successful `login()` the bridge dispatches `auth-changed`; the parent
  * `AuthGate`'s `useAuthSession` flips to the app and this component unmounts.
  *
- * First-run (INFRA1, 2026-06-10): the bridge no longer seeds default users, so a
- * fresh device/deploy starts with an empty database. When there are zero users
- * this page shows a "create first profile" form (`createFirstUser` — the one
- * non-admin-gated creation path; later users come from Settings → Users). The
- * new profile then flows into the normal first-login password setup.
+ * First-run (INFRA1 → M4, 2026-06-17): the bridge no longer seeds default users,
+ * so a fresh device/deploy starts with an empty database. When there are zero
+ * users this page shows the `FirstRunWizard` (create the parent/admin account +
+ * player profiles). On completion it refreshes the user list and falls through to
+ * the normal selection grid; kids set their password on first login as usual.
  */
 export function LoginPage() {
   const nk = useNikud()
@@ -30,10 +31,6 @@ export function LoginPage() {
   const [password, setPassword] = useState('')
   const [showPassword, setShowPassword] = useState(false)
   const [error, setError] = useState('')
-
-  // First-run create-profile form (only rendered when the user DB is empty).
-  const [newId, setNewId] = useState('')
-  const [newName, setNewName] = useState('')
 
   const selectedUser = selectedUserId ? getUser(selectedUserId) : null
   const isFirstTime = selectedUserId ? needsPasswordSetup(selectedUserId) : false
@@ -69,26 +66,10 @@ export function LoginPage() {
     // On success the AuthGate re-renders and unmounts this component.
   }
 
-  function handleCreateFirst(e: React.FormEvent) {
-    e.preventDefault()
-    const id = newId.trim()
-    const name = newName.trim()
-    if (!/^[a-zA-Z0-9_]+$/.test(id)) {
-      setError('שם המשתמש באנגלית בלבד: אותיות, מספרים וקו תחתון / English letters, numbers and underscore only')
-      return
-    }
-    if (!name) {
-      setError('נא להזין שם תצוגה / Please enter a display name')
-      return
-    }
-    const result = createFirstUser(id, name, id.charAt(0).toUpperCase())
-    if (!result.success) {
-      setError(result.error ?? 'שגיאה ביצירת הפרופיל / Could not create the profile')
-      return
-    }
-    setUsers(getAllUsers())
-    // Flow straight into the normal first-login password setup for the new profile.
-    selectUser(id)
+  // Fresh device: run the first-run wizard (parent account + player profiles).
+  // On completion we refresh the list and fall through to the selection grid.
+  if (users.length === 0) {
+    return <FirstRunWizard onComplete={() => setUsers(getAllUsers())} />
   }
 
   return (
@@ -100,53 +81,7 @@ export function LoginPage() {
           <p className="auth-subtitle">{nk('משחקים ללימוד אנגלית')}</p>
         </div>
 
-        {users.length === 0 && !selectedUserId ? (
-          <div className="auth-screen" data-testid="first-run-screen">
-            <h3>{nk('יצירת פרופיל ראשון')} / Create First Profile</h3>
-            <p className="password-hint">
-              {nk('אין עדיין פרופילים במכשיר הזה — ניצור פרופיל ראשון כדי להתחיל. אפשר להוסיף עוד פרופילים אחר כך מתוך ההגדרות.')}
-            </p>
-            <form className="login-form" onSubmit={handleCreateFirst} style={{ marginTop: 18 }}>
-              <div className="form-group">
-                <label htmlFor="first-user-id">{nk('שם משתמש (אנגלית)')} / Username</label>
-                <input
-                  id="first-user-id"
-                  type="text"
-                  className="password-input"
-                  dir="ltr"
-                  placeholder="e.g. dana"
-                  autoComplete="off"
-                  value={newId}
-                  onChange={(e) => setNewId(e.target.value)}
-                  autoFocus
-                  required
-                />
-              </div>
-              <div className="form-group">
-                <label htmlFor="first-user-name">{nk('שם תצוגה (עברית)')} / Display name</label>
-                <input
-                  id="first-user-name"
-                  type="text"
-                  className="password-input"
-                  placeholder={nk('למשל: דנה')}
-                  autoComplete="off"
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  required
-                />
-              </div>
-              {error && (
-                <div className="auth-error" data-testid="auth-error">
-                  {error}
-                </div>
-              )}
-              <button type="submit" className="auth-btn" data-testid="create-first-user">
-                <UserPlus size={18} aria-hidden />
-                <span>{nk('יצירת פרופיל')} / Create</span>
-              </button>
-            </form>
-          </div>
-        ) : !selectedUserId ? (
+        {!selectedUserId ? (
           <div className="auth-screen" data-testid="user-selection-screen">
             <h3>Select User / {nk('בחר משתמש')}</h3>
             <div className="user-selection-grid">
@@ -160,6 +95,11 @@ export function LoginPage() {
                 >
                   <div className="user-select-avatar">{user.initial}</div>
                   <span data-nikud-skip>{user.name}</span>
+                  {(user.role === 'parent' || user.role === 'manager') && (
+                    <span className="user-select-role" data-testid="user-role-badge">
+                      <ShieldCheck size={11} aria-hidden /> {nk('הורה')}
+                    </span>
+                  )}
                 </button>
               ))}
             </div>
