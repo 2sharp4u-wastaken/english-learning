@@ -111,7 +111,7 @@ export function AnswerGrid({
             onClick={() => onSelect(index)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             className={cn(
-              'group relative flex min-h-[3.5rem] items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-base font-semibold transition',
+              'group relative flex min-h-[3.5rem] min-w-0 items-center justify-center gap-2 rounded-2xl border px-4 py-3 text-base font-semibold transition',
               'border-white/10 bg-white/[0.04] text-white',
               'hover:border-[color:var(--blue-400)]/40 hover:bg-white/[0.08]',
               'focus-visible:border-[color:var(--blue-400)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--blue-400)]/40',
@@ -129,15 +129,19 @@ export function AnswerGrid({
             {option.label || option.sublabel ? (
               <span
                 className={cn(
-                  'flex min-w-0 flex-col items-center justify-center',
+                  'flex w-full min-w-0 flex-col items-center justify-center',
                   option.sublabel ? 'gap-0.5' : '',
                 )}
               >
-                {option.label ? <span className="truncate">{nk(option.label)}</span> : null}
+                {option.label ? (
+                  <span className="block w-full text-center leading-tight [overflow-wrap:anywhere]">
+                    {nk(option.label)}
+                  </span>
+                ) : null}
                 {option.sublabel ? (
                   <span
                     dir="rtl"
-                    className="truncate text-xs font-medium text-[color:var(--slate-300)]"
+                    className="block w-full text-center text-xs font-medium leading-tight text-[color:var(--slate-300)] [overflow-wrap:anywhere]"
                   >
                     {nk(option.sublabel)}
                   </span>

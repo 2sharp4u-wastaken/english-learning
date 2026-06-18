@@ -1,4 +1,6 @@
 import type { WJWord } from '@/bridge/word-journey'
+import { cn } from '@/lib/cn'
+import { emojiSizeClass } from '@/lib/emojiFit'
 
 /** Renders a word's real image when available, else its emoji (parity with the
  *  legacy renderPicture + the other React games' prompt pictures). */
@@ -18,9 +20,19 @@ export function WordJourneyPicture({
   if (effective) {
     return <img src={effective} alt="" className={className} />
   }
+  const picture = word.picture || '🔤'
   return (
-    <span className="text-6xl [@media(max-height:700px)]:text-4xl" role="img" aria-label={word.word}>
-      {word.picture || '🔤'}
+    <span
+      className={cn(
+        'inline-block max-w-full text-center leading-none [overflow-wrap:anywhere]',
+        // Long keycap "pictures" (number words) shrink to fit instead of
+        // overflowing the tile (beta #24).
+        emojiSizeClass(picture, 'text-6xl [@media(max-height:700px)]:text-4xl'),
+      )}
+      role="img"
+      aria-label={word.word}
+    >
+      {picture}
     </span>
   )
 }

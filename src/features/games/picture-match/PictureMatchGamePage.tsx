@@ -30,6 +30,8 @@ import {
 import { getSettings } from '@/bridge/settings'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import { useNikud } from '@/bridge/nikud'
+import { cn } from '@/lib/cn'
+import { emojiSizeClass } from '@/lib/emojiFit'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
 
@@ -68,9 +70,18 @@ function OptionPicture({
       />
     )
   }
+  const picture = option.picture || '🔤'
   return (
-    <span className="text-5xl" role="img" aria-label={option.word}>
-      {option.picture || '🔤'}
+    <span
+      className={cn(
+        'inline-block max-w-full text-center leading-none [overflow-wrap:anywhere]',
+        // Long keycap "pictures" (number words) shrink to fit the tile (beta #24).
+        emojiSizeClass(picture, 'text-5xl'),
+      )}
+      role="img"
+      aria-label={option.word}
+    >
+      {picture}
     </span>
   )
 }

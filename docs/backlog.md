@@ -261,6 +261,13 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
 - 🟢 **Dedicated coin SFX** — the coin stat-pill currently reuses the victory
   fanfare; synthesize a "cha-ching" or have the pill speak its value.
 - 🟢 **Reuse Reading's compact layout** for the Word Journey spell stage (consistency).
+- ✅ **Sneak peek on the WJ spell stage — SHIPPED 2026-06-18.** The Reading game's
+  flash-then-hide spell flow has a budgeted "הצצה" (sneak peek) re-flash button, but
+  the Word Journey **SpellStage** (same flow) was missing it. Added it mirroring
+  Reading exactly — same `sneakPeekEnabled`/`sneakPeekDuration`/`sneakPeekBudget`
+  settings (one parent control set for both games), `data-testid="wj-spell-peek"`,
+  enabled only once the word auto-hides, decrements the per-item budget. Verified by
+  driving WJ to the spell stage: (3)→(2) on tap, word re-flashes.
 - 🟢 **Memory sizing knobs** — `AREA_REM2`/`CHROME_REM`/per-level `columns` in
   `bridge/memory.ts` if cards feel off on any level.
 - ✅ **Per-device parent password ("Tier 2") — SHIPPED 2026-06-10.** The
@@ -542,28 +549,34 @@ question. Plan:
 The two-pane + chrome-hide work above is "complete across every *play* screen,"
 but a fresh device play-test on the deployed `ffa96f8` bundle surfaced gaps that
 work never covered. Issues #16/#19/#20/#21/#22.
-- 🔴 **M3-a — Finish/reward screen has no landscape layout (issue #22).** The
-  M3 two-pane work only touched the in-game `<main>`; `RewardModal` (the
-  end-of-session completion screen) was never adapted, so it overflows / needs
-  scrolling in short landscape. Give it the same short-landscape treatment
-  (compact chrome, two-column or fit-to-height). Shared modal → fixes every game
-  at once (per `feedback_reward_modal_invariants`).
-- 🔴 **M3-b — Landscape play screens still scroll; right pane scrolls, left not
-  centered (issues #20, #21).** Reports say the two-pane still requires scrolling
-  on-device and the layout reads unbalanced ("right side shouldn't need
-  scrolling, left side should be centered"). Re-verify the
-  `(orientation: landscape) and (max-height: 600px)` path on a real ~360px-tall
-  device — the local 680×320 checks may not match the device's actual chrome
-  height. Likely candidates: prompt pane content still taller than its half;
-  interaction pane not vertically centered.
-- 🟡 **M3-c — Portrait still needs scrolling; want modern auto-hide / auto-scroll
-  (issues #16, #19).** M3's chrome-hide was scoped to *short landscape* only.
-  In **portrait** on a small phone the bottom of the play area can still sit below
-  the fold, and the child doesn't know to scroll. Two asks: (1) auto-hide the top
-  bar (game name + progress) on scroll like a mobile browser address bar, freeing
-  height; (2) if scrolling is unavoidable, auto-scroll to reveal the next question
-  + footer on question change (we already reset scrollTop to 0 — this is the
-  opposite nudge). Decide which; (1) is the more systemic fix.
+- ✅ **M3-a — RewardModal short-landscape layout — SHIPPED 2026-06-18.** The
+  shared `RewardModal` now compacts in the SAME `(orientation: landscape) and
+  (max-height: 600px)` query (globals.css): smaller hero icon, notched headline,
+  two-up stats, row buttons. Its backdrop was also switched to `grid
+  place-items-center overflow-y-auto` so a tall dialog stays fully reachable
+  (scrolls from the top) instead of clipping its head — the safety net for any
+  short viewport. Stable class hooks (`reward-hero`/`reward-stats`/`reward-actions`)
+  added for the CSS. Verified via a 680×320 vocab playthrough: fits, no page
+  scroll. Shared modal → every game.
+- ✅ **M3-b — Landscape panes balanced + centered — SHIPPED 2026-06-18.** Added
+  `justify-content: center` to BOTH `.game-twopane` panes (was on the prompt only),
+  so the interaction pane is vertically centered to match the prompt — the
+  "left side should be centered" imbalance (#21). Verified at 680×300: both panes
+  centered, zero page/main scroll. The earlier prompt-card/interaction compaction
+  (beta #6–#9) already addresses the "still scrolls" half for the AnswerGrid +
+  letter-builder + say-word families; a real ~360px-tall device re-check is still
+  the honest follow-up if a specific game over-runs.
+- ✅ **M3-c — Portrait chrome auto-hide on scroll — SHIPPED 2026-06-18 (chose
+  option (1), the systemic fix).** `GameScreenShell` now collapses the decorative
+  chrome (the `game-chrome` wrapper around GameHero title + QuestionProgress) when
+  the child scrolls `<main>` down on a small phone — like a mobile browser address
+  bar — freeing ~60px for the question/answers; it slides back at the top.
+  Compact-only + fitViewport-only (desktop/tablet untouched). Guarded against two
+  failure modes: a 260ms post-toggle mute so the collapse-reflow doesn't flicker
+  it, and it only engages when overflow exceeds the chrome height +16px so hiding
+  never removes the scroll room needed to bring it back (no stuck-hidden state).
+  Resets on question change. Verified: chrome 86→26px, `<main>` 216→276px.
+  (Option (2), auto-scroll-to-next, intentionally NOT done — (1) is more systemic.)
 
 ### M4 ✅ First-run parent onboarding wizard — SHIPPED 2026-06-17
 Done with M12 Slice B (one slice). `src/features/auth/FirstRunWizard.tsx` replaces
@@ -913,38 +926,75 @@ A second device play-test of the live site filed GitHub issues #13–#22.
 The landscape/scroll reports (#16/#19/#20/#21/#22) are folded into **§7 M3 —
 REOPENED follow-ups** above. The rest are new, standalone:
 
-- 🟡 **M16 — Customization tab: redundant toggles + weak hierarchy (issue #13).**
-  In "המשחק שלי" (`project_player_customization`) "all three toggles on together
-  doesn't make sense," and "the top part selection is not prominent enough from
-  the available options." Make the mutually-exclusive choices read as a single
-  selection (radio/segmented, not three independent on-switches) and give the
-  primary selector clear visual priority over the secondary options. UX pass on
-  the customization tab; no engine change.
-- 🔴 **M17 — Scroll position carried between bottom-bar pages (issue #14).**
-  Navigating the bottom tab bar preserves the previous page's scroll offset
-  (scroll Settings to the bottom → switch to Home → land at Home's bottom).
-  Needs a route-change scroll-reset (scroll the page/app container to top on
-  navigation). App-shell level fix, applies to all tab pages.
-- 🔴 **M18 — ABC letter audio mispronounced (issue #15).** Some letters are
-  voiced wrong: "Rr" is read as "a r", "We" as "e e" — TTS is reading the
-  *displayed case-pair string* letter-by-letter instead of the letter name/sound.
-  NOT covered by M10 (say-it matching) or M11 (emoji strip). Fix at the ABC speak
-  boundary: speak the canonical single letter / its phoneme, never the "Aa"/"Rr"
-  display pair. (Audit the other letter-sound games for the same pattern.)
-- 🟢 **M19 — Word Journey "hear yourself" replay (issue #17).** User wants WJ's
-  say-word stage to offer the recording replay that Pronunciation has, without
-  auto-advancing. ⚠️ **Constrained by M1**: `useMicPlayback` no-ops on Android by
-  design (a parallel capture starves Android speech recognition), and the
-  reporter is on Android — so this is desktop-only unless M1's invariant is
-  revisited. On desktop WJ already uses the same hook as Pronunciation, so the
-  delta is wiring the replay button into `SayWordStage`. Confirm scope with the
-  user (desktop-only is the honest answer for the Android tester).
-- 🟡 **M20 — Bug-report widget copy (issue #18).** The report widget
-  (`project_bug_report_feature`) text should invite **bugs, feature requests, and
-  upgrade ideas** (not just "bugs"), and make clear the **screenshot is optional**
-  with better guiding text. Hebrew, `data-nikud-skip` subtree. Copy-only change in
-  `src/features/feedback/BugReportWidget.tsx`; re-run `build-nikud-map.py` only if
-  new Hebrew chrome is added.
+- ✅ **M16 — Customization tab hierarchy + grouped toggles — SHIPPED 2026-06-18.**
+  In "המשחק שלי" (`DisplayTab.tsx`): the **theme picker** (the signature "top
+  selection") is now a prominent grid of larger cards with a big swatch + strong
+  ring/scale on the active one, so it clearly outranks the toggles below; the
+  **Motion** section's three overlapping switches (the "all three on together
+  doesn't make sense" complaint — confetti/sparkles/reducedMotion) are now grouped
+  UNDER a single prominent `SegmentedControl` (new shared component) for the
+  celebration LEVEL (רגוע/רגיל/מסיבה, with emoji), with the toggles demoted to a
+  divided "אפשרויות נוספות" sub-group. **No engine change** — every pref keeps its
+  meaning and wiring; this is purely presentation. Tests green (theme-ocean /
+  sound-bell / mascot-cat selectors preserved). Verified by screenshot.
+- ✅ **M17 — Route-change scroll reset — SHIPPED 2026-06-18.** `AppShell` now
+  `scrollTo(0,0)` on `#react-root` (the app's scroll layer) on every `pathname`
+  change, so a deep scroll on one tab page no longer carries into the next.
+  App-shell level → all tab pages.
+- ✅ **M18 — ABC letter audio no longer spelled out — SHIPPED 2026-06-18.** The
+  data's `phonetic` respellings double as the say-letter matcher's expected token,
+  but several are two-char lowercase ("ee"/E, "ef"/F, "el"/L, "em"/M, "en"/N,
+  "ar"/R, "ex"/X) that the Web Speech engine treats as initialisms and SPELLS OUT
+  ("ar" → "a r"). New AUDIO-ONLY map `src/features/games/abc/letterSpeech.ts`
+  (`getLetterSpeech(letterUpper, fallback)`) replaces only the spell-prone ones
+  with word-like forms (arr/eee/eff/ell/emm/enn/ecks); wired into the 3 ABC speak
+  sites. `phonetic` is UNCHANGED so the on-device-proven M10 matcher is untouched.
+  Phonics speaks full example words → not affected. Unit test
+  `abc/__tests__/letterSpeech.test.ts`.
+- ✅ **M19 — WJ "hear yourself" replay — ALREADY SHIPPED (commit `1e8bdd5`,
+  pre-`ffa96f8`); desktop-only by design.** `SayWordStage` already captures the
+  mic via `useMicPlayback` and renders the "שמע את עצמך" replay button
+  (`wj-say-hear-self`) on the answered state, and it does NOT auto-advance (the
+  child taps "הבא"). The issue #17 reporter is on **Android**, where
+  `useMicPlayback` no-ops by the **M1 invariant** (a parallel capture starves
+  Android speech recognition) — so the button correctly never shows there. No code
+  change: enabling it on Android would re-break recognition. Desktop is the honest
+  answer, exactly as anticipated.
+- ✅ **M20 — Bug-report widget copy broadened — SHIPPED 2026-06-18.**
+  `BugReportWidget.tsx`: launcher → "משוב" / aria "דיווח ומשוב"; dialog title
+  "דיווח ומשוב"; intro now invites **a bug, a new idea, or a suggestion** and
+  states the **screenshot is optional**; textarea placeholder broadened. Whole
+  subtree stays `data-nikud-skip` (no nikud-map regen needed).
+
+## 9. Beta round 3 — new findings (2026-06-18, build `4ee0acb`)
+A third device play-test filed GitHub issues #23–#27. **#23/#25 (WJ portrait
+scrolling) and #26 ("Ff" voiced "ee ef")** are re-reports on the deployed
+`4ee0acb` bundle, which predates the §8/§7 beta-round-2 fixes — #25 = M3-c
+portrait chrome auto-hide, #26 = M18 ABC letter audio (`letterSpeech.ts` maps
+F's "ef" → "eff" so the engine stops spelling it "E-F"). Both are already fixed
+in the tree and just await deploy; **re-verify on the next build before
+resolving the issues.** The rest are new answer-box overflow bugs:
+
+- ✅ **M21 — Answer tiles overflow at 320px — SHIPPED 2026-06-18.** Two reports,
+  one root cause class (content escaping its grid cell):
+  - **#27 (ABC identify-case).** The bilingual labels "אות גדולה (Uppercase)" /
+    "אות קטנה (lowercase)" spilled out of their 2-column tiles. Cause:
+    `AnswerGrid` buttons are grid items with the default `min-width:auto`, so a
+    long single-line (`truncate`) label grew the button past its `1fr` track.
+    Fix in `shared/AnswerGrid.tsx`: add `min-w-0` to the button AND let labels
+    **wrap** (`block w-full text-center leading-tight [overflow-wrap:anywhere]`)
+    instead of `truncate` — wrapping keeps the full text readable (a kid must
+    read "(lowercase)"; truncation would hide it). Shared → every text-option
+    game. Verified at 320px via `/dev/game-shell` binary mode: both labels wrap
+    to 2 lines inside their boxes.
+  - **#24 (WJ ListenMatch numbers).** Number words render their `image` as a
+    keycap-emoji string (Thousand = `1️⃣0️⃣0️⃣0️⃣`, Billion = 9 keycaps) at a
+    fixed `text-6xl`, overflowing the tile. New shared util `src/lib/emojiFit.ts`
+    (`graphemeCount` — Intl.Segmenter with a variation-selector/keycap-stripping
+    fallback so each keycap counts once, NOT 3× — + `emojiSizeClass(str, base)`
+    stepping the font down by glyph count). Wired into `WordJourneyPicture` and
+    PictureMatch's `OptionPicture` (same latent bug). Unit test
+    `src/lib/emojiFit.test.ts`. Verified at 320px: "billion" fits and wraps.
 
 ### Pre-existing (NOT MOBILE1) — unrelated smoke failures
 `smoke.spec.js` "continue CTA target is stable across loads (FU-HOME-continue)"
@@ -958,11 +1008,12 @@ on-reload timing issue, not a product regression. Worth a separate look.
 **MOBILE1 first — it's what the live play-test surfaced:** M1✅ → M6✅ → M9✅ →
 M10✅ → M11✅ → M2✅ → M3✅ done. **M12 Slice A (QA panel)✅**, **M12 Slice B + M4
 (parent account + wizard + one-unlock + expose-all + kid settings + guide)✅** done.
-**Beta round 2 (§8 + §7 M3-reopened) is the freshest device feedback — likely
-next:** quick wins first — M17 (route scroll-reset, #14), M18 (ABC letter audio,
-#15), M20 (bug-report copy, #18), M16 (customization UX, #13) — then the bigger
-M3-a/b/c landscape+scroll work (#16/#19/#20/#21/#22), then M19 (WJ hear-yourself,
-desktop-only). After that: M7 (tablet TTS — likely just the device Hebrew-voice
+**Beta round 2 (§8 + §7 M3-reopened):** ✅ quick wins DONE 2026-06-18 — M17
+(route scroll-reset, #14), M18 (ABC letter audio, #15), M20 (bug-report copy,
+#18), M16 (customization UX, #13); ✅ M3-a/b/c landscape+scroll DONE; ✅ M19
+already-shipped/desktop-only. **Recommend a real-device re-test of the
+landscape+portrait set on a ~360px-tall phone to confirm #16/#19/#20/#21/#22 are
+fully closed before resolving the GitHub issues.** After that: M7 (tablet TTS — likely just the device Hebrew-voice
 install) → M8 (PWA install button) → M5 (needs the Cloudflare Worker + project
 key, and its `manager` role overlaps M12). Then the milestone-cert bug (clear
 fix, but needs the recalibration decision first) → E2E backfill for the mic/WJ
