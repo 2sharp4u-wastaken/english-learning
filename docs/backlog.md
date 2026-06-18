@@ -1006,6 +1006,14 @@ beta-round-2. The rest are new answer-box overflow bugs:
     PictureMatch's `OptionPicture` (same latent bug). Unit test
     `src/lib/emojiFit.test.ts`. Verified at 320px: "billion" fits and wraps.
 
+- 🟡 **MOBILE-QA — on-device re-test of beta r2/r3 fixes (GitHub #28, OPEN).**
+  The only open thread from beta rounds 2+3: confirm on a real ~360px-tall
+  Android screen what was closed without device verification — landscape/portrait
+  no-scroll + chrome auto-hide (#16/#19/#20/#21/#22/#23/#25), ABC letter audio not
+  spelled out (#15/#26), answer-tile/number-emoji fit (#24/#27). Local checks were
+  unit tests + 320px `/dev/game-shell` only, NOT the live games. A failure here is
+  *not-yet-verified*, not a regression. Tracked in issue #28.
+
 ### Pre-existing (NOT MOBILE1) — unrelated smoke failures
 `smoke.spec.js` "continue CTA target is stable across loads (FU-HOME-continue)"
 + "10 learned words + ABC mastery: unlocks Reading" fail on the baseline
@@ -1023,8 +1031,9 @@ live; all issues #13–#27 closed): M17 (route scroll-reset, #14), M18 (ABC lett
 audio, #15/#26), M20 (bug-report copy, #18), M16 (customization UX, #13),
 M3-a/b/c (landscape+scroll, #16/#19/#20/#21/#22/#23/#25), M19 (already-shipped/
 desktop-only, #17), M21 (answer-tile overflow, #24/#27). ⚠️ The landscape set was
-closed without an on-device re-test (see §9 CLOSEOUT) — a ~360px Android pass of
-ABC + Word Journey + landscape is still the honest follow-up. Next: M7 (tablet TTS — likely just the device Hebrew-voice
+closed without an on-device re-test → tracked as **MOBILE-QA (GitHub #28, the one
+open thread)**: a ~360px Android pass of ABC + Word Journey + landscape. Next:
+MOBILE-QA #28, then M7 (tablet TTS — likely just the device Hebrew-voice
 install) → M8 (PWA install button) → M5 (needs the Cloudflare Worker + project
 key, and its `manager` role overlaps M12). Then the milestone-cert bug (clear
 fix, but needs the recalibration decision first) → E2E backfill for the mic/WJ
