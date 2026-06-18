@@ -394,6 +394,27 @@ gated `useMicPlayback`). Fix: added the same `isAndroid()` early-return to
 capture must gate on `isAndroid()` — `useMicPlayback`/`micHold` do, but grep for
 any per-page inline capture too.**
 
+**M1-c 🟢 (considering) — restore "hear yourself" replay on Android via cloud STT.**
+Today on Android we DROP the replay capture (scoring via `webkitSpeechRecognition`
+still works; only the "שמע את עצמך" button is gone). Why we can't just sequence it
+locally: the Web Speech API is mic-in→text-out — it reads ONLY the live system mic,
+won't accept a recorded blob or a chosen `MediaStream`, and never exposes the audio
+it captured. So getting BOTH a transcript and replayable audio forces two concurrent
+captures, which Android starves. **The clean fix is a single capture + a different
+STT path:** `MediaRecorder` records once (no concurrent recognition → no starvation),
+stop → you have the blob for replay, then POST the blob to a cloud STT API
+(Google Cloud STT / Whisper / Azure / AssemblyAI — these transcribe an uploaded file,
+unlike Web Speech) → score the returned transcript with the same
+`isBalancedSpeechMatch`. One capture yields replay AND scoring. **Costs:** needs the
+Cloudflare Worker + a paid STT key (server-side), a per-recording network round-trip
+(~0.5–2s, **mic games become online-only on Android**), and it makes us the controller
+of children's voice data (heavier than today, though Android's Web Speech already
+ships audio to Google). On-device Whisper WASM/transformers.js avoids network+privacy
+but is a tens–hundreds-MB model, slow/iffy on low-end Android for one short word.
+**Not worth it for replay alone right now** (scoring works); but if scoring ever moves
+to cloud STT for accuracy, Android replay falls out for free. Surfaced in the
+`/whats-new` roadmap ("considering").
+
 Original finding: permission granted, green mic dot on, but nothing gets picked up. Prime suspect
 (code-level, not yet device-verified): the app holds EXTRA `getUserMedia`
 streams open while `webkitSpeechRecognition` runs — `useMicPlayback`'s
