@@ -127,7 +127,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
       <div className="game-twopane flex flex-1 flex-col gap-4">
         <div className="game-twopane-prompt flex flex-col items-center">
           <MediaPromptCard
-            prompt="לחצו על המיקרופון ואמרו את המילה"
+            prompt={phase === 'answered' ? undefined : 'לחצו על המיקרופון ואמרו את המילה'}
             media={<WordJourneyPicture word={word} />}
             word={displayWord}
             translation={hebrew || undefined}
@@ -138,11 +138,16 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
           />
         </div>
         <div className="game-twopane-interaction flex flex-1 flex-col gap-4">
+      {/* Once answered the mic is disabled (no re-record until "next"), so the big
+       * size-20 button + status line are dead weight that pushed the result card +
+       * "next" below the fold on short/narrow phones (issue #29). Hide them then —
+       * the result card carries replay/next. */}
+      {phase !== 'answered' ? (
       <div className="flex flex-col items-center gap-3">
         <button
           type="button"
           onClick={() => (recording ? void stop() : void record())}
-          disabled={phase === 'answered' || !supported}
+          disabled={!supported}
           data-testid="wj-say-record"
           aria-label={recording ? 'עצור הקלטה' : 'התחל הקלטה'}
           className={cn(
@@ -158,14 +163,13 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
           {nk(
             recording
               ? 'מקליט… לחצו שוב לעצירה'
-              : phase === 'answered'
-                ? 'התוצאה מוכנה'
-                : supported
-                  ? 'לחצו על המיקרופון'
-                  : 'הדפדפן אינו תומך בזיהוי דיבור',
+              : supported
+                ? 'לחצו על המיקרופון'
+                : 'הדפדפן אינו תומך בזיהוי דיבור',
           )}
         </p>
       </div>
+      ) : null}
       {phase === 'answered' && transcript !== null ? (
         <section
           data-testid="wj-say-result"

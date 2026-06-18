@@ -1014,6 +1014,34 @@ beta-round-2. The rest are new answer-box overflow bugs:
   unit tests + 320px `/dev/game-shell` only, NOT the live games. A failure here is
   *not-yet-verified*, not a regression. Tracked in issue #28.
 
+## 10. Beta round 4 — Word Journey say-word (2026-06-18, GitHub #29)
+A device report on `#/game/word-journey` (Android, 320×680) raised three things,
+all on the **say-word** stage:
+
+- ✅ **Number answers marked wrong (the real bug).** Target "Thirty-one" → spoken,
+  ASR returned the **digit string `"31"`** (logs: `Result received: "31"`), which
+  was compared against the spelled-out target and failed. Root cause:
+  `src/lib/speechMatch.ts` `NUMERALS` only mapped round numbers (0–20, tens, 100,
+  1000), so a compound digit like `31` stayed `"31"` (1 token) vs `"thirty one"`
+  (2 tokens) → the word-count guard bailed. **Fix:** replaced the static map with
+  `numeralToWords()` that expands any digit token to space-separated words
+  (`"31"`→`"thirty one"`), covering all 0–99 compounds while keeping
+  `100`/`1000` as the single words `hundred`/`thousand` (the standalone vocab
+  entries). Regression test added in `speechMatch.test.ts`.
+- ✅ **"Left side requires scrolling".** At 320×680 the say-word **answered** state
+  overflowed `<main>` by ~222px (the result card + "next" sat below the fold).
+  Cause: the big `size-20` mic button + status line stayed on screen after
+  answering (it's disabled then — no re-record until "next"), and the prompt card
+  kept its "press the mic" instruction. **Fix** (`SayWordStage.tsx`): hide the
+  inert mic + status block in the answered phase and drop the now-misleading
+  prompt instruction. Overflow 222px → ~26px (essentially fits; the M3-c chrome
+  auto-hide covers the remainder). Orientation-agnostic, no per-game CSS added.
+- ℹ️ **"No button to hear my recording" — working as designed, not a bug.** The
+  "שמע את עצמך" replay (`useMicPlayback`) is **deliberately Android-disabled**
+  (`isAndroid()` early-return) because a parallel mic capture starves Android
+  speech recognition (see M1). It's desktop-only by design; revisiting it needs a
+  way to capture audio without a second stream during recognition (none today).
+
 ### Pre-existing (NOT MOBILE1) — unrelated smoke failures
 `smoke.spec.js` "continue CTA target is stable across loads (FU-HOME-continue)"
 + "10 learned words + ABC mastery: unlocks Reading" fail on the baseline

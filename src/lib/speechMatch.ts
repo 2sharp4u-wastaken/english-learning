@@ -17,19 +17,33 @@
  * pure and unit-testable; the two should converge eventually (backlog M10).
  */
 
-const NUMERALS: Record<string, string> = {
-  '0': 'zero', '1': 'one', '2': 'two', '3': 'three', '4': 'four',
-  '5': 'five', '6': 'six', '7': 'seven', '8': 'eight', '9': 'nine',
-  '10': 'ten', '11': 'eleven', '12': 'twelve', '13': 'thirteen',
-  '14': 'fourteen', '15': 'fifteen', '16': 'sixteen', '17': 'seventeen',
-  '18': 'eighteen', '19': 'nineteen', '20': 'twenty', '30': 'thirty',
-  '40': 'forty', '50': 'fifty', '60': 'sixty', '70': 'seventy',
-  '80': 'eighty', '90': 'ninety', '100': 'hundred', '1000': 'thousand',
+const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine']
+const TEENS = ['ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen']
+const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety']
+
+/** Convert a pure-digit token to its English word form, space-separated and
+ *  hyphen-free ("31" → "thirty one", "19" → "nineteen") so a digit transcript
+ *  matches a spelled-out target word-for-word. Returns null for ranges we don't
+ *  expand (the token is then left untouched). "100"/"1000" stay the single
+ *  words "hundred"/"thousand" to match the standalone vocab entries. */
+function numeralToWords(token: string): string | null {
+  if (!/^\d+$/.test(token)) return null
+  const n = Number(token)
+  if (n < 10) return ONES[n]
+  if (n < 20) return TEENS[n - 10]
+  if (n < 100) {
+    const tens = TENS[Math.floor(n / 10)]
+    const ones = n % 10
+    return ones === 0 ? tens : `${tens} ${ONES[ones]}`
+  }
+  if (n === 100) return 'hundred'
+  if (n === 1000) return 'thousand'
+  return null
 }
 
-/** Lowercase, strip punctuation, fold hyphens/underscores to spaces, and map
- *  standalone numerals to words ("19" → "nineteen") so digit/word transcripts
- *  match either direction (Word Journey relies on this). */
+/** Lowercase, strip punctuation, fold hyphens/underscores to spaces, and expand
+ *  standalone numerals to words ("19" → "nineteen", "31" → "thirty one") so
+ *  digit/word transcripts match either direction (Word Journey relies on this). */
 function normalize(s: string): string {
   return (s || '')
     .toLowerCase()
@@ -38,7 +52,7 @@ function normalize(s: string): string {
     .replace(/[-_]/g, ' ')
     .replace(/\s+/g, ' ')
     .split(' ')
-    .map((w) => NUMERALS[w] ?? w)
+    .map((w) => numeralToWords(w) ?? w)
     .join(' ')
     .trim()
 }

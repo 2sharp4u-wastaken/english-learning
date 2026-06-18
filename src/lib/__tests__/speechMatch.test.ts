@@ -38,6 +38,21 @@ describe('isBalancedSpeechMatch', () => {
     expect(isBalancedSpeechMatch('19', 'nineteen')).toBe(true)
   })
 
+  it('expands compound digit transcripts to words (issue #29)', () => {
+    // ASR returns "31" for the spoken target "Thirty-one"
+    expect(isBalancedSpeechMatch('thirty-one', '31')).toBe(true)
+    expect(isBalancedSpeechMatch('Thirty-one', '31')).toBe(true)
+    expect(isBalancedSpeechMatch('twenty-one', '21')).toBe(true)
+    expect(isBalancedSpeechMatch('fifty-one', '51')).toBe(true)
+    // round tens still work
+    expect(isBalancedSpeechMatch('thirty', '30')).toBe(true)
+    // hundred/thousand stay single words
+    expect(isBalancedSpeechMatch('hundred', '100')).toBe(true)
+    expect(isBalancedSpeechMatch('thousand', '1000')).toBe(true)
+    // wrong number still rejected
+    expect(isBalancedSpeechMatch('thirty-one', '41')).toBe(false)
+  })
+
   it('empty / unrecognized transcript never matches', () => {
     expect(isBalancedSpeechMatch('peach', '')).toBe(false)
     expect(isBalancedSpeechMatch('', 'peach')).toBe(false)
