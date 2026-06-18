@@ -62,7 +62,8 @@ function SoundGrid({
           data-testid={`sound-${id}`}
           onClick={() => choose(id)}
           className={cn(
-            'flex aspect-square items-center justify-center rounded-lg border text-lg transition-transform hover:scale-110',
+            // Scale the emoji with the tile on wider screens (beta #31).
+            'flex aspect-square items-center justify-center rounded-lg border text-xl transition-transform hover:scale-110 sm:text-2xl lg:text-3xl',
             value === id ? 'border-learn bg-learn/15' : 'border-white/10 bg-white/5 hover:bg-white/10',
           )}
         >
@@ -76,7 +77,7 @@ function SoundGrid({
         aria-label="none"
         onClick={() => choose('none')}
         className={cn(
-          'flex aspect-square items-center justify-center rounded-lg border text-lg transition-transform hover:scale-110',
+          'flex aspect-square items-center justify-center rounded-lg border text-xl transition-transform hover:scale-110 sm:text-2xl lg:text-3xl',
           value === 'none' ? 'border-coral-400 bg-coral-400/15' : 'border-white/10 bg-white/5 hover:bg-white/10',
         )}
       >
@@ -298,7 +299,9 @@ export function DisplayTab() {
                     data-testid={`mascot-${id}`}
                     onClick={() => updatePrefs({ mascotCharacter: id })}
                     className={cn(
-                      'flex aspect-square items-center justify-center rounded-lg border text-xl transition-transform hover:scale-110',
+                      // Emoji scales with the (square) tile so it doesn't read as a
+                      // tiny glyph in a big card on desktop (beta #31).
+                      'flex aspect-square items-center justify-center rounded-lg border text-2xl transition-transform hover:scale-110 sm:text-3xl lg:text-4xl',
                       prefs.mascotCharacter === id
                         ? 'border-learn bg-learn/15'
                         : 'border-white/10 bg-white/5 hover:bg-white/10',

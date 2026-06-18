@@ -1,0 +1,68 @@
+/**
+ * "מה חדש" (What's New) content — the changelog rendered by WhatsNewPage.
+ *
+ * HOW TO ADD A NEW RELEASE
+ * ------------------------
+ * Prepend a new object to the top of `RELEASES` (newest first). Keep the copy
+ * short and parent-facing — describe the benefit, not the implementation. Each
+ * item has a `kind` that controls its colored chip:
+ *   'feature'  → ✨ חדש        (a new capability)
+ *   'improve'  → ⬆️ שיפור      (an existing thing made better)
+ *   'fix'      → 🛠️ תיקון      (a bug fixed)
+ *
+ * `BASE_FEATURES` is the foundational feature set ("the first version") and is
+ * shown as the oldest, pinned card at the bottom of the list.
+ */
+
+export type ChangeKind = 'feature' | 'improve' | 'fix'
+
+export interface ChangeItem {
+  kind: ChangeKind
+  text: string
+}
+
+export interface Release {
+  /** e.g. "3.0" — shown as a chip. */
+  version: string
+  /** ISO date "YYYY-MM-DD" — rendered in he-IL. */
+  date: string
+  /** One-line headline for the release. */
+  title: string
+  items: ChangeItem[]
+}
+
+/** Newest first. Prepend new releases here. */
+export const RELEASES: Release[] = [
+  {
+    version: '3.0',
+    date: '2026-06-18',
+    title: 'מראה חדש, התאמה אישית והרבה משחקים',
+    items: [
+      { kind: 'feature', text: 'עיצוב חדש לגמרי לכל האפליקציה, מהיר וברור יותר.' },
+      { kind: 'feature', text: '"המשחק שלי" — כל ילד/ה בוחר/ת ערכת צבעים, דמות, צלילים ועוצמת חגיגה.' },
+      { kind: 'feature', text: 'משחקי ביטויים: ניבים, פעלים מורכבים וסלנג ידידותי לילדים.' },
+      { kind: 'feature', text: 'אזור הורה מוגן בסיסמה: הוספת מילים, החלפת תמונות וניהול שחקנים.' },
+      { kind: 'feature', text: 'אפשר להתקין את המשחק כאפליקציה ולשחק גם בלי אינטרנט.' },
+      { kind: 'feature', text: 'כפתור "דיווח על תקלה" בכל מסך — שולח צילום מסך ופרטים בלחיצה.' },
+      { kind: 'improve', text: 'תמיכה מלאה במסך לרוחב ובטלפונים קטנים.' },
+      { kind: 'improve', text: 'מסע המילים זוכר היכן עצרתם וממשיך מאותו מקום.' },
+      { kind: 'improve', text: 'כפתור "הצצה" שמראה את המילה לרגע במשחקי הכתיב.' },
+      { kind: 'fix', text: 'תיקון זיהוי הדיבור במשחקי המיקרופון במכשירי אנדרואיד.' },
+      { kind: 'fix', text: 'תיקון תמונות צבעים שלא הופיעו במכשירים מסוימים.' },
+    ],
+  },
+]
+
+/** The foundational feature set — the "first version" card. */
+export const BASE_FEATURES: { title: string; features: string[] } = {
+  title: 'הגרסה הראשונה',
+  features: [
+    'לימוד אוצר מילים באנגלית לילדים דוברי עברית בגילאי 5–8.',
+    'מסלול למידה מובנה: מילים נחשפות, נלמדות ונכנסות לתרגול חוזר.',
+    'משחקים מגוונים: אוצר מילים, האזנה, הגייה, קריאה, דקדוק, זיכרון ועוד.',
+    'מסע המילים — מסע רב-שלבי ללימוד מילה חדשה מהיכרות ועד כתיב ודיבור.',
+    'לימוד אותיות וצלילים (ABC ופוניקה).',
+    'מעקב התקדמות, מטבעות, תעודות וניקוד אישי לכל שחקן/ית.',
+    'ממשק בעברית מימין לשמאל, עם ניקוד אופציונלי.',
+  ],
+}

@@ -19,7 +19,7 @@ export const colorsWords = [
     { word: "Orange", translation: "כתום", category: "colors", image: "🟠" },
     { word: "Purple", translation: "סגול", category: "colors", image: "🟣" },
     { word: "Brown", translation: "חום", category: "colors", image: "🟤" },
-    { word: "Gray", translation: "אפור", category: "colors", image: "🩶" },
+    { word: "Gray", translation: "אפור", category: "colors", image: "🩶", imageUrl: "img/icons/colors/gray-circle.svg" },
     { word: "Maroon", translation: "חום אדום", category: "colors", image: "🟤" , imageUrl: "img/icons/colors/maroon-circle.svg"},
     { word: "Navy Blue", translation: "כָּחוֹל כֵּהֶה", category: "colors", image: "🔵" , imageUrl: "img/icons/colors/navy-blue-circle.svg"},
     { word: "Olive", translation: "זית", category: "colors", image: "🟢" , imageUrl: "img/icons/colors/olive-circle.svg"},

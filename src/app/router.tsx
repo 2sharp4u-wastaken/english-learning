@@ -6,6 +6,7 @@ import { CoursesPage } from '@/features/courses/CoursesPage'
 import { StatsPage } from '@/features/stats/StatsPage'
 import { SettingsPage } from '@/features/settings/SettingsPage'
 import { ParentGuideRoute } from '@/features/parent/ParentGuidePage'
+import { WhatsNewRoute } from '@/features/whats-new/WhatsNewPage'
 import { GameHostPage } from '@/features/games/GameHostPage'
 import { GameShellDemo } from '@/features/games/shared/GameShellDemo'
 
@@ -20,6 +21,7 @@ export const router = createHashRouter([
       { path: 'stats', element: <StatsPage /> },
       { path: 'settings', element: <SettingsPage /> },
       { path: 'parent-guide', element: <ParentGuideRoute /> },
+      { path: 'whats-new', element: <WhatsNewRoute /> },
       { path: 'dev/game-shell', element: <GameShellDemo /> },
       { path: 'game/:gameId', element: <GameHostPage /> },
       // Catch-all: redirect any unknown hash path (e.g. /settings.html

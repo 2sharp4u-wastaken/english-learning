@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Download, RotateCcw, BookOpen, KeyRound, AlertTriangle } from 'lucide-react'
+import { Download, RotateCcw, BookOpen, KeyRound, AlertTriangle, Sparkles } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { changeParentPassword, factoryReset } from '@/bridge/auth'
 import { SectionCard } from '../components/SectionCard'
@@ -86,6 +86,22 @@ export function AdvancedToolsTab() {
         >
           <BookOpen size={14} />
           <span>פתיחת המדריך</span>
+        </button>
+      </SectionCard>
+
+      {/* What's New + roadmap — informational, content in src/data/whatsNew.ts. */}
+      <SectionCard
+        title="מה חדש ובקרוב"
+        description="רשימת התכונות החדשות בכל גרסה, והמשך הדרך — מה אנחנו עובדים עליו ומתכננים."
+      >
+        <button
+          type="button"
+          onClick={() => navigate('/whats-new')}
+          data-testid="tools-open-whats-new"
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-white/8 hover:text-text"
+        >
+          <Sparkles size={14} />
+          <span>מה חדש</span>
         </button>
       </SectionCard>
 

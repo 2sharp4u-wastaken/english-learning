@@ -24,6 +24,7 @@ import { cancelSpeech, hardResetSpeech, speak, speakWord } from '@/bridge/audio'
 import { getShowConfetti, playAnswerSfx, triggerConfetti } from '@/bridge/feedback'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import { useNikud } from '@/bridge/nikud'
+import { isAndroid } from '@/lib/platform'
 import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'recording' | 'answered' | 'finished'
@@ -129,6 +130,14 @@ export function PracticeGamePage() {
   }, [])
 
   const startMediaCapture = useCallback(async (): Promise<void> => {
+    // M1: a parallel getUserMedia capture starves Android's speech recognition
+    // into silence (permission granted, green dot on, recognition hears nothing),
+    // so the recording was never picked up on mobile. The hear-yourself replay is
+    // therefore desktop-only — on Android we skip the capture entirely and the
+    // "שמע את עצמך" button (gated on the recording URL) simply never shows, exactly
+    // like Word Journey's say-word stage (which already routes through the
+    // Android-gated useMicPlayback hook). See src/lib/platform.ts.
+    if (isAndroid()) return
     if (!('mediaDevices' in navigator) || typeof MediaRecorder === 'undefined') {
       return
     }

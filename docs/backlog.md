@@ -383,6 +383,17 @@ it's gated on the captured URL). Unit-pinned in `micHold.test.ts`. **Verify on
 the tablet AND phone after the next `netlify deploy --prod`** — if recognition
 is still silent with our streams gone, see the fallback suspects below.
 
+**M1-b 🔴→✅ Pronunciation/Practice STILL recorded silence on Android (2026-06-18, beta).**
+The 2026-06-11 gate covered `useMicPlayback` + `micHold`, but `PronunciationGamePage`
+and `PracticeGamePage` carry their OWN inline `startMediaCapture` (a bespoke
+`getUserMedia`+`MediaRecorder` for hear-yourself, predating the shared hook) that
+was NOT gated — so הגייה/תרגול kept opening a parallel capture and starving
+recognition on Android (worked on desktop; WJ say-word worked because it uses the
+gated `useMicPlayback`). Fix: added the same `isAndroid()` early-return to
+`startMediaCapture` in both pages. **INVARIANT: every parallel `getUserMedia`
+capture must gate on `isAndroid()` — `useMicPlayback`/`micHold` do, but grep for
+any per-page inline capture too.**
+
 Original finding: permission granted, green mic dot on, but nothing gets picked up. Prime suspect
 (code-level, not yet device-verified): the app holds EXTRA `getUserMedia`
 streams open while `webkitSpeechRecognition` runs — `useMicPlayback`'s
@@ -1041,6 +1052,28 @@ all on the **say-word** stage:
   (`isAndroid()` early-return) because a parallel mic capture starves Android
   speech recognition (see M1). It's desktop-only by design; revisiting it needs a
   way to capture audio without a second stream during recognition (none today).
+
+## 11. Beta round 5 (2026-06-18, build `0c74a88`)
+
+- ✅ **Pronunciation (הגייה) mic not picked up on Android — M1-b.** Each recording
+  failed on mobile while WJ say-word worked. Root cause: the un-gated inline
+  `startMediaCapture` in `PronunciationGamePage`/`PracticeGamePage` (see §7 M1-b).
+  Fixed with the `isAndroid()` gate on both.
+- ✅ **#30 — one blank picture tile (WJ listen-match).** The "Gray" color rendered
+  `🩶` (U+1FA76, an Emoji 15.1 glyph) which tofus on Android 10 — the EmojiFix
+  `unicode-range` claims U+1FA70–1FAFF but the baked Noto subset predates 15.1.
+  Fix: added a `gray-circle.svg` + `imageUrl` to `data/categories/colors.js` Gray
+  (same pattern as navy-blue/maroon/olive). NOTE: 🩵 (U+1FA75)/🩷 (U+1FA77) may
+  share the gap if ever used — regen the EmojiFix subset from a 15.1+ Noto if so.
+- ✅ **#31 — emoji too small on desktop (Settings).** The mascot/sound emoji grids
+  used fixed `text-xl`/`text-lg` while the tiles grew on wide screens. Made the
+  emoji responsive (`sm:`/`lg:` text-size steps) in `DisplayTab.tsx`.
+- ✅ **NEW FEATURE — "מה חדש" + roadmap view** (route `/whats-new`, parent area).
+  Changelog (base version + per-version releases) and a roadmap/backlog view.
+  Content is pure data in `src/data/whatsNew.ts` + `src/data/roadmap.ts` (add a
+  release = prepend to `RELEASES`). Linked from Settings → כלי הורה → "מה חדש
+  ובקרוב"; page shows the live `__APP_VERSION__`. Mirrors the ParentGuidePage
+  pattern (adult Hebrew, `data-nikud-skip`, pure component + route wrapper).
 
 ### Pre-existing (NOT MOBILE1) — unrelated smoke failures
 `smoke.spec.js` "continue CTA target is stable across loads (FU-HOME-continue)"

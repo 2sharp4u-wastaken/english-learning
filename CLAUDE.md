@@ -16,8 +16,8 @@ Behavioral rules for Claude Code in this project. These override defaults.
 
 ## Rules
 
-### Never auto-commit or auto-push
-Always ask before committing or pushing. Show the diff summary and wait for explicit approval.
+### Auto-commit + push on reaching the goal
+When the work for a request is complete and verified, **commit and push it without asking for additional approval** (2026-06-18 rule change — supersedes the old "always ask first"). Push in the same step (commit implies push). Before committing, do a **session-review closeout**: re-read the whole session and save anything a fresh session would need (memories with WHY, doc/backlog updates, CLAUDE.md forward-propagation) per the closeout discipline below. Still **never commit/push directly to `main`** — branch first if on the default branch.
 
 ### Slice closeout discipline
 Before committing a non-trivial change or ending a session, consult the `feedback_cross_session_continuity` memory and run its closeout (master-plan + wiring-map + memory with WHY annotations + lean auto-load + cold-start verification). This includes a **forward-propagation review**: ask whether what this slice taught should update the instructions for *following* slices, *broader*/template-level patterns, or project-wide conventions — and edit those (master-plan slice entries, templates/recipes, docs, CLAUDE.md) so a fresh session inherits it without the user re-stating it. A PreToolUse hook nudges this on every `git commit` — don't ignore it. Skip for doc/typo/trivial fixes.
@@ -65,7 +65,7 @@ Design and implement RTL first. Use Tailwind logical properties (`ps-*`, `pe-*`,
 
 ### Routing
 Hash-based routing via React Router (`createHashRouter`):
-- `/#/home`, `/#/profile`, `/#/courses`, `/#/stats`, `/#/settings`, `/#/game/:gameId`
+- `/#/home`, `/#/profile`, `/#/courses`, `/#/stats`, `/#/settings`, `/#/game/:gameId`, `/#/parent-guide`, `/#/whats-new` (changelog + roadmap; content in `src/data/whatsNew.ts`+`roadmap.ts` — see `project_whats_new_page` memory)
 - `index.html` is the only HTML file (Slice 4.5 deleted the last legacy markup); every page is a React route
 
 ### Word object schema
