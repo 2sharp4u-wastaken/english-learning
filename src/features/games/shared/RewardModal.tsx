@@ -84,7 +84,10 @@ export function RewardModal({
       role="presentation"
       data-testid="reward-modal-backdrop"
       onClick={dismiss}
-      className="fixed inset-0 z-[1100] flex items-center justify-center bg-black/60 px-4 backdrop-blur-sm"
+      // grid + place-items-center + overflow-y-auto keeps a tall dialog fully
+      // reachable (scrolls from the top) instead of clipping its head off-screen
+      // the way flex centering does — the M3-a safety net for short viewports.
+      className="fixed inset-0 z-[1100] grid place-items-center overflow-y-auto bg-black/60 p-4 backdrop-blur-sm"
     >
       <div
         role="dialog"
@@ -111,7 +114,7 @@ export function RewardModal({
           </button>
         ) : null}
 
-        <div className="mx-auto mb-3 flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-[color:var(--amber-400)] to-[color:var(--coral-400)] text-white shadow-lg">
+        <div className="reward-hero mx-auto mb-3 flex size-16 items-center justify-center rounded-full bg-gradient-to-br from-[color:var(--amber-400)] to-[color:var(--coral-400)] text-white shadow-lg">
           <Sparkles className="size-8" />
         </div>
 
@@ -127,7 +130,7 @@ export function RewardModal({
           <p className="mt-2 text-sm text-[color:var(--slate-200)]">{nk(message)}</p>
         ) : null}
 
-        <div className="mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className="reward-stats mt-5 grid grid-cols-1 gap-2 sm:grid-cols-2">
           <Stat
             icon={<Trophy className="size-4" />}
             label="ניקוד"
@@ -155,7 +158,7 @@ export function RewardModal({
           ) : null}
         </div>
 
-        <div className="mt-6 flex flex-col gap-2 sm:flex-row-reverse">
+        <div className="reward-actions mt-6 flex flex-col gap-2 sm:flex-row-reverse">
           {onPlayAgain ? (
             <button
               type="button"

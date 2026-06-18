@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { MediaPromptCard } from '@/features/games/shared/MediaPromptCard'
 import { SpellingComparison } from '@/features/games/shared/SpellingComparison'
 import { LetterSlots } from '@/features/games/shared/LetterSlots'
@@ -6,6 +6,7 @@ import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { WordJourneyPicture } from './WordJourneyPicture'
 import { cancelSpeech, speak, speakWord } from '@/bridge/audio'
 import { getGameFeedback, getShowConfetti, triggerConfetti } from '@/bridge/feedback'
+import { getSettings } from '@/bridge/settings'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import { useNikud } from '@/bridge/nikud'
 import { POINTS, type WJSpellItem, type WJWord } from '@/bridge/word-journey'
@@ -33,6 +34,18 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
   const [feedback, setFeedback] = useState<{ variant: 'correct' | 'incorrect'; text: string } | null>(null)
   const advanceTimer = useRef<number | null>(null)
   const hideTimer = useRef<number | null>(null)
+  // Sneak peek (parity with the Reading game's F1): a child-tapped button
+  // re-flashes the hidden word for a short moment, up to a per-question budget.
+  // Same settings, so the parent controls both games with one set of knobs.
+  const sneakPeek = useMemo(() => {
+    const s = getSettings()
+    return {
+      enabled: s.sneakPeekEnabled ?? true,
+      durationMs: Math.round((s.sneakPeekDuration ?? 0.5) * 1000),
+      budget: s.sneakPeekBudget ?? 3,
+    }
+  }, [])
+  const [peeksLeft, setPeeksLeft] = useState<number>(() => sneakPeek.budget)
 
   const item = items[index]
 
@@ -42,6 +55,7 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
     setPhase('building')
     setFeedback(null)
     setWordVisible(true)
+    setPeeksLeft(sneakPeek.budget)
     if (hideTimer.current) window.clearTimeout(hideTimer.current)
     hideTimer.current = window.setTimeout(() => setWordVisible(false), WORD_REVEAL_MS)
     // Deferred auto-play (StrictMode-safe — see DiscoverStage).
@@ -60,6 +74,20 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
     if (index + 1 < items.length) setIndex((i) => i + 1)
     else onComplete()
   }, [index, items.length, onComplete])
+
+  // Re-flash the hidden word for a short moment (sneak peek). Only meaningful
+  // once the word has auto-hidden and while still building — disabled otherwise.
+  const peek = useCallback(() => {
+    if (!sneakPeek.enabled) return
+    if (phase !== 'building' || wordVisible || peeksLeft <= 0) return
+    setPeeksLeft((n) => Math.max(0, n - 1))
+    if (hideTimer.current) window.clearTimeout(hideTimer.current)
+    setWordVisible(true)
+    hideTimer.current = window.setTimeout(() => {
+      setWordVisible(false)
+      hideTimer.current = null
+    }, sneakPeek.durationMs)
+  }, [peeksLeft, phase, sneakPeek, wordVisible])
 
   const check = () => {
     if (phase !== 'building' || built.length === 0) return
@@ -133,6 +161,22 @@ export function SpellStage({ items, onAnswer, onComplete }: Props) {
 
           {phase === 'building' ? (
             <div className="mx-auto flex max-w-md flex-wrap items-center justify-center gap-3">
+              {sneakPeek.enabled ? (
+                <button
+                  type="button"
+                  onClick={peek}
+                  disabled={wordVisible || peeksLeft <= 0}
+                  data-testid="wj-spell-peek"
+                  aria-label="הצצה במילה"
+                  className="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/5 px-5 py-2.5 text-sm font-bold text-white shadow-sm transition hover:bg-white/10 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  <span aria-hidden>👁</span>
+                  {nk('הצצה')}
+                  <span className="tabular-nums" dir="ltr">
+                    ({peeksLeft})
+                  </span>
+                </button>
+              ) : null}
               <button
                 type="button"
                 onClick={() => setClearNonce((n) => n + 1)}

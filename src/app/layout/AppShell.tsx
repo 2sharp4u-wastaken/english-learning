@@ -34,6 +34,15 @@ export function AppShell() {
     }
   }, [prefs.theme, prefs.highContrast, prefs.reducedMotion, prefs.bigText])
 
+  // Reset scroll to the top on every route change (M17 / beta #14). #react-root
+  // is the app's scroll layer (see the fixed-overflow effect below), so a deep
+  // scroll on one tab page used to carry into the next (scroll Settings to the
+  // bottom → switch to Home → land at Home's bottom). One app-shell-level reset
+  // covers every tab page.
+  useEffect(() => {
+    document.getElementById('react-root')?.scrollTo(0, 0)
+  }, [pathname])
+
   // Login/welcome chime — once when the authenticated shell mounts (i.e. per
   // sign-in; the shell persists across hub/game navigation and unmounts only on
   // logout). The login button is a user gesture, so audio is allowed to start.

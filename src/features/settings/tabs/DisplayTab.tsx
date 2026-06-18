@@ -18,6 +18,7 @@ import { cn } from '@/lib/cn'
 import { SectionCard } from '../components/SectionCard'
 import { Toggle } from '../components/Toggle'
 import { RadioCards, type RadioOption } from '../components/RadioCards'
+import { SegmentedControl, type SegmentOption } from '../components/SegmentedControl'
 
 /**
  * "המשחק שלי" — the ONLY kid-facing (unprotected) settings tab. Per-profile
@@ -90,10 +91,10 @@ export function DisplayTab() {
   const { settings, updateSettings } = useSettings()
   const { prefs, updatePrefs } = usePlayerPrefs()
 
-  const celebrationOptions: RadioOption<'calm' | 'normal' | 'party'>[] = [
-    { value: 'calm', label: nk('רגוע') },
-    { value: 'normal', label: nk('רגיל') },
-    { value: 'party', label: nk('מסיבה') },
+  const celebrationOptions: SegmentOption<'calm' | 'normal' | 'party'>[] = [
+    { value: 'calm', label: nk('רגוע'), emoji: '😌' },
+    { value: 'normal', label: nk('רגיל'), emoji: '🙂' },
+    { value: 'party', label: nk('מסיבה'), emoji: '🎉' },
   ]
   const packOptions: RadioOption<(typeof SOUND_PACK_IDS)[number]>[] = SOUND_PACK_IDS.map((id) => ({
     value: id,
@@ -105,7 +106,14 @@ export function DisplayTab() {
       {/* Colors / theme */}
       <SectionCard title={nk('צבעים')} description={nk('בחרו ערכת צבעים ואת צבע הדמות.')}>
         <div className="space-y-3">
-          <div className="flex flex-wrap gap-2" role="radiogroup" aria-label={nk('ערכת צבעים')}>
+          {/* Primary, prominent selection — bigger cards with a large swatch and a
+              strong ring on the active theme, so the signature choice clearly
+              outranks the toggles beneath it (M16 / beta #13). */}
+          <div
+            className="grid grid-cols-3 gap-2 sm:grid-cols-5"
+            role="radiogroup"
+            aria-label={nk('ערכת צבעים')}
+          >
             {THEME_NAMES.map((t) => (
               <button
                 key={t}
@@ -115,13 +123,20 @@ export function DisplayTab() {
                 data-testid={`theme-${t}`}
                 onClick={() => updatePrefs({ theme: t })}
                 className={cn(
-                  'flex items-center gap-2 rounded-xl border px-3 py-2 text-sm font-medium transition-colors',
+                  'flex flex-col items-center gap-2 rounded-2xl border-2 px-2 py-3 text-sm font-semibold transition-all',
                   prefs.theme === t
-                    ? 'border-learn bg-learn/15 text-text'
+                    ? 'border-learn bg-learn/15 text-text shadow-[var(--shadow-panel)] scale-[1.03]'
                     : 'border-white/10 bg-white/5 text-muted hover:bg-white/10',
                 )}
               >
-                <span className="h-4 w-4 rounded-full" style={{ background: THEME_SWATCH[t].color }} aria-hidden />
+                <span
+                  className={cn(
+                    'h-9 w-9 rounded-full ring-2 transition-shadow',
+                    prefs.theme === t ? 'ring-white/80' : 'ring-white/15',
+                  )}
+                  style={{ background: THEME_SWATCH[t].color }}
+                  aria-hidden
+                />
                 {THEME_SWATCH[t].label}
               </button>
             ))}
@@ -223,36 +238,40 @@ export function DisplayTab() {
         </div>
       </SectionCard>
 
-      {/* Motion / animation */}
-      <SectionCard title={nk('תנועה ואנימציה')} description={nk('כמה תנועה וחגיגות יהיו במשחק.')}>
-        <div className="space-y-2">
-          <div className="space-y-1.5">
-            <span className="block text-xs font-medium text-muted">{nk('עוצמת חגיגה')}</span>
-            <RadioCards
-              columns={3}
-              options={celebrationOptions}
-              value={prefs.celebration}
-              onChange={(v) => updatePrefs({ celebration: v })}
+      {/* Motion / animation — the celebration LEVEL is the one primary choice
+          (prominent segmented control); the rest are secondary fine-tuning
+          toggles, visually demoted so "all three on together" no longer reads as
+          three equal switches (M16 / beta #13). */}
+      <SectionCard title={nk('תנועה ואנימציה')} description={nk('בחרו כמה תנועה וחגיגות יהיו במשחק.')}>
+        <div className="space-y-4">
+          <SegmentedControl
+            ariaLabel={nk('עוצמת חגיגה')}
+            options={celebrationOptions}
+            value={prefs.celebration}
+            onChange={(v) => updatePrefs({ celebration: v })}
+          />
+
+          <div className="space-y-2 border-t border-white/10 pt-3">
+            <span className="block text-xs font-medium text-muted">{nk('אפשרויות נוספות')}</span>
+            <Toggle
+              label={nk('קונפטי')}
+              description={nk('פיזור קונפטי על הצלחה')}
+              checked={prefs.confetti}
+              onChange={(v) => updatePrefs({ confetti: v })}
+            />
+            <Toggle
+              label={nk('נצנוצים במסך הבית')}
+              description={nk('רקע נוצץ בראש מסך הבית')}
+              checked={prefs.sparkles}
+              onChange={(v) => updatePrefs({ sparkles: v })}
+            />
+            <Toggle
+              label={nk('הפחתת תנועה')}
+              description={nk('מצב רגוע — פחות אנימציות')}
+              checked={prefs.reducedMotion}
+              onChange={(v) => updatePrefs({ reducedMotion: v })}
             />
           </div>
-          <Toggle
-            label={nk('קונפטי')}
-            description={nk('פיזור קונפטי על הצלחה')}
-            checked={prefs.confetti}
-            onChange={(v) => updatePrefs({ confetti: v })}
-          />
-          <Toggle
-            label={nk('נצנוצים במסך הבית')}
-            description={nk('רקע נוצץ בראש מסך הבית')}
-            checked={prefs.sparkles}
-            onChange={(v) => updatePrefs({ sparkles: v })}
-          />
-          <Toggle
-            label={nk('הפחתת תנועה')}
-            description={nk('מצב רגוע — פחות אנימציות')}
-            checked={prefs.reducedMotion}
-            onChange={(v) => updatePrefs({ reducedMotion: v })}
-          />
         </div>
       </SectionCard>
 

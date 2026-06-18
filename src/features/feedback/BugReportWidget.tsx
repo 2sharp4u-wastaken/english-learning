@@ -109,8 +109,8 @@ export function BugReportWidget() {
           type="button"
           onClick={() => setOpen(true)}
           data-testid="bug-report-button"
-          aria-label="דיווח על תקלה"
-          title="דיווח על תקלה"
+          aria-label="דיווח ומשוב"
+          title="דיווח על תקלה, רעיון או הצעה לשיפור"
           className={cn(
             'fixed start-3 z-[60] flex items-center gap-1.5 rounded-full border border-white/15',
             'bg-[color:var(--ink-900)]/80 px-3 py-2 text-xs font-semibold text-white/80 shadow-lg backdrop-blur',
@@ -119,7 +119,7 @@ export function BugReportWidget() {
           )}
         >
           <Bug className="size-4 text-[color:var(--coral-400)]" aria-hidden />
-          <span className="hidden sm:inline">דיווח</span>
+          <span className="hidden sm:inline">משוב</span>
         </button>
       ) : null}
 
@@ -144,7 +144,7 @@ export function BugReportWidget() {
                 className="flex items-center gap-2 text-lg font-bold text-white"
               >
                 <Bug className="size-5 text-[color:var(--coral-400)]" aria-hidden />
-                דיווח על תקלה
+                דיווח ומשוב
               </h2>
               <button
                 type="button"
@@ -169,7 +169,8 @@ export function BugReportWidget() {
             ) : (
               <>
                 <p className="mb-3 text-sm text-[color:var(--slate-300)]">
-                  צרו צילום מסך של התקלה, העלו אותו כאן והוסיפו משפט קצר (עברית או אנגלית).
+                  נשמח לשמוע! ספרו לנו על תקלה, רעיון חדש או הצעה לשיפור. אפשר לצרף
+                  צילום מסך כדי לעזור לנו להבין — אבל זה לא חובה.
                 </p>
 
                 {/* Screenshot upload + preview */}
@@ -219,7 +220,7 @@ export function BugReportWidget() {
                   onChange={(e) => setDescription(e.target.value)}
                   data-testid="bug-report-description"
                   rows={3}
-                  placeholder="מה קרה? (עברית או אנגלית)"
+                  placeholder="תקלה, רעיון או הצעה לשיפור (עברית או אנגלית)"
                   className="mb-3 w-full resize-none rounded-2xl border border-white/10 bg-black/20 px-3 py-2.5 text-sm text-white placeholder:text-white/40 focus:border-[color:var(--blue-400)] focus:outline-none"
                 />
 

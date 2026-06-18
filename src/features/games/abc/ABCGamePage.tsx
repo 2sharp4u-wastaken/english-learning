@@ -24,6 +24,7 @@ import {
   type ABCSessionResult,
 } from '@/bridge/abc'
 import { cancelSpeech, hardResetSpeech, speak, speakWord } from '@/bridge/audio'
+import { getLetterSpeech } from './letterSpeech'
 import { getGameFeedback, getShowConfetti, triggerConfetti } from '@/bridge/feedback'
 import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
@@ -182,7 +183,7 @@ export function ABCGamePage() {
       if (current.type === 'word-picture' && current.displayWord) {
         void speakWord(current.displayWord.toLowerCase(), GAME_CONTEXT, { allowOverlap: true })
       } else if (current.phonetic) {
-        void speak(current.phonetic)
+        void speak(getLetterSpeech(current.letterUpper, current.phonetic))
       }
     }
 
@@ -211,7 +212,7 @@ export function ABCGamePage() {
     if (current.type === 'word-picture' && current.displayWord) {
       void speakWord(current.displayWord.toLowerCase(), GAME_CONTEXT)
     } else if (current.phonetic) {
-      void speak(current.phonetic)
+      void speak(getLetterSpeech(current.letterUpper, current.phonetic))
     }
   }, [current])
 
@@ -258,7 +259,7 @@ export function ABCGamePage() {
           if (q.type === 'word-picture' && q.displayWord) {
             await speakWord(q.displayWord.toLowerCase(), GAME_CONTEXT)
           } else if (q.phonetic) {
-            await speak(q.phonetic)
+            await speak(getLetterSpeech(q.letterUpper, q.phonetic))
           }
         })()
       }

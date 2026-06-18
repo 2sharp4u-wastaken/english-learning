@@ -195,7 +195,13 @@
     min-height: 0;
     overflow-y: auto;
   }
-  #react-root .game-twopane > .game-twopane-prompt {
+  /* Vertically center BOTH panes so the prompt (physically right, RTL) and the
+   * interaction (physically left) read as a balanced pair — the interaction pane
+   * used to sit top-aligned against a centered prompt, which looked lopsided
+   * (beta #21: "left side should be centered"). overflow-y:auto stays as the
+   * safety net if a pane ever exceeds the height. */
+  #react-root .game-twopane > .game-twopane-prompt,
+  #react-root .game-twopane > .game-twopane-interaction {
     justify-content: center;
   }
   /* On a very short landscape phone (~320px tall) the prompt card's vertical
@@ -289,5 +295,47 @@
     padding-top: 0.4rem;
     padding-bottom: 0.4rem;
     font-size: 0.95rem;
+  }
+
+  /* The end-of-session RewardModal (the completion screen) was never given a
+   * short-landscape layout — its big icon + headline + stacked stats + stacked
+   * buttons overflow a ~360px-tall landscape phone (beta #22 / M3-a). Compact it
+   * in the SAME query: shrink the hero icon, notch the headline down, tighten the
+   * vertical rhythm, lay the stats two-up and the action buttons in a row. The
+   * dialog is rendered under #react-root so this selector reaches it; the
+   * grid+overflow backdrop (RewardModal.tsx) is the scroll safety net if it still
+   * exceeds the height. Shared modal → fixes every game at once. */
+  #react-root [data-testid='reward-modal'] {
+    padding: 1rem 1.25rem;
+  }
+  #react-root [data-testid='reward-modal'] .reward-hero {
+    width: 2.5rem;
+    height: 2.5rem;
+    margin-bottom: 0.4rem;
+  }
+  #react-root [data-testid='reward-modal'] .reward-hero svg {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  #react-root [data-testid='reward-modal-title'] {
+    font-size: 1.375rem;
+    line-height: 1.15;
+  }
+  #react-root [data-testid='reward-modal'] .reward-stats {
+    margin-top: 0.75rem;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  #react-root [data-testid='reward-modal'] .reward-stats > * {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem;
+  }
+  #react-root [data-testid='reward-modal'] .reward-actions {
+    margin-top: 0.85rem;
+    flex-direction: row-reverse;
+  }
+  #react-root [data-testid='reward-modal'] .reward-actions button {
+    padding-top: 0.6rem;
+    padding-bottom: 0.6rem;
   }
 }
