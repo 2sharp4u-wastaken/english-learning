@@ -971,9 +971,19 @@ A third device play-test filed GitHub issues #23–#27. **#23/#25 (WJ portrait
 scrolling) and #26 ("Ff" voiced "ee ef")** are re-reports on the deployed
 `4ee0acb` bundle, which predates the §8/§7 beta-round-2 fixes — #25 = M3-c
 portrait chrome auto-hide, #26 = M18 ABC letter audio (`letterSpeech.ts` maps
-F's "ef" → "eff" so the engine stops spelling it "E-F"). Both are already fixed
-in the tree and just await deploy; **re-verify on the next build before
-resolving the issues.** The rest are new answer-box overflow bugs:
+F's "ef" → "eff" so the engine stops spelling it "E-F"). Both shipped with
+beta-round-2. The rest are new answer-box overflow bugs:
+
+> **CLOSEOUT 2026-06-18:** beta rounds 2 + 3 are **committed, pushed, and live**
+> (`1d26f92` + `1ca1182`, deployed to Cloudflare — homepage serves
+> `gitSha:"1ca1182"`). **All GitHub issues #13–#27 are CLOSED.** ⚠️ The
+> landscape/portrait set (#16/#19/#20/#21/#22/#23/#25, M3-a/b/c) was closed
+> WITHOUT an on-device re-test, and the live ABC/WJ flows weren't re-played for
+> the audio/overflow fixes (#15/#26/#24/#27 verified via unit tests + 320px
+> `/dev/game-shell`, not the real games). So if a fresh beta report says
+> "landscape still scrolls" or "ABC still spells letters out", treat it as
+> not-yet-device-verified, NOT a regression. An on-device pass of ABC + Word
+> Journey + landscape on a ~360px Android screen is still the honest follow-up.
 
 - ✅ **M21 — Answer tiles overflow at 320px — SHIPPED 2026-06-18.** Two reports,
   one root cause class (content escaping its grid cell):
@@ -1008,12 +1018,13 @@ on-reload timing issue, not a product regression. Worth a separate look.
 **MOBILE1 first — it's what the live play-test surfaced:** M1✅ → M6✅ → M9✅ →
 M10✅ → M11✅ → M2✅ → M3✅ done. **M12 Slice A (QA panel)✅**, **M12 Slice B + M4
 (parent account + wizard + one-unlock + expose-all + kid settings + guide)✅** done.
-**Beta round 2 (§8 + §7 M3-reopened):** ✅ quick wins DONE 2026-06-18 — M17
-(route scroll-reset, #14), M18 (ABC letter audio, #15), M20 (bug-report copy,
-#18), M16 (customization UX, #13); ✅ M3-a/b/c landscape+scroll DONE; ✅ M19
-already-shipped/desktop-only. **Recommend a real-device re-test of the
-landscape+portrait set on a ~360px-tall phone to confirm #16/#19/#20/#21/#22 are
-fully closed before resolving the GitHub issues.** After that: M7 (tablet TTS — likely just the device Hebrew-voice
+**Beta rounds 2 + 3 — ✅ DONE & DEPLOYED 2026-06-18** (`1d26f92` + `1ca1182`,
+live; all issues #13–#27 closed): M17 (route scroll-reset, #14), M18 (ABC letter
+audio, #15/#26), M20 (bug-report copy, #18), M16 (customization UX, #13),
+M3-a/b/c (landscape+scroll, #16/#19/#20/#21/#22/#23/#25), M19 (already-shipped/
+desktop-only, #17), M21 (answer-tile overflow, #24/#27). ⚠️ The landscape set was
+closed without an on-device re-test (see §9 CLOSEOUT) — a ~360px Android pass of
+ABC + Word Journey + landscape is still the honest follow-up. Next: M7 (tablet TTS — likely just the device Hebrew-voice
 install) → M8 (PWA install button) → M5 (needs the Cloudflare Worker + project
 key, and its `manager` role overlaps M12). Then the milestone-cert bug (clear
 fix, but needs the recalibration decision first) → E2E backfill for the mic/WJ
