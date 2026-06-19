@@ -25,4 +25,7 @@ export { transportationWords }  from './transportation.js';
 export { toolsWords }           from './tools.js';
 export { signsWords }           from './signs.js';
 export { musicWords }           from './music.js';
+export { daysWords }            from './days.js';
+export { monthsWords }          from './months.js';
+export { astronomyWords }       from './astronomy.js';
 export { customWords }          from './custom.js';

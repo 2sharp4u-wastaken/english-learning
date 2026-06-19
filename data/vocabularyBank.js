@@ -6,6 +6,7 @@ import {
     schoolWords, minecraftWords, gamingWords, robloxWords, feelingsWords,
     adjectivesWords, placesWords, timeWords, weatherWords, sportsWords,
     transportationWords, toolsWords, signsWords, musicWords,
+    daysWords, monthsWords, astronomyWords,
     customWords
 } from './categories/_index.js';
 
@@ -34,6 +35,9 @@ const vocabularyBank = [
     ...toolsWords,
     ...signsWords,
     ...musicWords,
+    ...daysWords,
+    ...monthsWords,
+    ...astronomyWords,
     ...customWords      // parent-saved words (committed to source)
 ];
 

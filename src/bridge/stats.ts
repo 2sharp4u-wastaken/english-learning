@@ -43,6 +43,9 @@ const CATEGORY_META: Record<string, { name: string; icon: string }> = {
   tools: { name: 'כלים וציוד', icon: '🧰' },
   signs: { name: 'שלטים וסמלים', icon: '🚸' },
   music: { name: 'מוזיקה', icon: '🎵' },
+  days: { name: 'ימי השבוע', icon: '📅' },
+  months: { name: 'חודשי השנה', icon: '🗓️' },
+  astronomy: { name: 'אסטרונומיה', icon: '🔭' },
   custom: { name: 'מותאם אישית', icon: '⭐' },
 }
 

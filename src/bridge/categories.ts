@@ -28,6 +28,9 @@ const BASE_CATEGORIES: VocabularyCategory[] = [
   { id: 'tools',           name: 'כלים וציוד',      wordCount: 16 },
   { id: 'signs',           name: 'שלטים וסמלים',    wordCount: 12 },
   { id: 'music',           name: 'מוזיקה',          wordCount: 11 },
+  { id: 'days',            name: 'ימי השבוע',        wordCount: 7  },
+  { id: 'months',          name: 'חודשי השנה',       wordCount: 12 },
+  { id: 'astronomy',       name: 'אסטרונומיה',       wordCount: 25 },
 ]
 
 interface WordLike {

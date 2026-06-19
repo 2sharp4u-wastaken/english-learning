@@ -1,15 +1,9 @@
-// Time & Days vocabulary (20 words)
+// Time vocabulary (15 words)
 // For Hebrew-speaking children aged 5-9
 // Covers words used in sentence games: morning, night, today, yesterday, weekend, summer
+// Days of the week live in days.js (dedicated focused category).
 
 export const timeWords = [
-    { word: "Monday", translation: "יום שני", category: "time", image: "📅" },
-    { word: "Tuesday", translation: "יום שלישי", category: "time", image: "📅" },
-    { word: "Wednesday", translation: "יום רביעי", category: "time", image: "📅" },
-    { word: "Thursday", translation: "יום חמישי", category: "time", image: "📅" },
-    { word: "Friday", translation: "יום שישי", category: "time", image: "📅" },
-    { word: "Saturday", translation: "שבת", category: "time", image: "✡️" },
-    { word: "Sunday", translation: "יום ראשון", category: "time", image: "📅" },
     { word: "Morning", translation: "בוקר", category: "time", image: "🌅" },
     { word: "Afternoon", translation: "צהריים", category: "time", image: "☀️" },
     { word: "Evening", translation: "ערב", category: "time", image: "🌆" },
