@@ -1106,6 +1106,17 @@ on-reload timing issue, not a product regression. Worth a separate look.
 
 ## 12. Beta round 6 (2026-06-19, build `74fffc7`)
 
+- ✅ **New categories: Astronomy (25), Days of the week (7), Months of the year (12) — 2026-06-19.**
+  Three new word files added to the bank. Days were split OUT of `time.js` (which now covers
+  only time-of-day + seasons, 15 words) into a dedicated `days.js` so children can practice
+  day names in isolation. Months were completely missing. Astronomy covers solar-system planets,
+  space objects, and exploration vocabulary. Wired into `_index.js` + `vocabularyBank.js` +
+  `src/bridge/categories.ts` (BASE_CATEGORIES) + `src/bridge/stats.ts` (CATEGORY_META).
+  **INVARIANT: days live in `category:"days"`, NOT `category:"time"` — do not re-add them to
+  time.js.** Existing users who had learned `monday_time` etc. will have those mastery entries
+  orphaned (beta-only risk; acceptable). Sentence/grammar data that mentions day names does so
+  as vocabulary within sentence text, not by category filter — unaffected.
+
 - ✅ **#32/#33 — Picture Match confusion "איזה תמונה לבחור" (which picture to choose?).**
   User Zohar (600×928, Linux/ChromeOS-like) filed two reports from
   `#/game/picture-match`. Log in #33 shows a TTS watchdog firing at +5.987s
