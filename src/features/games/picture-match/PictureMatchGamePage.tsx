@@ -405,6 +405,9 @@ export function PictureMatchGamePage() {
       ? promptWordRaw
       : stripNikud(promptWordRaw)
     : undefined
+  // Hebrew translation shown in the prompt (mirrors Listening game) so the child
+  // has a native-language cue when audio fails or is delayed.
+  const hebrewTranslation = current?.hebrew || current?.translation || undefined
 
   const answerOptions = current
     ? current.options.map((opt, i) => ({
@@ -448,6 +451,7 @@ export function PictureMatchGamePage() {
             <MediaPromptCard
               prompt="האזן ובחר את התמונה הנכונה"
               word={promptWord}
+              translation={hebrewTranslation}
               onPlayAudio={handleManualPlay}
               audioDisabled={audioPlaysLeft <= 0 && playsSoFar >= REQUIRED_PLAYS_BEFORE_REVEAL}
               audioLabel="השמע מילה"

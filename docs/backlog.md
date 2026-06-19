@@ -1104,6 +1104,22 @@ on-reload timing issue, not a product regression. Worth a separate look.
 
 ---
 
+## 12. Beta round 6 (2026-06-19, build `74fffc7`)
+
+- ✅ **#32/#33 — Picture Match confusion "איזה תמונה לבחור" (which picture to choose?).**
+  User Zohar (600×928, Linux/ChromeOS-like) filed two reports from
+  `#/game/picture-match`. Log in #33 shows a TTS watchdog firing at +5.987s
+  (utterance never ended → force-settled = silence); without audio the child
+  had only an English word they can't read and 4 mystery pictures. Fix: pass
+  the Hebrew translation from the question object to `MediaPromptCard`'s
+  `translation` prop — mirroring the Listening game's established pattern
+  (`current?.hebrew || current?.translation`). The `hebrew` field is populated
+  in `convertToPictureMatch()` from the vocab bank. This gives every child a
+  native-language cue for what to look for, even when TTS is silent.
+  **GitHub issues #32 and #33 closed.**
+
+---
+
 ### Suggested order
 **MOBILE1 first — it's what the live play-test surfaced:** M1✅ → M6✅ → M9✅ →
 M10✅ → M11✅ → M2✅ → M3✅ done. **M12 Slice A (QA panel)✅**, **M12 Slice B + M4
