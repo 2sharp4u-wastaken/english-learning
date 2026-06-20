@@ -958,8 +958,16 @@ CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|pictu
 
 ## PWA Update Detection (M22)
 
+**CRITICAL — sw.js must change every deploy or the banner never fires.** The browser only
+treats a deploy as an update when `/sw.js` differs byte-for-byte from the installed copy. A
+normal deploy ships new *hashed chunks* but, without help, an identical `sw.js` → no new
+worker → no `controllerchange` → no banner (the new chunks still trickle in silently via
+stale-while-revalidate, just unannounced). FIX (2026-06-21): `vite.config.ts`'s
+`copyStaticAssets` rewrites `const CACHE_VERSION = 'v2'` → `'v2-<gitSHA>'` when copying
+`sw.js` into `dist/`, so every commit flips the bytes and the chain below runs reliably.
+
 ```
-new deploy pushed → Cloudflare Workers serves new sw.js
+new deploy pushed → Cloudflare Workers serves new sw.js (CACHE_VERSION carries the git SHA)
   └─ browser fetches sw.js in background (existing SW still controls the page)
   └─ new SW installs → self.skipWaiting() fires immediately
   └─ new SW activates → self.clients.claim()
@@ -977,7 +985,14 @@ hadController guard (src/main.tsx):
   - non-null on update (old SW was controlling) → banner shown
 ```
 
-Files: `src/main.tsx` (listener), `src/app/UpdateBanner.tsx` (UI), `src/app/App.tsx` (mount point).
+Manual check: the "מה חדש" page (`WhatsNewPage`) has a "בדיקת עדכונים" button →
+`src/lib/swUpdate.ts` `checkForAppUpdate()` → `registration.update()` (forces the byte-diff
+now instead of waiting for the next navigation). If a new worker is found it installs +
+activates and the same banner takes over; otherwise the button reports "הגרסה עדכנית ✓".
+
+Files: `src/main.tsx` (listener), `src/app/UpdateBanner.tsx` (UI), `src/app/App.tsx` (mount point),
+`src/lib/swUpdate.ts` (manual check), `src/features/whats-new/WhatsNewPage.tsx` (button),
+`vite.config.ts` (sw.js SHA stamping).
 WHY: `skipWaiting()` in `sw.js` means the new SW activates immediately without waiting for
 tabs to close — `controllerchange` is therefore the correct event (not `waiting` state, which
 is skipped). The banner is mounted OUTSIDE `<Providers>` so it survives any provider-level error.

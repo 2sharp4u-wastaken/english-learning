@@ -1163,6 +1163,14 @@ on-reload timing issue, not a product regression. Worth a separate look.
   ever entering the waiting state — `controllerchange` is the only signal.
   Files: `src/main.tsx`, `src/app/UpdateBanner.tsx`, `src/app/App.tsx`.
   Wiring: `docs/wiring-map.md` → "PWA Update Detection (M22)".
+  **Follow-up — SHIPPED 2026-06-21 (reliable trigger + manual check).** The banner
+  above only fires when the browser sees a NEW `sw.js` (byte-diff). `sw.js` had a
+  hardcoded `CACHE_VERSION='v2'`, so a normal deploy (new hashed chunks, identical
+  sw.js) never registered as an update → banner silent. Fix: `vite.config.ts`
+  stamps the git SHA into `CACHE_VERSION` (`v2-<sha>`) when copying sw.js, so every
+  commit flips the bytes. Plus a manual "בדיקת עדכונים" button on the "מה חדש" page
+  (`src/lib/swUpdate.ts` `checkForAppUpdate()` → `registration.update()`).
+  Files: `vite.config.ts`, `sw.js`, `src/lib/swUpdate.ts`, `src/features/whats-new/WhatsNewPage.tsx`.
 
 ---
 
