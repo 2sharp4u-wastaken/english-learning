@@ -1129,13 +1129,15 @@ on-reload timing issue, not a product regression. Worth a separate look.
   native-language cue for what to look for, even when TTS is silent.
   **GitHub issues #32 and #33 closed.**
 
-- ✅ **#34 — ABC letter audio: M voiced as "e m m", R voiced as "e r r" (Android TTS).**
+- ✅ **#34/#37/#38 — ABC letter audio: M voiced as "e m m", E voiced as "e e e" etc. (Android TTS).**
   `letterSpeech.ts` (M18) had doubled-consonant forms ("emm", "arr", "ecks") to avoid
-  Android TTS spelling out 2-char tokens — but Android was still spelling the 3-char
-  forms letter-by-letter. Fix: use real English words where they exist (`R: 'are'`,
-  `X: 'ex'`) and revert others to the abcData.js phonetics (shorter is less prone to
-  misreading than a tripled string). Full table updated: E→'ee', F→'ef', L→'el',
-  M→'em', N→'en', R→'are', X→'ex'. **GitHub issue #34 closed.**
+  Android TTS spelling out 2-char tokens — but Android spelled those 3-char forms too
+  (E-M-M, A-R-R). First fix attempt used shorter abcData phonetics (em, ee, el, etc.)
+  but Android still spells any short token that looks like an abbreviation. Final fix
+  (#37/#38): use **single uppercase letters** for the trouble set (E→'E', F→'F', L→'L',
+  M→'M', N→'N', S→'S') — a single character is unambiguous; TTS MUST say its name, it
+  cannot spell it. Real-word forms kept where they exist: R→'are' (verb), X→'ex' (noun).
+  **GitHub issues #34, #37, #38 closed.**
 
 - ✅ **#35/#36 — ABC say-letter: T/X etc. consistently return `nomatch` on Android;
   only escape was to say the letter twice (to trigger "wrong" answer) and advance.**

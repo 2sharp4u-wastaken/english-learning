@@ -1,34 +1,36 @@
-// M18 (beta #15/#34) — letter-name audio that TTS pronounces correctly.
+// M18 (beta #15/#34/#37/#38) — letter-name audio that TTS pronounces correctly.
 //
 // The ABC data's `phonetic` field (data/abcData.js) drives the SAY-LETTER
 // matcher (expected STT transcript) — it stays as-is there.
 // This map is AUDIO-ONLY (never feeds the matcher or the on-screen glyph).
 //
-// Strategy: use real English words wherever the phonetic is a bare 2-char token
-// that Android TTS spells out letter-by-letter (e.g. "em" → "E M", "ar" → "A R").
-// "are" (verb) is read as a word; "ex" (noun) is read as a word; etc.
-// For letters where no better word exists, keep the abcData phonetic as-is
-// (shorter is safer than tripling consonants like "emm" → "E M M").
+// Strategy (revised after #37/#38):
+// - Short 2–3 char strings that look like abbreviations (em, ee, el, ef, en, ess)
+//   get spelled out letter-by-letter by Android TTS regardless of length.
+// - Single UPPERCASE letters are unambiguous: TTS cannot spell a single character
+//   and must say its name (E→"ee", M→"em", N→"en", etc.).
+// - For letters where a common English WORD matches the name, use the word:
+//   R→"are" (verb), X→"ex" (noun), and the already-word-like set (bee, see, …).
 const LETTER_SPEECH: Record<string, string> = {
   A: 'ay',
   B: 'bee',
   C: 'see',
   D: 'dee',
-  E: 'ee',
-  F: 'ef',
+  E: 'E',
+  F: 'F',
   G: 'jee',
   H: 'aitch',
   I: 'eye',
   J: 'jay',
   K: 'kay',
-  L: 'el',
-  M: 'em',
-  N: 'en',
+  L: 'L',
+  M: 'M',
+  N: 'N',
   O: 'oh',
   P: 'pee',
   Q: 'cue',
   R: 'are',
-  S: 'ess',
+  S: 'S',
   T: 'tee',
   U: 'you',
   V: 'vee',

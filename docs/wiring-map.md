@@ -811,6 +811,11 @@ React route /#/game/abc
       │   ├─ match-case / letter-sound / identify-case / alphabet-order → AnswerGrid,
       │   │   AUDIO-GATED: options hidden until letter phonetic auto-plays (voice
       │   │   readiness poll → setAudioRevealed). letter-sound shows '?' glyph.
+      │   │   Audio text = getLetterSpeech(letterUpper, phonetic) (letterSpeech.ts):
+      │   │   single uppercase letter for E/F/L/M/N/S (TTS must say the name, can't
+      │   │   spell a single char); real words for R→'are'/X→'ex'; word-like tokens
+      │   │   for the rest (bee, see, tee…). NEVER feed this map to the STT matcher —
+      │   │   the matcher uses question.phonetic from abcData.js.
       │   ├─ word-picture → emoji prompt, options shown immediately, voices the WORD.
       │   └─ say-letter → mic button (isSpeechRecognitionAvailable / startABCRecording);
       │       unsupported → message + skip. No audio gate.
