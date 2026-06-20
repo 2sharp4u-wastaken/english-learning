@@ -33,8 +33,19 @@ window.addEventListener('vite:preloadError', () => {
 // after it), register immediately, else the listener never fires.
 if (import.meta.env.PROD && 'serviceWorker' in navigator) {
   const register = () => {
+    // Remember whether there was already a SW controller before we register.
+    // If yes, a future controllerchange means a NEW SW took over = real update.
+    // If no, it's the very first install — no banner needed.
+    const hadController = !!navigator.serviceWorker.controller
+
     navigator.serviceWorker.register('/sw.js').catch(() => {
       /* registration failure is non-fatal — the app still runs online */
+    })
+
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (hadController) {
+        window.dispatchEvent(new CustomEvent('sw-update-available'))
+      }
     })
   }
   if (document.readyState === 'complete') register()

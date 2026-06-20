@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { Providers } from './providers'
 import { router } from './router'
+import { UpdateBanner } from './UpdateBanner'
 import { warmUpConfetti } from '@/bridge/feedback'
 import { useEngineBoot } from '@/hooks/useEngineBoot'
 import { useAuthSession } from '@/hooks/useAuthSession'
@@ -32,10 +33,13 @@ export function App() {
   }, [])
 
   return (
-    <Providers>
-      <AuthGate>
-        <RouterProvider router={router} />
-      </AuthGate>
-    </Providers>
+    <>
+      <Providers>
+        <AuthGate>
+          <RouterProvider router={router} />
+        </AuthGate>
+      </Providers>
+      <UpdateBanner />
+    </>
   )
 }
