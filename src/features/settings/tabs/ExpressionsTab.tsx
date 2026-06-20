@@ -47,6 +47,7 @@ export function ExpressionsTab() {
             label="הפעלת ביטויים"
             description="מתג ראשי לכל תוכן הביטויים. כיבוי מסתיר את כולם מהמשחקים."
             checked={enabled}
+            testId="expr-enabled-toggle"
             onChange={(v) => updateSettings({ expressionsEnabled: v })}
           />
           <div className="grid gap-2 sm:grid-cols-2">
@@ -57,6 +58,7 @@ export function ExpressionsTab() {
                 description={REGISTER_COPY[reg].description}
                 checked={enabled && registers[reg]}
                 disabled={!enabled}
+                testId={`expr-register-${reg}`}
                 onChange={(v) => setRegister(reg, v)}
               />
             ))}

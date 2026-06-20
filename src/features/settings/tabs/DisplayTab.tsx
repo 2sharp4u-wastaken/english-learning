@@ -1,4 +1,3 @@
-import { useSettings } from '@/hooks/useSettings'
 import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
 import { useNikud } from '@/bridge/nikud'
 import {
@@ -89,7 +88,6 @@ function SoundGrid({
 
 export function DisplayTab() {
   const nk = useNikud()
-  const { settings, updateSettings } = useSettings()
   const { prefs, updatePrefs } = usePlayerPrefs()
 
   const celebrationOptions: SegmentOption<'calm' | 'normal' | 'party'>[] = [
@@ -313,24 +311,6 @@ export function DisplayTab() {
               </div>
             </div>
           )}
-        </div>
-      </SectionCard>
-
-      {/* Global display (parent-shared) */}
-      <SectionCard title={nk('תצוגת מילים')} description={nk('הגדרות אלו משותפות לכל השחקנים/ות.')}>
-        <div className="grid gap-2 sm:grid-cols-2">
-          <Toggle
-            label={nk('ניקוד עברי')}
-            description={nk('הצגת סימני ניקוד על מילים בעברית')}
-            checked={settings.showNikud !== false}
-            onChange={(v) => updateSettings({ showNikud: v })}
-          />
-          <Toggle
-            label={nk('אותיות קטנות באנגלית')}
-            description={nk('הצגת מילים באנגלית באותיות קטנות')}
-            checked={settings.lowercaseMode === true}
-            onChange={(v) => updateSettings({ lowercaseMode: v })}
-          />
         </div>
       </SectionCard>
     </div>

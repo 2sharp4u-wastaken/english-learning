@@ -12,6 +12,8 @@ interface Props {
   collapsible?: boolean
   /** Initial collapsed state (only meaningful with `collapsible`). */
   defaultCollapsed?: boolean
+  /** data-testid placed on the collapsible header button (for deterministic expand in tests). */
+  headerTestId?: string
 }
 
 export function SectionCard({
@@ -22,6 +24,7 @@ export function SectionCard({
   actions,
   collapsible = false,
   defaultCollapsed = false,
+  headerTestId,
 }: Props) {
   const [open, setOpen] = useState(!defaultCollapsed)
   const hasHeader = Boolean(title || description || actions)
@@ -64,6 +67,7 @@ export function SectionCard({
             type="button"
             onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
+            data-testid={headerTestId}
             className={cn(
               'flex w-full items-start justify-between gap-3 rounded-lg text-start transition-colors',
               open && 'mb-4',

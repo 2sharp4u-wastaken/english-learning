@@ -98,6 +98,20 @@ src/bridge/parentMode.ts = the single elevation source (module-level, like onAut
        (any password elevation is dropped when the session changes)
 useParentPassword() = thin React wrapper over the store (keeps {unlocked,unlock,lock})
 
+SettingsPage tabs (2026-06-21 redesign — 7 uneven tabs → 4 honest groups):
+  display  "המשחק שלי"   (unprotected) → DisplayTab           — per-player look & feel only
+  game     "משחק ולמידה" (protected)   → GameLearningTab       = CategoriesTab + GameTab + AdvancedTab
+  content  "תוכן"        (protected)   → ContentTab            = CustomWords + ExpressionsTab + WordImages(collapsed)
+  parents  "הורים וחשבון"(protected)   → ParentsTab            = UsersTab + password + cloud + QA + guide + whatsnew
+                                                                  + תחזוקה(collapsed) + התחלה מחדש(collapsed)
+  GameLearningTab/ContentTab/ParentsTab COMPOSE existing self-contained tab bodies
+  (each its own space-y-4 card stack) — nothing was rewritten. The old categories/
+  advanced/expressions/users/advanced-tools tab IDs are GONE. תצוגת מילים (device-
+  global showNikud/lowercase/hebrewVocalization) moved OUT of the kid display tab INTO
+  GameTab. SectionCard gained `collapsible`/`defaultCollapsed`/`headerTestId`; Toggle
+  gained `testId` (nikud-proof switch handle — the accessible name from the label is
+  mutated by runtime nikud injection, so getByRole({name}) on Hebrew toggles is fragile).
+
 SettingsPage (2026-06-17 — inline gate REMOVED):
   visibleTabs = unlocked ? TABS : TABS.filter(!protected)   ← kids see ONLY תצוגה
   unlocked is now ROLE-driven only: a parent reaches protected settings by SIGNING IN
@@ -108,11 +122,11 @@ SettingsPage (2026-06-17 — inline gate REMOVED):
        pill is just a redundant label) → customization content shows directly.
   session re-locks while a protected tab active → snaps back to display (render guard)
 
-Change the parent password from INSIDE the parent area: כלי הורה → "סיסמת הורה" →
+Change the parent password from INSIDE the parent area: הורים וחשבון → "סיסמת הורה" →
   changeParentPassword(new) [updates BOTH the parentPassword key AND the parent
   user's account password — one credential]. Forgotten-entirely recovery = clear
-  app data (offline app, no email channel). In-app "התחלה מחדש" (כלי הורה,
-  two-step confirm) → factoryReset() [localStorage.clear() + reload] → first-run
+  app data (offline app, no email channel). In-app "התחלה מחדש" (הורים וחשבון,
+  collapsed two-step confirm) → factoryReset() [localStorage.clear() + reload] → first-run
   wizard (reinstalling the PWA does NOT clear localStorage). Login screen shows a
   v<ver>·<sha> build stamp so a tester can confirm the deployed bundle.
 

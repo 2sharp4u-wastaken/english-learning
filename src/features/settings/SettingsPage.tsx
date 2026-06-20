@@ -1,28 +1,26 @@
 import { useCallback, useState } from 'react'
 import { useParentPassword } from '@/hooks/useParentPassword'
 import { SettingsTabRail, type TabDef } from './components/SettingsTabRail'
-import { Palette, Library, Gamepad2, SlidersHorizontal, Users, Wrench, MessagesSquare } from 'lucide-react'
+import { Palette, Gamepad2, Library, UserCog } from 'lucide-react'
 import { DisplayTab } from './tabs/DisplayTab'
-import { CategoriesTab } from './tabs/CategoriesTab'
-import { GameTab } from './tabs/GameTab'
-import { AdvancedTab } from './tabs/AdvancedTab'
-import { UsersTab } from './tabs/UsersTab'
-import { AdvancedToolsTab } from './tabs/AdvancedToolsTab'
-import { ExpressionsTab } from './tabs/ExpressionsTab'
+import { GameLearningTab } from './tabs/GameLearningTab'
+import { ContentTab } from './tabs/ContentTab'
+import { ParentsTab } from './tabs/ParentsTab'
 
-type TabId = 'display' | 'categories' | 'game' | 'advanced' | 'users' | 'advanced-tools' | 'expressions'
+type TabId = 'display' | 'game' | 'content' | 'parents'
 
-// Only "תצוגה" (display) is kid-facing; everything that changes content,
-// mechanics, or accounts is parent-gated — incl. קטגוריות (content selection),
-// which moved behind the gate in M12 Slice B.
+// Settings redesign (2026-06-21): seven uneven tabs collapsed into four honest
+// groups. Only "המשחק שלי" (display) is kid-facing; everything that changes
+// content, mechanics, or accounts is parent-gated.
+//   - display  → per-player look & feel (colors/sounds/motion/mascot)
+//   - game     → gameplay & learning (categories + mechanics + pace + display + overrides)
+//   - content  → authoring/overrides (custom words + expressions + images)
+//   - parents  → accounts, security, help, maintenance (+ collapsed danger zone)
 const TABS: TabDef[] = [
-  { id: 'display',        label: 'המשחק שלי',   icon: <Palette size={16} />,          protected: false },
-  { id: 'categories',     label: 'קטגוריות',    icon: <Library size={16} />,          protected: true  },
-  { id: 'game',           label: 'משחק',        icon: <Gamepad2 size={16} />,         protected: true  },
-  { id: 'advanced',       label: 'מתקדם',       icon: <SlidersHorizontal size={16} />, protected: true  },
-  { id: 'expressions',    label: 'ביטויים',     icon: <MessagesSquare size={16} />,   protected: true  },
-  { id: 'users',          label: 'משתמשים',     icon: <Users size={16} />,            protected: true  },
-  { id: 'advanced-tools', label: 'כלי הורה',    icon: <Wrench size={16} />,           protected: true  },
+  { id: 'display', label: 'המשחק שלי',   icon: <Palette size={16} />,  protected: false },
+  { id: 'game',    label: 'משחק ולמידה', icon: <Gamepad2 size={16} />, protected: true  },
+  { id: 'content', label: 'תוכן',        icon: <Library size={16} />,  protected: true  },
+  { id: 'parents', label: 'הורים וחשבון', icon: <UserCog size={16} />, protected: true  },
 ]
 
 export function SettingsPage() {
@@ -77,12 +75,9 @@ export function SettingsPage() {
         )}
         <div className="min-w-0 flex-1 space-y-4">
           {activeId === 'display' && <DisplayTab />}
-          {activeId === 'categories' && <CategoriesTab />}
-          {activeId === 'game' && <GameTab />}
-          {activeId === 'advanced' && <AdvancedTab />}
-          {activeId === 'expressions' && <ExpressionsTab />}
-          {activeId === 'users' && <UsersTab />}
-          {activeId === 'advanced-tools' && <AdvancedToolsTab />}
+          {activeId === 'game' && <GameLearningTab />}
+          {activeId === 'content' && <ContentTab />}
+          {activeId === 'parents' && <ParentsTab />}
         </div>
       </div>
     </div>

@@ -4,14 +4,20 @@ import { Download, RotateCcw, BookOpen, KeyRound, AlertTriangle, Sparkles } from
 import { useSettings } from '@/hooks/useSettings'
 import { changeParentPassword, factoryReset } from '@/bridge/auth'
 import { SectionCard } from '../components/SectionCard'
-import { CustomWordsPanel } from './components/CustomWordsPanel'
-import { WordImagesPanel } from './components/WordImagesPanel'
 import { QATestingPanel } from './components/QATestingPanel'
 import { CloudAccountPanel } from './components/CloudAccountPanel'
+import { UsersTab } from './UsersTab'
 
 const MIN_PASSWORD = 4
 
-export function AdvancedToolsTab() {
+/**
+ * "הורים וחשבון" — accounts, security, help and maintenance (settings redesign,
+ * 2026-06-21). Merges the old משתמשים tab with the account/tools/danger half of
+ * the former כלי הורה (content management split off to the תוכן tab). Order:
+ * players → password → cloud → QA → docs → (collapsed) destructive zone, so the
+ * irreversible actions sit last and folded away.
+ */
+export function ParentsTab() {
   const { resetSettings } = useSettings()
   const navigate = useNavigate()
   const [resetConfirmOpen, setResetConfirmOpen] = useState(false)
@@ -31,26 +37,12 @@ export function AdvancedToolsTab() {
 
   return (
     <div className="space-y-4">
-      <SectionCard
-        title="הוספת מילים מותאמות"
-        description="ייבוא מילים באנגלית ותרגום אוטומטי לעברית עם Claude. המילים נשמרות בדפדפן ומופיעות מיד במשחקים."
-      >
-        <CustomWordsPanel />
-      </SectionCard>
-
-      {/* M12 Slice A: parent/QA testing affordance — opens locked content without
-          grinding to the thresholds. Behind the parent password (this tab). */}
-      <SectionCard
-        title="כלי בדיקה (QA)"
-        description="פתיחת תוכן נעול לצורך בדיקה, בלי לשחק עד הסף. הכלי משנה את ההתקדמות של המשתמש הנוכחי — לא מיועד לשחקנים/ות."
-      >
-        <QATestingPanel />
-      </SectionCard>
+      {/* Player management (formerly its own משתמשים tab). */}
+      <UsersTab />
 
       {/* Issue #10: change the parent password from inside the parent area
-          (already authenticated — the standard "change password while logged
-          in"). There is no unauthenticated reset; a forgotten password is
-          recovered by clearing the app's data. */}
+          (already authenticated). There is no unauthenticated reset; a forgotten
+          password is recovered by clearing the app's data ("התחלה מחדש" below). */}
       <SectionCard
         title="סיסמת הורה"
         description="שינוי סיסמת ההורה. הסיסמה מגנה על כל ההגדרות והאזור הזה. אם שכחתם אותה לגמרי — ניתן לאפס דרך מחיקת נתוני האפליקציה במכשיר."
@@ -64,6 +56,15 @@ export function AdvancedToolsTab() {
         description="חשבון משפחה (אימייל וסיסמה) שיאפשר שימוש בכמה מכשירים וגיבוי ההתקדמות. אופציונלי — המשחק עובד גם בלי חיבור."
       >
         <CloudAccountPanel />
+      </SectionCard>
+
+      {/* M12 Slice A: parent/QA testing affordance — opens locked content without
+          grinding to the thresholds. */}
+      <SectionCard
+        title="כלי בדיקה (QA)"
+        description="פתיחת תוכן נעול לצורך בדיקה, בלי לשחק עד הסף. הכלי משנה את ההתקדמות של המשתמש הנוכחי — לא מיועד לשחקנים/ות."
+      >
+        <QATestingPanel />
       </SectionCard>
 
       {/* M4: in-app parent guide (offline, app-styled). */}
@@ -98,21 +99,14 @@ export function AdvancedToolsTab() {
         </button>
       </SectionCard>
 
-      {/* Image/translation overrides: a heavier, rarely-touched power tool, so it
-          sits low and starts collapsed (the panel mounts only when expanded). */}
-      <SectionCard
-        title="תמונות ותרגומים"
-        description="החלפת תמונות ותרגומים למילים קיימות. הכול נשמר בדפדפן — ללא צורך בשרת."
-        collapsible
-        defaultCollapsed
-      >
-        <WordImagesPanel />
-      </SectionCard>
-
-      {/* M6: moved here from the kid-visible settings header. */}
+      {/* M6: maintenance. Collapsed by default — rarely needed, and "איפוס הגדרות"
+          is destructive. */}
       <SectionCard
         title="תחזוקה"
         description="הורדת יומן האפליקציה לדיווח על תקלה, ואיפוס ההגדרות לברירת המחדל (לא נוגע בהתקדמות השחקנים/ות)."
+        collapsible
+        defaultCollapsed
+        headerTestId="tools-maintenance-toggle"
       >
         <div className="flex flex-wrap items-center gap-2">
           <button
@@ -162,11 +156,13 @@ export function AdvancedToolsTab() {
 
       {/* Full device reset (issue #10 recovery / clean-slate testing). Wipes ALL
           profiles + progress + the parent password and returns to the first-run
-          wizard. Behind the parent area; two-step confirm because it's
-          irreversible. */}
+          wizard. Collapsed + two-step confirm because it's irreversible. */}
       <SectionCard
         title="התחלה מחדש"
         description="מחיקת כל הפרופילים, כל ההתקדמות, ההגדרות וסיסמת ההורה — המכשיר חוזר למצב התחלתי ולאשף ההגדרה הראשוני. אין ביטול."
+        collapsible
+        defaultCollapsed
+        headerTestId="tools-factory-toggle"
       >
         {!factoryConfirm ? (
           <button

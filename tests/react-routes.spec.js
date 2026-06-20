@@ -467,7 +467,7 @@ test.describe('Slice 1.6: Settings', () => {
     // lone display pill is dropped too. There is NO inline "parent settings"
     // entry point either — protected settings are reached by signing in with the
     // parent profile.
-    for (const id of ['categories', 'game', 'advanced', 'expressions', 'users', 'advanced-tools']) {
+    for (const id of ['game', 'content', 'parents']) {
       await expect(page.locator(`[data-tab-id="${id}"]`)).toHaveCount(0);
     }
     await expect(page.locator('[data-testid="open-parent-settings"]')).toHaveCount(0);
@@ -524,7 +524,7 @@ test.describe('Slice 1.6: Settings', () => {
     await seedUser(page, { role: 'parent' });
     await gotoHash(page, '/settings');
 
-    for (const id of ['display', 'categories', 'game', 'advanced', 'expressions', 'users', 'advanced-tools']) {
+    for (const id of ['display', 'game', 'content', 'parents']) {
       await expect(page.locator(`[data-tab-id="${id}"]`).first()).toBeAttached({ timeout: 5000 });
     }
     // No "parent settings" unlock prompt — already elevated by role.
@@ -544,10 +544,11 @@ test.describe('Slice 1.6: Settings', () => {
 
   test('changing a setting persists to both legacy localStorage keys', async ({ page }) => {
     // Categories is parent-protected (M12 Slice B); a parent-role session
-    // auto-elevates, so we can open the categories tab without a password.
+    // auto-elevates. Settings redesign (2026-06-21): categories now live inside
+    // the consolidated "משחק ולמידה" (game) tab.
     await seedUser(page, { role: 'parent' });
     await gotoHash(page, '/settings');
-    await page.locator('[data-tab-id="categories"]:visible').first().click();
+    await page.locator('[data-tab-id="game"]:visible').first().click();
 
     // Wait for the weather category button (nikud-stripped match) and click it.
     // 'weather' is NOT in DEFAULT_SETTINGS — first click adds it.
@@ -579,8 +580,10 @@ test.describe('Slice 1.6: Settings', () => {
 
   test('reset settings flow: parent-tools gate → confirm → defaults restored (M6)', async ({ page }) => {
     // M6: the reset button moved off the kid-visible settings header into the
-    // parent-gated כלי הורה tab (the tab unlock IS the password gate now).
-    await openAdvancedTools(page);
+    // parent area. Redesign (2026-06-21): now under the parents tab's collapsed
+    // "תחזוקה" card — expand it first.
+    await openParentsTab(page);
+    await page.locator('[data-testid="tools-maintenance-toggle"]').click();
 
     // Pre-mutate the persisted settings so we have something to reset
     await page.evaluate(() => {
@@ -608,36 +611,46 @@ test.describe('Slice 1.6: Settings', () => {
     expect(legacy?.selectedCategories?.length).toBe(10);
   });
 
-  // Slice 4.3.b/c: Custom Words + Word Images both ported to React — the
-  // advanced-tools tab no longer links to legacy settings.html at all.
-  async function openAdvancedTools(page) {
+  // Settings redesign (2026-06-21): the old single "כלי הורה" (advanced-tools)
+  // tab was split — content authoring (custom words, images, expressions) lives
+  // in "תוכן" (content); accounts/security/maintenance in "הורים וחשבון" (parents).
+  // Parent settings are reached by signing in with the parent profile (role
+  // auto-elevates) — there's no inline unlock from a kid session anymore.
+  async function openParentsTab(page) {
     await page.setViewportSize({ width: 1280, height: 800 });
-    // Parent settings are reached by signing in with the parent profile (role
-    // auto-elevates) — there's no inline unlock from a kid session anymore.
     await seedUser(page, { role: 'parent' });
     await gotoHash(page, '/settings');
-    await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
+    await page.locator('[data-tab-id="parents"]:visible').first().click();
   }
 
-  test('advanced-tools: both tools render natively with no settings.html escape hatch', async ({ page }) => {
-    await openAdvancedTools(page);
+  async function openContentTab(page) {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedUser(page, { role: 'parent' });
+    await gotoHash(page, '/settings');
+    await page.locator('[data-tab-id="content"]:visible').first().click();
+  }
 
-    // Custom Words panel (textarea) + Word Images panel (list) both render.
+  test('content + parents: tools render natively with no settings.html escape hatch', async ({ page }) => {
+    // Content tab: Custom Words panel (textarea) + Word Images panel (list).
+    // Word Images is collapsed by default now → expand it first.
+    await openContentTab(page);
     await expect(page.locator('#react-root textarea')).toBeVisible();
+    await page.locator('[data-testid="content-images-toggle"]').click();
     await expect(page.locator('[data-testid="word-images-list"]')).toBeVisible();
+    await expect(page.locator('#react-root a[href="settings.html"]')).toHaveCount(0);
 
-    // M6: maintenance actions (logs download + settings reset) live here now.
+    // Parents tab: maintenance actions (logs download + settings reset) live in a
+    // collapsed "תחזוקה" card now → expand to reveal them.
+    await page.locator('[data-tab-id="parents"]:visible').first().click();
+    await page.locator('[data-testid="tools-maintenance-toggle"]').click();
     await expect(page.locator('[data-testid="tools-download-logs"]')).toBeVisible();
     await expect(page.locator('[data-testid="tools-reset-settings"]')).toBeVisible();
-
-    // No legacy escape hatch links remain.
-    await expect(page.locator('#react-root a[href="settings.html"]')).toHaveCount(0);
   });
 
   // Issue #10: parent password is changed from INSIDE the parent area (already
   // signed in as the parent) — there is no unauthenticated "forgot password" reset.
-  test('advanced-tools: change parent password (authenticated)', async ({ page }) => {
-    await openAdvancedTools(page);
+  test('parents: change parent password (authenticated)', async ({ page }) => {
+    await openParentsTab(page);
 
     await page.locator('#new-parent-pw').fill('changed-pass');
     await page.locator('#new-parent-pw2').fill('changed-pass');
@@ -653,8 +666,10 @@ test.describe('Slice 1.6: Settings', () => {
 
   // Issue #10 follow-up: in-app "התחלה מחדש" wipes the device and returns to the
   // first-run wizard (the standard-admin recovery, one tap inside the parent area).
-  test('advanced-tools: factory reset wipes profiles and returns to the first-run wizard', async ({ page }) => {
-    await openAdvancedTools(page);
+  test('parents: factory reset wipes profiles and returns to the first-run wizard', async ({ page }) => {
+    await openParentsTab(page);
+    // "התחלה מחדש" is a collapsed danger card now — expand to reveal the button.
+    await page.locator('[data-testid="tools-factory-toggle"]').click();
 
     await page.locator('[data-testid="tools-factory-reset"]').click();
     await page.locator('[data-testid="tools-factory-reset-confirm"]').click();
@@ -666,14 +681,14 @@ test.describe('Slice 1.6: Settings', () => {
   });
 
   // Tier-3 Phase A: optional cloud account card renders in the parent area.
-  test('advanced-tools: cloud account form renders (offline-first, optional)', async ({ page }) => {
-    await openAdvancedTools(page);
+  test('parents: cloud account form renders (offline-first, optional)', async ({ page }) => {
+    await openParentsTab(page);
     await expect(page.locator('[data-testid="cloud-account-form"]')).toBeVisible();
   });
 
   // M12 Slice A: parent/QA "unlock for testing" panel.
-  test('advanced-tools: QA panel seeds learned words and reflects in the live status', async ({ page }) => {
-    await openAdvancedTools(page);
+  test('parents: QA panel seeds learned words and reflects in the live status', async ({ page }) => {
+    await openParentsTab(page);
 
     const status = page.locator('[data-testid="qa-status"]');
     await expect(status).toBeVisible();
@@ -696,8 +711,8 @@ test.describe('Slice 1.6: Settings', () => {
     expect(learned).toBe(10);
   });
 
-  test('advanced-tools: Custom Words panel lists a seeded word and deletes it', async ({ page }) => {
-    await openAdvancedTools(page);
+  test('content: Custom Words panel lists a seeded word and deletes it', async ({ page }) => {
+    await openContentTab(page);
 
     // Seed a custom word, then re-open the tab so the panel reads it on mount.
     await page.evaluate(() => {
@@ -706,7 +721,7 @@ test.describe('Slice 1.6: Settings', () => {
       ]));
     });
     await page.locator('[data-tab-id="game"]:visible').first().click();
-    await page.locator('[data-tab-id="advanced-tools"]:visible').first().click();
+    await page.locator('[data-tab-id="content"]:visible').first().click();
 
     const list = page.locator('[data-testid="custom-words-list"]');
     await expect(list).toContainText('dragon');
@@ -719,8 +734,8 @@ test.describe('Slice 1.6: Settings', () => {
     expect(remaining).toHaveLength(0);
   });
 
-  test('advanced-tools: Custom Words import restores a backup bundle', async ({ page }) => {
-    await openAdvancedTools(page);
+  test('content: Custom Words import restores a backup bundle', async ({ page }) => {
+    await openContentTab(page);
 
     const bundle = {
       version: 1,
@@ -743,8 +758,10 @@ test.describe('Slice 1.6: Settings', () => {
     expect(saved.some((w) => w.word === 'whale')).toBe(true);
   });
 
-  test('advanced-tools: Word Images sets and resets an image override (live)', async ({ page }) => {
-    await openAdvancedTools(page);
+  test('content: Word Images sets and resets an image override (live)', async ({ page }) => {
+    await openContentTab(page);
+    // Word Images is collapsed by default in the redesign — expand it.
+    await page.locator('[data-testid="content-images-toggle"]').click();
     await expect(page.locator('[data-testid="word-images-list"]')).toBeVisible();
 
     // First card — word-independent (avoids assuming a specific base word).
@@ -766,8 +783,9 @@ test.describe('Slice 1.6: Settings', () => {
     )).toBe(false);
   });
 
-  test('advanced-tools: Word Images saves a translation override to localStorage', async ({ page }) => {
-    await openAdvancedTools(page);
+  test('content: Word Images saves a translation override to localStorage', async ({ page }) => {
+    await openContentTab(page);
+    await page.locator('[data-testid="content-images-toggle"]').click();
     await expect(page.locator('[data-testid="word-images-list"]')).toBeVisible();
 
     const card = page.locator('[data-testid="word-images-list"] li').first();
