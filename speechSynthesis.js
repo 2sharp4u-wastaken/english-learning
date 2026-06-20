@@ -13,6 +13,7 @@ class SpeechManager {
         this.recognition = null;
         this.isRecording = false;
         this.currentRecordingReject = null;
+        this.currentRecordingResolve = null;
         this._manualStop = false;
         this.voices = [];
         this.englishVoice = null;
@@ -441,7 +442,8 @@ class SpeechManager {
             }
 
             this.isRecording = true;
-            this.currentRecordingReject = reject; // Store reject function for manual stop
+            this.currentRecordingReject = reject;
+            this.currentRecordingResolve = resolve;
             console.log('[Speech] Recognition starting...');
 
             // M9 watchdog: a wedged speech service can leave recognition "on"
@@ -476,7 +478,8 @@ class SpeechManager {
             this.recognition.onresult = (event) => {
                 clearTimeout(recogWatchdog);
                 this.isRecording = false;
-                this.currentRecordingReject = null; // Clear reject function
+                this.currentRecordingReject = null;
+                this.currentRecordingResolve = null;
                 const transcript = event.results[0][0].transcript.toLowerCase().trim();
                 const confidence = event.results[0][0].confidence;
                 console.log(`[Speech] Result received: "${transcript}" (confidence: ${confidence.toFixed(2)})`);
@@ -497,6 +500,7 @@ class SpeechManager {
                     // We MUST settle the promise so callers don't hang and flags don't get stuck.
                     const rejectFn = this.currentRecordingReject;
                     this.currentRecordingReject = null;
+                    this.currentRecordingResolve = null;
                     if (rejectFn) {
                         console.warn('[Speech] Aborted — rejecting promise with RECORDING_CANCELLED to unblock caller');
                         rejectFn(new Error('RECORDING_CANCELLED'));
@@ -504,7 +508,8 @@ class SpeechManager {
                     return;
                 }
 
-                this.currentRecordingReject = null; // Clear reject function
+                this.currentRecordingReject = null;
+                this.currentRecordingResolve = null;
 
                 let errorMessage = `Speech recognition error: ${event.error}`;
 
@@ -543,15 +548,30 @@ class SpeechManager {
                             this.isRecording = false;
                             const rejectFn = this.currentRecordingReject;
                             this.currentRecordingReject = null;
+                            this.currentRecordingResolve = null;
                             if (rejectFn) rejectFn(new Error('RECORDING_CANCELLED'));
                         }
                     }, 250);
                     return;
                 }
 
-                // Pending reject (manual stop, or retry exhausted) — settle it.
+                // M9c (#35/#36): Android retry exhausted without manual intervention —
+                // resolve with empty transcript so the caller shows "wrong" feedback
+                // (+ "Next question" button) instead of silently resetting to idle.
+                // Manual stop still rejects with RECORDING_CANCELLED (user initiated).
+                if (silentRetryUsed && endedSilently && SPEECH_IS_ANDROID && !this._manualStop) {
+                    console.warn('[Speech] Recognition retry also failed — resolving empty (stuck-state escape)');
+                    const resolveFn = this.currentRecordingResolve;
+                    this.currentRecordingReject = null;
+                    this.currentRecordingResolve = null;
+                    if (resolveFn) resolveFn({ transcript: '', confidence: 0 });
+                    return;
+                }
+
+                // Pending reject (manual stop) — settle it.
                 const rejectFn = this.currentRecordingReject;
                 this.currentRecordingReject = null;
+                this.currentRecordingResolve = null;
                 rejectFn(new Error('RECORDING_CANCELLED'));
             };
 

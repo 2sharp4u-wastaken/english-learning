@@ -1515,9 +1515,13 @@ question→answer Slice 3.1 template. Differences / decisions vs legacy:
 - Scoring 10 pts/correct via `scoreManager`; `recordWordAttempt(letter, 'abc', …)` feeds
   `<letter>_abc` mastery; index advances on every answer (correct OR wrong). Correct
   auto-advances after 1.5s; wrong reveals the correct option, voices it, and shows Next.
-- `say-letter` matching ported verbatim from legacy (transcript contains phonetic/letter,
-  or Levenshtein ≤ 2). Graceful degradation: unsupported recognition shows a message + a
-  skip button (no Playwright coverage of the mic path — same stub gap as Slice 3.11).
+- `say-letter` matching uses `isBalancedSpeechMatch(phonetic, transcript, {aliases:[letter]})`
+  (M10, `src/lib/speechMatch.ts` — first-letter gate + similarity ≥ 0.7). Audio for letter
+  names is TTS-only via `letterSpeech.ts` (AUDIO-ONLY map, never feeds the matcher). Android
+  M9c (#35/#36): when STT retry exhausted without manual stop, `speechSynthesis.js` resolves
+  with `{transcript:'',confidence:0}` instead of rejecting → `settleAnswer(false)` shows wrong
+  feedback + abc-next button so the user is never stuck. Unsupported recognition: message +
+  skip button. No Playwright coverage of the mic path (same stub gap as Slice 3.11).
 - Resume via the generic `savedGame_<userId>_abc` state (Grammar Beginner bridge pattern).
 - Files: `src/bridge/abc.ts`, `src/features/games/abc/ABCGamePage.tsx` +
   `components/ABCAllMastered.tsx`; registered in `reactGames.ts` + `GameHostPage.tsx` (abc

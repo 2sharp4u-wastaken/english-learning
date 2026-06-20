@@ -816,8 +816,12 @@ React route /#/game/abc
       │       unsupported → message + skip. No audio gate.
       ├─ answer (MC) → recordABCAnswer(q, idx): recordWordAttempt(letter,'abc',correct)
       │   → <letter>_abc mastery; +10 on correct; mgr.currentQuestionIndex++; saveGameState.
-      ├─ answer (say-letter) → recordABCSpeechAttempt(q, {transcript}): lenient match
-      │   (contains phonetic/letter OR Levenshtein ≤ 2); same mastery/score/index advance.
+      ├─ answer (say-letter) → recordABCSpeechAttempt(q, {transcript}):
+      │   isBalancedSpeechMatch(phonetic, transcript, {aliases:[letterUpper]}) (M10,
+      │   src/lib/speechMatch.ts — first-letter gate + length-scaled similarity ≥ 0.7).
+      │   Android M9c: after retry exhaustion → resolves with empty → isCorrect=false
+      │   → wrong feedback + abc-next button (user not stuck).
+      │   Same mastery/score/index advance as MC.
       ├─ settleAnswer: getGameFeedback('abc',…) (fires SFX implicitly) + banner.
       │   correct → confetti + auto-advance 1.5s. wrong → voice correct letter/word +
       │   reveal correct option + abc-next button (manual advance).
