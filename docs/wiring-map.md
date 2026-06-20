@@ -956,6 +956,32 @@ CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|pictu
 > (`courseManager` is read off `window.app.courseManager`). `window.appManager` never existed (its
 > accidental use once left CoursesPage rendering empty).
 
+## PWA Update Detection (M22)
+
+```
+new deploy pushed → Cloudflare Workers serves new sw.js
+  └─ browser fetches sw.js in background (existing SW still controls the page)
+  └─ new SW installs → self.skipWaiting() fires immediately
+  └─ new SW activates → self.clients.claim()
+  └─ navigator.serviceWorker 'controllerchange' fires on the page
+       └─ [guard] hadController was true (= this is an UPDATE, not first install)
+       └─ window.dispatchEvent(new CustomEvent('sw-update-available'))
+            └─ UpdateBanner useEffect handler → setVisible(true)
+            └─ banner renders: "✨ גרסה חדשה זמינה" + "עדכן עכשיו" button
+                 └─ onClick → window.location.reload()  [picks up new assets]
+                 └─ dismiss → setVisible(false)         [snooze until next reload]
+
+hadController guard (src/main.tsx):
+  - captured BEFORE register() call
+  - navigator.serviceWorker.controller is null on first install → no banner
+  - non-null on update (old SW was controlling) → banner shown
+```
+
+Files: `src/main.tsx` (listener), `src/app/UpdateBanner.tsx` (UI), `src/app/App.tsx` (mount point).
+WHY: `skipWaiting()` in `sw.js` means the new SW activates immediately without waiting for
+tabs to close — `controllerchange` is therefore the correct event (not `waiting` state, which
+is skipped). The banner is mounted OUTSIDE `<Providers>` so it survives any provider-level error.
+
 ## Critical File Locations
 
 | Function | File | Line |

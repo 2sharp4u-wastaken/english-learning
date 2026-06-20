@@ -7,8 +7,8 @@ decision. This doc only tracks what is **not done**.
 
 Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ parked on the user.
 
-> **RESUME HERE (updated end of session 2026-06-17).** All work committed + pushed
-> to `v3-react-migration` (latest `1c08aea`); **NOT merged to `main`.**
+> **RESUME HERE (updated end of session 2026-06-20).** All work committed + pushed
+> to `claude/local-mobile-fixes-02es7r` (latest `d05cbc1`); **NOT merged to `main`.**
 > **Cloudflare Workers is the SOLE host** (Netlify retired): 
 > https://english-learning.2sharp4u.workers.dev/ — Git-connected, **push auto-deploys
 > ~2-4 min**; fast path **`npm run cf-deploy`** (wrangler authenticated on this
@@ -1152,6 +1152,18 @@ on-reload timing issue, not a product regression. Worth a separate look.
   didn't successfully say the letter). Long-term: cloud STT (M1-c, roadmap).
   **GitHub issues #35 and #36 closed.**
 
+- ✅ **M22 — PWA update banner — SHIPPED 2026-06-20.**
+  After a new Cloudflare deploy, users with the old build open in a tab never
+  knew an update was available (the SW silently took over but the page kept
+  running old assets). Added a fixed-bottom banner ("✨ גרסה חדשה זמינה" +
+  "עדכן עכשיו" reload button) that fires when `navigator.serviceWorker`
+  fires `controllerchange` with a `hadController` guard (suppresses on first
+  install). WHY `controllerchange` and not `waiting`: `sw.js` calls
+  `skipWaiting()` immediately on install, so the new SW activates without
+  ever entering the waiting state — `controllerchange` is the only signal.
+  Files: `src/main.tsx`, `src/app/UpdateBanner.tsx`, `src/app/App.tsx`.
+  Wiring: `docs/wiring-map.md` → "PWA Update Detection (M22)".
+
 ---
 
 ### Suggested order
@@ -1167,7 +1179,7 @@ closed without an on-device re-test → tracked as **MOBILE-QA (GitHub #28, the 
 open thread)**: a ~360px Android pass of ABC + Word Journey + landscape. Next:
 MOBILE-QA #28, then M7 (tablet TTS — likely just the device Hebrew-voice
 install) → M8 (PWA install button) → M5 (needs the Cloudflare Worker + project
-key, and its `manager` role overlaps M12). Then the milestone-cert bug (clear
-fix, but needs the recalibration decision first) → E2E backfill for the mic/WJ
-paths (stub now exists) → polish grab-bag as time allows. C2/C3 unblock the
-moment you drop the two images.
+key, and its `manager` role overlaps M12). **M22 (PWA update banner)✅ DONE.**
+Then the milestone-cert bug (clear fix, but needs the recalibration decision
+first) → E2E backfill for the mic/WJ paths (stub now exists) → polish
+grab-bag as time allows. C2/C3 unblock the moment you drop the two images.
