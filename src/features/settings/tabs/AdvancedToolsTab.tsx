@@ -38,13 +38,6 @@ export function AdvancedToolsTab() {
         <CustomWordsPanel />
       </SectionCard>
 
-      <SectionCard
-        title="תמונות ותרגומים"
-        description="החלפת תמונות ותרגומים למילים קיימות. הכול נשמר בדפדפן — ללא צורך בשרת."
-      >
-        <WordImagesPanel />
-      </SectionCard>
-
       {/* M12 Slice A: parent/QA testing affordance — opens locked content without
           grinding to the thresholds. Behind the parent password (this tab). */}
       <SectionCard
@@ -103,6 +96,17 @@ export function AdvancedToolsTab() {
           <Sparkles size={14} />
           <span>מה חדש</span>
         </button>
+      </SectionCard>
+
+      {/* Image/translation overrides: a heavier, rarely-touched power tool, so it
+          sits low and starts collapsed (the panel mounts only when expanded). */}
+      <SectionCard
+        title="תמונות ותרגומים"
+        description="החלפת תמונות ותרגומים למילים קיימות. הכול נשמר בדפדפן — ללא צורך בשרת."
+        collapsible
+        defaultCollapsed
+      >
+        <WordImagesPanel />
       </SectionCard>
 
       {/* M6: moved here from the kid-visible settings header. */}
