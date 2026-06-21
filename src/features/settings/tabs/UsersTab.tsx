@@ -140,7 +140,11 @@ export function UsersTab() {
       <SectionCard
         title="ניהול משתמשים"
         description={`${users.length}/${MAX_USERS} משתמשים רשומים.`}
-        actions={
+        collapsible
+        defaultCollapsed
+        headerTestId="tools-users-toggle"
+      >
+        <div className="mb-3 flex justify-start">
           <button
             type="button"
             onClick={() => setAddOpen(true)}
@@ -150,8 +154,7 @@ export function UsersTab() {
             <UserPlus size={14} />
             <span>הוסף משתמש</span>
           </button>
-        }
-      >
+        </div>
         <ul className="space-y-2">
           {users.map((user) => (
             <UserRow
