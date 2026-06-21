@@ -9,8 +9,16 @@
  *     refreshed in the background. So the app works offline after one online visit.
  *   - cross-origin (e.g. the optional Dicta nikud API) → untouched / network only.
  *
- * Bump CACHE_VERSION to invalidate the whole cache on a breaking change. The
- * `activate` handler deletes every cache that isn't the current one.
+ * CACHE_VERSION is stamped at build time by vite.config.ts (copyStaticAssets):
+ * the regex replaces `const CACHE_VERSION = 'v2'` with `'v2-<gitSHA>'` when
+ * copying sw.js into dist/. This is load-bearing: browsers only re-install a
+ * service worker when /sw.js changes byte-for-byte, so a fixed version would
+ * make every deploy ship an IDENTICAL sw.js — the browser keeps the old SW
+ * forever, the update cycle (install → skipWaiting → activate → controllerchange)
+ * never re-fires, and installed/mobile users get pinned to the build they first
+ * cached. Stamping a fresh SHA every deploy makes the new SW install, purge old
+ * caches (so even un-hashed assets like legacy scripts + data/*.json refresh),
+ * and fire the M22 update banner.
  */
 const CACHE_VERSION = 'v2';
 const CACHE = `elg-${CACHE_VERSION}`;

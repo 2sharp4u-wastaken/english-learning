@@ -1172,6 +1172,22 @@ on-reload timing issue, not a product regression. Worth a separate look.
   (`src/lib/swUpdate.ts` `checkForAppUpdate()` → `registration.update()`).
   Files: `vite.config.ts`, `sw.js`, `src/lib/swUpdate.ts`, `src/features/whats-new/WhatsNewPage.tsx`.
 
+- ✅ **M22-fix — SW build stamp so updates actually reach mobile — SHIPPED 2026-06-21.**
+  M22 never fired in the wild: the whole chain (new deploy → browser re-installs
+  SW → `skipWaiting`/`activate`/`controllerchange` → banner) only runs when
+  `/sw.js` changes **byte-for-byte**, but `sw.js` had a hardcoded
+  `CACHE_VERSION = 'v2'`, so every deploy copied an **identical** SW — the browser
+  kept the old one forever, the banner never showed, and the per-deploy
+  cache-purge in `activate` never re-ran, pinning un-hashed assets (legacy scripts
+  like `speechSynthesis.js`, `data/*.json`) to whatever a device first cached
+  (e.g. the recent ABC-audio fixes never reached returning mobile users). Fix:
+  `sw.js` now carries a `'__BUILD_ID__'` placeholder that `vite.config.ts`
+  (`copyStaticAssets`) stamps with `git-sha + build-time` on every build, so the
+  SW is byte-different every deploy → install → cache purge → `controllerchange` →
+  banner. Cache name is per-deploy too, so even un-hashed assets refresh on update.
+  Files: `sw.js`, `vite.config.ts`, `src/__tests__/pwa-wiring.test.ts` (regression
+  guard). Wiring: `docs/wiring-map.md` → "PWA Update Detection (M22)".
+
 ---
 
 ### Suggested order
