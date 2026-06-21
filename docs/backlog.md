@@ -7,15 +7,17 @@ decision. This doc only tracks what is **not done**.
 
 Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ parked on the user.
 
-> **RESUME HERE (updated end of session 2026-06-20).** All work committed + pushed
-> to `claude/local-mobile-fixes-02es7r` (latest `d05cbc1`); **NOT merged to `main`.**
+> **RESUME HERE (updated end of session 2026-06-21).** Work from this session on
+> `claude/mobile-version-update-lk0v6e` (latest `9a7dc0c`) — **NOT yet merged to
+> `v3-react-migration`** (PR welcome; it has 2 commits: pwa-wiring regression test +
+> settings collapse). The big refactors from `claude/local-mobile-fixes-02es7r` were
+> **merged via PR #39** and are **LIVE** on `v3-react-migration` (`0766f83`).
 > **Cloudflare Workers is the SOLE host** (Netlify retired): 
-> https://english-learning.2sharp4u.workers.dev/ — Git-connected, **push auto-deploys
-> ~2-4 min**; fast path **`npm run cf-deploy`** (wrangler authenticated on this
-> machine). Login screen shows a `v<ver> · <sha>` build stamp to confirm the live
-> bundle (SW serves cached first → close+reopen to pick up a deploy). Deploy
-> gotchas: `docs/cloudflare-deploy.md`; bug-report triage (gh IS authed now):
-> `[[project_bug_report_feature]]`.
+> https://english-learning.2sharp4u.workers.dev/ — Git-connected, **push to
+> `v3-react-migration` auto-deploys ~2-4 min**; Login screen `v<ver> · <sha>` build
+> stamp confirms the live bundle. SW now gets git SHA stamped per deploy (M22-fix),
+> so deployed devices see the update banner automatically. Deploy gotchas:
+> `docs/cloudflare-deploy.md`; bug-report triage: `[[project_bug_report_feature]]`.
 >
 > **This session (2026-06-17) shipped THREE big things — all live except where noted:**
 > 1. **M12 Slice B + M4 — parent admin account.** First-run wizard (`FirstRunWizard`,
@@ -1187,6 +1189,31 @@ on-reload timing issue, not a product regression. Worth a separate look.
   banner. Cache name is per-deploy too, so even un-hashed assets refresh on update.
   Files: `sw.js`, `vite.config.ts`, `src/__tests__/pwa-wiring.test.ts` (regression
   guard). Wiring: `docs/wiring-map.md` → "PWA Update Detection (M22)".
+
+- ✅ **Settings tab — 4-tab refactor — SHIPPED 2026-06-21 (PR #39).**
+  Collapsed 7 uneven tabs into 4: "המשחק שלי" / "משחק ולמידה" / "תוכן" /
+  "הורים וחשבון". `SectionCard` gained `collapsible/defaultCollapsed/headerTestId`.
+  "תמונות ותרגומים" starts collapsed. Files: `src/features/settings/tabs/*`,
+  `src/features/settings/components/SectionCard.tsx`.
+
+- ✅ **Settings — collapse secondary parent sections — SHIPPED 2026-06-21.**
+  "ניהול משתמשים" (`tools-users-toggle`), "סיסמת הורה" (`tools-password-toggle`),
+  "כלי בדיקה (QA)" (`tools-qa-toggle`) now start collapsed. "הוסף משתמש" button
+  moved from UsersTab header `actions` (hidden by chevron when collapsible) into
+  card body. "עריכת תרגומים" removed as standalone SectionCard and embedded as an
+  inline collapsible sub-row at the bottom of the "ביטויים, ניבים וסלנג" card
+  (`expr-translations-toggle`, starts closed, -mx/-mb bleed flush to card edge).
+  Playwright tests updated to expand sections before interacting with their content.
+  Files: `UsersTab.tsx`, `ParentsTab.tsx`, `ExpressionsTab.tsx`, `react-routes.spec.js`.
+  **INVARIANT:** any Playwright test touching elements inside these collapsed cards
+  MUST click the card's `headerTestId` toggle first.
+
+- 🔴 **`clickRepeatCount` is a dead setting (2026-06-21).** The "מספר חזרות
+  בלחיצה" slider in GameTab (1–5, "כמה פעמים מילה מושמעת בלחיצה אחת") is stored
+  in `settings.clickRepeatCount` and copied to `gameManager.clickRepeatCount`, but
+  **nothing reads it** to drive audio repetition. It has no effect on gameplay.
+  Fix options: (a) wire it into the audio bridges so each click repeats N times, or
+  (b) remove the setting entirely if the feature is unwanted.
 
 ---
 
