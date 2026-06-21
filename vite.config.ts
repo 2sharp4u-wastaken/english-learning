@@ -57,6 +57,21 @@ function copyStaticAssets(): Plugin {
       const root = __dirname
       const out = path.resolve(root, 'dist')
       for (const file of rootFiles) {
+        // sw.js: the browser only treats a deploy as an "update" if /sw.js differs
+        // byte-for-byte from the installed copy. A normal deploy ships new *hashed
+        // chunks* but an unchanged sw.js, so without this the update banner never
+        // fires. Bake the git SHA into CACHE_VERSION so sw.js changes every commit →
+        // browser detects a new worker → controllerchange → UpdateBanner. (Also makes
+        // `activate` purge the old cache, forcing fresh assets.)
+        if (file === 'sw.js') {
+          const swSrc = fs.readFileSync(path.resolve(root, file), 'utf-8')
+          const stamped = swSrc.replace(
+            /const CACHE_VERSION = '[^']*';/,
+            `const CACHE_VERSION = 'v2-${GIT_SHA}';`,
+          )
+          fs.writeFileSync(path.join(out, file), stamped)
+          continue
+        }
         fs.copyFileSync(path.resolve(root, file), path.join(out, file))
       }
       // vendor/: self-hosted canvas-confetti (no jsdelivr CDN → offline-capable).

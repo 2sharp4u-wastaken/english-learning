@@ -91,13 +91,33 @@ export function GameTab() {
         )}
       </SectionCard>
 
-      <SectionCard title="קול וקריאה">
-        <Toggle
-          label="ניקוד עברי בקריאה"
-          description="הוסף סימני ניקוד לתרגום העברי להקראה טבעית יותר"
-          checked={settings.hebrewVocalization}
-          onChange={(v) => updateSettings({ hebrewVocalization: v })}
-        />
+      {/* תצוגת מילים: device-global word display (case + nikud). Moved here from
+          the kid "המשחק שלי" tab — it's a shared learning/display setting, not a
+          per-player look-and-feel choice. */}
+      <SectionCard
+        title="תצוגת מילים"
+        description="ניקוד עברי, אותיות קטנות באנגלית, וניקוד בהקראה. הגדרות אלו משותפות לכל השחקנים/ות."
+      >
+        <div className="grid gap-2 sm:grid-cols-2">
+          <Toggle
+            label="ניקוד עברי"
+            description="הצגת סימני ניקוד על מילים בעברית"
+            checked={settings.showNikud !== false}
+            onChange={(v) => updateSettings({ showNikud: v })}
+          />
+          <Toggle
+            label="אותיות קטנות באנגלית"
+            description="הצגת מילים באנגלית באותיות קטנות"
+            checked={settings.lowercaseMode === true}
+            onChange={(v) => updateSettings({ lowercaseMode: v })}
+          />
+          <Toggle
+            label="ניקוד עברי בקריאה"
+            description="הוסף סימני ניקוד לתרגום העברי להקראה טבעית יותר"
+            checked={settings.hebrewVocalization}
+            onChange={(v) => updateSettings({ hebrewVocalization: v })}
+          />
+        </div>
       </SectionCard>
     </div>
   )

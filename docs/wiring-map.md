@@ -98,6 +98,20 @@ src/bridge/parentMode.ts = the single elevation source (module-level, like onAut
        (any password elevation is dropped when the session changes)
 useParentPassword() = thin React wrapper over the store (keeps {unlocked,unlock,lock})
 
+SettingsPage tabs (2026-06-21 redesign — 7 uneven tabs → 4 honest groups):
+  display  "המשחק שלי"   (unprotected) → DisplayTab           — per-player look & feel only
+  game     "משחק ולמידה" (protected)   → GameLearningTab       = CategoriesTab + GameTab + AdvancedTab
+  content  "תוכן"        (protected)   → ContentTab            = CustomWords + ExpressionsTab + WordImages(collapsed)
+  parents  "הורים וחשבון"(protected)   → ParentsTab            = UsersTab + password + cloud + QA + guide + whatsnew
+                                                                  + תחזוקה(collapsed) + התחלה מחדש(collapsed)
+  GameLearningTab/ContentTab/ParentsTab COMPOSE existing self-contained tab bodies
+  (each its own space-y-4 card stack) — nothing was rewritten. The old categories/
+  advanced/expressions/users/advanced-tools tab IDs are GONE. תצוגת מילים (device-
+  global showNikud/lowercase/hebrewVocalization) moved OUT of the kid display tab INTO
+  GameTab. SectionCard gained `collapsible`/`defaultCollapsed`/`headerTestId`; Toggle
+  gained `testId` (nikud-proof switch handle — the accessible name from the label is
+  mutated by runtime nikud injection, so getByRole({name}) on Hebrew toggles is fragile).
+
 SettingsPage (2026-06-17 — inline gate REMOVED):
   visibleTabs = unlocked ? TABS : TABS.filter(!protected)   ← kids see ONLY תצוגה
   unlocked is now ROLE-driven only: a parent reaches protected settings by SIGNING IN
@@ -108,11 +122,11 @@ SettingsPage (2026-06-17 — inline gate REMOVED):
        pill is just a redundant label) → customization content shows directly.
   session re-locks while a protected tab active → snaps back to display (render guard)
 
-Change the parent password from INSIDE the parent area: כלי הורה → "סיסמת הורה" →
+Change the parent password from INSIDE the parent area: הורים וחשבון → "סיסמת הורה" →
   changeParentPassword(new) [updates BOTH the parentPassword key AND the parent
   user's account password — one credential]. Forgotten-entirely recovery = clear
-  app data (offline app, no email channel). In-app "התחלה מחדש" (כלי הורה,
-  two-step confirm) → factoryReset() [localStorage.clear() + reload] → first-run
+  app data (offline app, no email channel). In-app "התחלה מחדש" (הורים וחשבון,
+  collapsed two-step confirm) → factoryReset() [localStorage.clear() + reload] → first-run
   wizard (reinstalling the PWA does NOT clear localStorage). Login screen shows a
   v<ver>·<sha> build stamp so a tester can confirm the deployed bundle.
 
@@ -958,8 +972,16 @@ CoursesPage: tap a topic's launchable activity badge (vocabulary|listening|pictu
 
 ## PWA Update Detection (M22)
 
+**CRITICAL — sw.js must change every deploy or the banner never fires.** The browser only
+treats a deploy as an update when `/sw.js` differs byte-for-byte from the installed copy. A
+normal deploy ships new *hashed chunks* but, without help, an identical `sw.js` → no new
+worker → no `controllerchange` → no banner (the new chunks still trickle in silently via
+stale-while-revalidate, just unannounced). FIX (2026-06-21): `vite.config.ts`'s
+`copyStaticAssets` rewrites `const CACHE_VERSION = 'v2'` → `'v2-<gitSHA>'` when copying
+`sw.js` into `dist/`, so every commit flips the bytes and the chain below runs reliably.
+
 ```
-new deploy pushed → Cloudflare Workers serves new sw.js
+new deploy pushed → Cloudflare Workers serves new sw.js (CACHE_VERSION carries the git SHA)
   └─ browser fetches sw.js in background (existing SW still controls the page)
   └─ new SW installs → self.skipWaiting() fires immediately
   └─ new SW activates → self.clients.claim()
@@ -977,7 +999,14 @@ hadController guard (src/main.tsx):
   - non-null on update (old SW was controlling) → banner shown
 ```
 
-Files: `src/main.tsx` (listener), `src/app/UpdateBanner.tsx` (UI), `src/app/App.tsx` (mount point).
+Manual check: the "מה חדש" page (`WhatsNewPage`) has a "בדיקת עדכונים" button →
+`src/lib/swUpdate.ts` `checkForAppUpdate()` → `registration.update()` (forces the byte-diff
+now instead of waiting for the next navigation). If a new worker is found it installs +
+activates and the same banner takes over; otherwise the button reports "הגרסה עדכנית ✓".
+
+Files: `src/main.tsx` (listener), `src/app/UpdateBanner.tsx` (UI), `src/app/App.tsx` (mount point),
+`src/lib/swUpdate.ts` (manual check), `src/features/whats-new/WhatsNewPage.tsx` (button),
+`vite.config.ts` (sw.js SHA stamping).
 WHY: `skipWaiting()` in `sw.js` means the new SW activates immediately without waiting for
 tabs to close — `controllerchange` is therefore the correct event (not `waiting` state, which
 is skipped). The banner is mounted OUTSIDE `<Providers>` so it survives any provider-level error.

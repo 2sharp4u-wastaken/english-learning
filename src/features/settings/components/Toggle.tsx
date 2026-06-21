@@ -6,9 +6,12 @@ interface Props {
   label: string
   description?: string
   disabled?: boolean
+  /** data-testid on the switch control — a nikud-proof handle for tests (the
+   *  accessible name comes from the label, which nikudDOM mutates at runtime). */
+  testId?: string
 }
 
-export function Toggle({ checked, onChange, label, description, disabled }: Props) {
+export function Toggle({ checked, onChange, label, description, disabled, testId }: Props) {
   return (
     <label
       className={cn(
@@ -21,6 +24,7 @@ export function Toggle({ checked, onChange, label, description, disabled }: Prop
         role="switch"
         aria-checked={checked}
         disabled={disabled}
+        data-testid={testId}
         onClick={() => !disabled && onChange(!checked)}
         className={cn(
           'relative mt-0.5 h-6 w-11 shrink-0 rounded-full transition-colors',

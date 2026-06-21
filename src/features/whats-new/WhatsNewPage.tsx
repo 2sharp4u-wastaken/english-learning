@@ -1,9 +1,10 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowRight, Sparkles, Rocket, ListChecks } from 'lucide-react'
+import { ArrowRight, Sparkles, Rocket, ListChecks, RefreshCw } from 'lucide-react'
 import { RELEASES, BASE_FEATURES, type ChangeKind } from '@/data/whatsNew'
 import { ROADMAP, type RoadmapStatus } from '@/data/roadmap'
 import { cn } from '@/lib/cn'
+import { checkForAppUpdate } from '@/lib/swUpdate'
 
 /**
  * In-app "מה חדש" (What's New) + "בקרוב" (Roadmap) view. Parent/maintainer-facing
@@ -42,6 +43,51 @@ function Chip({ icon, label, cls }: { icon: string; label: string; cls: string }
 
 function buildVersion(): string {
   return typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : 'dev'
+}
+
+/**
+ * "בדיקת עדכונים": forces the browser to re-check /sw.js now. If a newer build
+ * is live the worker installs + activates and the global UpdateBanner takes over
+ * (so we don't render our own "update now" here — just the check + a status line).
+ * Gender-neutral copy per the project's Hebrew rule.
+ */
+function UpdateCheckButton() {
+  const [state, setState] = useState<'idle' | 'checking' | 'current' | 'updating' | 'unsupported'>(
+    'idle',
+  )
+
+  async function onCheck() {
+    setState('checking')
+    try {
+      const result = await checkForAppUpdate()
+      setState(result)
+    } catch {
+      setState('unsupported')
+    }
+  }
+
+  const status: Record<typeof state, string | null> = {
+    idle: null,
+    checking: 'בודק…',
+    current: 'הגרסה עדכנית ✓',
+    updating: 'נמצא עדכון, מתקין…',
+    unsupported: 'בדיקה אינה זמינה',
+  }
+
+  return (
+    <div className="mt-1.5 flex items-center gap-2">
+      <button
+        type="button"
+        onClick={onCheck}
+        disabled={state === 'checking'}
+        className="inline-flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-semibold text-muted transition-colors hover:bg-white/10 hover:text-text disabled:opacity-60"
+      >
+        <RefreshCw size={13} className={cn(state === 'checking' && 'animate-spin')} />
+        <span>בדיקת עדכונים</span>
+      </button>
+      {status[state] && <span className="text-xs text-muted">{status[state]}</span>}
+    </div>
+  )
 }
 
 function formatDate(iso: string): string {
@@ -84,6 +130,7 @@ export function WhatsNewPage({
             <p className="text-sm text-muted">
               הגרסה המותקנת: <span dir="ltr">v{buildVersion()}</span>
             </p>
+            <UpdateCheckButton />
           </div>
         </div>
         <button

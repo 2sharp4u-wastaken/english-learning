@@ -29,7 +29,9 @@ async function seedParent(page) {
 }
 
 async function openExpressionsTab(page) {
-  await page.getByRole('button', { name: 'ביטויים' }).click();
+  // Settings redesign (2026-06-21): the expressions controls + meaning editor
+  // moved from their own ביטויים tab into the consolidated "תוכן" (content) tab.
+  await page.locator('[data-tab-id="content"]:visible').first().click();
   await expect(page.getByTestId('expressions-list')).toBeVisible();
 }
 
@@ -37,14 +39,15 @@ test('register + master toggles persist to settings', async ({ page }) => {
   await seedParent(page);
   await openExpressionsTab(page);
 
-  // Enable the "edgy" register (off by default).
-  await page.getByRole('switch', { name: /נועז/ }).click();
+  // Enable the "edgy" register (off by default). Target by testid — the label's
+  // accessible name is mutated by runtime nikud injection.
+  await page.getByTestId('expr-register-edgy').click();
   await page.waitForTimeout(400);
   let settings = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) || '{}'), SETTINGS_KEY);
   expect(settings.expressionRegisters?.edgy).toBe(true);
 
   // Master off — disables the whole feature.
-  await page.getByRole('switch', { name: 'הפעלת ביטויים' }).click();
+  await page.getByTestId('expr-enabled-toggle').click();
   await page.waitForTimeout(400);
   settings = await page.evaluate((k) => JSON.parse(localStorage.getItem(k) || '{}'), SETTINGS_KEY);
   expect(settings.expressionsEnabled).toBe(false);

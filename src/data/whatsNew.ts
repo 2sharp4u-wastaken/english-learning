@@ -34,6 +34,15 @@ export interface Release {
 /** Newest first. Prepend new releases here. */
 export const RELEASES: Release[] = [
   {
+    version: '3.0.1',
+    date: '2026-06-21',
+    title: 'עדכונים אמינים יותר',
+    items: [
+      { kind: 'improve', text: 'התראת "גרסה חדשה זמינה" מופיעה עכשיו באמת בכל עדכון של המשחק.' },
+      { kind: 'feature', text: 'כפתור "בדיקת עדכונים" במסך "מה חדש" — אפשר לבדוק מיד אם יש גרסה חדשה.' },
+    ],
+  },
+  {
     version: '3.0',
     date: '2026-06-18',
     title: 'מראה חדש, התאמה אישית והרבה משחקים',
