@@ -52,4 +52,15 @@ describe('PWA wiring (INFRA1)', () => {
     expect(viteConfig).toContain("'sw.js'")
     expect(viteConfig).toContain("'vendor'")
   })
+
+  it('vite.config stamps the git SHA into sw.js CACHE_VERSION on every build (M22)', () => {
+    // Browsers only re-install a SW when /sw.js changes byte-for-byte. vite.config
+    // regex-replaces CACHE_VERSION with 'v2-<gitSHA>' at build time so every deploy
+    // ships a byte-different SW → install → activate (cache purge) → controllerchange
+    // → the M22 update banner. Without this the SW is identical every deploy and
+    // updates never reach installed/mobile users.
+    expect(swSource).toContain("const CACHE_VERSION = 'v2'")
+    expect(viteConfig).toContain("CACHE_VERSION = '[^']*'")
+    expect(viteConfig).toContain('GIT_SHA')
+  })
 })

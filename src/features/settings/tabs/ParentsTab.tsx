@@ -46,6 +46,9 @@ export function ParentsTab() {
       <SectionCard
         title="סיסמת הורה"
         description="שינוי סיסמת ההורה. הסיסמה מגנה על כל ההגדרות והאזור הזה. אם שכחתם אותה לגמרי — ניתן לאפס דרך מחיקת נתוני האפליקציה במכשיר."
+        collapsible
+        defaultCollapsed
+        headerTestId="tools-password-toggle"
       >
         <ChangeParentPassword />
       </SectionCard>
@@ -63,6 +66,9 @@ export function ParentsTab() {
       <SectionCard
         title="כלי בדיקה (QA)"
         description="פתיחת תוכן נעול לצורך בדיקה, בלי לשחק עד הסף. הכלי משנה את ההתקדמות של המשתמש הנוכחי — לא מיועד לשחקנים/ות."
+        collapsible
+        defaultCollapsed
+        headerTestId="tools-qa-toggle"
       >
         <QATestingPanel />
       </SectionCard>

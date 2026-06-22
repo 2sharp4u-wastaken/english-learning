@@ -1010,6 +1010,12 @@ Files: `src/main.tsx` (listener), `src/app/UpdateBanner.tsx` (UI), `src/app/App.
 WHY: `skipWaiting()` in `sw.js` means the new SW activates immediately without waiting for
 tabs to close — `controllerchange` is therefore the correct event (not `waiting` state, which
 is skipped). The banner is mounted OUTSIDE `<Providers>` so it survives any provider-level error.
+WHY the build stamp (mobile-version-update fix, 2026-06-21): the whole chain only fires if the
+browser re-installs the SW, and it only does that when `/sw.js` is byte-different. The original
+M22 ship left `CACHE_VERSION` hardcoded at `'v2'`, so every deploy copied an identical `sw.js` —
+the SW never re-installed, the banner never showed, and the per-deploy cache purge in `activate`
+never re-ran, pinning un-hashed assets (legacy scripts, `data/*.json`) to whatever a device first
+cached. `vite.config.ts` now regex-stamps the git SHA into `CACHE_VERSION` on every build.
 
 ## Critical File Locations
 

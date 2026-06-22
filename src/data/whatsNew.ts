@@ -34,6 +34,15 @@ export interface Release {
 /** Newest first. Prepend new releases here. */
 export const RELEASES: Release[] = [
   {
+    version: '3.0.2',
+    date: '2026-06-21',
+    title: 'סדר טוב יותר בהגדרות ההורה',
+    items: [
+      { kind: 'improve', text: 'אזור ההורה נקי ומסודר יותר — הכרטיסים הפחות נפוצים מקופלים כברירת מחדל ונפתחים בלחיצה.' },
+      { kind: 'improve', text: 'עריכת תרגומי הביטויים עברה לתוך כרטיס הביטויים — הכל במקום אחד.' },
+    ],
+  },
+  {
     version: '3.0.1',
     date: '2026-06-21',
     title: 'עדכונים אמינים יותר',

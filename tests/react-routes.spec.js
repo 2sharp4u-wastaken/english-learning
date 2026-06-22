@@ -651,6 +651,7 @@ test.describe('Slice 1.6: Settings', () => {
   // signed in as the parent) — there is no unauthenticated "forgot password" reset.
   test('parents: change parent password (authenticated)', async ({ page }) => {
     await openParentsTab(page);
+    await page.locator('[data-testid="tools-password-toggle"]').click();
 
     await page.locator('#new-parent-pw').fill('changed-pass');
     await page.locator('#new-parent-pw2').fill('changed-pass');
@@ -689,6 +690,7 @@ test.describe('Slice 1.6: Settings', () => {
   // M12 Slice A: parent/QA "unlock for testing" panel.
   test('parents: QA panel seeds learned words and reflects in the live status', async ({ page }) => {
     await openParentsTab(page);
+    await page.locator('[data-testid="tools-qa-toggle"]').click();
 
     const status = page.locator('[data-testid="qa-status"]');
     await expect(status).toBeVisible();
