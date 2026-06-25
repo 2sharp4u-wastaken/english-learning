@@ -21,6 +21,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   exitBehavior: 'autosave',
   gameUnlockOverride: false,
   difficultyAutoGate: true,
+  certDifficulty: 'normal',
   claudeApiKey: '',
   // Reading "sneak peek" (F1) — on by default; child taps to re-flash the
   // hidden word for ~½s, up to 3 times per question.

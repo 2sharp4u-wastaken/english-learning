@@ -145,6 +145,8 @@ export interface UserSummary {
 
 export type LearningPace = 'slow' | 'normal' | 'fast'
 export type ExitBehavior = 'autosave' | 'confirmation'
+/** Difficulty preset for milestone-certificate thresholds (cert recalibration). */
+export type CertDifficulty = 'easy' | 'normal' | 'hard'
 
 export interface AppSettings {
   // Vocabulary category selection
@@ -164,6 +166,11 @@ export interface AppSettings {
   exitBehavior: ExitBehavior
   gameUnlockOverride: boolean
   difficultyAutoGate: boolean    // Slice 1.9 — gate word-length by progress
+
+  // Milestone-certificate difficulty preset (cert recalibration, 2026-06-25).
+  // Swaps the threshold ladders for BOTH the "met" and "mastered" cert tracks
+  // between easy/normal/hard. Optional: absent ⇒ 'normal'. Parent-only setting.
+  certDifficulty?: CertDifficulty
 
   // Reading "sneak peek" (F1) — a child-tapped button re-flashes the hidden
   // word for a short moment. Optional: pre-F1 settings blobs won't have these;

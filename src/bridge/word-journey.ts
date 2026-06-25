@@ -475,6 +475,13 @@ export function finishWordJourney(
       app.userProgress.gameUnlocks = data.gameUnlocks
     }
   }
+
+  // Word-count milestone certificates (met + mastered tracks). WJ has its own
+  // completion path (it never calls AppState.updateProgress), so fire the check
+  // here too — otherwise milestone certs never award on a WJ finish. (Was the
+  // reported cert-firing bug; backlog "Certificate / level recalibration".)
+  app?.checkMilestoneCertificates?.()
+
   app?.saveUserProgress?.()
 
   mgr.isGameActive = false

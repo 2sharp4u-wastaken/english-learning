@@ -81,14 +81,52 @@ export interface AppStateOptions {
   onSettingsApplied?: (settings: AppSettings) => void
 }
 
+export type CertDifficulty = 'easy' | 'normal' | 'hard'
+
 export class AppState {
-  static MILESTONES = [
-    { id: 'milestone-first-word', count: 1, name: 'המילה הראשונה!', icon: '🌱', nameEn: 'First Word' },
-    { id: 'milestone-word-explorer', count: 10, name: 'חוקר מילים', icon: '🔍', nameEn: 'Word Explorer' },
-    { id: 'milestone-word-master', count: 25, name: 'מומחה מילים', icon: '🌟', nameEn: 'Word Master' },
-    { id: 'milestone-word-champion', count: 50, name: 'אלוף המילים', icon: '🏆', nameEn: 'Word Champion' },
-    { id: 'milestone-word-legend', count: 100, name: 'אגדת המילים', icon: '👑', nameEn: 'Word Legend' },
-  ]
+  /**
+   * Two milestone-certificate TRACKS (cert-level recalibration, 2026-06-25):
+   *   - `met` (discovery): driven by words *introduced* (≥1 attempt) — fast-growing.
+   *     Cheap, frequent dopamine for young learners.
+   *   - `mastered` (prestige): driven by derived-Learned words (`getDerivedLearnedCount`)
+   *     — slow-growing, the "real" achievement. Reuses the legacy prestige cert IDs so
+   *     any grandfathered award survives.
+   * Each track has 5 FIXED tiers with STABLE ids. The per-tier threshold COUNT comes
+   * from `MILESTONE_THRESHOLDS[track][certDifficulty]`, never the id — so changing the
+   * parent difficulty preset can only ever ADD a newly-qualifying tier and never
+   * revokes an earned one (award logic is purely additive). WHY two tracks + presets:
+   * docs/backlog.md "Certificate / level recalibration".
+   */
+  static MILESTONE_TIERS: Record<'met' | 'mastered', { id: string; name: string; icon: string }[]> = {
+    met: [
+      { id: 'milestone-met-1', name: 'פגשתי מילה!', icon: '🌱' },
+      { id: 'milestone-met-2', name: 'מגלה מילים', icon: '🔍' },
+      { id: 'milestone-met-3', name: 'אספן מילים', icon: '🎒' },
+      { id: 'milestone-met-4', name: 'חוקר מילים', icon: '🗺️' },
+      { id: 'milestone-met-5', name: 'ים של מילים', icon: '🌈' },
+    ],
+    mastered: [
+      { id: 'milestone-first-word', name: 'הצעד הראשון', icon: '🌱' },
+      { id: 'milestone-word-explorer', name: 'לומד/ת מצטיין/ת', icon: '⭐' },
+      { id: 'milestone-word-master', name: 'מומחה מילים', icon: '🌟' },
+      { id: 'milestone-word-champion', name: 'אלוף המילים', icon: '🏆' },
+      { id: 'milestone-word-legend', name: 'אגדת המילים', icon: '👑' },
+    ],
+  }
+
+  /** Per-tier threshold counts by track + parent difficulty preset (5 tiers each). */
+  static MILESTONE_THRESHOLDS: Record<'met' | 'mastered', Record<CertDifficulty, number[]>> = {
+    met: {
+      easy: [1, 5, 15, 30, 60],
+      normal: [1, 10, 25, 50, 100],
+      hard: [1, 25, 50, 100, 200],
+    },
+    mastered: {
+      easy: [1, 3, 10, 20, 40],
+      normal: [1, 5, 15, 30, 60],
+      hard: [1, 10, 25, 50, 100],
+    },
+  }
 
   static GAME_MILESTONES = [
     {
@@ -436,13 +474,17 @@ export class AppState {
     const gameMilestones = this.checkGameMilestoneCertificates(gameType, score)
 
     // Show celebration modal for newly earned game milestones
+    let delay = 1500
     if (gameMilestones.length > 0) {
-      let delay = 1500
       for (const cert of gameMilestones) {
         setTimeout(() => this.opts.onCertificateModal?.(cert.topicName, cert.score), delay)
         delay += 2500
       }
     }
+
+    // Word-count milestone certificates (met + mastered tracks). Continue the modal
+    // cascade after any game milestones so the celebrations don't overlap.
+    this.checkMilestoneCertificates(delay)
 
     this.saveUserProgress()
   }
@@ -505,33 +547,60 @@ export class AppState {
 
   // ── Milestone certificates ───────────────────────────────────────────────────
 
-  checkMilestoneCertificates(learnedCount: number): MilestoneCertificate[] {
-    if (!this.userProgress) return []
+  /** Active certificate difficulty preset (parent setting; defaults to 'normal'). */
+  private certDifficulty(): CertDifficulty {
+    const v = (this.settings as any)?.certDifficulty
+    return v === 'easy' || v === 'hard' ? v : 'normal'
+  }
 
-    const certs = this.userProgress.certificates || []
+  /**
+   * Award word-count milestone certificates across BOTH tracks — `met` (words
+   * introduced) and `mastered` (derived-Learned) — using the thresholds for the
+   * current `certDifficulty` preset. Idempotent + additive (never revokes), so it's
+   * safe to call after every game finish and after a preset change. Fires the
+   * celebration modal for each newly-earned cert (staggered, starting at `startDelay`).
+   * Counts come from the live ProgressManager, so the caller passes nothing.
+   */
+  checkMilestoneCertificates(startDelay = 1500): MilestoneCertificate[] {
+    if (!this.userProgress) return []
+    const pm = this.progressManager
+    if (!pm) return []
+
     if (!this.userProgress.certificates) {
       this.userProgress.certificates = []
     }
+    const earnedIds = new Set(this.userProgress.certificates.map((c: any) => c.id))
 
-    const earnedIds = new Set(certs.map((c: any) => c.id))
+    const preset = this.certDifficulty()
+    const counts: Record<'met' | 'mastered', number> = {
+      met: pm.getIntroducedCount?.() ?? 0,
+      mastered: pm.getDerivedLearnedCount?.() ?? 0,
+    }
+
     const newlyEarned: MilestoneCertificate[] = []
-
-    for (const m of AppState.MILESTONES) {
-      if (learnedCount >= m.count && !earnedIds.has(m.id)) {
-        const cert: MilestoneCertificate = {
-          id: m.id,
-          topicId: m.id,
-          topicName: `${m.icon} ${m.name}`,
-          earnedDate: new Date().toISOString().split('T')[0],
-          score: 100,
-          timestamp: Date.now(),
-          isMilestone: true,
-          milestoneCount: m.count,
+    for (const track of ['met', 'mastered'] as const) {
+      const tiers = AppState.MILESTONE_TIERS[track]
+      const thresholds = AppState.MILESTONE_THRESHOLDS[track][preset]
+      const count = counts[track]
+      tiers.forEach((tier, i) => {
+        const need = thresholds[i]
+        if (count >= need && !earnedIds.has(tier.id)) {
+          const cert: MilestoneCertificate = {
+            id: tier.id,
+            topicId: tier.id,
+            topicName: `${tier.icon} ${tier.name}`,
+            earnedDate: new Date().toISOString().split('T')[0],
+            score: 100,
+            timestamp: Date.now(),
+            isMilestone: true,
+            milestoneCount: need,
+          }
+          this.userProgress.certificates.push(cert)
+          earnedIds.add(tier.id)
+          newlyEarned.push(cert)
+          console.log(`[V2] Milestone earned (${track}): ${tier.name} (${need})`)
         }
-        this.userProgress.certificates.push(cert)
-        newlyEarned.push(cert)
-        console.log(`[V2] Milestone earned: ${m.name} (${m.count} words)`)
-      }
+      })
     }
 
     if (newlyEarned.length > 0) {
@@ -540,6 +609,12 @@ export class AppState {
       if (this.certificateManager) {
         this.certificateManager.userProgress = this.userProgress
       }
+      let delay = startDelay
+      for (const cert of newlyEarned) {
+        setTimeout(() => this.opts.onCertificateModal?.(cert.topicName, cert.score), delay)
+        delay += 2500
+      }
+      this.opts.onCertificateGalleryRefresh?.()
     }
 
     return newlyEarned

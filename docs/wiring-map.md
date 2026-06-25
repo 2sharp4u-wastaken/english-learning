@@ -10,8 +10,12 @@ endGame('word-journey') with percentage ≥ 60%
   ├─ Calculate ABC mastery from wordMastery[A_abc..Z_abc]
   ├─ progressManager.checkAndUnlockGames(learned, topics, abcMastery)
   │   └─ gameUnlocks{} updated → home card lock states refresh
-  ├─ app.checkMilestoneCertificates(learnedCount)
-  │   └─ certificates[] updated → profile gallery, modal shown
+  ├─ app.checkMilestoneCertificates()   [cert recalibration, 2026-06-25]
+  │   └─ TWO tracks: met (getIntroducedCount) + mastered (getDerivedLearnedCount),
+  │      thresholds per certDifficulty preset; additive/idempotent. certificates[]
+  │      → profile gallery. NOTE on the React path this call lives in
+  │      `finishWordJourney` (bridge/word-journey.ts), NOT endGame — WJ never
+  │      calls updateProgress, which is why milestone certs used to never fire here.
   ├─ saveGameScoreToHistory() ──→ stats games panel
   ├─ totalPoints += delta ──→ stats overview
   ├─ coinManager.awardActivityComplete() ──→ coins, header display
@@ -49,6 +53,9 @@ endGame(gameType)  [not word-journey, not abc]
   ├─ app.checkGameMilestoneCertificates(gameType, score)
   │   └─ May award: Sentence Builder (scramble/fill-blanks 100%), Perfect Listener (listening 100%)
   └─ app.updateProgress() ──→ totalGamesPlayed++, course tracking
+      └─ app.checkMilestoneCertificates()   [cert recalibration, 2026-06-25]
+          └─ met + mastered word-count tracks (see WJ chain). This is THE firing
+             site for all non-WJ games; WJ fires it directly in finishWordJourney.
 ```
 
 **Does NOT trigger:** word graduation, game unlocks, learning progress bar

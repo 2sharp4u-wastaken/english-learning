@@ -59,14 +59,15 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 >     animated emoji). See `[[project_player_customization]]`.
 > (4) **Leaderboard** (§ LB — now has the D1 seam), **M8** PWA install button,
 >     **M5/M13** parent word/image submission (reuse the D1/Worker backend; `manager`
->     role reserved for these), milestone-cert WJ bug (needs cert-recalibration decision).
+>     role reserved for these). ✅ milestone-cert WJ bug + cert recalibration SHIPPED
+>     2026-06-25 (two tracks met/mastered + difficulty preset; see §2).
 > GitHub issues #10/#11/#12 are now CLOSED (round-1 fixes verified;
 `d167a49`/`20dcaab`/`b305311`). **Round 2 (build `ffa96f8`) filed #13–#22, all
 OPEN:** the landscape/scroll set (#16/#19/#20/#21/#22) is tracked under §7 M3 —
 REOPENED follow-ups; #13/#14/#15/#17/#18 are new items M16–M20 in §8.
 > Two PRE-EXISTING smoke failures (clean tree): smoke.spec.js:180 (ABC→Reading
 > unlock) + :351 (continue CTA label) — not root-caused. See `[[testing_preexisting_smoke_failures]]`.
-> Waiting on the user: cert recalibration; install Hebrew TTS voice on the tablet
+> Waiting on the user: install Hebrew TTS voice on the tablet
 > (M7); C2/C3 images.
 
 ---
@@ -230,12 +231,23 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
     grandfathered, sticky); regression asserting `Home.wordsLearned ===
     Stats.introducedCount` for the same user + per-user isolation in the selector.
   - **Sequence:** Step1 = A+B+tests (zero UI risk) → Step2 = C+D → Step3 = E → Step4 = F+G.
-- 🔴 **Milestone certs don't fire on React Word Journey completion** —
-  `finishWordJourney` doesn't call `checkMilestoneCertificates`. Wire it (gated on
-  the recalibration decision below). *This is a real bug, not just a decision.*
-- 🟡 **Certificate / level recalibration (product decision — needs the user).**
-  Split milestone certificates into "words met" vs "words mastered" tracks and pick
-  thresholds. Blocks the cert-firing wire-up above.
+- ✅ **Certificate / level recalibration + milestone-cert firing — SHIPPED 2026-06-25.**
+  Milestone certs are now TWO tracks (`AppState.MILESTONE_TIERS`): **met** (driven by
+  `getIntroducedCount` — words seen ≥1×) and **mastered** (driven by
+  `getDerivedLearnedCount` — derived-Learned). 5 fixed tiers each, STABLE ids; the
+  per-tier threshold count comes from `MILESTONE_THRESHOLDS[track][certDifficulty]`
+  (parent preset easy/normal/hard, default normal — UI in `AdvancedTab`). `met` reuses
+  thresholds 1·10·25·50·100 (normal); `mastered` 1·5·15·30·60. The award path
+  (`AppState.checkMilestoneCertificates()`, now parameterless — reads live counts) is
+  purely additive + idempotent, so a preset change only ever ADDS a newly-qualifying
+  tier and never revokes. Firing was the original bug: it's now called from BOTH
+  `AppState.updateProgress` (all non-WJ games, via `endGame`) AND `finishWordJourney`
+  (WJ has its own completion path that never calls updateProgress — that was why certs
+  never fired on a WJ finish). Tests: `src/engine/__tests__/milestone-certs.test.ts`.
+  NOTE: the new Hebrew cert names + settings copy aren't in `data/nikud-map.json` yet
+  (Dicta API was network-policy-blocked at ship time); re-run `build-nikud-map.py`
+  when the host is reachable so the nikud toggle vocalizes them. Chains:
+  `docs/wiring-map.md` → "Word Journey Completion Chain" + "Any Other Game".
 - 🟡 **Long words skip spelling** — currently omitted from the spell stage; they
   need a lighter spelling interaction instead.
 - 🟢 **Recommendation explicitness** — make the engine clearer about the
@@ -1231,6 +1243,6 @@ open thread)**: a ~360px Android pass of ABC + Word Journey + landscape. Next:
 MOBILE-QA #28, then M7 (tablet TTS — likely just the device Hebrew-voice
 install) → M8 (PWA install button) → M5 (needs the Cloudflare Worker + project
 key, and its `manager` role overlaps M12). **M22 (PWA update banner)✅ DONE.**
-Then the milestone-cert bug (clear fix, but needs the recalibration decision
-first) → E2E backfill for the mic/WJ paths (stub now exists) → polish
+Then ✅ the milestone-cert bug + cert recalibration (SHIPPED 2026-06-25, §2)
+→ E2E backfill for the mic/WJ paths (stub now exists) → polish
 grab-bag as time allows. C2/C3 unblock the moment you drop the two images.

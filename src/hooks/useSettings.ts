@@ -17,6 +17,7 @@ function shallowEqualSettings(a: AppSettings, b: AppSettings): boolean {
     a.showConfetti !== b.showConfetti ||
     a.exitBehavior !== b.exitBehavior ||
     a.gameUnlockOverride !== b.gameUnlockOverride ||
+    a.certDifficulty !== b.certDifficulty ||
     a.claudeApiKey !== b.claudeApiKey ||
     a.expressionsEnabled !== b.expressionsEnabled
   ) {
