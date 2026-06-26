@@ -3,6 +3,12 @@ import { Coins, RotateCcw, Sparkles, Trophy, X } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { speak } from '@/bridge/audio'
 import { useNikud } from '@/bridge/nikud'
+import {
+  celebrationLevelForPct,
+  getShowConfetti,
+  playCelebration,
+  triggerCelebration,
+} from '@/bridge/feedback'
 
 interface Tier {
   message: string
@@ -57,6 +63,7 @@ export function RewardModal({
   const hasTally = typeof correct === 'number' && typeof total === 'number' && total > 0
   const pct = hasTally ? Math.round((correct! / total!) * 100) : null
   const tier = pct == null ? null : tierFor(pct)
+  const level = pct == null ? null : celebrationLevelForPct(pct)
   const headline = title ?? (tier ? `${tier.message}! ${tier.emoji}` : 'Done! 🎉')
 
   useEffect(() => {
@@ -68,11 +75,25 @@ export function RewardModal({
     return () => window.removeEventListener('keydown', handler)
   }, [open, onClose, onExit])
 
+  // End-of-game celebration: clapping fanfare + matching confetti, both scaled by
+  // the score category (level). Fires whenever the score screen appears, for EVERY
+  // game (this modal is the shared end screen). `open` flips false→true on finish,
+  // so this runs once per completion (not on mount, so StrictMode doesn't double
+  // it). Needs a real tally (pct != null); pure-message dialogs skip it.
+  useEffect(() => {
+    if (!open || level == null) return
+    playCelebration(level)
+    if (getShowConfetti()) triggerCelebration(level)
+  }, [open, level])
+
+  // Speak the encouraging tier message — delayed so the clap fanfare leads and the
+  // voice lands over the applause rather than colliding with its attack.
   useEffect(() => {
     if (!open) return
-    if (title) return // caller-supplied title — let the caller handle audio
+    if (title) return // caller-supplied title — let the caller handle the spoken line
     if (pct == null || !tier) return
-    void speak(`${tier.message}!`)
+    const id = window.setTimeout(() => void speak(`${tier.message}!`), 650)
+    return () => window.clearTimeout(id)
   }, [open, pct, tier, title])
 
   if (!open) return null

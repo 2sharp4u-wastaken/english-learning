@@ -477,6 +477,90 @@ class AudioEffectsManager {
         return this.playSound(type);
     }
 
+    // 👏 End-of-game clapping fanfare — a synthesized crowd applause with three
+    // excitement levels, chosen by the score category (see bridge/feedback
+    // playCelebration). Claps are short band-passed noise bursts (broadband
+    // transients) scattered with jitter to sound like many hands; the swell ramps
+    // in, sustains, then tapers. Higher levels add more/denser claps, a longer
+    // tail, and a triumphant brass-y fanfare melody layered on top (a real
+    // "standing ovation" for top scores). Synthesised — no audio files, works
+    // offline, same Web Audio path as every other effect.
+    //   level 1 — light, warm applause (lower scores: still encouraging)
+    //   level 2 — full applause + short fanfare (good scores)
+    //   level 3 — roaring ovation + grand fanfare (near-perfect / perfect)
+    async playApplause(level = 2) {
+        if (!this.enabled) return;
+        await this.resume();
+        const ctx = this.audioContext;
+        if (!ctx) return;
+        const now = ctx.currentTime;
+
+        const cfg = ({
+            1: { dur: 1.1, claps: 16, peak: 0.22, fanfare: null },
+            2: { dur: 1.8, claps: 30, peak: 0.30, fanfare: [[392, 0.16], [587.33, 0.16], [783.99, 0.42]] },          // G-D-G
+            3: { dur: 2.6, claps: 52, peak: 0.38, fanfare: [[392, 0.16], [523.25, 0.16], [659.25, 0.16], [783.99, 0.55]] }, // G-C-E-G
+        })[level] || { dur: 1.8, claps: 30, peak: 0.30, fanfare: [[392, 0.16], [587.33, 0.16], [783.99, 0.42]] };
+
+        // One short noise buffer reused for every clap transient.
+        const bufLen = Math.max(1, Math.floor(ctx.sampleRate * 0.08));
+        const noiseBuf = ctx.createBuffer(1, bufLen, ctx.sampleRate);
+        const data = noiseBuf.getChannelData(0);
+        for (let i = 0; i < bufLen; i++) data[i] = Math.random() * 2 - 1;
+
+        // Master gain keeps the whole applause under the global volume.
+        const master = ctx.createGain();
+        master.gain.value = this.volume;
+        master.connect(ctx.destination);
+
+        const clap = (t, gain, freq) => {
+            const src = ctx.createBufferSource();
+            src.buffer = noiseBuf;
+            const bp = ctx.createBiquadFilter();
+            bp.type = 'bandpass';
+            bp.frequency.value = freq;
+            bp.Q.value = 0.7;
+            const g = ctx.createGain();
+            g.gain.setValueAtTime(0.0001, t);
+            g.gain.exponentialRampToValueAtTime(gain, t + 0.004);
+            g.gain.exponentialRampToValueAtTime(0.0001, t + 0.12);
+            src.connect(bp);
+            bp.connect(g);
+            g.connect(master);
+            src.start(t);
+            src.stop(t + 0.13);
+        };
+
+        for (let i = 0; i < cfg.claps; i++) {
+            const frac = i / cfg.claps;
+            // Swell envelope: quick rise (first 20%), hold, taper (last 30%).
+            const swell = frac < 0.2 ? frac / 0.2 : frac > 0.7 ? Math.max(0.15, (1 - frac) / 0.3) : 1;
+            const jitter = (Math.random() - 0.5) * (cfg.dur / cfg.claps);
+            const t = Math.max(now, now + frac * cfg.dur + jitter);
+            const gain = cfg.peak * (0.5 + Math.random() * 0.5) * (0.4 + swell * 0.6);
+            const freq = 1200 + Math.random() * 1700; // claps are bright/broadband
+            clap(t, gain, freq);
+        }
+
+        // Triumphant fanfare layered over the applause for the higher levels.
+        if (cfg.fanfare) {
+            let t = now + 0.12;
+            cfg.fanfare.forEach(([freq, dur]) => {
+                const osc = ctx.createOscillator();
+                const g = ctx.createGain();
+                osc.type = 'square';
+                osc.frequency.value = freq;
+                g.gain.setValueAtTime(0.0001, t);
+                g.gain.exponentialRampToValueAtTime(0.5, t + 0.02);
+                g.gain.exponentialRampToValueAtTime(0.001, t + dur);
+                osc.connect(g);
+                g.connect(master);
+                osc.start(t);
+                osc.stop(t + dur);
+                t += dur * 0.85; // slight overlap for a brassy legato
+            });
+        }
+    }
+
     // Set volume (0.0 to 1.0)
     setVolume(volume) {
         this.volume = Math.max(0, Math.min(1, volume));

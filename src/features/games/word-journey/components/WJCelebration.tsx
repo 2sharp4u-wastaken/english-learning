@@ -1,9 +1,15 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { WordJourneyPicture } from './WordJourneyPicture'
 import { cancelSpeech, speakWord } from '@/bridge/audio'
 import { stripNikud, useTextPrefs } from '@/bridge/textPrefs'
 import { useNikud } from '@/bridge/nikud'
 import { cn } from '@/lib/cn'
+import {
+  celebrationLevelForPct,
+  getShowConfetti,
+  playCelebration,
+  triggerCelebration,
+} from '@/bridge/feedback'
 import type { WJStatus, WJSummaryEntry } from '@/bridge/word-journey'
 
 const STEP_MS = 950
@@ -26,6 +32,20 @@ export function WJCelebration({ summary, onPlayAgain, onHome }: Props) {
   const { caseMode, showNikud } = useTextPrefs()
   const nk = useNikud()
   const [revealed, setRevealed] = useState(0)
+
+  // Clapping fanfare + confetti, scaled by how much of the journey was learned —
+  // Word Journey's score screen is custom (not the shared RewardModal), so it gets
+  // the same celebration here. The ref guards React StrictMode's dev double-mount
+  // (this screen mounts on completion rather than via an `open` toggle).
+  const celebratedRef = useRef(false)
+  useEffect(() => {
+    if (celebratedRef.current || summary.length === 0) return
+    celebratedRef.current = true
+    const learned = summary.filter((s) => s.status === 'learned').length
+    const level = celebrationLevelForPct(Math.round((learned / summary.length) * 100))
+    playCelebration(level)
+    if (getShowConfetti()) triggerCelebration(level)
+  }, [summary])
 
   useEffect(() => {
     const timers: number[] = []

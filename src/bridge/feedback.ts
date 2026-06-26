@@ -47,6 +47,67 @@ interface AudioEffects {
   playSparkle(): Promise<void>
   playWelcomeChime(type?: string): Promise<void>
   playSound(id: string): Promise<void>
+  playApplause(level?: number): Promise<void>
+}
+
+/**
+ * Excitement level (1–3) for the end-of-game clapping fanfare + matching confetti,
+ * derived from the session's score category (% correct). Shared by every score
+ * screen (RewardModal + Word Journey's WJCelebration) so the celebration scales
+ * consistently: a near-perfect run gets a roaring ovation, a low run still gets a
+ * warm, encouraging clap (kids 5–8 — always positive).
+ */
+export type CelebrationLevel = 1 | 2 | 3
+export function celebrationLevelForPct(pct: number): CelebrationLevel {
+  if (pct >= 90) return 3
+  if (pct >= 70) return 2
+  return 1
+}
+
+/**
+ * Play the clapping fanfare at the given excitement level. A "celebration" sound,
+ * so it rides the master sound switch only (soundOn) — not the per-category
+ * answer/coin/hero toggles. No-op if the legacy audio engine isn't loaded yet.
+ */
+export function playCelebration(level: CelebrationLevel): void {
+  if (!getPlayerPrefs().soundOn) return
+  const fx = (window as any).audioEffects as AudioEffects | undefined
+  try {
+    fx?.playApplause?.(level)?.catch?.(() => {})
+  } catch {
+    /* swallow — audio is a nice-to-have */
+  }
+}
+
+/**
+ * Fire a celebratory confetti burst scaled by the excitement level (the visual
+ * partner of playCelebration). Respects reduced-motion and is additionally scaled
+ * by the kid's `celebration` intensity pref. Level 3 adds side fountains for a
+ * grand finish. Callers gate on getShowConfetti() first (per-kid + global toggle).
+ */
+export function triggerCelebration(level: CelebrationLevel): void {
+  const confetti = (window as any).confetti as ConfettiFn | undefined
+  if (typeof confetti !== 'function') return
+  const prefs = getPlayerPrefs()
+  if (prefs.reducedMotion) return
+  const mult = prefs.celebration === 'party' ? 1.6 : prefs.celebration === 'calm' ? 0.6 : 1
+  const base = level === 3 ? 160 : level === 2 ? 110 : 70
+  const colors = ['#667eea', '#764ba2', '#4facfe', '#00f2fe', '#ffd700']
+  try {
+    confetti({
+      particleCount: Math.round(base * mult),
+      spread: level === 3 ? 100 : 75,
+      origin: { y: 0.6 },
+      colors,
+    })
+    if (level === 3) {
+      const side = Math.round(40 * mult)
+      confetti({ particleCount: side, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, colors })
+      confetti({ particleCount: side, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors })
+    }
+  } catch {
+    /* swallow — visual nice-to-have */
+  }
 }
 
 // Per-kid sound gating (playerPrefs): master switch + per-category. correct/wrong

@@ -244,6 +244,33 @@ DISTINCT from global AppSettings (bridge/settings.ts). One opaque blob → syncs
 in the future cloud backend (Phase B). See [[project_player_customization]].
 ```
 
+## End-of-Game Celebration (clapping fanfare, score-scaled)
+
+```
+Game finishes → score screen appears:
+  ├─ Shared path: RewardModal (used by ~16 games) — open flips false→true on finish
+  └─ Custom path: WJCelebration (Word Journey) — mounts on completion (ref-guarded
+       against StrictMode dev double-mount)
+        │
+        ├─ level = celebrationLevelForPct(pct)   (bridge/feedback.ts, single source)
+        │     pct = % correct (RewardModal) | % learned (WJCelebration)
+        │     ≥90 → 3 (roaring ovation + grand fanfare) · ≥70 → 2 (applause + fanfare)
+        │     · <70 → 1 (warm encouraging clap — kids 5–8, always positive)
+        ├─ playCelebration(level) → audioEffects.playApplause(level)
+        │     synthesized crowd applause (band-passed noise-burst claps + swell) with a
+        │     square-wave brass fanfare layered on top for levels 2–3. Rides the MASTER
+        │     sound switch only (soundOn) — a "celebration" sound, not gated by the
+        │     per-category answer/coin/hero toggles. No audio files (Web Audio, offline).
+        └─ getShowConfetti() ? triggerCelebration(level) : skip
+              confetti burst scaled by level × the kid's `celebration` intensity pref;
+              level 3 adds side fountains. Skips entirely in reducedMotion.
+
+RewardModal also speaks the tier message (speak), now DELAYED 650ms so the clap leads
+and the voice lands over the applause instead of colliding with its attack.
+WHY: user request — every game's congrats/score screen should clap, louder the better
+the score. One shared helper (celebrationLevelForPct) keeps both score screens in sync.
+```
+
 ## Daily Login
 
 ```

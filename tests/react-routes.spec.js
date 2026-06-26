@@ -881,6 +881,31 @@ test.describe('Slice 2.2: Shared feedback and reward', () => {
       .toBe('#/home');
   });
 
+  test('reward modal plays a clapping fanfare once when the score screen appears', async ({ page }) => {
+    await seedUser(page);
+    await gotoHash(page, '/dev/game-shell');
+
+    // Spy on the synthesized applause. The demo finishes at 3/10 = 30% → level 1.
+    await page.waitForFunction(() => typeof window.audioEffects?.playApplause === 'function');
+    await page.evaluate(() => {
+      window.__applause = [];
+      const fx = window.audioEffects;
+      const orig = fx.playApplause.bind(fx);
+      fx.playApplause = (level) => {
+        window.__applause.push(level);
+        return orig(level);
+      };
+    });
+
+    await page.locator('[data-testid="demo-finish"]').click();
+    await expect(page.locator('[data-testid="reward-modal"]')).toBeVisible();
+
+    // Exactly one clap fanfare, at the level matching the score category.
+    await page.waitForTimeout(400);
+    const applause = await page.evaluate(() => window.__applause);
+    expect(applause).toEqual([1]);
+  });
+
   test('reward modal play-again resets and closes', async ({ page }) => {
     await seedUser(page);
     await gotoHash(page, '/dev/game-shell');

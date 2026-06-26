@@ -9,6 +9,9 @@ Behavioral rules for Claude Code in this project. These override defaults.
 - **Master plan:** `docs/master-plan.md` — the source of truth for migration phases and decisions (history + the *why*)
 - **Open work:** `docs/backlog.md` — the single source of truth for what's left to do; the other docs point here for status
 
+## Deploy
+- **Auto-deploy on commit — NO pull requests.** Pushing a commit triggers the deploy automatically; there is no PR/review gate. Just commit + push (per the auto-commit rule below) and the deploy happens on its own. Do **not** open PRs for normal work unless the user explicitly asks for one.
+
 ## Dev Setup
 - **Run the app:** `npm run dev` (Vite, port 3002) — that's all. As of Slice 4.3 the app is **fully Python-free** (no `/api/*` calls). Open `http://localhost:3002`.
 - **`server.py` is OPTIONAL** (port 3000) — a maintainer-only tool for regenerating the static `data/nikud-map.json` (Dicta Nakdan CORS proxy) and baking authored content to source. Nothing the running app does requires it.
@@ -106,7 +109,7 @@ Accessed from React only via `src/bridge/` modules.
 - `src/features/games/shared/MediaPromptCard.tsx` — word/translation/media slot + audio button (`audioIconOnly` for legacy speaker look; omit `word` for audio-only games). `wordHidden` reserves the word's layout box but hides it (`visibility:hidden`) — use it to flash-then-hide a word without the card shifting (Reading), instead of toggling `word` to `undefined`.
 - `src/features/games/shared/AnswerGrid.tsx` — N options grid (`columns={2|3|4}`, `variant='text'|'media'`, `hidden` for audio gate). Supports an optional `sublabel` per option, rendered as small Hebrew gloss under the main label (used by Slice 3.10 Grammar for bilingual options).
 - `src/features/games/shared/FeedbackBanner.tsx` — correct/incorrect floating banner
-- `src/features/games/shared/RewardModal.tsx` — end-of-session reward
+- `src/features/games/shared/RewardModal.tsx` — end-of-session reward. On open it fires a **score-scaled clapping fanfare + matching confetti** for free (every game inherits it): `celebrationLevelForPct(pct)` → level 1/2/3 → `playCelebration()` (synth applause+fanfare via `audioEffects.playApplause`, rides the master soundOn switch only) + `triggerCelebration()` (confetti, gated by `getShowConfetti()`+reducedMotion) — all in `src/bridge/feedback.ts`. Word Journey's custom score screen `WJCelebration` reuses the same helpers (ref-guarded for StrictMode). A NEW custom end screen should call these two, don't re-roll. See `docs/wiring-map.md` → "End-of-Game Celebration".
 - `src/features/games/shared/ExitConfirmDialog.tsx` — "leave game?" modal
 - `src/features/games/shared/SpellingComparison.tsx` — "learn from the mistake" panel for letter-building games: correct word (green) above the child's attempt with per-position green/red letters. Used by Reading + Word Journey spell. Pair it with voicing the correct word on a correct answer.
 - `src/features/games/shared/SentenceComparison.tsx` — word-order sibling of `SpellingComparison` for word-sequence games (Sentence Scramble): correct sentence (green word-chips) above the attempt, each attempted word green when it's in the right position, red otherwise.
