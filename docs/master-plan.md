@@ -1859,6 +1859,27 @@ a non-existent DB would break it) and the Worker 503s until provisioned. Go-live
 roadmap (B backup → C sync → D leaderboards) in `docs/cloud-backend.md`. Tests: `worker/__tests__/
 auth.test.ts` (8, mock D1) + `cloudAccount.test.ts` (4). See `[[project_cloud_backend]]`.
 
+### Slice CERT1: Certificate recalibration + per-player content unlock — ✅ SHIPPED (2026-06-25/26)
+
+Two related changes to the rewards/gating model. **(1) Cert recalibration (v3.0.3, product decision):**
+milestone word certificates split into TWO tracks in `AppState.MILESTONE_TIERS` — `met` (driven by
+`getIntroducedCount`, words seen ≥1×) and `mastered` (driven by `getDerivedLearnedCount`). 5 fixed
+tiers each (stable ids; `mastered` reuses the legacy prestige ids), per-tier threshold from
+`MILESTONE_THRESHOLDS[track][certDifficulty]` — a parent preset (easy/normal/hard, default normal;
+`met` 1·10·25·50·100, `mastered` 1·5·15·30·60 at normal). Award path is parameterless,
+additive + idempotent, so a preset change only ADDS a newly-qualifying tier, never revokes. Also
+fixed the long-standing firing bug: `checkMilestoneCertificates()` was defined but never called — now
+fires from `updateProgress` (all non-WJ games) AND `finishWordJourney` (WJ's separate completion path
+that never calls updateProgress, the actual root cause). **(2) Per-player content unlock (v3.0.4):**
+new per-user blob `v2_playerUnlocks_<userId>` (`src/bridge/playerUnlocks.ts`, `{ expressions?: boolean }`)
+— a PARENT decision scoped to ONE child, set from the per-kid row in `UsersTab`, distinct from the
+device-global `gameUnlockOverride` (all content, every player) and from `playerPrefs` (the kid's own
+look-and-feel). `getExpressionUnlock()` ORs in `isExpressionsUnlockedForCurrentUser()` so a parent can
+open ביטויים for a child under the 50-mastered gate without opening everything for everyone (the
+`expressionsEnabled` content switch still applies). Kept minimal (expressions only) but the blob is
+extensible to per-game unlocks. Tests: `milestone-certs.test.ts` (5) + `playerUnlocks.test.ts` (5).
+Why both: docs/backlog.md "Certificate / level recalibration" + chains in `docs/wiring-map.md`.
+
 ## Phase 4: Cleanup and Consolidation
 
 Objective: remove dead legacy code and shrink maintenance burden.
