@@ -3574,4 +3574,75 @@ test.describe('Integration (known issues)', () => {
     await expect(page.locator('[data-testid="home-hero"]')).toBeVisible();
     await expect(page.locator('[data-testid="login-modal"]')).toHaveCount(0);
   });
+
+  // Regression (welcome-sound-login-routing): logging out from a deep route and
+  // back in must land on HOME, not resume the previous route. The hash router is
+  // a module-level singleton whose location persisted across the AuthGate
+  // unmount/remount, so re-login used to drop the user back on e.g. /settings.
+  // useAuthSession now resets the router to /home on logout.
+  test('logout from a deep route then re-login lands on home (not the last page)', async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await seedUser(page);
+
+    // Go deep into Settings, confirm we're there.
+    await gotoHash(page, '/settings');
+    await expect(page).toHaveURL(/#\/settings$/);
+
+    // Log out via the top-nav user menu.
+    await page.locator('[data-testid="user-menu-button"]').click();
+    await page.locator('[data-testid="logout-button"]').click();
+
+    // Login screen shows; the route was reset to /home behind it.
+    await expect(page.locator('[data-testid="login-modal"]')).toBeVisible();
+    await expect(page).toHaveURL(/#\/home$/);
+
+    // Log back in as the same user (password was adopted on the seeded first login
+    // — seedUser's password is null, so any password is accepted and adopted).
+    await page.locator('[data-testid="user-select-card"]').first().click();
+    await page.locator('#password-input').fill('test1234');
+    await page.locator('[data-testid="login-submit"]').click();
+
+    // Lands on home, NOT back on /settings.
+    await expect(page.locator('[data-testid="home-hero"]')).toBeVisible();
+    await expect(page).toHaveURL(/#\/home$/);
+  });
+
+  // Regression (welcome-sound-login-routing): the post-login welcome chime must
+  // play EXACTLY ONCE. It used to fire twice — once from React (AppShell →
+  // playLoginChime) and once from a now-removed legacy `user-logged-in` listener
+  // in index.html. Default prefs are soundOn:true + loginSound:'arpeggio', so the
+  // chime is expected to fire.
+  test('welcome chime plays exactly once on login (no duplicate)', async ({ page }) => {
+    await seedUser(page);
+    await page.evaluate(() => {
+      // Keep the user, drop the session: this is a fresh login.
+      localStorage.removeItem('currentSession');
+      localStorage.removeItem('currentUser');
+    });
+    await page.reload();
+
+    // Login screen present + audio engine loaded; install a call counter.
+    await expect(page.locator('[data-testid="login-modal"]')).toBeVisible();
+    await page.waitForFunction(() => typeof window.audioEffects?.playWelcomeChime === 'function');
+    await page.evaluate(() => {
+      window.__chimeCount = 0;
+      const fx = window.audioEffects;
+      const orig = fx.playWelcomeChime.bind(fx);
+      fx.playWelcomeChime = (...args) => {
+        window.__chimeCount++;
+        return orig(...args);
+      };
+    });
+
+    // Log in (first login adopts the entered password).
+    await page.locator('[data-testid="user-select-card"]').first().click();
+    await page.locator('#password-input').fill('test1234');
+    await page.locator('[data-testid="login-submit"]').click();
+    await expect(page.locator('[data-testid="home-hero"]')).toBeVisible();
+
+    // Give any stray (legacy) handler a chance to fire before counting.
+    await page.waitForTimeout(800);
+    const count = await page.evaluate(() => window.__chimeCount);
+    expect(count).toBe(1);
+  });
 });

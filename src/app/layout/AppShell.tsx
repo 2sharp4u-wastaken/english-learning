@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
 import { TopNav } from './TopNav'
 import { MobileTopBar } from './MobileTopBar'
@@ -46,7 +46,14 @@ export function AppShell() {
   // Login/welcome chime — once when the authenticated shell mounts (i.e. per
   // sign-in; the shell persists across hub/game navigation and unmounts only on
   // logout). The login button is a user gesture, so audio is allowed to start.
+  // The ref guards against React StrictMode's dev-only setup→cleanup→setup double
+  // invoke (the same mount, so the ref persists) — otherwise the chime plays
+  // twice in dev. A real re-login unmounts/remounts AppShell → fresh ref → chimes
+  // again, which is correct.
+  const chimedRef = useRef(false)
   useEffect(() => {
+    if (chimedRef.current) return
+    chimedRef.current = true
     playLoginChime()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])

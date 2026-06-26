@@ -52,28 +52,13 @@
          are ready and republishes the same window.* globals the bridges read. -->
 
 
-    <script>
-        // Post-login welcome chime. React Router owns routing (index + catch-all
-        // both redirect to /home) and React owns the home screen, so the legacy
-        // welcome-screen handler was retired in Slice 4.1.
-        window.addEventListener('user-logged-in', (e) => {
-            if (!window.audioEffects) return;
-            const userId = (e.detail && e.detail.userId) || localStorage.getItem('currentUser');
-            let chimeType = 'arpeggio';
-            if (userId) {
-                try {
-                    const progress = JSON.parse(localStorage.getItem(`userProgress_${userId}`) || '{}');
-                    chimeType = progress.welcomeChime || 'arpeggio';
-                } catch (err) { /* ignore */ }
-            }
-            setTimeout(() => window.audioEffects.playWelcomeChime(chimeType), 400);
-        });
-    </script>
-
-    <!-- Slice 4.5: the chime-selector inline script was deleted with the legacy
-         `#chime-selector` profile DOM it drove. The welcome chime still plays via
-         the `user-logged-in` handler above (reads `progress.welcomeChime`); the
-         picker UI for changing it now lives in React if/when re-added. -->
+    <!-- The post-login welcome chime is played EXCLUSIVELY by React now
+         (AppShell mount → playLoginChime() → playerPrefs.loginSound). The old
+         legacy `user-logged-in` chime handler here read the stale
+         `progress.welcomeChime` key and fired a SECOND time on every login,
+         doubling the sound — removed (welcome-sound-login-routing fix). The
+         `user-logged-in` event itself is still dispatched (engine boot needs
+         it); only the duplicate chime listener is gone. -->
 
     <!-- React app mount point -->
     <div id="react-root"></div>

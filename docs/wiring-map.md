@@ -88,6 +88,15 @@ App.tsx
       │             └─ onAuthChange fires → AuthGate flips to app; useEngineBoot.initEngine()
       └─ authed → <RouterProvider> (the app)
 
+  On logout, useAuthSession calls router.navigate('/home') (resetRouteToHome).
+    WHY: createHashRouter is a module-level singleton whose state.location PERSISTS
+    while AuthGate swaps RouterProvider↔LoginPage, so re-login would otherwise
+    resume the previous user's deep route (e.g. /settings, /game/...). Must use
+    router.navigate, NOT window.location.hash = — react-router v7 hash history
+    listens to 'popstate' only and ignores 'hashchange', so a raw hash write
+    wouldn't update router state. Covers every logout path (button, idle expiry,
+    user switch) because it runs in onAuthChange's user→null branch too.
+
 bridge/auth.ts = standalone owner (no window.authService):
   storage keys (UNPREFIXED): users · currentSession · currentUser
   idle expiry 30min — lazy in isAuthenticated() + 500ms onAuthChange poll;
@@ -223,7 +232,11 @@ DisplayTab (unprotected kid tab) → usePlayerPrefs().updatePrefs(patch)
        └─ subscribePlayerPrefs consumers re-read (also on 'auth-changed' = profile switch):
             ├─ AppShell effect → #react-root data-theme / data-contrast / data-reduced-motion
             │     + html.app-big-text (themes.css overrides Tailwind --color-* vars)
-            ├─ AppShell mount → playLoginChime() once per sign-in (prefs.loginSound variant)
+            ├─ AppShell mount → playLoginChime() once per sign-in (prefs.loginSound variant).
+            │     Guarded by a `chimedRef` so React StrictMode's dev double-effect can't
+            │     double-play; a real re-login remounts AppShell → fresh ref → chimes again.
+            │     (The legacy index.html `user-logged-in` chime listener was REMOVED — it
+            │     was a second, stale source that doubled the sound on every login.)
             ├─ bridge/feedback.ts → soundAllowed()/getShowConfetti() gate every sound + confetti;
             │     triggerConfetti scales by celebration, skips on reducedMotion
             └─ HomePage → mascot/sparkles gated; ProfilePage/MobileTopBar → avatarColor
