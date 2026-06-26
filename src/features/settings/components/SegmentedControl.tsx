@@ -46,7 +46,8 @@ export function SegmentedControl<T extends string>({ options, value, onChange, a
             )}
           >
             {opt.emoji && (
-              <span className="text-xl leading-none" aria-hidden>
+              // Issue #51: larger glyph (~+50%) so the icon reads clearly on phones.
+              <span className="text-3xl leading-none" aria-hidden>
                 {opt.emoji}
               </span>
             )}

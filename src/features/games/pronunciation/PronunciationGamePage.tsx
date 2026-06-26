@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { getApp, getGameManager } from '@/engine/instances'
 import { useNavigate } from 'react-router-dom'
-import { Mic, MicOff, Volume2 } from 'lucide-react'
+import { Mic, MicOff } from 'lucide-react'
 import { GameScreenShell } from '@/features/games/shared/GameScreenShell'
 import { MediaPromptCard } from '@/features/games/shared/MediaPromptCard'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
@@ -596,35 +596,26 @@ export function PronunciationGamePage() {
                     {Math.round(comparison.accuracy * 100)}%
                   </span>
                 </div>
-                {phase === 'answered' ? (
+                {/* Issue #41: the in-panel "השמע שוב" duplicated the prompt card's
+                    speaker (same playWord), so it's removed. Only the unique
+                    "שמע את עצמך" replay (when a recording exists) remains. */}
+                {phase === 'answered' && comparison.recordingUrl ? (
                   <div className="mt-1 flex flex-wrap items-center justify-center gap-2">
                     <button
                       type="button"
-                      onClick={() => playWord(false)}
-                      data-testid="pronunciation-replay"
-                      aria-label="השמע מילה שוב"
-                      className="flex items-center justify-center gap-2 rounded-full bg-gradient-to-r from-[color:var(--blue-400)] to-[color:var(--mint-400)] px-4 py-2 text-sm font-bold text-[color:var(--ink-950)] shadow-md transition hover:brightness-110"
+                      onClick={() => {
+                        if (!comparison.recordingUrl) return
+                        cancelSpeech()
+                        const audio = new Audio(comparison.recordingUrl)
+                        audio.play().catch(() => {})
+                      }}
+                      data-testid="pronunciation-hear-self"
+                      aria-label="שמע את עצמך"
+                      className="flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:bg-white/15"
                     >
-                      <Volume2 className="size-4" aria-hidden />
-                      {nk('השמע שוב')}
+                      <Mic className="size-4" aria-hidden />
+                      {nk('שמע את עצמך')}
                     </button>
-                    {comparison.recordingUrl ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (!comparison.recordingUrl) return
-                          cancelSpeech()
-                          const audio = new Audio(comparison.recordingUrl)
-                          audio.play().catch(() => {})
-                        }}
-                        data-testid="pronunciation-hear-self"
-                        aria-label="שמע את עצמך"
-                        className="flex items-center justify-center gap-2 rounded-full bg-white/10 px-4 py-2 text-sm font-bold text-white shadow-md transition hover:bg-white/15"
-                      >
-                        <Mic className="size-4" aria-hidden />
-                        {nk('שמע את עצמך')}
-                      </button>
-                    ) : null}
                   </div>
                 ) : null}
               </section>

@@ -12,9 +12,14 @@ import { ExpressionsTab } from './ExpressionsTab'
 export function ContentTab() {
   return (
     <div className="space-y-4">
+      {/* Issue #53: starts collapsed — the import form is tall and was always
+          open, overloading the page. Tap the header chevron to expand. */}
       <SectionCard
         title="הוספת מילים מותאמות"
         description="ייבוא מילים באנגלית ותרגום אוטומטי לעברית עם Claude. המילים נשמרות בדפדפן ומופיעות מיד במשחקים."
+        collapsible
+        defaultCollapsed
+        headerTestId="content-customwords-toggle"
       >
         <CustomWordsPanel />
       </SectionCard>

@@ -12,7 +12,9 @@ import {
   Star,
   Trophy,
   User,
+  Volume2,
 } from 'lucide-react'
+import { speakWord, speakHebrew, cancelSpeech } from '@/bridge/audio'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { useUserProgress } from '@/hooks/useUserProgress'
 import { useGameUnlocks } from '@/hooks/useGameUnlocks'
@@ -506,6 +508,16 @@ function WordsTab({
       })
   }, [learnedWords, vocabBank])
 
+  // Issue #47: tap a sticker to hear the word — English first, then its Hebrew
+  // translation — so the collection doubles as a self-quiz / listening aid.
+  const playEntry = (word: string, translation: string) => {
+    cancelSpeech()
+    void (async () => {
+      await speakWord(word.toLowerCase(), 'vocabulary')
+      if (translation) await speakHebrew(translation)
+    })()
+  }
+
   if (entries.length === 0) {
     return (
       <EmptyState
@@ -519,15 +531,25 @@ function WordsTab({
   return (
     <div className="grid grid-cols-3 gap-2 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6">
       {entries.map((entry) => (
-        <div
+        <button
           key={entry.key}
-          className="flex flex-col items-center gap-1 rounded-2xl border border-white/10 bg-surface/90 p-3 text-center shadow-panel"
+          type="button"
+          onClick={() => playEntry(entry.word, entry.translation)}
+          data-testid="profile-word-sticker"
+          className="group relative flex flex-col items-center gap-1 rounded-2xl border border-white/10 bg-surface/90 p-3 text-center shadow-panel transition-transform hover:-translate-y-0.5 hover:border-white/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-learn/50"
+          aria-label={`${entry.word} — ${entry.translation}. השמע`}
           title={`${entry.word} — ${entry.translation}`}
         >
+          <span
+            aria-hidden
+            className="absolute end-1.5 top-1.5 text-muted/50 transition-colors group-hover:text-learn"
+          >
+            <Volume2 size={13} />
+          </span>
           <span className="text-2xl">{entry.emoji}</span>
           <span className="text-sm font-medium text-text">{entry.word}</span>
           <span className="text-xs text-muted">{entry.translation}</span>
-        </div>
+        </button>
       ))}
     </div>
   )

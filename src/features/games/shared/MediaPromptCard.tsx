@@ -12,6 +12,9 @@ export interface MediaPromptCardProps {
   media?: ReactNode
   /** Top-line instruction (e.g. "האזן ובחר את התמונה") */
   prompt?: string
+  /** Rich instruction node — when set, replaces `prompt` (used to emphasize a
+   *  varying keyword, e.g. ABC's "after"/"before"). Caller owns nikud. */
+  promptNode?: ReactNode
   /** Reserve the word's layout box but hide it (visibility:hidden). Lets a game
    *  flash-then-hide the word without the rest of the card shifting (Reading D3). */
   wordHidden?: boolean
@@ -33,6 +36,7 @@ export function MediaPromptCard({
   translation,
   media,
   prompt,
+  promptNode,
   onPlayAudio,
   audioPlaying = false,
   audioDisabled = false,
@@ -50,7 +54,15 @@ export function MediaPromptCard({
         className,
       )}
     >
-      {prompt ? (
+      {promptNode ? (
+        <p
+          data-testid="media-prompt-text"
+          dir="rtl"
+          className="text-lg font-medium text-[color:var(--slate-300)] sm:text-xl"
+        >
+          {promptNode}
+        </p>
+      ) : prompt ? (
         <p
           data-testid="media-prompt-text"
           dir="rtl"

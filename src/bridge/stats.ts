@@ -2,7 +2,7 @@ import type { UserProgress } from './types'
 import { getApp } from '../engine/instances'
 import { v2Key } from './storage'
 import { getAllExpressions, type ExpressionType } from './expressions'
-import { deriveLifecycle } from '../engine/lifecycle'
+import { deriveLifecycle, type LifecycleResult } from '../engine/lifecycle'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -119,8 +119,11 @@ export interface CategoryRow {
   name: string
   icon: string
   total: number
-  learned: number
-  practiced: number
+  /** Words MET in this category (lifecycle introduced — status !== 'new'). */
+  met: number
+  /** Words in שליטה in this category (lifecycle learned / mastered). */
+  mastered: number
+  /** met / total, 0–100. */
   pct: number
 }
 
@@ -542,53 +545,56 @@ function buildJourneyRows(userId: string, progress: UserProgress): JourneyRow[] 
 
 // ─── Category completion ────────────────────────────────────────────────────
 
-function buildCategoryCompletion(progress: UserProgress): {
+function buildCategoryCompletion(lifecycle: LifecycleResult): {
   rows: CategoryRow[]
   startedCount: number
   completedCount: number
 } {
   const vocabIndex = getVocabularyIndex()
-  const learnedWords = progress.learnedWords || {}
-  const wordMastery = progress.wordMastery || {}
-  const learnedByCategory: Record<string, number> = {}
-  const practicedByCategory: Record<string, number> = {}
+  const metByCategory: Record<string, number> = {}
+  const masteredByCategory: Record<string, number> = {}
 
-  for (const key of Object.keys(learnedWords)) {
+  // Issue #48 (PROG1): per-category progress now derives from the SAME lifecycle
+  // the overview "מילים נלמדו" / "מילים בשליטה" tiles use — NOT the legacy
+  // `learnedWords` stamp (written only by a full Word-Journey graduation), which
+  // left every category bar at 0% even when the child had met dozens of words.
+  // "met" = introduced (status !== 'new', drives the bar); "mastered" = derived-
+  // Learned (שליטה). Keying is `word_category`; getWordDisplayInfo resolves the
+  // category (bank lookup, else the key suffix), matching the journey/word tables.
+  for (const key of lifecycle.introducedKeys) {
     const cat = getWordDisplayInfo(key, vocabIndex).category
-    learnedByCategory[cat] = (learnedByCategory[cat] || 0) + 1
+    metByCategory[cat] = (metByCategory[cat] || 0) + 1
   }
-
-  for (const entry of Object.values(wordMastery)) {
-    const cat = entry?.category
-    if (!cat) continue
-    practicedByCategory[cat] = (practicedByCategory[cat] || 0) + 1
+  for (const key of lifecycle.learnedKeys) {
+    const cat = getWordDisplayInfo(key, vocabIndex).category
+    masteredByCategory[cat] = (masteredByCategory[cat] || 0) + 1
   }
 
   const categoryIds = new Set([
     ...Object.keys(vocabIndex.categoryTotals),
-    ...Object.keys(learnedByCategory),
-    ...Object.keys(practicedByCategory),
+    ...Object.keys(metByCategory),
+    ...Object.keys(masteredByCategory),
   ])
 
   const rows: CategoryRow[] = Array.from(categoryIds)
     .map((id) => {
       const meta = getCategoryMeta(id)
       const total = vocabIndex.categoryTotals[id] || 0
-      const learned = learnedByCategory[id] || 0
-      const practiced = practicedByCategory[id] || 0
-      const pct = total > 0 ? Math.round((learned / total) * 100) : 0
-      return { id, name: meta.name, icon: meta.icon, total, learned, practiced, pct }
+      const met = metByCategory[id] || 0
+      const mastered = masteredByCategory[id] || 0
+      const pct = total > 0 ? Math.min(100, Math.round((met / total) * 100)) : 0
+      return { id, name: meta.name, icon: meta.icon, total, met, mastered, pct }
     })
     .sort((a, b) => {
-      if (b.learned !== a.learned) return b.learned - a.learned
+      if (b.met !== a.met) return b.met - a.met
       if (b.pct !== a.pct) return b.pct - a.pct
       return a.name.localeCompare(b.name)
     })
 
   return {
     rows,
-    startedCount: rows.filter((r) => r.learned > 0 || r.practiced > 0).length,
-    completedCount: rows.filter((r) => r.total > 0 && r.learned >= r.total).length,
+    startedCount: rows.filter((r) => r.met > 0).length,
+    completedCount: rows.filter((r) => r.total > 0 && r.mastered >= r.total).length,
   }
 }
 
@@ -670,7 +676,7 @@ export function buildUserStatsModel(userId: string, displayName: string): UserSt
   const masteryStats = getWordMasteryStats(progress, isCurrentUser)
   const memoryRecords = loadMemoryRecords(userId)
   const journeyRows = buildJourneyRows(userId, progress)
-  const categoryCompletion = buildCategoryCompletion(progress)
+  const categoryCompletion = buildCategoryCompletion(lifecycle)
   const learningVelocity = getLearningVelocity(progress)
   const inProgressCount = journeyRows.filter((r) => !r.isLearned).length
 

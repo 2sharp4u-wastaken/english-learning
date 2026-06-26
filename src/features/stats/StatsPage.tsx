@@ -849,7 +849,7 @@ function CategoryCard({ category }: { category: CategoryRow }) {
     <div className="rounded-2xl border border-white/8 bg-surface/90 p-4">
       <div className="flex items-center justify-between gap-3 mb-3">
         <span className="font-bold text-text">{category.icon} {category.name}</span>
-        <span className="font-bold text-text">{category.learned}/{category.total || '—'}</span>
+        <span className="font-bold text-text">{category.met}/{category.total || '—'}</span>
       </div>
       <div className="h-2.5 rounded-full bg-white/10 overflow-hidden">
         <div
@@ -858,8 +858,8 @@ function CategoryCard({ category }: { category: CategoryRow }) {
         />
       </div>
       <div className="mt-2 flex justify-between text-xs text-muted">
-        <span>{category.pct}% הושלמו</span>
-        <span>{category.practiced} תורגלו</span>
+        <span>{category.pct}% נלמדו</span>
+        <span>{category.mastered} בשליטה</span>
       </div>
     </div>
   )

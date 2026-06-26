@@ -27,9 +27,11 @@ export function RadioCards<T extends string>({ options, value, onChange, columns
             type="button"
             onClick={() => onChange(opt.value)}
             className={cn(
-              'rounded-xl border p-3 text-start transition-colors',
+              // Issue #51: the selected card gets a clear 2px frame + ring so it's
+              // distinguishable at a glance, not just "slightly darker".
+              'rounded-xl border-2 p-3 text-start transition-colors',
               active
-                ? 'border-learn/60 bg-learn/10 text-text'
+                ? 'border-learn bg-learn/15 text-text ring-2 ring-learn/40'
                 : 'border-white/8 bg-white/5 text-muted hover:border-white/20 hover:bg-white/8 hover:text-text',
             )}
           >

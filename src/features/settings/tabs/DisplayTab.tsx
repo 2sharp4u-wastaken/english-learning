@@ -61,8 +61,9 @@ function SoundGrid({
           data-testid={`sound-${id}`}
           onClick={() => choose(id)}
           className={cn(
-            // Scale the emoji with the tile on wider screens (beta #31).
-            'flex aspect-square items-center justify-center rounded-lg border text-xl transition-transform hover:scale-110 sm:text-2xl lg:text-3xl',
+            // Scale the emoji with the tile on wider screens (beta #31); larger
+            // base glyph so it reads clearly on phones (issue #51).
+            'flex aspect-square items-center justify-center rounded-lg border text-2xl transition-transform hover:scale-110 sm:text-3xl lg:text-4xl',
             value === id ? 'border-learn bg-learn/15' : 'border-white/10 bg-white/5 hover:bg-white/10',
           )}
         >
@@ -76,7 +77,7 @@ function SoundGrid({
         aria-label="none"
         onClick={() => choose('none')}
         className={cn(
-          'flex aspect-square items-center justify-center rounded-lg border text-xl transition-transform hover:scale-110 sm:text-2xl lg:text-3xl',
+          'flex aspect-square items-center justify-center rounded-lg border text-2xl transition-transform hover:scale-110 sm:text-3xl lg:text-4xl',
           value === 'none' ? 'border-coral-400 bg-coral-400/15' : 'border-white/10 bg-white/5 hover:bg-white/10',
         )}
       >
@@ -298,8 +299,9 @@ export function DisplayTab() {
                     onClick={() => updatePrefs({ mascotCharacter: id })}
                     className={cn(
                       // Emoji scales with the (square) tile so it doesn't read as a
-                      // tiny glyph in a big card on desktop (beta #31).
-                      'flex aspect-square items-center justify-center rounded-lg border text-2xl transition-transform hover:scale-110 sm:text-3xl lg:text-4xl',
+                      // tiny glyph in a big card on desktop (beta #31); larger base
+                      // glyph for phones (issue #51).
+                      'flex aspect-square items-center justify-center rounded-lg border text-3xl transition-transform hover:scale-110 sm:text-4xl lg:text-5xl',
                       prefs.mascotCharacter === id
                         ? 'border-learn bg-learn/15'
                         : 'border-white/10 bg-white/5 hover:bg-white/10',

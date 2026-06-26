@@ -1,7 +1,8 @@
 import { useCallback, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useParentPassword } from '@/hooks/useParentPassword'
 import { SettingsTabRail, type TabDef } from './components/SettingsTabRail'
-import { Palette, Gamepad2, Library, UserCog } from 'lucide-react'
+import { Palette, Gamepad2, Library, UserCog, Sparkles } from 'lucide-react'
 import { DisplayTab } from './tabs/DisplayTab'
 import { GameLearningTab } from './tabs/GameLearningTab'
 import { ContentTab } from './tabs/ContentTab'
@@ -26,6 +27,7 @@ const TABS: TabDef[] = [
 export function SettingsPage() {
   const [activeId, setActiveId] = useState<TabId>('display')
   const { unlocked } = useParentPassword()
+  const navigate = useNavigate()
 
   // Kids (not elevated) see ONLY the unprotected tab(s). The parent tabs appear
   // only when the parent is in control — which now means the parent is logged in
@@ -58,6 +60,17 @@ export function SettingsPage() {
               : 'העדפות תצוגה. הגדרות נוספות נמצאות בכניסה עם פרופיל ההורה.'}
           </p>
         </div>
+        {/* Issue #52: "מה חדש ובקרוב" surfaced as a top-bar action for EVERY user
+            (kids included) — it was buried inside the parent-only הורים tab. */}
+        <button
+          type="button"
+          onClick={() => navigate('/whats-new')}
+          data-testid="settings-open-whats-new"
+          className="flex items-center gap-1.5 rounded-full border border-white/10 bg-white/5 px-3 py-2 text-sm font-medium text-muted transition-colors hover:bg-white/10 hover:text-text"
+        >
+          <Sparkles size={16} />
+          <span>מה חדש</span>
+        </button>
       </header>
 
       {/* Body: tab rail + active tab. For kids only one tab is visible

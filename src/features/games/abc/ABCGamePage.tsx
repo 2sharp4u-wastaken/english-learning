@@ -47,6 +47,30 @@ const GATE_TYPES = new Set<ABCQuestion['type']>([
   'alphabet-order',
 ])
 
+/**
+ * Issue #42: alphabet-order questions randomly ask "what comes after/before X".
+ * The differing keyword (אחרי / לפני) was easy to miss in plain prose, so we
+ * render it bold + colored. Driven by `askAfter` — no string parsing.
+ */
+function AlphabetOrderPrompt({
+  question,
+  nk,
+}: {
+  question: ABCQuestion
+  nk: (s: string) => string
+}) {
+  return (
+    <>
+      {nk('מה בא')}{' '}
+      <strong className="font-extrabold text-[color:var(--mint-400)]">
+        {nk(question.askAfter ? 'אחרי' : 'לפני')}
+      </strong>{' '}
+      <span dir="ltr" className="font-bold text-white">{`"${question.letterBoth ?? question.letter}"`}</span>
+      {'?'}
+    </>
+  )
+}
+
 function LetterGlyph({ question }: { question: ABCQuestion }) {
   if (question.type === 'word-picture') {
     return (
@@ -423,6 +447,11 @@ export function ABCGamePage() {
           current ? (
             <MediaPromptCard
               prompt={current.instruction}
+              promptNode={
+                current.type === 'alphabet-order' ? (
+                  <AlphabetOrderPrompt question={current} nk={nk} />
+                ) : undefined
+              }
               media={<LetterGlyph question={current} />}
               onPlayAudio={isSayLetter ? undefined : replayAudio}
               audioDisabled={phase === 'answered'}
@@ -433,7 +462,9 @@ export function ABCGamePage() {
         }
       >
         {current ? (
-          <div key={index} className="flex flex-1 flex-col gap-4">
+          // Issue #42: center the answer area in the available height instead of
+          // letting it hug the top under the prompt card.
+          <div key={index} className="flex flex-1 flex-col justify-center gap-4">
             {isSayLetter ? (
               <div className="flex flex-col items-center gap-3">
                 <button
