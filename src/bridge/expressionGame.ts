@@ -17,6 +17,7 @@ import { getApp, getGameManager } from '../engine/instances'
 import { getDerivedLearnedCount } from './progress'
 import { getExpressionBank, getExpressionPlainForm, type Expression } from './expressions'
 import { getSettings } from './settings'
+import { isExpressionsUnlockedForCurrentUser } from './playerUnlocks'
 
 export type ExpressionMode = 'meaning' | 'truefalse' | 'blank' | 'build' | 'swap'
 
@@ -58,8 +59,12 @@ export function getExpressionUnlock(): ExpressionUnlock {
   // The parent "expose all content" toggle opens the expression tier too (M12
   // Slice B) — as long as there's content to show. Read-time, mirrors games.ts.
   const exposed = getSettings().gameUnlockOverride === true
+  // Per-PLAYER parent unlock: opens ביטויים for THIS child only (set in UsersTab),
+  // bypassing the 50-word gate without the device-wide "expose all" toggle. Still
+  // needs hasContent — the content master switch (expressionsEnabled) always applies.
+  const perPlayer = isExpressionsUnlockedForCurrentUser()
   return {
-    unlocked: hasContent && (exposed || learnedCount >= EXPRESSION_UNLOCK_WORDS),
+    unlocked: hasContent && (exposed || perPlayer || learnedCount >= EXPRESSION_UNLOCK_WORDS),
     learnedCount,
     needed: EXPRESSION_UNLOCK_WORDS,
     hasContent,

@@ -7,6 +7,7 @@ import {
   Trash2,
   Shield,
   ShieldCheck,
+  Sparkles,
   X,
 } from 'lucide-react'
 import type { User } from '@/bridge/types'
@@ -19,6 +20,7 @@ import {
   setUserRole,
 } from '@/bridge/auth'
 import { resetUserPractice, resetUserStats } from '@/bridge/progress'
+import { getPlayerUnlocks, setPlayerUnlocks } from '@/bridge/playerUnlocks'
 import { SectionCard } from '../components/SectionCard'
 import { AddUserModal } from '../components/AddUserModal'
 import { cn } from '@/lib/cn'
@@ -108,6 +110,16 @@ export function UsersTab() {
     }
   }, [pending, refresh])
 
+  // Per-player ביטויים unlock (non-destructive → toggles immediately, no confirm).
+  const handleToggleExpressions = useCallback(
+    (user: User) => {
+      const cur = getPlayerUnlocks(user.id).expressions === true
+      setPlayerUnlocks(user.id, { expressions: !cur })
+      refresh()
+    },
+    [refresh],
+  )
+
   const handleAdd = useCallback(
     async ({
       id,
@@ -165,6 +177,7 @@ export function UsersTab() {
               onResetStats={() => setPending({ kind: 'reset-stats', user })}
               onResetPractice={() => setPending({ kind: 'reset-practice', user })}
               onToggleRole={() => setPending({ kind: 'toggle-role', user })}
+              onToggleExpressions={() => handleToggleExpressions(user)}
               onDelete={() => setPending({ kind: 'delete', user })}
             />
           ))}
@@ -271,6 +284,7 @@ interface RowProps {
   onResetStats: () => void
   onResetPractice: () => void
   onToggleRole: () => void
+  onToggleExpressions: () => void
   onDelete: () => void
 }
 
@@ -281,10 +295,12 @@ function UserRow({
   onResetStats,
   onResetPractice,
   onToggleRole,
+  onToggleExpressions,
   onDelete,
 }: RowProps) {
   const isManager = user.role === 'manager' || user.id === 'manager'
   const isParent = user.role === 'parent'
+  const exprUnlocked = getPlayerUnlocks(user.id).expressions === true
 
   return (
     <li className="flex flex-wrap items-center gap-3 rounded-xl border border-white/8 bg-white/5 p-3 sm:flex-nowrap">
@@ -315,6 +331,14 @@ function UserRow({
         <ActionBtn icon={<KeyRound size={14} />} label="איפוס סיסמה" onClick={onResetPassword} />
         <ActionBtn icon={<RotateCcw size={14} />} label="איפוס תרגול" onClick={onResetPractice} />
         <ActionBtn icon={<BarChart3 size={14} />} label="איפוס סטטיסטיקה" onClick={onResetStats} />
+        {!isManager && !isParent && (
+          <ActionBtn
+            icon={<Sparkles size={14} />}
+            label={exprUnlocked ? 'נעל ביטויים' : 'פתח ביטויים'}
+            onClick={onToggleExpressions}
+            tone={exprUnlocked ? 'active' : 'neutral'}
+          />
+        )}
         {!isManager && (
           <ActionBtn
             icon={isParent ? <ShieldCheck size={14} /> : <Shield size={14} />}

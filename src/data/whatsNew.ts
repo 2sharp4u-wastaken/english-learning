@@ -34,6 +34,14 @@ export interface Release {
 /** Newest first. Prepend new releases here. */
 export const RELEASES: Release[] = [
   {
+    version: '3.0.4',
+    date: '2026-06-26',
+    title: 'פתיחת ביטויים לכל שחקן/ית בנפרד',
+    items: [
+      { kind: 'feature', text: 'בניהול המשתמשים אפשר עכשיו לפתוח את משחקי הביטויים לכל ילד/ה בנפרד — בלי לפתוח את כל התכנים לכולם.' },
+    ],
+  },
+  {
     version: '3.0.3',
     date: '2026-06-25',
     title: 'תעודות הישג חדשות',
