@@ -322,8 +322,14 @@ data/expressions/plainForms.js (phrase → plainEn, Slice 5.4)
 React route /#/game/expr-{meaning,truefalse,blank,build,swap}
   └─ GameHostPage → REACT_GAMES['expr-*'] → expressions/pages.tsx wrapper → ExpressionGamePage(mode)
       ├─ buildExpressionSession(mode)  (src/bridge/expressionGame.ts)
-      │   ├─ getExpressionUnlock(): getDerivedLearnedCount() ≥ 50 AND getExpressionBank().length>0
+      │   ├─ getExpressionUnlock(): getExpressionBank().length>0 AND
+      │   │     ( settings.gameUnlockOverride          // device-wide "open all", every player
+      │   │       || isExpressionsUnlockedForCurrentUser()  // per-PLAYER parent unlock (2026-06-26)
+      │   │       || getDerivedLearnedCount() ≥ 50 )   // the kid's own mastered-word gate
       │   │     (single source of truth — HomePage expressions tier gate too; NOT gameUnlocks)
+      │   │     Per-player: src/bridge/playerUnlocks.ts (v2_playerUnlocks_<userId>.expressions),
+      │   │       set per-kid in UsersTab; bypasses the 50 gate for THAT child only. hasContent
+      │   │       (expressionsEnabled) still required.
       │   └─ buildOne(mode): meaning/truefalse/blank/build + swap (plainEn prompt, skip if no plain form;
       │         distractors exclude shared meaningHe/plainEn → one defensible answer)
       └─ recordExpressionAnswer(phrase, ok) → gameManager.recordExpressionAttempt
