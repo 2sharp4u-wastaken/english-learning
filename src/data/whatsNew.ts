@@ -34,6 +34,17 @@ export interface Release {
 /** Newest first. Prepend new releases here. */
 export const RELEASES: Release[] = [
   {
+    version: '3.0.3',
+    date: '2026-06-25',
+    title: 'תעודות הישג חדשות',
+    items: [
+      { kind: 'feature', text: 'תעודות חדשות על מילים שנפגשתם בהן לאורך הדרך — חגיגה כבר מהמילה הראשונה!' },
+      { kind: 'feature', text: 'תעודות יוקרה נפרדות על מילים שאתם באמת שולטים בהן.' },
+      { kind: 'feature', text: 'הורים יכולים לבחור כמה קל לקבל תעודות (קל / רגיל / מאתגר) באזור ההורה.' },
+      { kind: 'fix', text: 'תעודות מילים מוענקות עכשיו גם בסיום מסע המילים.' },
+    ],
+  },
+  {
     version: '3.0.2',
     date: '2026-06-21',
     title: 'סדר טוב יותר בהגדרות ההורה',
