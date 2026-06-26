@@ -481,11 +481,24 @@ function CoinsPanel({ model }: { model: UserStatsModel }) {
     .filter((e) => e?.date === today && (e.amount ?? 0) > 0)
     .reduce((sum, e) => sum + (e.amount ?? 0), 0)
 
+  // Issue #50: "יתרת מטבעות" and "סה\"כ הרוויח" are identical until coins are
+  // SPENT (no shop/sink exists yet), so showing both reads as a confusing
+  // duplicate. While nothing has been spent (balance === total earned) we show a
+  // single "מטבעות" tile; the distinction reappears on its own the moment a spend
+  // feature makes the balance drop below the total earned. No flag to maintain.
+  const hasSpentCoins = coins < totalEarned
+
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-3 gap-3">
-        <MetricTile icon={<Coins className="h-6 w-6" />} value={coins.toLocaleString()} label="יתרת מטבעות" variant="primary" />
-        <MetricTile icon={<Trophy className="h-6 w-6" />} value={totalEarned.toLocaleString()} label='סה"כ הרוויח' variant="green" />
+      <div className={cn('grid gap-3', hasSpentCoins ? 'grid-cols-3' : 'grid-cols-2')}>
+        {hasSpentCoins ? (
+          <>
+            <MetricTile icon={<Coins className="h-6 w-6" />} value={coins.toLocaleString()} label="יתרת מטבעות" variant="primary" />
+            <MetricTile icon={<Trophy className="h-6 w-6" />} value={totalEarned.toLocaleString()} label='סה"כ הרוויח' variant="green" />
+          </>
+        ) : (
+          <MetricTile icon={<Coins className="h-6 w-6" />} value={coins.toLocaleString()} label="מטבעות" variant="primary" />
+        )}
         <MetricTile icon={<Sun className="h-6 w-6" />} value={String(earnedToday)} label="הרוויח היום" variant="orange" />
       </div>
 
