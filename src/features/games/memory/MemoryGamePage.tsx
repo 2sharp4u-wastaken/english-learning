@@ -338,7 +338,7 @@ export function MemoryGamePage() {
   const matchedPairs = Math.floor(matched.size / 2)
 
   const headerProps = useMemo(
-    () => ({ title: 'משחק זיכרון', icon: '🧠', score, onBack: requestExit }),
+    () => ({ title: 'משחק זיכרון', gameId: 'memory', score, onBack: requestExit }),
     [requestExit, score],
   )
 
@@ -346,7 +346,7 @@ export function MemoryGamePage() {
   // (The play header's onBack opens the exit-confirm dialog, which the gate
   // screen doesn't mount — without this its back button is dead.)
   const gateHeaderProps = useMemo(
-    () => ({ title: 'משחק זיכרון', icon: '🧠', score: 0, onBack: () => navigate('/home') }),
+    () => ({ title: 'משחק זיכרון', gameId: 'memory', score: 0, onBack: () => navigate('/home') }),
     [navigate],
   )
 

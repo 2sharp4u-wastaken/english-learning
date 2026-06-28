@@ -388,7 +388,7 @@ export function ReadingGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'קריאה',
-      icon: '📖',
+      gameId: 'reading',
       score,
       onBack: requestExit,
     }),

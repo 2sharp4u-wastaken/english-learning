@@ -920,13 +920,43 @@ cover the empty state, the Due-pool render, and exit.
 ```
 src/features/games/shared/GameScreenShell.tsx
   ├─ <GameHeader {...header} />                    ← top bar: back button + toggles + score/coins
-  ├─ <GameHero title icon subtitle />              ← below header, above progress
+  ├─ <GameHero title gameId subtitle />            ← below header, above progress (gameId → themed GameIcon)
   ├─ <QuestionProgress {...progress} />?
   ├─ <main>{children}</main>
   └─ <div className="pt-2">{footer}</div>?
 ```
 
-Pages still declare a single `headerProps = { title, icon, score, onBack }` and the shell forwards the title/icon/subtitle to `<GameHero>`. `<GameHeader>` accepts those fields on the props for forwarding but no longer renders them — its center area is gone, so the back button and toggle/score pills aren't visually crowded by the title. The hero sits between the controls row and the progress strip so it reads as a section heading for the question card. Slices 3.1–3.9 inherit this for free; no per-page change.
+Pages still declare a single `headerProps = { title, gameId, score, onBack }` and the shell forwards the title/gameId/subtitle to `<GameHero>` (which renders the themed `<GameIcon>` — see "Game icons" below; the emoji `icon` field is now only a loading/non-game fallback). `<GameHeader>` accepts those fields on the props for forwarding but no longer renders them — its center area is gone, so the back button and toggle/score pills aren't visually crowded by the title. The hero sits between the controls row and the progress strip so it reads as a section heading for the question card. Slices 3.1–3.9 inherit this for free; no per-page change.
+
+## Game icons (themed Lucide, not emoji — 2026-06-28, applies to ALL games)
+
+```
+gameIcons.ts: GAME_ICONS[id] = { Icon: LucideIcon, accent: tier }   ← single source of truth
+   getGameIcon(id) → safe fallback (Puzzle/challenge)
+        │
+   GameIcon.tsx: <GameIcon gameId variant tone /> → <Icon class={size + (tone==='accent' ? text-<accent> : currentColor)} />
+        │
+   ┌────┴───────────────────────────────────────────────┐
+   │ in-game hero:  headerProps={ title, gameId, ... }   │
+   │   → GameScreenShell → <GameHero gameId compact />    │
+   │      → renderIcon('hero' | 'heroCompact')           │
+   │ Home tile:     <GameIcon gameId variant="tile" />   │
+   │ Home CTA/pill: <GameIcon ... variant="inline" tone="current" />
+   │ NewlyUnlockedModal / Profile badges / Stats game col │
+   └─────────────────────────────────────────────────────┘
+
+WJ stages: word-journey/stageIcons.ts WJ_STAGE_ICONS[stageId] → shared by WJStageBar + Stats journey pills
+```
+
+Why: every game icon used to be a raw system emoji re-typed in up to 3 places
+(`gameRegistry.ts`, each page's `headerProps`, `HomePage` `GAME_ORDER`) that drifted
+(grammar ✏️/📝, memory 🃏/🧠) and collided (📖 reading==story-time, ✅ true-or-not==
+expr-truefalse). Emoji also render per-OS and needed a 310 KB Noto subset to dodge
+Android "tofu" (`emoji-tofu-fix.md`). Now one Lucide glyph per id, tinted by tier so it
+re-colors with the player's theme. To add a game: add its id to `GAME_ICONS` and pass
+`gameId` in `headerProps`. The legacy emoji strings remain as inert fallback data; no
+render site reads them. Full inventory + how to swap to colored SVGs later:
+`docs/game-icons-inventory.md`.
 
 ## Nikud rendering (React-owned, FU-4.4-nikud — applies to ALL React games)
 

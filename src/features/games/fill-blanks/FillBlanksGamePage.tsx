@@ -286,7 +286,7 @@ export function FillBlanksGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'השלם את המשפט',
-      icon: '✍️',
+      gameId: 'fill-blanks',
       score,
       onBack: requestExit,
     }),

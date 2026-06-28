@@ -334,7 +334,7 @@ export function ListeningGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'האזנה',
-      icon: '🎧',
+      gameId: 'listening',
       score,
       onBack: requestExit,
     }),

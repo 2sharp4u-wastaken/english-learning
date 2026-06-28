@@ -5,6 +5,7 @@ import { getGameCatalog, takePendingUnlocks } from '@/bridge/games'
 import { playEffect, type SoundEffect } from '@/bridge/feedback'
 import { speakHebrew } from '@/bridge/audio'
 import { NewlyUnlockedModal } from './components/NewlyUnlockedModal'
+import { GameIcon } from '@/features/games/shared/GameIcon'
 import { HomeMascot } from './components/HomeMascot'
 import { HeroSparkles } from './components/HeroSparkles'
 import { useAuthSession } from '@/hooks/useAuthSession'
@@ -153,7 +154,7 @@ export function HomePage() {
     () =>
       unlockedIds.map((id) => {
         const game = catalog.find((c) => c.id === id)
-        return { id, icon: game?.icon ?? '🎮', name: game?.name ?? id }
+        return { id, name: game?.name ?? id }
       }),
     [unlockedIds, catalog],
   )
@@ -161,7 +162,6 @@ export function HomePage() {
   const greetingName = displayName ?? 'חבר'
   const continueGameId = continueTarget?.gameId ?? 'word-journey'
   const continueLabel = continueTarget?.label ?? 'מסע המילים'
-  const continueIcon = continueTarget?.icon ?? '🗺️'
 
   return (
     <div className="space-y-6 pb-8">
@@ -221,7 +221,7 @@ export function HomePage() {
                 data-continue-label={continueLabel}
                 className="group flex items-center gap-2 rounded-full bg-learn px-4 py-2 text-sm font-bold text-slate-950 shadow-glow transition-transform hover:scale-105 active:scale-95 sm:text-base"
               >
-                <span className="text-lg" aria-hidden>{continueIcon}</span>
+                <GameIcon gameId={continueGameId} variant="inline" tone="current" className="inline-flex shrink-0" />
                 <span>בוא נשחק — {continueLabel}</span>
                 <Play size={16} className="fill-current transition-transform group-hover:translate-x-[-2px]" />
               </button>
@@ -232,8 +232,9 @@ export function HomePage() {
             {nextUnlock ? (
               <>
                 🎁 עוד קצת ונפתח את{' '}
-                <span className="font-semibold text-text">
-                  {nextUnlock.icon} {nextUnlock.name}
+                <span className="inline-flex items-center gap-1 font-semibold text-text align-middle">
+                  <GameIcon gameId={nextUnlock.id} variant="inline" className="inline-flex" />
+                  {nextUnlock.name}
                 </span>
                 {nextUnlockRemaining ? <span> · {nextUnlockRemaining}</span> : ''}
               </>
@@ -281,12 +282,11 @@ export function HomePage() {
                   >
                     <span
                       className={cn(
-                        'text-4xl transition-transform sm:text-5xl',
+                        'transition-transform',
                         isLocked ? 'opacity-40 grayscale' : 'group-hover:scale-110',
                       )}
-                      aria-hidden
                     >
-                      {game.icon}
+                      <GameIcon gameId={game.id} variant="tile" />
                     </span>
                     <span className={cn('text-sm font-semibold sm:text-base', isLocked ? 'text-muted' : 'text-text')}>
                       {game.name}

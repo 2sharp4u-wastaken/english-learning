@@ -140,6 +140,7 @@ export function GameScreenShell({
             title={header.title}
             subtitle={header.subtitle}
             icon={header.icon}
+            gameId={header.gameId}
             aside={header.heroAside}
             compact={compact}
           />

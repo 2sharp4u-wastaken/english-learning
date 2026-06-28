@@ -244,7 +244,7 @@ export function GrammarBeginnerGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'דקדוק למתחילים',
-      icon: '🔊',
+      gameId: 'grammar-beginner',
       score,
       onBack: requestExit,
     }),

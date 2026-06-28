@@ -1,15 +1,22 @@
+import { Check } from 'lucide-react'
 import { cn } from '@/lib/cn'
 import { useNikud } from '@/bridge/nikud'
 import { useCompactViewport } from '@/features/games/shared/useCompactViewport'
 import type { WJStageId } from '@/bridge/word-journey'
+import { WJ_STAGE_ICONS } from '../stageIcons'
 
-const STAGES: { id: WJStageId; icon: string; label: string }[] = [
-  { id: 'discover', icon: '👀', label: 'גילוי' },
-  { id: 'listen-match', icon: '👂', label: 'הקשבה' },
-  { id: 'spell-tiles', icon: '✏️', label: 'כתיבה' },
-  { id: 'say-word', icon: '🎤', label: 'דיבור' },
-  { id: 'recall', icon: '🧠', label: 'זיכרון' },
+// Lucide glyphs (currentColor, from the shared WJ_STAGE_ICONS map) replace the
+// per-stage emoji — device-consistent and they inherit each stage state's text
+// color (active/done/upcoming).
+const STAGES: { id: WJStageId; label: string }[] = [
+  { id: 'discover', label: 'גילוי' },
+  { id: 'listen-match', label: 'הקשבה' },
+  { id: 'spell-tiles', label: 'כתיבה' },
+  { id: 'say-word', label: 'דיבור' },
+  { id: 'recall', label: 'זיכרון' },
 ]
+
+const STAGE_ICON_CLASS = 'size-4 sm:size-5'
 
 /** The five-stage journey map. Mirrors the legacy wj-stage-bar: each step is
  *  active / completed / upcoming.
@@ -50,7 +57,12 @@ export function WJStageBar({ activeStage }: { activeStage: WJStageId }) {
                     state === 'upcoming' && 'bg-white/5 text-[color:var(--slate-300)] opacity-50',
                   )}
                 >
-                  {state === 'done' ? '✓' : stage.icon}
+                  {state === 'done'
+                    ? <Check className={STAGE_ICON_CLASS} aria-hidden />
+                    : (() => {
+                        const StageIcon = WJ_STAGE_ICONS[stage.id]
+                        return <StageIcon className={STAGE_ICON_CLASS} aria-hidden />
+                      })()}
                 </span>
                 {/* Per-icon labels only fit on wider AND tall-enough screens. */}
                 <span
@@ -81,10 +93,17 @@ export function WJStageBar({ activeStage }: { activeStage: WJStageId }) {
           stage once here instead. */}
       {active ? (
         <span
-          className={cn('text-xs font-semibold text-white', compact ? 'block' : 'sm:hidden')}
+          className={cn(
+            'inline-flex items-center gap-1 text-xs font-semibold text-white',
+            compact ? 'flex' : 'sm:hidden',
+          )}
           data-testid="wj-stage-current"
         >
-          {active.icon} {nk(active.label)}
+          {(() => {
+            const ActiveIcon = WJ_STAGE_ICONS[active.id]
+            return <ActiveIcon className="size-4" aria-hidden />
+          })()}{' '}
+          {nk(active.label)}
         </span>
       ) : null}
     </div>

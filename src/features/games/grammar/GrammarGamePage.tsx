@@ -263,7 +263,7 @@ export function GrammarGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'דקדוק',
-      icon: '📝',
+      gameId: 'grammar',
       score,
       onBack: requestExit,
     }),

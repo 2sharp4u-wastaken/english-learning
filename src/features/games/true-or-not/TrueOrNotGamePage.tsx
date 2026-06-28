@@ -316,7 +316,7 @@ export function TrueOrNotGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'נכון או לא?',
-      icon: '✅',
+      gameId: 'true-or-not',
       score,
       onBack: requestExit,
     }),

@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { cn } from '@/lib/cn'
+import { GameIcon } from '@/features/games/shared/GameIcon'
 
 export interface UnlockedGameMeta {
   id: string
-  icon: string
   name: string
 }
 
@@ -59,9 +59,7 @@ export function NewlyUnlockedModal({ games, onClose }: Props) {
               )}
               style={{ transitionDelay: `${150 + i * 180}ms` }}
             >
-              <span className="text-4xl" aria-hidden>
-                {g.icon}
-              </span>
+              <GameIcon gameId={g.id} variant="tile" />
               <span className="text-sm font-bold leading-tight text-white">{g.name}</span>
             </div>
           ))}

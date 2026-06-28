@@ -331,7 +331,7 @@ export function VocabularyGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'אוצר מילים',
-      icon: '📚',
+      gameId: 'vocabulary',
       score,
       onBack: requestExit,
     }),

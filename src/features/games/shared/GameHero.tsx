@@ -1,11 +1,15 @@
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/cn'
 import { useNikud } from '@/bridge/nikud'
+import { GameIcon } from './GameIcon'
 
 export interface GameHeroProps {
   title: string
   subtitle?: string
+  /** Emoji fallback (loading/non-game uses). Prefer `gameId`. */
   icon?: string
+  /** When set, render the themed `<GameIcon>` instead of the emoji `icon`. */
+  gameId?: string
   /**
    * Optional content rendered to the physical LEFT of the centered title,
    * inside the same hero container. Used by Word Journey to sit its 5-stage
@@ -32,9 +36,19 @@ export interface GameHeroProps {
  * a section heading directly above the progress bar, and the question card
  * follows.
  */
-export function GameHero({ title, subtitle, icon, aside, compact, className }: GameHeroProps) {
+export function GameHero({ title, subtitle, icon, gameId, aside, compact, className }: GameHeroProps) {
   const nk = useNikud()
-  if (!title && !icon) return null
+  if (!title && !icon && !gameId) return null
+  // Themed game icon (preferred) vs. legacy emoji string fallback.
+  const renderIcon = (variant: 'hero' | 'heroCompact') => {
+    if (gameId) return <GameIcon gameId={gameId} variant={variant} />
+    if (!icon) return null
+    return (
+      <span className={variant === 'heroCompact' ? 'text-lg leading-none' : 'text-3xl leading-none'} aria-hidden>
+        {icon}
+      </span>
+    )
+  }
   // Compact (short viewport): one slim line, no divider — saves ~70px so the
   // question card isn't pushed off-screen on small/landscape phones.
   if (compact) {
@@ -44,11 +58,7 @@ export function GameHero({ title, subtitle, icon, aside, compact, className }: G
         data-compact="true"
         className={cn('flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center', className)}
       >
-        {icon ? (
-          <span className="text-lg leading-none" aria-hidden>
-            {icon}
-          </span>
-        ) : null}
+        {renderIcon('heroCompact')}
         <h1 className="text-base font-extrabold tracking-tight text-white">{nk(title)}</h1>
         {aside ? <div className="w-full sm:w-auto">{aside}</div> : null}
       </div>
@@ -68,11 +78,7 @@ export function GameHero({ title, subtitle, icon, aside, compact, className }: G
         </div>
       ) : null}
       <div className="flex items-center justify-center gap-2.5">
-        {icon ? (
-          <span className="text-3xl leading-none" aria-hidden>
-            {icon}
-          </span>
-        ) : null}
+        {renderIcon('hero')}
         <h1 className="text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
           {nk(title)}
         </h1>

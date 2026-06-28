@@ -433,7 +433,7 @@ export function PracticeGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'תרגול',
-      icon: '🎯',
+      gameId: 'practice',
       score,
       onBack: requestExit,
     }),

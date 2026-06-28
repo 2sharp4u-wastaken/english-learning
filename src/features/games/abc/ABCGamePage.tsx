@@ -378,7 +378,7 @@ export function ABCGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'ABC אותיות',
-      icon: '🔤',
+      gameId: 'abc',
       score,
       onBack: requestExit,
     }),
@@ -389,7 +389,7 @@ export function ABCGamePage() {
   // (The play header's onBack opens the exit-confirm dialog, which the gate
   // screen doesn't mount — without this its back button is dead.)
   const gateHeaderProps = useMemo(
-    () => ({ title: 'ABC אותיות', icon: '🔤', score: 0, onBack: () => navigate('/home') }),
+    () => ({ title: 'ABC אותיות', gameId: 'abc', score: 0, onBack: () => navigate('/home') }),
     [navigate],
   )
 

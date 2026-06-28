@@ -15,7 +15,11 @@ import { useNikud } from '@/bridge/nikud'
 export interface GameHeaderProps {
   title: string
   subtitle?: string
+  /** Emoji fallback (e.g. the loading "⏳"). Game screens should pass `gameId`
+   *  instead so GameHero renders the themed `<GameIcon>` from the central map. */
   icon?: string
+  /** Game id → GameHero renders `<GameIcon gameId>` (preferred over `icon`). */
+  gameId?: string
   /** Forwarded by GameScreenShell to <GameHero aside>; not rendered here. */
   heroAside?: ReactNode
   score?: number

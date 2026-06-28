@@ -346,7 +346,7 @@ export function PhonicsGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'משחק צלילים',
-      icon: '🔡',
+      gameId: 'phonics',
       score,
       onBack: requestExit,
     }),
@@ -357,7 +357,7 @@ export function PhonicsGamePage() {
   // (The play header's onBack opens the exit-confirm dialog, which the gate
   // screen doesn't mount — without this its back button is dead.)
   const gateHeaderProps = useMemo(
-    () => ({ title: 'משחק צלילים', icon: '🔡', score: 0, onBack: () => navigate('/home') }),
+    () => ({ title: 'משחק צלילים', gameId: 'phonics', score: 0, onBack: () => navigate('/home') }),
     [navigate],
   )
 

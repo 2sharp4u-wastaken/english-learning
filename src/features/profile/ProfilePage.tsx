@@ -29,6 +29,7 @@ import {
   getMasteredExpressionCount,
 } from '@/bridge/progress'
 import { getGameCatalog } from '@/bridge/games'
+import { GameIcon } from '@/features/games/shared/GameIcon'
 import { cn } from '@/lib/cn'
 
 // ─── Level system ───────────────────────────────────────────────────────────
@@ -416,7 +417,7 @@ function UnlockedGamesGrid({
                   : 'border border-white/6 bg-white/3 text-muted/60',
               )}
             >
-              <span>{game.icon}</span>
+              <GameIcon gameId={game.type} variant="inline" tone="current" className="inline-flex shrink-0" />
               <span>{game.name}</span>
               {!isOpen && <Lock size={12} className="text-muted/40" />}
             </div>

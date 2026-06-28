@@ -423,7 +423,7 @@ export function PronunciationGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'הגייה',
-      icon: '🎤',
+      gameId: 'pronunciation',
       score,
       onBack: requestExit,
     }),

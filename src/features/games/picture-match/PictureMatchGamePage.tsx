@@ -359,7 +359,7 @@ export function PictureMatchGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'מילה לתמונה',
-      icon: '🖼️',
+      gameId: 'picture-match',
       score,
       onBack: requestExit,
     }),

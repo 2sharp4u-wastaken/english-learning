@@ -225,7 +225,7 @@ export function StoryTimeGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'זמן סיפור',
-      icon: '📖',
+      gameId: 'story-time',
       score,
       onBack: requestExit,
     }),

@@ -7,6 +7,7 @@ import { AnswerGrid } from '@/features/games/shared/AnswerGrid'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
+import { GameIcon } from '@/features/games/shared/GameIcon'
 import { WordTable, type WordTableRow } from '@/features/games/shared/WordTable'
 import { SentenceText } from '@/features/games/shared/NewWordPill'
 import { detectNewWords } from '@/bridge/newWords'
@@ -37,7 +38,6 @@ export interface BlankFillGamePageProps {
   /** Key into `window.gameData` for this game's question bank. */
   dataKey: string
   title: string
-  icon: string
   /** Feedback bank to read (defaults to 'grammar' — guaranteed to exist). */
   feedbackKey?: string
 }
@@ -66,7 +66,6 @@ export function BlankFillGamePage({
   gameType,
   dataKey,
   title,
-  icon,
   feedbackKey = 'grammar',
 }: BlankFillGamePageProps) {
   const navigate = useNavigate()
@@ -253,8 +252,8 @@ export function BlankFillGamePage({
   const cancelExit = useCallback(() => setExitOpen(false), [])
 
   const headerProps = useMemo(
-    () => ({ title, icon, score, onBack: requestExit }),
-    [icon, requestExit, score, title],
+    () => ({ title, gameId: gameType, score, onBack: requestExit }),
+    [gameType, requestExit, score, title],
   )
 
   const progressProps = useMemo(
@@ -280,7 +279,7 @@ export function BlankFillGamePage({
     return (
       <GameScreenShell header={{ ...headerProps, onBack: () => navigate('/home') }}>
         <div className="flex flex-1 flex-col items-center justify-center gap-3 text-center text-[color:var(--slate-200)]">
-          <span className="text-5xl">{icon}</span>
+          <GameIcon gameId={gameType} variant="tile" />
           <p>{nk('אין שאלות זמינות כרגע.')}</p>
         </div>
       </GameScreenShell>

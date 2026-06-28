@@ -6,7 +6,6 @@ export function ProgressiveGamePage() {
       gameType="progressive"
       dataKey="progressive"
       title="זמן מתמשך"
-      icon="🏃"
     />
   )
 }

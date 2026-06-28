@@ -32,6 +32,9 @@ import {
   type MemoryRecord,
 } from '@/bridge/stats'
 import { getAllUsers } from '@/bridge/auth'
+import { GameIcon } from '@/features/games/shared/GameIcon'
+import { WJ_STAGE_ICONS } from '@/features/games/word-journey/stageIcons'
+import type { WJStageId } from '@/bridge/word-journey'
 import { cn } from '@/lib/cn'
 
 // ─── Tab definitions ────────────────────────────────────────────────────────
@@ -523,7 +526,16 @@ function CoinsPanel({ model }: { model: UserStatsModel }) {
                     <tr key={i} className="border-b border-white/5 last:border-0">
                       <td className="py-3 pe-4 text-xs text-muted">{entry.date || '—'}</td>
                       <td className="py-3 px-2 text-text">{label}</td>
-                      <td className="py-3 px-2 text-muted">{gameMeta ? `${gameMeta.icon} ${gameMeta.name}` : '—'}</td>
+                      <td className="py-3 px-2 text-muted">
+                        {gameMeta && entry.gameType ? (
+                          <span className="inline-flex items-center gap-1">
+                            <GameIcon gameId={entry.gameType} variant="inline" tone="current" />
+                            {gameMeta.name}
+                          </span>
+                        ) : (
+                          '—'
+                        )}
+                      </td>
                       <td className={cn('py-3 px-2 text-center font-bold', entry.amount >= 0 ? 'text-emerald-400' : 'text-red-400')}>
                         {entry.amount >= 0 ? '+' : ''}{entry.amount}
                       </td>
@@ -827,7 +839,11 @@ function JourneyStagePills({ row }: { row: JourneyRow }) {
                   : 'bg-white/5 text-muted/50',
             )}
           >
-            {stage.icon} {stage.label}
+            {(() => {
+              const StageIcon = WJ_STAGE_ICONS[stage.id as WJStageId]
+              return StageIcon ? <StageIcon className="size-3" aria-hidden /> : null
+            })()}
+            {stage.label}
           </span>
         )
       })}

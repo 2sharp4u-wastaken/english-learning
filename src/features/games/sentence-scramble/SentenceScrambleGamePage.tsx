@@ -283,7 +283,7 @@ export function SentenceScrambleGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'סידור משפטים',
-      icon: '🔀',
+      gameId: 'scramble',
       score,
       onBack: requestExit,
     }),

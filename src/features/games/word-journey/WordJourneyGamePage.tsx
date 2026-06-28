@@ -207,7 +207,7 @@ export function WordJourneyGamePage() {
   const headerProps = useMemo(
     () => ({
       title: 'מסע מילים',
-      icon: '🗺️',
+      gameId: 'word-journey',
       score,
       onBack: requestExit,
     }),

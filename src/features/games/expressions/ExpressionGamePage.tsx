@@ -37,12 +37,12 @@ interface FeedbackState {
 const ADVANCE_DELAY_MS = 1500
 const POINTS_PER_CORRECT = 10
 
-const MODE_META: Record<ExpressionMode, { title: string; icon: string; prompt: string }> = {
-  meaning: { title: 'התאמת משמעות', icon: '🧩', prompt: 'מה הפירוש של הביטוי?' },
-  truefalse: { title: 'נכון או לא?', icon: '✅', prompt: 'האם הפירוש נכון?' },
-  blank: { title: 'השלימו את הביטוי', icon: '✍️', prompt: 'איזה ביטוי משלים את המשפט?' },
-  build: { title: 'בנו את הביטוי', icon: '🧱', prompt: 'סדרו את המילים לפי הפירוש' },
-  swap: { title: 'החליפו בביטוי', icon: '🔄', prompt: 'איזה ביטוי אפשר להגיד במקום?' },
+const MODE_META: Record<ExpressionMode, { title: string; prompt: string }> = {
+  meaning: { title: 'התאמת משמעות', prompt: 'מה הפירוש של הביטוי?' },
+  truefalse: { title: 'נכון או לא?', prompt: 'האם הפירוש נכון?' },
+  blank: { title: 'השלימו את הביטוי', prompt: 'איזה ביטוי משלים את המשפט?' },
+  build: { title: 'בנו את הביטוי', prompt: 'סדרו את המילים לפי הפירוש' },
+  swap: { title: 'החליפו בביטוי', prompt: 'איזה ביטוי אפשר להגיד במקום?' },
 }
 
 export function ExpressionGamePage({ mode }: { mode: ExpressionMode }) {
@@ -243,8 +243,8 @@ export function ExpressionGamePage({ mode }: { mode: ExpressionMode }) {
   const cancelExit = useCallback(() => setExitOpen(false), [])
 
   const headerProps = useMemo(
-    () => ({ title: meta.title, icon: meta.icon, score, onBack: requestExit }),
-    [meta.icon, meta.title, requestExit, score],
+    () => ({ title: meta.title, gameId: `expr-${mode}`, score, onBack: requestExit }),
+    [meta.title, mode, requestExit, score],
   )
   const progressProps = useMemo(
     () => ({
@@ -259,8 +259,8 @@ export function ExpressionGamePage({ mode }: { mode: ExpressionMode }) {
   // home. (The play header's onBack opens the exit-confirm dialog, which the gate
   // screens don't mount — without this their back button is dead.)
   const gateHeaderProps = useMemo(
-    () => ({ title: meta.title, icon: meta.icon, score: 0, onBack: () => navigate('/home') }),
-    [meta.icon, meta.title, navigate],
+    () => ({ title: meta.title, gameId: `expr-${mode}`, score: 0, onBack: () => navigate('/home') }),
+    [meta.title, mode, navigate],
   )
 
   // ── Gate / loading screens ──────────────────────────────────────────────────

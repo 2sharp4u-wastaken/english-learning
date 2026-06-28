@@ -6,7 +6,6 @@ export function ArticlesGamePage() {
       gameType="articles"
       dataKey="articles"
       title="a / an / the"
-      icon="📝"
     />
   )
 }
