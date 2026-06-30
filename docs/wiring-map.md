@@ -928,13 +928,15 @@ src/features/games/shared/GameScreenShell.tsx
 
 Pages still declare a single `headerProps = { title, gameId, score, onBack }` and the shell forwards the title/gameId/subtitle to `<GameHero>` (which renders the themed `<GameIcon>` — see "Game icons" below; the emoji `icon` field is now only a loading/non-game fallback). `<GameHeader>` accepts those fields on the props for forwarding but no longer renders them — its center area is gone, so the back button and toggle/score pills aren't visually crowded by the title. The hero sits between the controls row and the progress strip so it reads as a section heading for the question card. Slices 3.1–3.9 inherit this for free; no per-page change.
 
-## Game icons (themed Lucide, not emoji — 2026-06-28, applies to ALL games)
+## Game icons (custom multi-color illustrations, not emoji — 2026-06-30, ALL games)
 
 ```
-gameIcons.ts: GAME_ICONS[id] = { Icon: LucideIcon, accent: tier }   ← single source of truth
-   getGameIcon(id) → safe fallback (Puzzle/challenge)
+gameIllustrations.tsx: GAME_ILLUSTRATIONS[id] = <svg viewBox 0 0 64 64>  ← the art (fixed colors)
+gameIcons.ts:          GAME_ICONS[id].accent  = tier                     ← tile bg tint (+ Lucide fallback)
         │
-   GameIcon.tsx: <GameIcon gameId variant tone /> → <Icon class={size + (tone==='accent' ? text-<accent> : currentColor)} />
+   GameIcon.tsx: <GameIcon gameId variant /> →
+        illustration on a tier-tinted tile (tile/hero) | bare (heroCompact/inline)
+        fallback: themed Lucide glyph when no illustration (loading/unmapped id)
         │
    ┌────┴───────────────────────────────────────────────┐
    │ in-game hero:  headerProps={ title, gameId, ... }   │
@@ -952,11 +954,13 @@ Why: every game icon used to be a raw system emoji re-typed in up to 3 places
 (`gameRegistry.ts`, each page's `headerProps`, `HomePage` `GAME_ORDER`) that drifted
 (grammar ✏️/📝, memory 🃏/🧠) and collided (📖 reading==story-time, ✅ true-or-not==
 expr-truefalse). Emoji also render per-OS and needed a 310 KB Noto subset to dodge
-Android "tofu" (`emoji-tofu-fix.md`). Now one Lucide glyph per id, tinted by tier so it
-re-colors with the player's theme. To add a game: add its id to `GAME_ICONS` and pass
-`gameId` in `headerProps`. The legacy emoji strings remain as inert fallback data; no
-render site reads them. Full inventory + how to swap to colored SVGs later:
-`docs/game-icons-inventory.md`.
+Android "tofu" (`emoji-tofu-fix.md`). The maintainer wanted a *playful, multi-color,
+kid* look — not emoji and not single-color icon sets — so each game now has a custom
+SVG illustration on a tier-tinted tile. To add a game: add an illustration in
+`gameIllustrations.tsx`, its id to `GAME_ICONS` (tier), and pass `gameId` in
+`headerProps`. The legacy emoji strings remain as inert fallback data; no render site
+reads them. WJ **stage** icons stay single-color Lucide (recolor per state). Full
+inventory + rejected options + paid-pack swap: `docs/game-icons-inventory.md`.
 
 ## Nikud rendering (React-owned, FU-4.4-nikud — applies to ALL React games)
 

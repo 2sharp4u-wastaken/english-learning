@@ -1,8 +1,10 @@
 # Game Icons — Asset Inventory & Overhaul Assessment
 
-**Status:** ✅ **IMPLEMENTED** — all game icons migrated from raw emoji to a
-single themed `lucide-react` set (see "What shipped" below). This doc remains the
-inventory of record + the rationale/alternatives.
+**Status:** ✅ **IMPLEMENTED** — all game icons migrated from raw emoji to a set of
+**custom multi-color SVG illustrations** (`gameIllustrations.tsx`), after a design
+review rejected both system emoji (inconsistent across devices) and single-color
+icon sets (Lucide/Solar/Phosphor/Mingcute — "too clean / business-like" for ages
+5–8). This doc remains the inventory of record + the rationale/alternatives.
 **Audience:** Hebrew-speaking kids ages 5–8, RTL UI
 **Scope:** the per-game icons shown on the Home tiles and inside each game's hero
 header. (Vocabulary *word* images in `img/icons/**` are out of scope — those are
@@ -10,14 +12,18 @@ content, not chrome.)
 
 ## What shipped
 
-- **One source of truth:** `src/features/games/gameIcons.ts` — `GAME_ICONS`
-  maps every game id → a `lucide-react` glyph + a tier accent. `getGameIcon(id)`
-  resolves with a safe `Puzzle`/challenge fallback.
+- **The illustrations:** `src/features/games/gameIllustrations.tsx` — one
+  multi-color `viewBox="0 0 64 64"` SVG per game (fixed colors; they do NOT
+  theme-shift — that's intentional for a playful look). `getGameIllustration(id)`.
+- **Tier accents:** `src/features/games/gameIcons.ts` — `GAME_ICONS` still maps
+  each id → tier accent, used for the **tile background tint** behind the
+  illustration (and a `lucide-react` glyph kept only as a safe fallback for any
+  unmapped id, e.g. the loading screen).
 - **One render component:** `src/features/games/shared/GameIcon.tsx` —
-  `<GameIcon gameId variant tone />`. Variants: `tile` (Home grid, badged),
-  `hero`/`heroCompact` (in-game `GameHero`), `inline` (em-sized, for pills/CTAs),
-  `stage` (WJ). `tone='current'` inherits `currentColor` for colored backgrounds
-  (the Home "בוא נשחק" CTA, locked/muted pills).
+  `<GameIcon gameId variant />`. Variants: `tile` (Home grid, illustration on a
+  tier tile), `hero`/`heroCompact` (in-game `GameHero`), `inline` (em-sized, for
+  pills/CTAs), `stage` (legacy). Renders the illustration; falls back to the
+  themed Lucide glyph (`tone='accent'|'current'`) only when no illustration.
 - **Threading:** `GameHeaderProps.gameId` → `GameScreenShell` → `GameHero` renders
   the themed icon (the emoji `icon` prop is kept only as a loading/non-game
   fallback). Every game page now passes `gameId` instead of an emoji `icon`.
@@ -34,12 +40,15 @@ content, not chrome.)
   `HomePage` `GAME_ORDER.fallbackIcon`, `bridge/stats.ts` (`GAME_NAMES` /
   `WORD_JOURNEY_STAGES`) as inert data fallbacks — no render site reads them now.
 
-**Direction chosen:** Lucide line icons (Option A) — fully self-contained (zero
-new assets/licensing), device-consistent (kills the "tofu" problem), themeable,
-reversible. Each icon is colored by its tier accent + sits in a soft badge on the
-tiles to stay playful for the age group. To later switch to colored SVG
-illustrations (Option B), swap the glyphs in `gameIcons.ts` + the render in
-`GameIcon.tsx` — every site updates from that one place.
+**Direction chosen (2026-06-30):** custom multi-color SVG illustrations (Option B),
+hand-authored in-repo so there's zero licensing and full brand control. The path
+there: shipped Lucide first (clean + device-consistent) → maintainer found every
+single-color set "too business-like" for kids and every emoji set still emoji →
+authored a cohesive illustrated set instead. Because everything routes through
+`GameIcon` + `getGameIllustration`, swapping to a *paid* illustration pack later
+(Streamline/Icons8/Flaticon) is a one-module change. WJ **stage** glyphs stay
+single-color Lucide on purpose — the stage bar recolors per progress state, which
+fixed-color illustrations can't do (`word-journey/stageIcons.ts`).
 
 ## TL;DR
 
