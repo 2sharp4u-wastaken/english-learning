@@ -138,19 +138,25 @@ export const GAME_ILLUSTRATIONS: Record<string, ComponentType<IllProps>> = {
   ),
   articles: svg(
     <>
-      <path d="M12 14 h40 a4 4 0 0 1 4 4 v18 a4 4 0 0 1 -4 4 h-24 l-9 8 v-8 h-7 a4 4 0 0 1 -4 -4 v-18 a4 4 0 0 1 4 -4z" fill="#ffd24a" />
-      <text x="32" y="32" fontSize="11" fontWeight="800" fill="#7a5800" textAnchor="middle" fontFamily="Arial">a · an · the</text>
+      <path d="M10 13 h44 a5 5 0 0 1 5 5 v20 a5 5 0 0 1 -5 5 h-26 l-9 8 v-8 h-9 a5 5 0 0 1 -5 -5 v-20 a5 5 0 0 1 5 -5z" fill="#ffd24a" />
+      <text x="32" y="27" fontSize="11.5" fontWeight="800" fill="#7a5800" textAnchor="middle" fontFamily="Arial">a · an</text>
+      <text x="32" y="40" fontSize="11.5" fontWeight="800" fill="#7a5800" textAnchor="middle" fontFamily="Arial">the</text>
     </>,
   ),
   progressive: svg(
     <>
-      <g stroke="#68a8ff" strokeWidth="2.6" strokeLinecap="round">
-        <path d="M6 24 h9" />
-        <path d="M4 31 h7" />
-        <path d="M8 38 h6" />
+      <g stroke="#9fc3ff" strokeWidth="2.2" strokeLinecap="round">
+        <path d="M5 27 h6" />
+        <path d="M3 34 h5" />
       </g>
-      <path d="M16 40 q0 -7 7 -8 l9 -1 6 -6 q2 7 9 9 l9 2 a4 4 0 0 1 4 4 v2 a3 3 0 0 1 -3 3 h-43 a4 4 0 0 1 -4 -4z" fill="#ff7a66" />
-      <path d="M18 43 h35" stroke="#fff" strokeWidth="2" strokeLinecap="round" />
+      <path d="M12 41 V31 q0 -3 3 -4 l6 -2 7 6 12 2 q6 1 6 5 v3 z" fill="#4a90e2" />
+      <path d="M12 41 V37 h11 v4 z" fill="#356bb0" />
+      <rect x="9" y="40" width="41" height="5" rx="2.5" fill="#fff7ec" />
+      <rect x="9" y="44.5" width="41" height="2" rx="1" fill="#cdd8e6" />
+      <g stroke="#ffd24a" strokeWidth="2" strokeLinecap="round">
+        <path d="M25 27 l7 3 M27 31 l7 3 M29 35 l7 3" />
+      </g>
+      <path d="M20 38 q11 -4 23 -2" stroke="#ff7a66" strokeWidth="2.6" fill="none" strokeLinecap="round" />
     </>,
   ),
   practice: svg(
@@ -245,27 +251,24 @@ export const GAME_ILLUSTRATIONS: Record<string, ComponentType<IllProps>> = {
       <path d="M34 18 H52 V40 H34 V33 A4 4 0 0 1 34 25 Z" fill="#ff8a5c" />
     </>,
   ),
+  // Distinct from `true-or-not` (two plain circles): a speech bubble — it's about
+  // whether a *phrase's* meaning is true — with a check, plus a small ✗ badge.
   'expr-truefalse': svg(
     <>
-      <circle cx="24" cy="29" r="13" fill="#4cc38a" />
-      <path d="M18 29 l4 4 8 -9" stroke="#fff" strokeWidth="3" fill="none" strokeLinecap="round" strokeLinejoin="round" />
-      <circle cx="43" cy="39" r="11" fill="#ff6f61" />
-      <path d="M39 35 l8 8 M47 35 l-8 8" stroke="#fff" strokeWidth="3" strokeLinecap="round" />
+      <path d="M9 12 h38 a5 5 0 0 1 5 5 v15 a5 5 0 0 1 -5 5 h-19 l-9 8 v-8 h-10 a5 5 0 0 1 -5 -5 v-15 a5 5 0 0 1 5 -5z" fill="#4cc38a" />
+      <path d="M16 24 l5 5 12 -13" stroke="#fff" strokeWidth="3.4" fill="none" strokeLinecap="round" strokeLinejoin="round" />
+      <circle cx="47" cy="40" r="9" fill="#ff6f61" />
+      <path d="M43.5 36.5 l7 7 M50.5 36.5 l-7 7" stroke="#fff" strokeWidth="2.6" strokeLinecap="round" />
     </>,
   ),
+  // Distinct from `fill-blanks` (paper + pencil): a speech bubble with a blank
+  // slot — complete the *expression*.
   'expr-blank': svg(
     <>
-      {Paper()}
-      <g stroke="#cdd8e6" strokeWidth="2" strokeLinecap="round">
-        <path d="M20 21 H40 M20 27 H40" />
-      </g>
-      <rect x="20" y="32" width="13" height="4" rx="2" fill="#ffd24a" />
-      <path d="M20 38 H40" stroke="#cdd8e6" strokeWidth="2" strokeLinecap="round" />
-      <g transform="rotate(45 46 40)">
-        <rect x="43" y="24" width="5" height="20" rx="2" fill="#ff7a66" />
-        <path d="M43 44 h5 l-2.5 5z" fill="#5a4a2a" />
-        <rect x="43" y="20" width="5" height="5" fill="#ffd24a" />
-      </g>
+      <path d="M9 13 h46 a5 5 0 0 1 5 5 v16 a5 5 0 0 1 -5 5 h-24 l-9 8 v-8 h-13 a5 5 0 0 1 -5 -5 v-16 a5 5 0 0 1 5 -5z" fill="#ffd24a" />
+      <path d="M17 22 H49" stroke="#b07d12" strokeWidth="2.4" strokeLinecap="round" />
+      <rect x="18" y="28" width="16" height="5" rx="2.5" fill="#fff" />
+      <path d="M38 30.5 H49" stroke="#b07d12" strokeWidth="2.4" strokeLinecap="round" />
     </>,
   ),
   'expr-build': svg(

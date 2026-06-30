@@ -34,6 +34,15 @@ export interface Release {
 /** Newest first. Prepend new releases here. */
 export const RELEASES: Release[] = [
   {
+    version: '3.0.6',
+    date: '2026-06-30',
+    title: 'אייקונים חדשים וצבעוניים למשחקים',
+    items: [
+      { kind: 'improve', text: 'כל משחק קיבל אייקון מצויר חדש, צבעוני ומשחקי — מפת מסע, קוביות אותיות, אוזניות, מיקרופון ועוד — במקום הסמלים הישנים.' },
+      { kind: 'improve', text: 'האייקונים נראים עכשיו זהים בכל טלפון וטאבלט, בלי הבדלים בין מכשירים.' },
+    ],
+  },
+  {
     version: '3.0.5',
     date: '2026-06-26',
     title: 'שיפורים מהמשובים שלכם',
