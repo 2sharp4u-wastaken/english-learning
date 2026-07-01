@@ -1,5 +1,10 @@
 # Emoji "tofu" fix (M15)
 
+> **Still required after the 2026-06-30 game-icon overhaul — do NOT delete.** This
+> font is for **vocabulary WORD emoji content**, not game icons. The overhaul moved
+> *game* icons to custom SVGs (`gameIllustrations.tsx`), but ~40 U+1FA70-block emoji
+> remain in `data/` as word content, so `emoji-fix.woff2` is not icon bloat.
+
 **Problem:** ~51 vocab words use newer-Unicode emoji (the **U+1FA70–1FAFF** block,
 Unicode 12–15: 🪑🪨🫏🫁🩸🪓🪟🪜… + a few 1F9xx). Older **Android** system emoji
 fonts don't have these glyphs, so they rendered as blank "tofu" boxes on the
