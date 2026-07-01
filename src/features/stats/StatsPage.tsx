@@ -264,7 +264,7 @@ function GamesPanel({ model }: { model: UserStatsModel }) {
             <tbody>
               {model.gameRows.map((row) => (
                 <tr key={row.gameType} className="border-b border-white/5 last:border-0">
-                  <td className="py-3 pe-2 text-lg">{row.icon}</td>
+                  <td className="py-3 pe-2"><GameIcon gameId={row.gameType} variant="inline" /></td>
                   <td className="py-3 pe-4 font-bold text-text">{row.name}</td>
                   <td className="py-3 px-2 text-center text-muted">{row.gamesPlayed}</td>
                   <td className="py-3 px-2 text-center font-semibold text-accent-blue">{row.averageScore}%</td>

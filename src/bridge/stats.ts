@@ -71,7 +71,6 @@ export const GAME_NAMES: Record<string, { name: string; icon: string }> = {
 export interface GameStatsRow {
   gameType: string
   name: string
-  icon: string
   gamesPlayed: number
   averageScore: number
   bestScore: number
@@ -643,7 +642,6 @@ export function buildUserStatsModel(userId: string, displayName: string): UserSt
     gameRows.push({
       gameType: gt,
       name: GAME_NAMES[gt].name,
-      icon: GAME_NAMES[gt].icon,
       gamesPlayed: played,
       averageScore: Math.min(100, avg),
       bestScore: Math.min(100, best),

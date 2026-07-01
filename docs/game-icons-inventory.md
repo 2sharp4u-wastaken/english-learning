@@ -33,7 +33,8 @@ content, not chrome.)
 - **Render sites migrated:** Home tiles + continue CTA + next-unlock pill,
   `NewlyUnlockedModal`, every in-game `GameHero`, expression games,
   `BlankFillGamePage` (articles/progressive) incl. its empty state, Profile game
-  badges, Stats coin-history game column + journey pills, `WJStageBar`.
+  badges, Stats coin-history game column + **games-played table** + journey pills,
+  `WJStageBar`.
 - **Drift/collisions resolved:** distinct glyph per game (no more 📖/📖 or ✅/✅);
   icons are now defined once, not re-typed per render site.
 - The legacy emoji strings still sit in `engine/gameRegistry.ts`,
