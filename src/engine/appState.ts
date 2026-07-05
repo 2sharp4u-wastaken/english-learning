@@ -17,6 +17,9 @@
  * deep-equal.
  */
 
+import { wordKey, canonicalizeWordKey } from '../lib/wordKey'
+import { SAVE_ERROR_EVENT, SAVE_RECOVERED_EVENT } from '../lib/storageEvents'
+
 export const V2_STORAGE_PREFIX = 'v2_'
 
 export interface WordObj {
@@ -153,6 +156,14 @@ export class AppState {
   currentUser: string | null = null
   userProgress: any = null
   settings: AppSettings
+  /** User whose progress blob is loaded — deferred saves write to THIS id (see loadUserProgress). */
+  loadedUserId: string | null = null
+
+  /** Coalescing window for progress writes (leading + trailing throttle). */
+  static SAVE_THROTTLE_MS = 400
+  private pendingSaveTimer: ReturnType<typeof setTimeout> | null = null
+  private lastPersistAt = 0
+  private lastPersistFailed = false
 
   scoreManager: any = null
   progressManager: any = null
@@ -182,6 +193,10 @@ export class AppState {
 
   loadUserProgress(): any {
     const userId = this.resolveUserId()
+    // Pin the owner of the loaded blob: saves are throttled (see saveUserProgress),
+    // so a deferred write can fire AFTER the active user changed — it must land on
+    // the user whose data it holds, never on whoever is logged in by then.
+    this.loadedUserId = userId
     const storageKey = `${V2_STORAGE_PREFIX}userProgress_${userId}`
     const saved = localStorage.getItem(storageKey)
 
@@ -198,6 +213,11 @@ export class AppState {
   }
 
   migrateUserProgress(oldProgress: any): any {
+    // Word-identity keys: merge any legacy non-lowercased entries into the
+    // canonical `<lowercased word>_<category>` twin (idempotent, runs on every
+    // load — see src/lib/wordKey.ts for WHY).
+    this.normalizeWordKeys(oldProgress)
+
     // Already at latest version — just patch any fields added after the version was cut
     if (oldProgress.version === 4) {
       if (typeof oldProgress.totalPoints !== 'number') oldProgress.totalPoints = 0
@@ -260,6 +280,79 @@ export class AppState {
 
     console.log('Migration complete to v4')
     return migratedProgress
+  }
+
+  /**
+   * Re-key `wordMastery` / `learnedWords` / `wordJourneyProgress` entries whose
+   * key isn't the canonical lowercased form (historic writers used
+   * `${word}_${category}` verbatim, so "Apple" and "apple" split into two
+   * records). Mastery twins are MERGED (attempts summed, latest wins for
+   * volatile fields); learned/journey twins keep the canonical entry.
+   */
+  normalizeWordKeys(progress: any): void {
+    if (!progress) return
+
+    const mastery = progress.wordMastery
+    if (mastery && typeof mastery === 'object') {
+      for (const key of Object.keys(mastery)) {
+        const stats = mastery[key]
+        const canonical =
+          stats?.word && stats?.category ? wordKey(stats.word, stats.category) : canonicalizeWordKey(key)
+        if (canonical === key) continue
+        const twin = mastery[canonical]
+        mastery[canonical] = twin ? AppState.mergeWordStats(twin, stats) : stats
+        delete mastery[key]
+      }
+    }
+
+    for (const mapName of ['learnedWords', 'wordJourneyProgress'] as const) {
+      const map = progress[mapName]
+      if (!map || typeof map !== 'object') continue
+      for (const key of Object.keys(map)) {
+        const canonical = canonicalizeWordKey(key)
+        if (canonical === key) continue
+        if (!(canonical in map)) map[canonical] = map[key]
+        delete map[key]
+      }
+    }
+  }
+
+  /** Merge two mastery records for the same word (casing twins). Counters sum;
+   *  volatile fields (streak, lapses, last result) come from the later-seen entry. */
+  static mergeWordStats(a: any, b: any): any {
+    const later = String(a?.lastSeen || '') >= String(b?.lastSeen || '') ? a : b
+    const responseTimes = [...(b?.responseTimes || []), ...(a?.responseTimes || [])].slice(-10)
+    const gameTypeStats: Record<string, { correct: number; total: number }> = {}
+    for (const src of [a?.gameTypeStats, b?.gameTypeStats]) {
+      for (const [game, s] of Object.entries(src || {}) as [string, any][]) {
+        if (!gameTypeStats[game]) gameTypeStats[game] = { correct: 0, total: 0 }
+        gameTypeStats[game].correct += s?.correct || 0
+        gameTypeStats[game].total += s?.total || 0
+      }
+    }
+    const word = a?.word ?? b?.word
+    return {
+      ...b,
+      ...a,
+      ...(typeof word === 'string' ? { word: word.toLowerCase() } : {}),
+      totalAttempts: (a?.totalAttempts || 0) + (b?.totalAttempts || 0),
+      correctAttempts: (a?.correctAttempts || 0) + (b?.correctAttempts || 0),
+      incorrectAttempts: (a?.incorrectAttempts || 0) + (b?.incorrectAttempts || 0),
+      consecutiveCorrect: later?.consecutiveCorrect || 0,
+      firstSeen: [a?.firstSeen, b?.firstSeen].filter(Boolean).sort()[0] ?? null,
+      lastSeen: [a?.lastSeen, b?.lastSeen].filter(Boolean).sort().pop() ?? null,
+      lastResult: later?.lastResult ?? null,
+      masteryLevel: Math.max(a?.masteryLevel || 0, b?.masteryLevel || 0),
+      justMastered: false,
+      gameTypeStats,
+      responseTimes,
+      averageResponseTime: responseTimes.length
+        ? Math.round(responseTimes.reduce((s: number, t: number) => s + t, 0) / responseTimes.length)
+        : null,
+      reviewStage: Math.max(a?.reviewStage || 0, b?.reviewStage || 0),
+      reachedLearned: !!(a?.reachedLearned || b?.reachedLearned),
+      lapses: later?.lapses || 0,
+    }
   }
 
   getDefaultProgress(): any {
@@ -335,8 +428,42 @@ export class AppState {
     }
   }
 
+  /**
+   * Persist userProgress — leading + trailing THROTTLE (design-flaws fix,
+   * 2026-07-05). Every answer used to `JSON.stringify` the ENTIRE progress blob
+   * to localStorage synchronously (the same per-event-write pathology the
+   * consoleLogger rule bans), which stutters on the old-Android target devices.
+   * Now: an isolated call writes immediately (so single-action flows and tests
+   * see fresh bytes); calls landing within SAVE_THROTTLE_MS coalesce into one
+   * trailing write of the latest state. `flushPendingSave()` forces the trailing
+   * write out — boot.ts wires it to pagehide/visibilitychange-hidden and to
+   * engine rebuild (user switch), so nothing is lost on exit.
+   */
   saveUserProgress(): void {
-    const userId = this.resolveUserId()
+    const elapsed = Date.now() - this.lastPersistAt
+    if (elapsed >= AppState.SAVE_THROTTLE_MS) {
+      this.persistUserProgress()
+      return
+    }
+    if (this.pendingSaveTimer !== null) return
+    this.pendingSaveTimer = setTimeout(() => {
+      this.pendingSaveTimer = null
+      this.persistUserProgress()
+    }, AppState.SAVE_THROTTLE_MS - elapsed)
+  }
+
+  /** Write any coalesced (deferred) save out NOW. Safe to call when idle. */
+  flushPendingSave(): void {
+    if (this.pendingSaveTimer === null) return
+    clearTimeout(this.pendingSaveTimer)
+    this.pendingSaveTimer = null
+    this.persistUserProgress()
+  }
+
+  private persistUserProgress(): void {
+    if (!this.userProgress) return
+    const userId = this.loadedUserId ?? this.resolveUserId()
+    this.lastPersistAt = Date.now()
 
     // Track today's activity date
     const todayStr = new Date().toISOString().slice(0, 10)
@@ -354,9 +481,23 @@ export class AppState {
     const storageKey = `${V2_STORAGE_PREFIX}userProgress_${userId}`
     try {
       localStorage.setItem(storageKey, JSON.stringify(this.userProgress))
+      if (this.lastPersistFailed) {
+        this.lastPersistFailed = false
+        this.dispatchStorageEvent(SAVE_RECOVERED_EVENT)
+      }
     } catch (error) {
+      // Quota / privacy-mode failure: the child keeps playing but nothing
+      // persists — surface it (AppShell banner via bridge/storageHealth)
+      // instead of dying silently in the console.
       console.error('Error saving user progress:', error)
+      this.lastPersistFailed = true
+      this.dispatchStorageEvent(SAVE_ERROR_EVENT)
     }
+  }
+
+  private dispatchStorageEvent(name: string): void {
+    if (typeof window === 'undefined') return
+    window.dispatchEvent(new CustomEvent(name))
   }
 
   // ── Word stats ─────────────────────────────────────────────────────────────
@@ -365,8 +506,13 @@ export class AppState {
     if (!this.userProgress || !this.userProgress.wordMastery) {
       return null
     }
-    const wordKey = `${word}_${category}`
-    return this.userProgress.wordMastery[wordKey] || null
+    // Canonical lowercased key; the raw-cased fallback covers a not-yet-migrated
+    // blob (normalizeWordKeys re-keys those on load).
+    return (
+      this.userProgress.wordMastery[wordKey(word, category)] ||
+      this.userProgress.wordMastery[`${word}_${category}`] ||
+      null
+    )
   }
 
   saveWordStats(word: string, category: string, stats: any): void {
@@ -377,8 +523,7 @@ export class AppState {
     if (!this.userProgress.wordMastery) {
       this.userProgress.wordMastery = {}
     }
-    const wordKey = `${word}_${category}`
-    this.userProgress.wordMastery[wordKey] = stats
+    this.userProgress.wordMastery[wordKey(word, category)] = stats
     this.saveUserProgress()
   }
 
@@ -399,7 +544,7 @@ export class AppState {
     if (gameType === 'memory') {
       const learnedWords = this.userProgress?.learnedWords || {}
       const learnedBank = bank.filter((w) =>
-        Object.prototype.hasOwnProperty.call(learnedWords, `${w.word.toLowerCase()}_${w.category}`),
+        Object.prototype.hasOwnProperty.call(learnedWords, wordKey(w.word, w.category)),
       )
       return learnedBank.length >= 12 ? learnedBank : bank
     }
@@ -411,7 +556,7 @@ export class AppState {
       return []
     }
 
-    return bank.filter((w) => learnedKeys.has(`${w.word.toLowerCase()}_${w.category}`))
+    return bank.filter((w) => learnedKeys.has(wordKey(w.word, w.category)))
   }
 
   calculateMastery(wordStats: any): number {

@@ -31,6 +31,19 @@ import { allCourses } from '../../data/courses/index.js'
 
 let engineReady = false
 
+// Progress saves are throttled (AppState.saveUserProgress, design-flaws fix
+// 2026-07-05) — a coalesced trailing write may still be pending when the child
+// closes the tab / backgrounds the PWA. Flush it on the page-exit signals
+// (pagehide covers close/navigate; visibilitychange-hidden covers Android
+// app-switch, where pagehide may never fire before the process is killed).
+if (typeof window !== 'undefined') {
+  const flushProgress = () => getApp()?.flushPendingSave?.()
+  window.addEventListener('pagehide', flushProgress)
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') flushProgress()
+  })
+}
+
 function getVocabularyBank(): any[] {
   return ((window as any).vocabularyBank as any[]) ?? []
 }
@@ -79,6 +92,11 @@ function createManagers(userProgress: any, save: () => void): AppManagers {
 export function initEngine(): boolean {
   const userId = getCurrentUserId()
   if (!userId) return false
+
+  // User switch: push out any coalesced save the OUTGOING engine still holds
+  // before the new one takes over (the deferred write targets the loaded user's
+  // key — see AppState.loadedUserId — so this can never cross users).
+  getApp()?.flushPendingSave?.()
 
   const app = new AppState({
     getUserId: () => getCurrentUserId(),

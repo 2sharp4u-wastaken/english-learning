@@ -10,6 +10,7 @@ import {
   stopPronunciationRecording,
   type PronunciationQuestion,
 } from './pronunciation'
+import { wordKey } from '../lib/wordKey'
 
 // Practice reuses the Pronunciation mechanic (record → compare), so its question
 // shape is identical. What differs is the *pool*: under the learning-flow redesign
@@ -113,7 +114,7 @@ function getSpeech(): LegacySpeechRecognizer | null {
 const GAME_TYPE = 'practice'
 
 function key(word: string, category: string): string {
-  return `${word.toLowerCase()}_${category}`
+  return wordKey(word, category)
 }
 
 function getLearnedCount(): number {

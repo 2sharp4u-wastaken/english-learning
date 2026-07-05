@@ -231,6 +231,32 @@ DISTINCT from global AppSettings (bridge/settings.ts). One opaque blob → syncs
 in the future cloud backend (Phase B). See [[project_player_customization]].
 ```
 
+## Storage Safety — throttled saves, failure banner, backup (design-flaws round 1, 2026-07-05)
+
+```
+ANY progress mutation → AppState.saveUserProgress()   [THROTTLED 400ms leading+trailing]
+  ├─ idle → persistUserProgress() writes v2_userProgress_<loadedUserId> NOW
+  ├─ burst → ONE trailing write of latest state (was: full-blob stringify per ANSWER)
+  └─ flushPendingSave() forced by engine/boot.ts on:
+       pagehide | visibilitychange→hidden | initEngine() (user switch; deferred
+       writes pin AppState.loadedUserId so they can never land on another user's key)
+persistUserProgress FAILURE (quota/private mode)
+  └─ dispatch 'elg:save-error' (src/lib/storageEvents.ts)
+       └─ bridge/storageHealth → useStorageHealth → AppShell <StorageWarningBanner>
+            (red fixed banner, both hub + game branches; clears on 'elg:save-recovered')
+main.tsx (PROD) → requestPersistentStorage() → navigator.storage.persist()
+
+ParentsTab "גיבוי מקומי (קובץ)" → bridge/backup.ts
+  ├─ ייצוא: buildBackupJson() = ALL localStorage keys minus BACKUP_EXCLUDE ('cloudToken')
+  │    → downloadBackup() .json file
+  └─ שחזור: file → describeBackup preview → confirm → restoreBackupAndReload()
+       (overwrites keys, never localStorage.clear(), reloads so boot rebuilds)
+adminDeleteUser (bridge/auth.ts) → removeAllUserData(id) — iterates the
+  src/lib/storageKeys.ts manifest (v2_userProgress/playerPrefs/playerUnlocks/
+  savedGame_*/audio-state/legacy keys). Register ANY new key there.
+auth.ts updateActivity: session idle-stamp write ≤1/30s (was every scroll event).
+```
+
 ## Daily Login
 
 ```

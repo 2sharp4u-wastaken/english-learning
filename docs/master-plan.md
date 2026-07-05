@@ -2165,6 +2165,28 @@ Acceptance criteria for Phase 4:
 - Playwright tests pass against React-only app
 - `npm run build` produces a clean, deployable bundle
 
+### Slice 4.7: Storage Robustness — design-flaws round 1 ✅ SHIPPED (2026-07-05)
+
+A repo-wide design review (branch `claude/design-flaws-review-ui75r1`) found 8 flaws;
+this slice shipped the data-safety half. WHY each fix + the still-open half:
+`docs/backlog.md` §3.5; cause/effect chains: `docs/wiring-map.md` → "Storage Safety".
+
+- `navigator.storage.persist()` at boot; save failures surface as a red AppShell
+  banner (`elg:save-error` → `bridge/storageHealth`) instead of a silent console line.
+- `AppState.saveUserProgress` throttled (400 ms leading+trailing, `flushPendingSave`
+  on pagehide/hidden/user-switch, deferred writes pinned to `loadedUserId`) — it used
+  to stringify the whole blob synchronously per ANSWER; auth's idle stamp likewise
+  wrote the session on every scroll event (now ≤1/30 s).
+- Parent file backup: ParentsTab "גיבוי מקומי (קובץ)" → `bridge/backup.ts`
+  (export all keys minus `cloudToken`; confirm-restore + reload). Stopgap until
+  Cloud Phase B sync.
+- `src/lib/wordKey.ts` = the ONLY word-identity key builder (was inlined ~25×;
+  appState's raw-cased variant split "Apple"/"apple" into two mastery records);
+  `AppState.normalizeWordKeys` merges legacy-cased twins on every load.
+- `src/lib/storageKeys.ts` = the localStorage key manifest; `adminDeleteUser` now
+  removes ALL per-user keys (previously left `v2_userProgress_<id>` → deleted
+  profiles resurrected on id reuse). NEW KEYS MUST BE REGISTERED THERE (CLAUDE.md rule).
+
 ## Phase 5: Content Expansion — Idioms & Slang
 
 Objective: introduce multi-word expressions (idioms and slang) as a first-class content type alongside the existing single-word vocabulary.

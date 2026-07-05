@@ -7,7 +7,29 @@ import { PageContainer } from './PageContainer'
 import { BugReportWidget } from '@/features/feedback/BugReportWidget'
 import { isReactGame } from '@/features/games/reactGames'
 import { usePlayerPrefs } from '@/hooks/usePlayerPrefs'
+import { useStorageHealth } from '@/hooks/useStorageHealth'
 import { playLoginChime } from '@/bridge/feedback'
+import { useNikud } from '@/bridge/nikud'
+
+/**
+ * Fixed top banner shown while progress saves are FAILING (quota / privacy
+ * mode) — see bridge/storageHealth. Rendered on both shell branches (hub +
+ * games) so it's visible wherever the child is playing.
+ */
+function StorageWarningBanner() {
+  const { saveFailed } = useStorageHealth()
+  const nk = useNikud()
+  if (!saveFailed) return null
+  return (
+    <div
+      role="alert"
+      data-testid="storage-warning-banner"
+      className="fixed inset-x-0 top-0 z-50 bg-red-600 px-3 py-1.5 text-center text-sm font-semibold text-white"
+    >
+      {nk('שמירת ההתקדמות נכשלה — ייתכן שאין מקום פנוי במכשיר')}
+    </div>
+  )
+}
 
 export function AppShell() {
   const { pathname } = useLocation()
@@ -93,6 +115,7 @@ export function AppShell() {
       <>
         <Outlet />
         <BugReportWidget />
+        <StorageWarningBanner />
       </>
     )
   }
@@ -109,6 +132,7 @@ export function AppShell() {
       </PageContainer>
       <MobileBottomNav />
       <BugReportWidget />
+      <StorageWarningBanner />
     </div>
   )
 }

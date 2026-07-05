@@ -2,6 +2,7 @@ import { setGameContext, cancelSpeech } from './audio'
 import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 import { isCourseMode } from './courseSession'
+import { wordKey } from '../lib/wordKey'
 
 export interface PictureMatchOption {
   word: string
@@ -150,7 +151,7 @@ export function beginPictureMatchSession(opts: BeginOptions = {}): PictureMatchS
   if (!mgr.settings?.gameUnlockOverride && !courseMode) {
     const learned = mgr._getLearnedWordSet()
     pool = pool.filter((w) =>
-      learned.has(`${w.word?.toLowerCase()}_${w.category}`),
+      learned.has(wordKey(w.word, w.category)),
     )
   }
   if (pool.length < 4) {

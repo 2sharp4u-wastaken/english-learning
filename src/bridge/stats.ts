@@ -3,6 +3,7 @@ import { getApp } from '../engine/instances'
 import { v2Key } from './storage'
 import { getAllExpressions, type ExpressionType } from './expressions'
 import { deriveLifecycle, type LifecycleResult } from '../engine/lifecycle'
+import { wordKey } from '../lib/wordKey'
 
 // ─── Constants ──────────────────────────────────────────────────────────────
 
@@ -237,7 +238,7 @@ function safeParse<T>(raw: string | null, fallback: T): T {
 }
 
 function buildWordKey(word: string, category: string): string {
-  return `${String(word || '').toLowerCase()}_${category || ''}`
+  return wordKey(word, category)
 }
 
 function getCategoryMeta(category: string): { name: string; icon: string } {

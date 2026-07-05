@@ -1,4 +1,5 @@
 import type { User, UserRole, Session } from './types'
+import { removeAllUserData } from '../lib/storageKeys'
 
 /**
  * src/bridge/auth.ts — STANDALONE auth owner (Slice 4.4.b2).
@@ -266,14 +267,26 @@ export function getCurrentUserId(): string | null {
   return session ? session.userId : null
 }
 
-let lastActivityTime = Date.now()
+// 0 (not Date.now()) so the FIRST interaction after a page load always stamps
+// immediately — a stale lastActivity from the previous visit must be refreshed
+// before it can cross the idle timeout mid-use.
+let lastActivityTime = 0
+
+// Idle-stamp write throttle (design-flaws fix, 2026-07-05): updateActivity is
+// wired to UNTHROTTLED scroll/mousedown/keydown/touchstart listeners, so it
+// used to rewrite the session JSON to localStorage on every scroll frame —
+// the exact per-event-write pathology the consoleLogger rule bans. The idle
+// timeout is 30 MINUTES, so a 30-second stamp granularity changes nothing.
+const ACTIVITY_WRITE_INTERVAL_MS = 30_000
 
 /** Refresh the idle timer (called on user interaction while authenticated). */
 function updateActivity(): void {
-  lastActivityTime = Date.now()
+  const now = Date.now()
+  if (now - lastActivityTime < ACTIVITY_WRITE_INTERVAL_MS) return
+  lastActivityTime = now
   const session = getCurrentSession()
   if (session) {
-    session.lastActivity = lastActivityTime
+    session.lastActivity = now
     localStorage.setItem(SESSION_KEY, JSON.stringify(session))
   }
 }
@@ -465,10 +478,12 @@ export function adminDeleteUser(userId: string): AdminResult {
   delete users[userId]
   saveUsers(users)
 
-  // Faithful to legacy: removes the unprefixed legacy data keys.
-  localStorage.removeItem(`userProgress_${userId}`)
-  const gameTypes = ['vocabulary', 'grammar', 'pronunciation', 'listening', 'reading']
-  gameTypes.forEach((game) => localStorage.removeItem(`scoreHistory_${userId}_${game}`))
+  // Remove EVERY key belonging to this user via the storage-key manifest
+  // (design-flaws fix, 2026-07-05). The old code only removed the legacy
+  // unprefixed keys, so `v2_userProgress_<id>` / playerPrefs / playerUnlocks /
+  // saved games survived deletion — orphaned forever, and silently RESURRECTED
+  // if a profile with the same id was later re-created.
+  removeAllUserData(userId)
 
   return { success: true, message: 'User deleted successfully' }
 }

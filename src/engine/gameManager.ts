@@ -21,6 +21,8 @@
  * RNG-independent invariants against the booted legacy `window.gameManager`.
  */
 
+import { wordKey } from '../lib/wordKey'
+
 export interface WordObj {
   word: string
   translation?: string
@@ -418,7 +420,7 @@ export class GameManager {
       return basePool
     }
 
-    const topicKeys = new Set(this.getActiveTopicWords().map((word) => `${word.word.toLowerCase()}_${word.category}`))
+    const topicKeys = new Set(this.getActiveTopicWords().map((word) => wordKey(word.word, word.category)))
 
     if (topicKeys.size === 0) {
       return basePool
@@ -432,7 +434,7 @@ export class GameManager {
     // bypasses both filters. Keep the converted question objects (with distractor
     // options) by sourcing from the provider, not from raw words. (Baseline fix #1.)
     const fullPool = this.opts.gameDataProvider?.()?.[gameType] ?? basePool
-    return fullPool.filter((word) => topicKeys.has(`${word.word?.toLowerCase()}_${word.category}`))
+    return fullPool.filter((word) => topicKeys.has(wordKey(word.word, word.category)))
   }
 
   getPracticeWords(_options: { refreshData?: boolean } = {}): WordObj[] {
@@ -504,7 +506,7 @@ export class GameManager {
       let mastery = pm ? pm.getWordStats(w.word, w.category)?.masteryLevel || 0 : 0
 
       if (pm?.isWordLearned?.(w.word, w.category)) {
-        const entry = pm.learnedWords?.[`${w.word.toLowerCase()}_${w.category}`]
+        const entry = pm.learnedWords?.[wordKey(w.word, w.category)]
         if (entry?.graduatedDate === today) {
           mastery = Math.max(mastery, 0.9)
         }
@@ -694,7 +696,7 @@ export class GameManager {
     const sessionMap = new Map<string, any>()
     const addWord = (word: string, category: string) => {
       if (!word || !category) return
-      const key = `${String(word).toLowerCase()}_${category}`
+      const key = wordKey(word, category)
       if (sessionMap.has(key)) return
 
       const stats = this.progressManager.getWordStats(word, category)

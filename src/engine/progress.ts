@@ -12,6 +12,7 @@
  */
 
 import { deriveWordStatus, isDerivedLearned } from './lifecycle'
+import { wordKey } from '../lib/wordKey'
 
 export interface WordStats {
   word: string
@@ -106,7 +107,7 @@ export class ProgressManager {
 
   getWordStats(word: string, category: string): WordStats | null {
     if (!word) return null
-    const key = `${word.toLowerCase()}_${category}`
+    const key = this._key(word, category)
     const legacyKey = `${word}_${category}`
     return this.wordMastery[key] || this.wordMastery[legacyKey] || null
   }
@@ -118,7 +119,7 @@ export class ProgressManager {
     gameType: string,
     responseTime: number | null = null,
   ): WordStats {
-    const key = `${word.toLowerCase()}_${category}`
+    const key = this._key(word, category)
     const wasDue = this.isWordDue(word, category)
 
     const stats: WordStats = this.wordMastery[key] || this.createDefaultWordStats(word, category)
@@ -436,7 +437,7 @@ export class ProgressManager {
   // ── Word graduation (V2 learned words) ─────────────────────────────────────
 
   graduateWord(word: string, category: string, journeyScore: number): void {
-    const key = `${word.toLowerCase()}_${category}`
+    const key = this._key(word, category)
     const today = new Date().toISOString().slice(0, 10)
     const allJourneyStages = ['discover', 'listen-match', 'spell-tiles', 'say-word', 'recall']
 
@@ -467,7 +468,7 @@ export class ProgressManager {
   }
 
   recordWordReinforcement(word: string, category: string, gameType: string): void {
-    const key = `${word.toLowerCase()}_${category}`
+    const key = this._key(word, category)
     if (!this.learnedWords[key]) return
     const today = new Date().toISOString().slice(0, 10)
     if (!this.learnedWords[key].reinforcedIn.includes(gameType)) {
@@ -485,7 +486,7 @@ export class ProgressManager {
     const today = new Date().toISOString().slice(0, 10)
     words.forEach(({ word, category }) => {
       if (!word || !category) return
-      const key = `${word.toLowerCase()}_${category}`
+      const key = this._key(word, category)
       const existing = this.wordJourneyProgress[key] || { completedStages: [], startedDate: today }
       this.wordJourneyProgress[key] = {
         ...existing,
@@ -506,7 +507,7 @@ export class ProgressManager {
   }
 
   isWordLearned(word: string, category: string): boolean {
-    const key = `${word.toLowerCase()}_${category}`
+    const key = this._key(word, category)
     return key in this.learnedWords
   }
 
@@ -519,7 +520,7 @@ export class ProgressManager {
   // ── V3 mastery-driven lifecycle ────────────────────────────────────────────
 
   _key(word: string, category: string): string {
-    return `${String(word ?? '').toLowerCase()}_${category}`
+    return wordKey(word, category)
   }
 
   migrateToLifecycleModel(): void {

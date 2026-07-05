@@ -2,6 +2,7 @@ import { setGameContext, cancelSpeech } from './audio'
 import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 import { ensureMicHold, scheduleMicRelease } from './micHold'
+import { wordKey } from '../lib/wordKey'
 
 // ─── Question shape (from data/converters.js convertToPronunciation) ────────
 
@@ -169,7 +170,7 @@ export function beginPronunciationSession(
   if (!mgr.settings?.gameUnlockOverride) {
     const learned = mgr._getLearnedWordSet()
     pool = pool.filter((w) =>
-      learned.has(`${w.word?.toLowerCase()}_${w.category}`),
+      learned.has(wordKey(w.word, w.category)),
     )
   }
   if (pool.length < 4) {

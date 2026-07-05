@@ -31,6 +31,7 @@ import {
 import { getGameCatalog } from '@/bridge/games'
 import { GameIcon } from '@/features/games/shared/GameIcon'
 import { cn } from '@/lib/cn'
+import { wordKey } from '@/lib/wordKey'
 
 // ─── Level system ───────────────────────────────────────────────────────────
 
@@ -489,7 +490,7 @@ function WordsTab({
 
     const bankMap = new Map<string, (typeof vocabBank)[number]>()
     for (const w of vocabBank) {
-      bankMap.set(`${w.word.toLowerCase()}_${w.category}`, w)
+      bankMap.set(wordKey(w.word, w.category), w)
     }
 
     return keys

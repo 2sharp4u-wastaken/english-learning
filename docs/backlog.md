@@ -261,6 +261,44 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
   say-word recording, and celebration animation/audio have no E2E.
   **Now partly unblocked:** the `webkitSpeechRecognition` stub
   (`tests/helpers/mockSpeech.js`) exists, so the mic/say-word paths are writable.
+- 🔴 **3 PRE-EXISTING react-routes failures (verified on clean tree 2026-07-05):**
+  `react-routes.spec.js:633/716/739` — all the Content-tab Custom Words panel
+  (`#react-root textarea` not found; `custom-words-list` never renders). Not
+  root-caused; joins the 2 known smoke failures. Suspect the CustomWordsPanel
+  seeded-state path broke in a recent settings redesign.
+
+## 3.5 Storage robustness — design-flaws review round 1 ✅ SHIPPED 2026-07-05
+
+Branch `claude/design-flaws-review-ui75r1`. A repo-wide design review found 8 flaws;
+the data-safety half (Phases A+B of the plan) shipped in one slice:
+- ✅ **`navigator.storage.persist()`** requested at boot (main.tsx, prod only) so the
+  browser protects the origin's storage from eviction.
+- ✅ **Progress-save throttling** — `AppState.saveUserProgress` was a full-blob
+  synchronous `JSON.stringify` per ANSWER (+ auth stamped the session on every
+  scroll event). Now leading+trailing throttle (400 ms) + `flushPendingSave()` on
+  pagehide/visibilitychange-hidden/user-switch (boot.ts); deferred writes are pinned
+  to `loadedUserId` so they can never land on the wrong user. Auth activity stamp
+  ≤1/30 s.
+- ✅ **Save-failure surfacing** — a failed write dispatches `elg:save-error`
+  (`src/lib/storageEvents.ts` → `bridge/storageHealth` → `useStorageHealth` →
+  AppShell red banner) instead of dying in the console.
+- ✅ **Local backup export/import** — ParentsTab "גיבוי מקומי (קובץ)"
+  (`bridge/backup.ts`): full-state JSON download / confirm-then-restore + reload.
+  `cloudToken` excluded from exports. Stopgap until Cloud Phase B sync.
+- ✅ **Canonical word keys** — `src/lib/wordKey.ts` is now the ONLY source of the
+  `<lowercased word>_<category>` key (was inlined ~25×; appState used a raw-cased
+  variant that split "Apple"/"apple" into two mastery records).
+  `AppState.normalizeWordKeys` merges legacy-cased twins on every load.
+- ✅ **Storage-key manifest** — `src/lib/storageKeys.ts` owns the key inventory;
+  `adminDeleteUser` now removes ALL per-user keys (it used to leave
+  `v2_userProgress_<id>` behind, resurrecting deleted profiles on id reuse).
+
+**Still open from the review (Phases C+D):** 🔴 cloud API guardrails (open signup,
+no rate limit — see §6/cloud-backend.md, do BEFORE sharing the URL further);
+🟡 parent-password "hash" is reversible `btoa` → move to SubtleCrypto SHA-256 with
+lazy re-hash; 🟢 type `UserProgress` end-to-end (interface exists in
+`bridge/types.ts` but engine uses `any`); 🟢 consolidate the copy-pasted
+learned-pool/resume/audio-gate logic across game bridges (do lazily per-touch).
 
 ## 4. Deferred infra / polish (low urgency)
 

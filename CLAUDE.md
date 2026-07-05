@@ -28,6 +28,11 @@ Version lives in `package.json` → `__APP_VERSION__` (Vite `define` in `vite.co
 ### Slice closeout discipline
 Before committing a non-trivial change or ending a session, consult the `feedback_cross_session_continuity` memory and run its closeout (master-plan + wiring-map + memory with WHY annotations + lean auto-load + cold-start verification). This includes a **forward-propagation review**: ask whether what this slice taught should update the instructions for *following* slices, *broader*/template-level patterns, or project-wide conventions — and edit those (master-plan slice entries, templates/recipes, docs, CLAUDE.md) so a fresh session inherits it without the user re-stating it. A PreToolUse hook nudges this on every `git commit` — don't ignore it. Skip for doc/typo/trivial fixes.
 
+### Storage + word-identity invariants (design-flaws round 1, 2026-07-05)
+- **Every localStorage key must be registered in `src/lib/storageKeys.ts`** (globals in `GLOBAL_KEYS`, per-user shapes in `isPerUserKey`). User deletion (`adminDeleteUser`) and the parent file-backup (`src/bridge/backup.ts`) iterate this manifest — an unregistered key survives deletion and misses backups.
+- **Word identity = `wordKey(word, category)` from `src/lib/wordKey.ts`** — never inline `` `${word.toLowerCase()}_${category}` `` again (a raw-cased variant in appState used to split "Apple"/"apple" into two mastery records; `AppState.normalizeWordKeys` merges legacy twins on every load).
+- **Progress saves are THROTTLED** (`AppState.saveUserProgress`: 400 ms leading+trailing; `flushPendingSave()` wired to pagehide/visibility-hidden/user-switch in `engine/boot.ts`; deferred writes pin `loadedUserId` so they never cross users). Never add a per-event synchronous `localStorage.setItem` on a hot path (answers, scroll — same class as the logger rule). Code that must read the raw `v2_userProgress_*` bytes right after a write should call `app.flushPendingSave()` first. Save failures dispatch `elg:save-error` → red AppShell banner (`bridge/storageHealth`).
+
 ### Read before modifying
 Read every file you plan to change before touching it. Do not suggest changes to code you haven't read.
 

@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { App } from './app/App'
+import { requestPersistentStorage } from './bridge/storageHealth'
 import './styles/globals.css'
 
 const root = document.getElementById('react-root')
@@ -25,6 +26,13 @@ window.addEventListener('vite:preloadError', () => {
   sessionStorage.setItem('vite-preload-reload-at', String(Date.now()))
   window.location.reload()
 })
+
+// All child progress lives in localStorage — ask the browser to protect this
+// origin's storage from eviction (best-effort; see bridge/storageHealth).
+// Production only: dev servers churn origins and the grant is meaningless there.
+if (import.meta.env.PROD) {
+  void requestPersistentStorage()
+}
 
 // PWA service worker — production only. In dev the SW would cache Vite's module
 // graph and fight HMR, and `/sw.js` isn't served by the dev server anyway (it's

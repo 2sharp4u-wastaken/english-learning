@@ -17,6 +17,8 @@
  * `_eachVocabWord`; see docs/learning-path.md → "Word Lifecycle Model".
  */
 
+import { wordKey } from '../lib/wordKey'
+
 export interface LifecycleThresholds {
   /** masteryLevel bar for "learned" (legacy `thresholds.mastered`, 0.8). */
   mastered: number
@@ -68,7 +70,7 @@ const ABC_CATEGORY = 'abc'
 
 /** Canonical de-dupe key, matching legacy `ProgressManager._key`. */
 function makeKey(word: string, category: string): string {
-  return `${word.toLowerCase()}_${category}`
+  return wordKey(word, category)
 }
 
 /** Split a `word_category` key into its category (suffix after the last `_`). */

@@ -1,6 +1,7 @@
 import { getApp } from '../engine/instances'
 import { getAbcMasteryPercent } from './progress'
 import { getExpressionUnlock } from './expressionGame'
+import { wordKey } from '../lib/wordKey'
 
 /**
  * src/bridge/qa.ts — parent/QA "unlock for testing" bridge (backlog M12 sub-item,
@@ -116,7 +117,7 @@ export function seedLearnedWords(count: number): number {
   let added = 0
   for (const w of vocabBank()) {
     if (added >= count) break
-    const key = `${w.word.toLowerCase()}_${w.category}`
+    const key = wordKey(w.word, w.category)
     if (learnedKeys.has(key)) continue
     // Three correct attempts clears the lifecycle bar (totalAttempts≥3,
     // masteryLevel 1.0≥0.8, consecutiveCorrect 3≥2) → reachedLearned.

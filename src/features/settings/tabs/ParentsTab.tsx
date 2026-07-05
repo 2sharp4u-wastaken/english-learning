@@ -1,8 +1,9 @@
-import { useCallback, useState } from 'react'
+import { useCallback, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Download, RotateCcw, BookOpen, KeyRound, AlertTriangle } from 'lucide-react'
+import { Download, Upload, RotateCcw, BookOpen, KeyRound, AlertTriangle } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { changeParentPassword, factoryReset } from '@/bridge/auth'
+import { downloadBackup, describeBackup, restoreBackupAndReload } from '@/bridge/backup'
 import { SectionCard } from '../components/SectionCard'
 import { QATestingPanel } from './components/QATestingPanel'
 import { CloudAccountPanel } from './components/CloudAccountPanel'
@@ -59,6 +60,19 @@ export function ParentsTab() {
         description="חשבון משפחה (אימייל וסיסמה) שיאפשר שימוש בכמה מכשירים וגיבוי ההתקדמות. אופציונלי — המשחק עובד גם בלי חיבור."
       >
         <CloudAccountPanel />
+      </SectionCard>
+
+      {/* Local file backup (design-flaws fix, 2026-07-05): localStorage is the only
+          store until Cloud Phase B — a browser data-clear wipes every child's
+          progress. Export/restore gives the parent a recovery path today. */}
+      <SectionCard
+        title="גיבוי מקומי (קובץ)"
+        description="שמירת כל הנתונים במכשיר — פרופילים, התקדמות והגדרות — לקובץ גיבוי, ושחזור מקובץ כזה. מומלץ לייצא מדי פעם: ניקוי נתוני הדפדפן מוחק את כל ההתקדמות."
+        collapsible
+        defaultCollapsed
+        headerTestId="tools-backup-toggle"
+      >
+        <LocalBackupPanel />
       </SectionCard>
 
       {/* M12 Slice A: parent/QA testing affordance — opens locked content without
@@ -199,6 +213,100 @@ export function ParentsTab() {
 
 const inputClass =
   'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-text outline-none transition-colors focus:border-white/25'
+
+/**
+ * Export the device state to a JSON download / restore from a previously
+ * exported file. Restore confirms first (it overwrites current data) and
+ * reloads on success so boot rebuilds from the restored state.
+ */
+function LocalBackupPanel() {
+  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [pending, setPending] = useState<{ text: string; exportedAt: string | null; keyCount: number } | null>(null)
+  const [error, setError] = useState(false)
+
+  const handleFile = useCallback(async (file: File | undefined) => {
+    if (!file) return
+    const text = await file.text()
+    const meta = describeBackup(text)
+    if (!meta) {
+      setPending(null)
+      setError(true)
+      return
+    }
+    setError(false)
+    setPending({ text, ...meta })
+  }, [])
+
+  const pendingDate = pending?.exportedAt ? pending.exportedAt.slice(0, 10) : null
+
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <button
+          type="button"
+          onClick={() => downloadBackup()}
+          data-testid="tools-backup-export"
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-white/8 hover:text-text"
+        >
+          <Download size={14} />
+          <span>ייצוא גיבוי</span>
+        </button>
+        <button
+          type="button"
+          onClick={() => fileInputRef.current?.click()}
+          data-testid="tools-backup-import"
+          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-white/8 hover:text-text"
+        >
+          <Upload size={14} />
+          <span>שחזור מגיבוי</span>
+        </button>
+        <input
+          ref={fileInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          data-testid="tools-backup-file"
+          onChange={(e) => {
+            void handleFile(e.target.files?.[0])
+            e.target.value = ''
+          }}
+        />
+      </div>
+      {error ? <p className="text-sm text-coral-400">קובץ הגיבוי לא תקין.</p> : null}
+      {pending ? (
+        <div className="space-y-2 rounded-lg border border-coral-400/25 bg-coral-400/5 p-3">
+          <p className="text-sm text-text">
+            לשחזר גיבוי{pendingDate ? ` מ־${pendingDate}` : ''} ({pending.keyCount} פריטים)? נתונים קיימים
+            במכשיר יידרסו, והאפליקציה תיטען מחדש.
+          </p>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              type="button"
+              onClick={() => setPending(null)}
+              className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-white/5 hover:text-text"
+            >
+              ביטול
+            </button>
+            <button
+              type="button"
+              data-testid="tools-backup-restore-confirm"
+              onClick={() => {
+                const result = restoreBackupAndReload(pending.text)
+                if (!result.success) {
+                  setPending(null)
+                  setError(true)
+                }
+              }}
+              className="rounded-lg bg-coral-400/90 px-3 py-1.5 text-sm font-medium text-ink-950 transition-colors hover:bg-coral-400"
+            >
+              שחזור
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  )
+}
 
 function ChangeParentPassword() {
   const [password, setPassword] = useState('')

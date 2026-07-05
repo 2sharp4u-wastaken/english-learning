@@ -2,6 +2,7 @@ import { setGameContext, cancelSpeech } from './audio'
 import { getApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 import { isCourseMode } from './courseSession'
+import { wordKey } from '../lib/wordKey'
 
 export interface TrueOrNotQuestion {
   word: string
@@ -281,7 +282,7 @@ export function beginTrueOrNotSession(opts: BeginOptions = {}): TrueOrNotSession
   } else {
     const learnedKeys = mgr._getLearnedWordSet()
     const learnedPool = allWords.filter((w) =>
-      learnedKeys.has(`${w.word?.toLowerCase()}_${w.category}`),
+      learnedKeys.has(wordKey(w.word, w.category)),
     )
     pool = learnedPool.length >= 4 ? learnedPool : allWords
   }

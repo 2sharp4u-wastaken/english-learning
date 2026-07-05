@@ -3,6 +3,7 @@ import { getApp as getEngineApp, getGameManager } from '../engine/instances'
 import { getSettings } from './settings'
 import { queuePendingUnlocks } from './games'
 import { getCurrentUserId } from './auth'
+import { wordKey } from '../lib/wordKey'
 
 // ─── Shapes ──────────────────────────────────────────────────────────────────
 
@@ -254,7 +255,7 @@ export function beginMemory(): MemorySessionResult {
 
   if (!mgr.settings?.gameUnlockOverride) {
     const introduced = mgr._getLearnedWordSet()
-    pool = pool.filter((w) => introduced.has(`${w.word.toLowerCase()}_${w.category}`))
+    pool = pool.filter((w) => introduced.has(wordKey(w.word, w.category)))
   }
 
   if (pool.length < MEMORY_MIN_WORDS) {
