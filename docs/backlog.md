@@ -7,68 +7,40 @@ decision. This doc only tracks what is **not done**.
 
 Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ parked on the user.
 
-> **RESUME HERE (updated end of session 2026-06-21).** Work from this session on
-> `claude/mobile-version-update-lk0v6e` (latest `9a7dc0c`) — **NOT yet merged to
-> `v3-react-migration`** (PR welcome; it has 2 commits: pwa-wiring regression test +
-> settings collapse). The big refactors from `claude/local-mobile-fixes-02es7r` were
-> **merged via PR #39** and are **LIVE** on `v3-react-migration` (`0766f83`).
-> **Cloudflare Workers is the SOLE host** (Netlify retired): 
-> https://english-learning.2sharp4u.workers.dev/ — Git-connected, **push to
-> `v3-react-migration` auto-deploys ~2-4 min**; Login screen `v<ver> · <sha>` build
-> stamp confirms the live bundle. SW now gets git SHA stamped per deploy (M22-fix),
-> so deployed devices see the update banner automatically. Deploy gotchas:
-> `docs/cloudflare-deploy.md`; bug-report triage: `[[project_bug_report_feature]]`.
+> **RESUME HERE (updated 2026-07-05, design-flaws round-1 session).**
+> **LIVE = v3.0.7 · `f1f913d`** on `v3-react-migration` — Cloudflare Workers is the
+> SOLE host: https://english-learning.2sharp4u.workers.dev/ (Git-connected, push to
+> `v3-react-migration` auto-deploys ~2-4 min; login-screen `v<ver> · <sha>` stamp
+> confirms the live bundle; SW SHA-stamped per deploy → update banner fires).
+> Deploy gotchas: `docs/cloudflare-deploy.md`.
 >
-> **This session (2026-06-17) shipped THREE big things — all live except where noted:**
-> 1. **M12 Slice B + M4 — parent admin account.** First-run wizard (`FirstRunWizard`,
->    parent picks name+password = the device parent credential, `createParentAccount`);
->    **one-unlock parent mode** (`src/bridge/parentMode.ts`, role OR password, 15-min
->    timeout, survives nav); kids see ONLY the unprotected "המשחק שלי" settings tab
->    (parent tabs hidden until elevated, one "הגדרות הורה" unlock button); `categories`
->    gated; in-app `/parent-guide`; "פתיחת כל התכנים" expose-all toggle. **Issue #10:**
->    standard admin password model (VERIFY-only, NO unauthenticated reset; change via
->    כלי הורה → "סיסמת הורה" `changeParentPassword`; factory-reset "התחלה מחדש" in
->    כלי הורה; recover-forgotten = clear app data) + all player copy says שחקן/ית
->    never ילד. **Issue #11:** auth modal scrollable on short phones.
->    See `[[project_m12b_m4_parent_account]]`.
-> 2. **Per-kid customization "המשחק שלי"** — per-user `playerPrefs` blob
->    (`v2_playerPrefs_<userId>`, `usePlayerPrefs`, distinct from global AppSettings):
->    5 themes, 15 distinct sounds (icon-only grid + preview; FIXED the bell/chord
->    fell-through-to-arpeggio bug), login + logout sounds, 12 mascot animals + many
->    rotating phrases, score-pill sound packs, motion/celebration, avatar color,
->    bigText/contrast. See `[[project_player_customization]]`.
-> 3. **Cloud backend Tier-3 Phase A — LIVE.** Cloudflare D1 `english-learning-db` +
->    Worker `/api/auth/*` + `/api/players` (PBKDF2 + JWT, `worker/auth.ts`) +
->    offline-first `src/bridge/cloudAccount.ts` + "חשבון בענן וגיבוי" card in כלי הורה.
->    Provisioned, deployed, verified live. See `[[project_cloud_backend]]` +
->    `docs/cloud-backend.md`. **121 unit tests + the settings/auth/customization
->    Playwright specs green.**
+> **This session shipped the design-flaws round-1 fixes (§3.5 — Slices 4.7 + 4.8 in
+> master-plan, branch `claude/design-flaws-review-ui75r1`, MERGED):** throttled
+> progress saves + flush + save-failure banner, `storage.persist()`, parent file
+> backup (גיבוי מקומי), canonical `wordKey` + casing-twin merge migration,
+> storage-key manifest + complete user deletion, SHA-256 password hashes (lazy
+> re-hash of legacy btoa), cloud API rate limiting + invite-gated signup + family
+> export/delete. **Guardrails go-live steps were run by the maintainer via the
+> Cloudflare dashboard 2026-07-05** (D1 console migration 0002 + `SIGNUP_INVITE_CODE`
+> secret) — on-device verification checklist in §3.5.
 >
 > **NEXT (pick up here):**
 > (1) **Cloud Phase B** — back up + sync each profile's progress (`v2_userProgress_<id>`)
 >     + `playerPrefs` blobs to the cloud account (push on change, pull on a fresh
 >     device); map local user ids ↔ cloud player ids at link time. This is what makes
 >     "same profile on tablet + laptop" real. Roadmap in `docs/cloud-backend.md`.
-> (2) **Cloud guardrails BEFORE any public launch of the cloud layer** — sign-up is
->     currently OPEN (anyone can register a family on the public URL): add rate-limiting
->     + email verification + a data export/delete path (it's kids' data). Noted in
->     `docs/cloud-backend.md` "Privacy".
-> (3) **Deferred customization:** coin-earned cosmetic unlocks (tie themes/avatars/
->     sound-packs to `CoinManager`); nikud/case becoming per-kid (still global);
->     richer non-emoji mascot (Lottie/SVG/rigged — blink/wave/walk, vs today's
->     animated emoji). See `[[project_player_customization]]`.
-> (4) **Leaderboard** (§ LB — now has the D1 seam), **M8** PWA install button,
->     **M5/M13** parent word/image submission (reuse the D1/Worker backend; `manager`
->     role reserved for these). ✅ milestone-cert WJ bug + cert recalibration SHIPPED
->     2026-06-25 (two tracks met/mastered + difficulty preset; see §2).
-> GitHub issues #10/#11/#12 are now CLOSED (round-1 fixes verified;
-`d167a49`/`20dcaab`/`b305311`). **Round 2 (build `ffa96f8`) filed #13–#22, all
-OPEN:** the landscape/scroll set (#16/#19/#20/#21/#22) is tracked under §7 M3 —
-REOPENED follow-ups; #13/#14/#15/#17/#18 are new items M16–M20 in §8.
-> Two PRE-EXISTING smoke failures (clean tree): smoke.spec.js:180 (ABC→Reading
-> unlock) + :351 (continue CTA label) — not root-caused. See `[[testing_preexisting_smoke_failures]]`.
-> Waiting on the user: install Hebrew TTS voice on the tablet
-> (M7); C2/C3 images.
+>     The local file backup (§3.5) is the stopgap meanwhile.
+> (2) **Email verification for cloud signup** — the last open guardrail (needs an
+>     email provider); required before any un-invited public signup.
+> (3) **Root-cause the pre-existing test failures:** 3 react-routes Custom Words
+>     failures (§3, verified on clean tree 2026-07-05) + 2 smoke failures
+>     (smoke.spec.js:180 ABC→Reading unlock, :351 continue CTA label).
+> (4) **Phase D quality (design-flaws leftovers, §3.5):** type `UserProgress`
+>     end-to-end; consolidate game-bridge copy-paste lazily per-touch.
+> (5) **Older parked items:** deferred customization (coin cosmetics, per-kid
+>     nikud/case, richer mascot); Leaderboard (§ LB); M8 PWA install button; M5/M13
+>     parent word/image submission; beta issues #13–#22 (§7 M3 / §8).
+> Waiting on the user: install Hebrew TTS voice on the tablet (M7); C2/C3 images.
 
 ---
 
@@ -303,9 +275,14 @@ the data-safety half (Phases A+B of the plan) shipped in one slice:
   (fail-open; `migrations/0002_rate_limits.sql`), invite-gated signup via the
   `SIGNUP_INVITE_CODE` secret, and data-rights endpoints `GET /api/family/export`
   + `DELETE /api/family` with UI in the כלי הורה cloud card.
-  **⚠️ MANUAL GO-LIVE STEPS (maintainer):** apply migration 0002 + (recommended)
-  set the invite-code secret — runbook in `docs/cloud-backend.md` §"Guardrails
-  go-live". Until then the limiter fails open and signup stays open.
+  **✅ GO-LIVE STEPS RUN 2026-07-05** (maintainer, via dashboard: D1 console
+  `CREATE TABLE rate_limits…` + `SIGNUP_INVITE_CODE` secret; v3.0.7 deployed).
+  **On-device verification (quick):** on the live site, כלי הורה → חשבון בענן →
+  יצירת חשבון with a fake email and a SHORT password (e.g. "12", so nothing can be
+  created) → expect **"בהזמנה בלבד" + an invite-code field** (secret active; if you
+  get "password too short" instead, the secret isn't applied — secrets need a
+  redeploy after being added). Repeat ~6 times fast → expect **"יותר מדי ניסיונות"**
+  (rate-limit table active; self-clears after 1h, login unaffected).
 
 **Still open from the review (Phase D):** 🟡 email verification for cloud signup
 (needs an email provider — before any un-invited public signup); 🟢 type

@@ -69,16 +69,19 @@ Verify: `POST /api/auth/register {email,password}` returns a token; `GET /api/au
 with that Bearer returns the family; wrong password → 401; the כלי הורה card
 registers/logs in. The app still works offline with no account.
 
-## Guardrails go-live runbook (Phase A.1 — RUN THESE, one-time)
+## Guardrails go-live runbook (Phase A.1) — ✅ RUN 2026-07-05 (kept for re-provisioning)
 The code ships inert-safe: the rate limiter fails open until the migration is
-applied, and signup stays open until the secret is set.
+applied, and signup stays open until the secret is set. Applied via the
+dashboard (D1 console: pasted the `CREATE TABLE rate_limits…` from
+migrations/0002 · Worker Settings → Variables and Secrets: `SIGNUP_INVITE_CODE`).
+CLI equivalent:
 ```
 wrangler d1 execute english-learning-db --file=migrations/0002_rate_limits.sql --remote
 wrangler secret put SIGNUP_INVITE_CODE    # optional but recommended: closes signup to invite-only
 ```
-Then deploy (`npm run cf-deploy` or push → auto-deploy). Verify: 6 rapid
-registrations from one machine → the 6th returns 429; with the secret set,
-register without a code → 403 `invite-required` and the card shows the
+NOTE: a secret added in the dashboard takes effect on the NEXT deploy. Verify:
+6 rapid registrations from one machine → the 6th returns 429; with the secret
+set, register without a code → 403 `invite-required` and the card shows the
 invite-code field.
 
 ## Privacy
