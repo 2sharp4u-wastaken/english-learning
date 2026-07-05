@@ -35,7 +35,17 @@ leaderboards (backlog § LB) and the M5/M13 word/image review queues.
   `POST /api/auth/login`, `GET /api/auth/me`, `GET/POST /api/players`,
   `DELETE /api/players/:id`. Client: `src/bridge/cloudAccount.ts` (optional, offline-
   first) + the "חשבון בענן וגיבוי" card in כלי הורה. Tests: `worker/__tests__/auth.test.ts`
-  (8, mock D1) + `src/bridge/__tests__/cloudAccount.test.ts` (4, mock fetch).
+  (mock D1) + `src/bridge/__tests__/cloudAccount.test.ts` (mock fetch).
+- **A.1 — guardrails (design-flaws Phase C, SHIPPED code 2026-07-05; needs the
+  runbook below applied to go live).** `/api/auth/*` is rate-limited via a D1
+  fixed-window counter (`migrations/0002_rate_limits.sql`; register 5/h/IP, login
+  20/15min/IP + 10/15min/email; FAILS OPEN if the table is missing). Registration
+  can be **invite-gated**: set the `SIGNUP_INVITE_CODE` secret and register
+  requires a matching `inviteCode` (client shows the field on the
+  `invite-required` error code). Data rights: `GET /api/family/export` (full JSON
+  dump) + `DELETE /api/family` (echo the account email as `confirmEmail`) — both
+  wired to buttons in the כלי הורה cloud card. **Still open: email verification**
+  (needs an email provider; do before any un-invited public signup).
 - **B — progress + prefs backup.** Push each player's `v2_userProgress_<id>` /
   `v2_playerPrefs_<id>` blob to `PUT /api/progress/:playerId` / `/api/prefs/:playerId`
   (debounced on change); pull on sign-in to a fresh device. Map local user ids ↔
@@ -59,8 +69,22 @@ Verify: `POST /api/auth/register {email,password}` returns a token; `GET /api/au
 with that Bearer returns the family; wrong password → 401; the כלי הורה card
 registers/logs in. The app still works offline with no account.
 
+## Guardrails go-live runbook (Phase A.1 — RUN THESE, one-time)
+The code ships inert-safe: the rate limiter fails open until the migration is
+applied, and signup stays open until the secret is set.
+```
+wrangler d1 execute english-learning-db --file=migrations/0002_rate_limits.sql --remote
+wrangler secret put SIGNUP_INVITE_CODE    # optional but recommended: closes signup to invite-only
+```
+Then deploy (`npm run cf-deploy` or push → auto-deploy). Verify: 6 rapid
+registrations from one machine → the 6th returns 429; with the secret set,
+register without a code → 403 `invite-required` and the card shows the
+invite-code field.
+
 ## Privacy
 Kids' data → minimal collection: only the parent email is PII; player names are
-pseudonymous under the family. Plan a data export/delete path before a public
-launch of the cloud layer. Client-submitted leaderboard scores (Phase D) are
-spoofable without server validation — treat a global board as "fun, not authoritative."
+pseudonymous under the family. Data rights are live (Phase A.1): the parent can
+export the family's full cloud data and permanently delete the account from the
+כלי הורה card. Still open before any un-invited public signup: email
+verification. Client-submitted leaderboard scores (Phase D) are spoofable
+without server validation — treat a global board as "fun, not authoritative."

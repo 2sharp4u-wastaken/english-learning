@@ -293,12 +293,25 @@ the data-safety half (Phases A+B of the plan) shipped in one slice:
   `adminDeleteUser` now removes ALL per-user keys (it used to leave
   `v2_userProgress_<id>` behind, resurrecting deleted profiles on id reuse).
 
-**Still open from the review (Phases C+D):** 🔴 cloud API guardrails (open signup,
-no rate limit — see §6/cloud-backend.md, do BEFORE sharing the URL further);
-🟡 parent-password "hash" is reversible `btoa` → move to SubtleCrypto SHA-256 with
-lazy re-hash; 🟢 type `UserProgress` end-to-end (interface exists in
-`bridge/types.ts` but engine uses `any`); 🟢 consolidate the copy-pasted
-learned-pool/resume/audio-gate logic across game bridges (do lazily per-touch).
+**Phase C (trust boundaries) ✅ SHIPPED 2026-07-05 (same branch):**
+- ✅ **Password hashing**: local hashes are now `sha256$<salt>$<digest>`
+  (`src/lib/sha256.ts`, synchronous — keeps the bridge/auth contract sync) —
+  the old `btoa(SALT+pw+SALT)` was REVERSIBLE encoding. Legacy hashes still
+  verify and are lazily re-hashed on the next successful login /
+  `verifyAdminPassword` (tests: `passwordMigration.test.ts`).
+- ✅ **Cloud API guardrails (code)**: D1 rate limiting on register/login
+  (fail-open; `migrations/0002_rate_limits.sql`), invite-gated signup via the
+  `SIGNUP_INVITE_CODE` secret, and data-rights endpoints `GET /api/family/export`
+  + `DELETE /api/family` with UI in the כלי הורה cloud card.
+  **⚠️ MANUAL GO-LIVE STEPS (maintainer):** apply migration 0002 + (recommended)
+  set the invite-code secret — runbook in `docs/cloud-backend.md` §"Guardrails
+  go-live". Until then the limiter fails open and signup stays open.
+
+**Still open from the review (Phase D):** 🟡 email verification for cloud signup
+(needs an email provider — before any un-invited public signup); 🟢 type
+`UserProgress` end-to-end (interface exists in `bridge/types.ts` but engine uses
+`any`); 🟢 consolidate the copy-pasted learned-pool/resume/audio-gate logic
+across game bridges (do lazily per-touch).
 
 ## 4. Deferred infra / polish (low urgency)
 

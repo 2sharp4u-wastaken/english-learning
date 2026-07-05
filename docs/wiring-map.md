@@ -200,18 +200,27 @@ The "שמע את עצמך" button self-hides there (it's gated on the captured U
 ANY future parallel-capture feature must respect the same gate.
 ```
 
-## Cloud Account (Tier-3 Phase A, 2026-06-17 — code, not live)
+## Cloud Account (Tier-3 Phase A, 2026-06-17 — LIVE; guardrails Phase C 2026-07-05)
 
 ```
 CloudAccountPanel (כלי הורה) → bridge/cloudAccount.ts (OPTIONAL, offline-first)
   └─ POST /api/auth/{register,login} → Worker handleCloudApi (worker/auth.ts)
+       ├─ rateLimit() — D1 fixed-window (rate_limits table, migrations/0002):
+       │    register 5/h/IP · login 20/15m/IP + 10/15m/email → 429; FAILS OPEN
+       │    if the table is missing (guardrail never takes auth down)
+       ├─ SIGNUP_INVITE_CODE secret set → register requires inviteCode, else
+       │    403 {code:'invite-required'} → panel reveals the invite field
        ├─ PBKDF2-SHA256 hash (per-account salt) → families table (Cloudflare D1)
        └─ HMAC-SHA256 JWT (AUTH_SECRET) → stored client-side at `cloudToken`
   └─ authed calls send Authorization: Bearer → familyFromRequest verifies JWT
-       └─ /api/players GET/POST/DELETE scoped to token.sub (family id)
+       ├─ /api/players GET/POST/DELETE scoped to token.sub (family id)
+       ├─ GET /api/family/export → full family JSON dump (panel "ייצוא נתוני הענן")
+       └─ DELETE /api/family {confirmEmail} → erase everything (panel confirm
+            "מחיקת החשבון בענן" → cloudSignOut; local profiles untouched)
 SEPARATE from local-first bridge/auth.ts (app plays fully offline regardless).
-DEPLOY-SAFE: d1_databases binding COMMENTED in wrangler.jsonc; Worker 503s until
-provisioned (env.DB/AUTH_SECRET absent). Go-live + Phases B–D: docs/cloud-backend.md.
+LOCAL password hashes (bridge/auth.ts, NOT this API): `sha256$<salt>$<digest>`
+since Phase C — legacy btoa hashes verify via fallback + lazily re-hash on the
+next successful login/verifyAdminPassword. Go-live + Phases B–D: docs/cloud-backend.md.
 See [[project_cloud_backend]].
 ```
 

@@ -7,28 +7,27 @@ import { createParentAccount, getUser, verifyAdminPassword, hasParentPassword } 
  * device parent credential (one secret), plus the "only one parent" guard.
  */
 
-const SALT = 'englishlearning2024'
-
 beforeEach(() => {
   localStorage.clear()
 })
 
 describe('createParentAccount', () => {
-  it('creates a parent-role user with a hashed password', () => {
+  it('creates a parent-role user with a salted SHA-256 password hash', () => {
     const r = createParentAccount('parent', 'אבא', 'pw1234')
     expect(r.success).toBe(true)
     const user = getUser('parent')
     expect(user?.role).toBe('parent')
     expect(user?.name).toBe('אבא')
-    expect(user?.password).toBe(btoa(SALT + 'pw1234' + SALT))
+    expect(user?.password).toMatch(/^sha256\$[0-9a-f]{32}\$[0-9a-f]{64}$/)
     expect(user?.password).not.toContain('pw1234')
   })
 
-  it('mirrors the password into the device parent credential', () => {
+  it('mirrors the password into the device parent credential (same hash string)', () => {
     createParentAccount('parent', 'אבא', 'pw1234')
     expect(hasParentPassword()).toBe(true)
     expect(verifyAdminPassword('pw1234')).toBe(true)
     expect(verifyAdminPassword('nope')).toBe(false)
+    expect(localStorage.getItem('parentPassword')).toBe(getUser('parent')?.password)
   })
 
   it('refuses when a parent already exists', () => {

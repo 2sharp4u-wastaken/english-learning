@@ -2187,6 +2187,26 @@ this slice shipped the data-safety half. WHY each fix + the still-open half:
   removes ALL per-user keys (previously left `v2_userProgress_<id>` → deleted
   profiles resurrected on id reuse). NEW KEYS MUST BE REGISTERED THERE (CLAUDE.md rule).
 
+### Slice 4.8: Trust Boundaries — design-flaws Phase C ✅ SHIPPED (2026-07-05)
+
+Same review, the security half. WHY + go-live runbook: `docs/backlog.md` §3.5 +
+`docs/cloud-backend.md` §"Guardrails go-live".
+
+- Local password hashes: `btoa(SALT+pw+SALT)` (reversible — a localStorage dump
+  handed back the parent's plaintext, probably-reused password) → salted
+  `sha256$<salt>$<digest>` via the synchronous `src/lib/sha256.ts` (WebCrypto's
+  digest is async and would ripple `await` through the whole sync bridge/auth
+  contract). Legacy hashes verify via a fallback and are lazily re-hashed on the
+  next successful login / verifyAdminPassword — no user-visible migration.
+  Playwright's `seedParentPassword` still seeds the legacy format on purpose:
+  it doubles as a regression test of the fallback path.
+- Cloud API: D1 fixed-window rate limiting on register/login (FAILS OPEN so a
+  missing migration can't take auth down), `SIGNUP_INVITE_CODE`-gated signup
+  (closes the previously fully-open public registration), and the data-rights
+  pair `GET /api/family/export` + `DELETE /api/family` (echo-the-email confirm)
+  with export/delete buttons in the כלי הורה cloud card. Email verification
+  remains open (needs a provider).
+
 ## Phase 5: Content Expansion — Idioms & Slang
 
 Objective: introduce multi-word expressions (idioms and slang) as a first-class content type alongside the existing single-word vocabulary.

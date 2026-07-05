@@ -1,5 +1,6 @@
 import type { User, UserRole, Session } from './types'
 import { removeAllUserData } from '../lib/storageKeys'
+import { sha256Hex } from '../lib/sha256'
 
 /**
  * src/bridge/auth.ts — STANDALONE auth owner (Slice 4.4.b2).
@@ -29,7 +30,9 @@ import { removeAllUserData } from '../lib/storageKeys'
 
 // ─── Constants (ported from legacy AuthService) ───────────────────────────────
 const SESSION_TIMEOUT = 30 * 60 * 1000 // 30 minutes idle timeout
-const PASSWORD_SALT = 'englishlearning2024'
+// Salt of the RETIRED btoa scheme — kept only so verifyPassword can still check
+// (and lazily upgrade) hashes written before the 2026-07-05 SHA-256 migration.
+const LEGACY_PASSWORD_SALT = 'englishlearning2024'
 
 // UNPREFIXED localStorage keys — exactly as legacy auth.js used them.
 const USERS_KEY = 'users'
@@ -157,14 +160,45 @@ export function createParentAccount(id: string, name: string, password: string):
 }
 
 // ─── Password ─────────────────────────────────────────────────────────────────
+//
+// Format (design-flaws Phase C, 2026-07-05): `sha256$<saltHex>$<digestHex>` with a
+// random per-hash 16-byte salt — digest = SHA-256(saltHex + password). The old
+// scheme was `btoa(SALT + password + SALT)`, i.e. REVERSIBLE encoding: any
+// localStorage dump / backup file handed back the parent's plaintext password.
+// Old-format hashes still verify (legacy fallback) and are transparently
+// re-hashed on the next successful login / verifyAdminPassword, so no user ever
+// notices the migration. Still a child gate, not a security boundary — but a
+// leaked hash no longer reveals a (probably reused) password.
 
-/** Simple obfuscation — not cryptographically secure, sufficient for local parental controls. */
+const HASH_PREFIX = 'sha256$'
+
+function randomSaltHex(): string {
+  const bytes = new Uint8Array(16)
+  crypto.getRandomValues(bytes)
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('')
+}
+
 function hashPassword(password: string): string {
-  return btoa(PASSWORD_SALT + password + PASSWORD_SALT)
+  const salt = randomSaltHex()
+  return `${HASH_PREFIX}${salt}$${sha256Hex(salt + password)}`
+}
+
+function legacyHashPassword(password: string): string {
+  return btoa(LEGACY_PASSWORD_SALT + password + LEGACY_PASSWORD_SALT)
+}
+
+/** Whether a stored hash predates the SHA-256 scheme (needs lazy re-hash). */
+function isLegacyHash(stored: string): boolean {
+  return !stored.startsWith(HASH_PREFIX)
 }
 
 function verifyPassword(password: string, hashed: string): boolean {
-  return hashPassword(password) === hashed
+  if (isLegacyHash(hashed)) {
+    return legacyHashPassword(password) === hashed
+  }
+  const [, salt, digest] = hashed.split('$')
+  if (!salt || !digest) return false
+  return sha256Hex(salt + password) === digest
 }
 
 function setUserPassword(userId: string, password: string): boolean {
@@ -205,6 +239,16 @@ export function login(userId: string, password: string): LoginResult {
     setUserPassword(userId, password)
   } else if (!verifyPassword(password, user.password)) {
     return { success: false, error: 'סיסמה שגויה / Incorrect password' }
+  } else if (isLegacyHash(user.password)) {
+    // Lazy migration off the reversible btoa scheme: we just proved the
+    // password, so re-store it in the SHA-256 format. For the parent account,
+    // mirror the SAME string into the device parent credential to keep the
+    // one-credential invariant (createParentAccount/changeParentPassword do too).
+    setUserPassword(userId, password)
+    if (user.role === 'parent' || user.role === 'manager') {
+      const upgraded = getUser(userId)?.password
+      if (upgraded) localStorage.setItem(PARENT_PASSWORD_KEY, upgraded)
+    }
   }
 
   const session: Session = {
@@ -383,10 +427,13 @@ export function factoryReset(keepReload = true): void {
   }
 }
 
-/** Verify the admin (parent) password. False when none is set up yet. */
+/** Verify the admin (parent) password. False when none is set up yet.
+ *  A successful verify against a legacy (btoa) hash re-stores it as SHA-256. */
 export function verifyAdminPassword(password: string): boolean {
   const stored = localStorage.getItem(PARENT_PASSWORD_KEY)
-  return stored !== null && verifyPassword(password, stored)
+  if (stored === null || !verifyPassword(password, stored)) return false
+  if (isLegacyHash(stored)) setParentPassword(password)
+  return true
 }
 
 /**

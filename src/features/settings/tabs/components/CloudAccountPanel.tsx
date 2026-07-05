@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Cloud, CloudOff, LogOut } from 'lucide-react'
+import { Cloud, CloudOff, LogOut, Download, Trash2 } from 'lucide-react'
 import {
   cloudLogin,
   cloudRegister,
@@ -8,6 +8,8 @@ import {
   getCloudEmail,
   subscribeCloudAccount,
   cloudListPlayers,
+  cloudExportFamilyData,
+  cloudDeleteFamily,
   type CloudPlayer,
 } from '@/bridge/cloudAccount'
 
@@ -24,6 +26,11 @@ export function CloudAccountPanel() {
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [players, setPlayers] = useState<CloudPlayer[] | null>(null)
+  // Closed-beta invite (Phase C): field appears once the server answers
+  // 'invite-required', so an open server never shows a confusing extra input.
+  const [inviteCode, setInviteCode] = useState('')
+  const [inviteNeeded, setInviteNeeded] = useState(false)
+  const [deleteConfirm, setDeleteConfirm] = useState(false)
 
   useEffect(() => subscribeCloudAccount(setSignedIn), [])
 
@@ -44,18 +51,40 @@ export function CloudAccountPanel() {
       if (busy) return
       setBusy(true)
       setError(null)
-      const fn = mode === 'register' ? cloudRegister : cloudLogin
-      const r = await fn(email, password)
+      const r =
+        mode === 'register'
+          ? await cloudRegister(email, password, inviteCode || undefined)
+          : await cloudLogin(email, password)
       setBusy(false)
       if (!r.ok) {
-        setError(r.error ?? 'שגיאה')
+        if (r.code === 'invite-required') {
+          setInviteNeeded(true)
+          setError(inviteCode ? 'קוד ההזמנה שגוי' : 'ההרשמה בשלב זה בהזמנה בלבד — נדרש קוד הזמנה')
+        } else {
+          setError(r.error ?? 'שגיאה')
+        }
         return
       }
       setEmail('')
       setPassword('')
+      setInviteCode('')
+      setInviteNeeded(false)
     },
-    [busy, mode, email, password],
+    [busy, mode, email, password, inviteCode],
   )
+
+  const handleExport = useCallback(async () => {
+    setError(null)
+    const r = await cloudExportFamilyData()
+    if (!r.ok) setError(r.error ?? 'שגיאה')
+  }, [])
+
+  const handleDelete = useCallback(async () => {
+    setError(null)
+    const r = await cloudDeleteFamily()
+    setDeleteConfirm(false)
+    if (!r.ok) setError(r.error ?? 'שגיאה')
+  }, [])
 
   if (signedIn) {
     return (
@@ -79,14 +108,61 @@ export function CloudAccountPanel() {
             ))}
           </ul>
         )}
-        <button
-          type="button"
-          onClick={() => cloudSignOut()}
-          className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-white/10 hover:text-text"
-        >
-          <LogOut size={14} />
-          <span>התנתקות</span>
-        </button>
+        <div className="flex flex-wrap items-center gap-2">
+          <button
+            type="button"
+            onClick={() => cloudSignOut()}
+            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-white/10 hover:text-text"
+          >
+            <LogOut size={14} />
+            <span>התנתקות</span>
+          </button>
+          {/* Data rights (Phase C): take the data out / erase it — kids' data. */}
+          <button
+            type="button"
+            onClick={() => void handleExport()}
+            data-testid="cloud-export-data"
+            className="flex items-center gap-1.5 rounded-lg border border-white/10 bg-white/5 px-3 py-1.5 text-xs font-medium text-muted transition-colors hover:bg-white/10 hover:text-text"
+          >
+            <Download size={14} />
+            <span>ייצוא נתוני הענן</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeleteConfirm(true)}
+            data-testid="cloud-delete-account"
+            className="flex items-center gap-1.5 rounded-lg border border-coral-400/25 bg-coral-400/10 px-3 py-1.5 text-xs font-medium text-coral-400 transition-colors hover:bg-coral-400/15"
+          >
+            <Trash2 size={14} />
+            <span>מחיקת החשבון בענן</span>
+          </button>
+        </div>
+        {error && <p className="text-xs text-coral-400">{error}</p>}
+        {deleteConfirm ? (
+          <div className="space-y-2 rounded-lg border border-coral-400/25 bg-coral-400/5 p-3">
+            <p className="text-sm text-text">
+              למחוק את חשבון הענן לצמיתות? כל השחקנים/ות והגיבויים בענן יימחקו. הפרופילים במכשיר הזה
+              לא נמחקים. לא ניתן לבטל.
+            </p>
+            <div className="flex items-center justify-end gap-2">
+              <button
+                type="button"
+                onClick={() => setDeleteConfirm(false)}
+                className="rounded-lg px-3 py-1.5 text-sm text-muted transition-colors hover:bg-white/5 hover:text-text"
+              >
+                ביטול
+              </button>
+              <button
+                type="button"
+                onClick={() => void handleDelete()}
+                data-testid="cloud-delete-account-confirm"
+                className="rounded-lg bg-coral-400/90 px-3 py-1.5 text-sm font-medium text-ink-950 transition-colors hover:bg-coral-400"
+              >
+                כן, מחק את החשבון
+              </button>
+            </div>
+          </div>
+        ) : null}
       </div>
     )
   }
@@ -117,6 +193,17 @@ export function CloudAccountPanel() {
           className={inputClass}
         />
       </div>
+      {mode === 'register' && inviteNeeded && (
+        <input
+          type="text"
+          dir="ltr"
+          placeholder="קוד הזמנה"
+          value={inviteCode}
+          onChange={(e) => setInviteCode(e.target.value)}
+          data-testid="cloud-invite-code"
+          className={inputClass}
+        />
+      )}
       {error && <p className="text-xs text-coral-400">{error}</p>}
       <div className="flex items-center justify-between gap-2">
         <button

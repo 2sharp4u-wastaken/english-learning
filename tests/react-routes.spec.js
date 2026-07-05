@@ -54,7 +54,10 @@ async function seedUser(page, { progressPatch = {}, role } = {}) {
 // Tier-2 parent password (backlog §4): per-device, stored hashed at the
 // unprefixed 'parentPassword' key. Tests seed the hash directly instead of
 // walking the first-access create wizard (covered by its own spec below).
-// Hash scheme mirrors bridge/auth.ts: btoa(SALT + password + SALT).
+// Seeds the LEGACY btoa(SALT + password + SALT) format on purpose: since the
+// Phase C hash migration (2026-07-05) new hashes are `sha256$<salt>$<digest>`,
+// but legacy hashes must keep verifying (and be lazily upgraded) — so this
+// seed doubles as a live regression test of the legacy fallback path.
 const PARENT_PASSWORD = 'test-parent-pass';
 
 async function seedParentPassword(page, password = PARENT_PASSWORD) {
@@ -657,10 +660,13 @@ test.describe('Slice 1.6: Settings', () => {
     await page.locator('#new-parent-pw2').fill('changed-pass');
     await page.locator('[data-testid="change-parent-password"] button[type="submit"]').click();
 
-    // The device parent credential now matches the new password's hash.
+    // The device parent credential was re-written in the SHA-256 format and kept
+    // in byte-sync with the parent account's own password (one credential).
     const ok = await page.evaluate(() => {
-      const SALT = 'englishlearning2024';
-      return localStorage.getItem('parentPassword') === btoa(SALT + 'changed-pass' + SALT);
+      const stored = localStorage.getItem('parentPassword') || '';
+      const users = JSON.parse(localStorage.getItem('users') || '{}');
+      const parent = Object.values(users).find((u) => u.role === 'parent' || u.role === 'manager');
+      return /^sha256\$[0-9a-f]{32}\$[0-9a-f]{64}$/.test(stored) && (!parent || parent.password === stored);
     });
     expect(ok).toBe(true);
   });
@@ -3503,10 +3509,13 @@ test.describe('Integration (known issues)', () => {
     expect(await cards.count()).toBe(2);
     await expect(page.locator('[data-testid="user-role-badge"]')).toHaveCount(1);
 
-    // Verify the device parent password equals the wizard password.
+    // Verify the wizard stored the device parent credential in the SHA-256
+    // format, byte-synced with the parent account's password (one credential).
     const parentOk = await page.evaluate(() => {
-      const SALT = 'englishlearning2024';
-      return localStorage.getItem('parentPassword') === btoa(SALT + 'parent-pass' + SALT);
+      const stored = localStorage.getItem('parentPassword') || '';
+      const users = JSON.parse(localStorage.getItem('users') || '{}');
+      const parent = Object.values(users).find((u) => u.role === 'parent' || u.role === 'manager');
+      return /^sha256\$[0-9a-f]{32}\$[0-9a-f]{64}$/.test(stored) && !!parent && parent.password === stored;
     });
     expect(parentOk).toBe(true);
 
