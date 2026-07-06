@@ -53,6 +53,12 @@ export function cloudSignOut(): void {
   window.dispatchEvent(new CustomEvent('cloud-account-changed'))
 }
 
+/**
+ * Authed fetch wrapper (adds the Bearer token, parses JSON, maps 503/429 to
+ * friendly Hebrew). Exported as `cloudApi` for the other cloud bridges
+ * (Phase B `bridge/cloudSync.ts`) so they share one place that owns the token
+ * header + error translation.
+ */
 async function api<T>(path: string, init?: RequestInit): Promise<CloudResult<T>> {
   const token = getCloudToken()
   try {
@@ -158,6 +164,9 @@ export async function cloudDeleteFamily(): Promise<CloudResult> {
   if (r.ok) cloudSignOut()
   return { ok: r.ok, error: r.error, code: r.code }
 }
+
+/** Shared authed fetch wrapper for the other cloud bridges (Phase B sync). */
+export { api as cloudApi }
 
 /** Subscribe to sign-in/out changes (fires immediately + on every change). */
 export function subscribeCloudAccount(cb: (signedIn: boolean) => void): () => void {

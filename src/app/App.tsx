@@ -5,6 +5,7 @@ import { Providers } from './providers'
 import { router } from './router'
 import { UpdateBanner } from './UpdateBanner'
 import { warmUpConfetti } from '@/bridge/feedback'
+import { initCloudAutoBackup } from '@/bridge/cloudSync'
 import { useEngineBoot } from '@/hooks/useEngineBoot'
 import { useAuthSession } from '@/hooks/useAuthSession'
 import { LoginPage } from '@/features/auth/LoginPage'
@@ -30,6 +31,12 @@ export function App() {
   useEffect(() => {
     const id = window.setTimeout(warmUpConfetti, 1200)
     return () => window.clearTimeout(id)
+  }, [])
+
+  // Cloud Phase B: wire the debounced auto-backup once (inert without a cloud
+  // account + a linked profile — see bridge/cloudSync).
+  useEffect(() => {
+    initCloudAutoBackup()
   }, [])
 
   return (

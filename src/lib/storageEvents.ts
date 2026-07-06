@@ -10,3 +10,11 @@
  */
 export const SAVE_ERROR_EVENT = 'elg:save-error'
 export const SAVE_RECOVERED_EVENT = 'elg:save-recovered'
+
+/**
+ * Fired after every SUCCESSFUL progress persist (the throttled
+ * `AppState.persistUserProgress` write). Cloud Phase B (`bridge/cloudSync.ts`)
+ * listens to debounce an auto-backup push for the active linked player. It is a
+ * plain "progress changed on disk" signal — carries no payload.
+ */
+export const SAVE_SUCCESS_EVENT = 'elg:save-success'

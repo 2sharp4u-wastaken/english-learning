@@ -171,9 +171,17 @@ export default {
     if (path.startsWith('/api/report-image/')) {
       return handleReportImage(decodeURIComponent(path.slice('/api/report-image/'.length)), env)
     }
-    // Cloud accounts (Phase A): /api/auth/* + /api/players. Returns null if the
-    // path isn't one of those, so we fall through to the 404 below.
-    if (path.startsWith('/api/auth/') || path === '/api/players' || path.startsWith('/api/players/')) {
+    // Cloud accounts (Phase A) + progress/prefs backup (Phase B): /api/auth/*,
+    // /api/players, /api/family, /api/progress/:id, /api/prefs/:id. Returns null
+    // if the path isn't one of those, so we fall through to the 404 below.
+    if (
+      path.startsWith('/api/auth/') ||
+      path === '/api/players' ||
+      path.startsWith('/api/players/') ||
+      path.startsWith('/api/family') ||
+      path.startsWith('/api/progress/') ||
+      path.startsWith('/api/prefs/')
+    ) {
       const res = await handleCloudApi(request, env, path)
       if (res) return res
     }

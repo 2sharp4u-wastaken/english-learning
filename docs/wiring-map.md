@@ -220,8 +220,35 @@ CloudAccountPanel (כלי הורה) → bridge/cloudAccount.ts (OPTIONAL, offlin
 SEPARATE from local-first bridge/auth.ts (app plays fully offline regardless).
 LOCAL password hashes (bridge/auth.ts, NOT this API): `sha256$<salt>$<digest>`
 since Phase C — legacy btoa hashes verify via fallback + lazily re-hash on the
-next successful login/verifyAdminPassword. Go-live + Phases B–D: docs/cloud-backend.md.
+next successful login/verifyAdminPassword. Go-live + Phases C–D: docs/cloud-backend.md.
 See [[project_cloud_backend]].
+```
+
+## Cloud Progress Backup (Tier-3 Phase B, 2026-07-06 — code)
+
+```
+bridge/cloudSync.ts — per-player progress/prefs BACKUP (opaque blob pass-through)
+  LINK MAP: `cloudPlayerLinks` = { [localUserId]: cloudPlayerId } (device-local —
+    local ids differ per device). getLinkedPlayerId / linkPlayer / unlinkPlayer.
+  CloudAccountPanel signed-in view → ProfileBackupList (one row per KID profile):
+    ├─ not linked → "הפעלת גיבוי" = linkAndBackup(uid,name,initial):
+    │     cloudCreatePlayer → linkPlayer → pushBackup
+    ├─ linked → "גיבוי כעת" = pushBackup(uid):
+    │     PUT /api/progress/:cloudId {blob: raw v2_userProgress_<uid>}
+    │     PUT /api/prefs/:cloudId    {blob: raw v2_playerPrefs_<uid>}   (only blobs that exist)
+    └─ linked → "שחזור" = pullBackupAndReload(uid):
+          GET /api/progress|prefs/:cloudId → {blob,null} → write local → reload
+          (reload so the engine re-boots from the pulled blob, like backup.ts restore)
+  AUTO-BACKUP: initCloudAutoBackup() (wired once in App) listens for
+    SAVE_SUCCESS_EVENT ('elg:save-success', dispatched by AppState.persistUserProgress
+    on every successful throttled write) + 'player-prefs-changed' → debounced 4s
+    pushBackup for the ACTIVE profile. Guards: no-op unless signed in AND linked.
+Worker (worker/auth.ts): GET/PUT /api/progress|prefs/:playerId, family-scoped
+  (playerInFamily gate → 404 for another family's player), blob ≤512KB, D1 upsert
+  (progress/prefs tables, migrations/0001). GET returns {blob:null} when none yet.
+Phase B is BACKUP (last-write-wins push / overwrite-on-pull), NOT bidirectional
+sync — merge/conflict resolution is Phase C. See docs/cloud-backend.md +
+[[project_cloud_backend]].
 ```
 
 ## Per-Player Customization ("המשחק שלי", 2026-06-17)

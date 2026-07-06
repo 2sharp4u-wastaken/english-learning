@@ -18,7 +18,7 @@
  */
 
 import { wordKey, canonicalizeWordKey } from '../lib/wordKey'
-import { SAVE_ERROR_EVENT, SAVE_RECOVERED_EVENT } from '../lib/storageEvents'
+import { SAVE_ERROR_EVENT, SAVE_RECOVERED_EVENT, SAVE_SUCCESS_EVENT } from '../lib/storageEvents'
 
 export const V2_STORAGE_PREFIX = 'v2_'
 
@@ -485,6 +485,10 @@ export class AppState {
         this.lastPersistFailed = false
         this.dispatchStorageEvent(SAVE_RECOVERED_EVENT)
       }
+      // Cloud Phase B: signal a successful on-disk write so bridge/cloudSync can
+      // debounce a backup push for the active linked player (no-op when no cloud
+      // account / link exists — the listener guards on that).
+      this.dispatchStorageEvent(SAVE_SUCCESS_EVENT)
     } catch (error) {
       // Quota / privacy-mode failure: the child keeps playing but nothing
       // persists — surface it (AppShell banner via bridge/storageHealth)

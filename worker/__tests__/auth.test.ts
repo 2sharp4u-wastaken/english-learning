@@ -41,6 +41,17 @@ function mockDB(opts: { rateLimitTable?: boolean } = {}): D1Database {
         if (sql.includes('COUNT(*)')) {
           return { c: players.filter((p) => p.family_id === args[0]).length } as T
         }
+        if (sql.includes('FROM players WHERE id')) {
+          // player-in-family scope check: WHERE id = ? AND family_id = ?
+          const p = players.find((x) => x.id === args[0] && x.family_id === args[1])
+          return (p ? { id: p.id } : null) as T | null
+        }
+        if (sql.includes('FROM progress WHERE player_id')) {
+          return (progress.find((x) => x.player_id === args[0]) ?? null) as T | null
+        }
+        if (sql.includes('FROM prefs WHERE player_id')) {
+          return (prefs.find((x) => x.player_id === args[0]) ?? null) as T | null
+        }
         return null
       },
       async run() {
@@ -68,6 +79,16 @@ function mockDB(opts: { rateLimitTable?: boolean } = {}): D1Database {
         } else if (sql.startsWith('DELETE FROM families')) {
           const i = families.findIndex((f) => f.id === args[0])
           if (i >= 0) families.splice(i, 1)
+        } else if (sql.startsWith('INSERT INTO progress')) {
+          const i = progress.findIndex((x) => x.player_id === args[0])
+          const rec = { player_id: args[0], blob: args[1], updated: args[2] }
+          if (i >= 0) progress[i] = rec
+          else progress.push(rec) // emulate ON CONFLICT(player_id) upsert
+        } else if (sql.startsWith('INSERT INTO prefs')) {
+          const i = prefs.findIndex((x) => x.player_id === args[0])
+          const rec = { player_id: args[0], blob: args[1], updated: args[2] }
+          if (i >= 0) prefs[i] = rec
+          else prefs.push(rec)
         } else if (sql.startsWith('DELETE FROM progress') || sql.startsWith('DELETE FROM prefs')) {
           // player-scoped and family-scoped variants; both no-op on empty arrays
         }
@@ -303,5 +324,100 @@ describe('family data rights', () => {
       '/api/auth/login',
     )
     expect(login!.status).toBe(401)
+  })
+})
+
+// ── Phase B: per-player progress / prefs backup blobs ──────────────────────────
+
+describe('progress + prefs backup', () => {
+  async function setup() {
+    const reg = await handleCloudApi(
+      req('/api/auth/register', 'POST', { email: 'parent@test.com', password: 'secret123' }),
+      env,
+      '/api/auth/register',
+    )
+    const token = ((await reg!.json()) as { token: string }).token
+    const create = await handleCloudApi(
+      req('/api/players', 'POST', { name: 'דנה', initial: 'ד' }, token),
+      env,
+      '/api/players',
+    )
+    const playerId = ((await create!.json()) as { player: { id: string } }).player.id
+    return { token, playerId }
+  }
+
+  it('PUT then GET round-trips a progress blob (opaque bytes)', async () => {
+    const { token, playerId } = await setup()
+    const blob = JSON.stringify({ wordMastery: { apple_food: { correct: 3 } }, coins: 12 })
+
+    const empty = await handleCloudApi(
+      req(`/api/progress/${playerId}`, 'GET', undefined, token),
+      env,
+      `/api/progress/${playerId}`,
+    )
+    expect(((await empty!.json()) as { blob: string | null }).blob).toBeNull()
+
+    const put = await handleCloudApi(
+      req(`/api/progress/${playerId}`, 'PUT', { blob }, token),
+      env,
+      `/api/progress/${playerId}`,
+    )
+    expect(put!.status).toBe(200)
+    expect(((await put!.json()) as { updated: string }).updated).toBeTruthy()
+
+    const get = await handleCloudApi(
+      req(`/api/progress/${playerId}`, 'GET', undefined, token),
+      env,
+      `/api/progress/${playerId}`,
+    )
+    expect(((await get!.json()) as { blob: string }).blob).toBe(blob)
+  })
+
+  it('PUT overwrites (last-write-wins) and prefs is a separate slot', async () => {
+    const { token, playerId } = await setup()
+    await handleCloudApi(req(`/api/progress/${playerId}`, 'PUT', { blob: 'v1' }, token), env, `/api/progress/${playerId}`)
+    await handleCloudApi(req(`/api/progress/${playerId}`, 'PUT', { blob: 'v2' }, token), env, `/api/progress/${playerId}`)
+    await handleCloudApi(req(`/api/prefs/${playerId}`, 'PUT', { blob: 'theme:ocean' }, token), env, `/api/prefs/${playerId}`)
+
+    const prog = await handleCloudApi(req(`/api/progress/${playerId}`, 'GET', undefined, token), env, `/api/progress/${playerId}`)
+    expect(((await prog!.json()) as { blob: string }).blob).toBe('v2')
+    const prefs = await handleCloudApi(req(`/api/prefs/${playerId}`, 'GET', undefined, token), env, `/api/prefs/${playerId}`)
+    expect(((await prefs!.json()) as { blob: string }).blob).toBe('theme:ocean')
+  })
+
+  it('rejects a non-string blob (400) and requires auth (401)', async () => {
+    const { token, playerId } = await setup()
+    const bad = await handleCloudApi(
+      req(`/api/progress/${playerId}`, 'PUT', { blob: { not: 'a string' } }, token),
+      env,
+      `/api/progress/${playerId}`,
+    )
+    expect(bad!.status).toBe(400)
+
+    const noAuth = await handleCloudApi(req(`/api/progress/${playerId}`, 'GET'), env, `/api/progress/${playerId}`)
+    expect(noAuth!.status).toBe(401)
+  })
+
+  it("404s on another family's player (scoped to the token's family)", async () => {
+    const { playerId } = await setup()
+    // A second family with its own token can't touch the first family's player.
+    const reg2 = await handleCloudApi(
+      req('/api/auth/register', 'POST', { email: 'other@test.com', password: 'secret123' }),
+      env,
+      '/api/auth/register',
+    )
+    const token2 = ((await reg2!.json()) as { token: string }).token
+    const put = await handleCloudApi(
+      req(`/api/progress/${playerId}`, 'PUT', { blob: 'x' }, token2),
+      env,
+      `/api/progress/${playerId}`,
+    )
+    expect(put!.status).toBe(404)
+    const get = await handleCloudApi(
+      req(`/api/progress/${playerId}`, 'GET', undefined, token2),
+      env,
+      `/api/progress/${playerId}`,
+    )
+    expect(get!.status).toBe(404)
   })
 })

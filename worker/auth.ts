@@ -15,6 +15,10 @@
  *   DELETE /api/players/:id  (Bearer)        → {ok}
  *   GET    /api/family/export (Bearer)       → full family data dump (data rights)
  *   DELETE /api/family        (Bearer) {confirmEmail} → {ok} (erase everything)
+ *   GET    /api/progress/:playerId (Bearer)  → {blob, updated} (null if none) — Phase B
+ *   PUT    /api/progress/:playerId (Bearer) {blob} → {ok, updated}            — Phase B
+ *   GET    /api/prefs/:playerId    (Bearer)  → {blob, updated}                — Phase B
+ *   PUT    /api/prefs/:playerId    (Bearer) {blob} → {ok, updated}            — Phase B
  *
  * Security: passwords hashed server-side with PBKDF2-SHA256 (per-account salt,
  * 100k iters) via Web Crypto; sessions are HMAC-SHA256-signed JWTs (AUTH_SECRET).
@@ -378,6 +382,64 @@ async function deleteFamily(request: Request, env: AuthEnv): Promise<Response> {
   return json({ ok: true })
 }
 
+// ─── Phase B: per-player progress + prefs backup (opaque JSON blobs) ───────────
+// The blob is the EXACT per-user JSON the client already stores locally
+// (`v2_userProgress_<id>` / `v2_playerPrefs_<id>`) — pass-through, no schema
+// churn. `table` is a fixed literal from the router (never user input), so
+// interpolating it into the SQL is safe.
+
+// Room for a heavy progress blob (mastery of the whole bank + history) but a
+// firm cap so one player can't fill the family's storage.
+const MAX_BLOB_BYTES = 512 * 1024
+
+/** Whether `playerId` belongs to `familyId` — scopes every blob op to the family
+ *  so a valid token for family A can't read/write family B's player. */
+async function playerInFamily(env: AuthEnv, playerId: string, familyId: string): Promise<boolean> {
+  const row = await env.DB!.prepare('SELECT id FROM players WHERE id = ? AND family_id = ?')
+    .bind(playerId, familyId)
+    .first()
+  return !!row
+}
+
+async function getBlob(
+  request: Request,
+  env: AuthEnv,
+  table: 'progress' | 'prefs',
+  playerId: string,
+): Promise<Response> {
+  const fam = await familyFromRequest(request, env)
+  if (!fam || !env.DB) return json({ error: 'unauthorized' }, 401)
+  if (!(await playerInFamily(env, playerId, fam.sub))) return json({ error: 'player not found' }, 404)
+  const row = await env.DB.prepare(`SELECT blob, updated FROM ${table} WHERE player_id = ?`)
+    .bind(playerId)
+    .first<{ blob: string; updated: string }>()
+  // 200 with a null blob when nothing is backed up yet — simpler for the client
+  // than distinguishing a 404 "no backup" from a real error.
+  return json({ blob: row?.blob ?? null, updated: row?.updated ?? null })
+}
+
+async function putBlob(
+  request: Request,
+  env: AuthEnv,
+  table: 'progress' | 'prefs',
+  playerId: string,
+): Promise<Response> {
+  const fam = await familyFromRequest(request, env)
+  if (!fam || !env.DB) return json({ error: 'unauthorized' }, 401)
+  if (!(await playerInFamily(env, playerId, fam.sub))) return json({ error: 'player not found' }, 404)
+  const { blob } = (await readJson(request)) as { blob?: unknown }
+  if (typeof blob !== 'string') return json({ error: 'blob (string) required' }, 400)
+  if (blob.length > MAX_BLOB_BYTES) return json({ error: 'blob too large' }, 413)
+  const updated = new Date().toISOString()
+  await env.DB.prepare(
+    `INSERT INTO ${table} (player_id, blob, updated) VALUES (?, ?, ?)
+       ON CONFLICT(player_id) DO UPDATE SET blob = excluded.blob, updated = excluded.updated`,
+  )
+    .bind(playerId, blob, updated)
+    .run()
+  return json({ ok: true, updated })
+}
+
 async function readJson(request: Request): Promise<unknown> {
   try {
     return await request.json()
@@ -406,6 +468,18 @@ export async function handleCloudApi(request: Request, env: AuthEnv, path: strin
   }
   if (path.startsWith('/api/players/') && method === 'DELETE') {
     return deletePlayer(request, env, decodeURIComponent(path.slice('/api/players/'.length)))
+  }
+
+  // Phase B: per-player progress / prefs backup blobs.
+  if (path.startsWith('/api/progress/')) {
+    const pid = decodeURIComponent(path.slice('/api/progress/'.length))
+    if (method === 'GET') return getBlob(request, env, 'progress', pid)
+    if (method === 'PUT') return putBlob(request, env, 'progress', pid)
+  }
+  if (path.startsWith('/api/prefs/')) {
+    const pid = decodeURIComponent(path.slice('/api/prefs/'.length))
+    if (method === 'GET') return getBlob(request, env, 'prefs', pid)
+    if (method === 'PUT') return putBlob(request, env, 'prefs', pid)
   }
 
   return null

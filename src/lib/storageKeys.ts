@@ -33,6 +33,8 @@ export const GLOBAL_KEYS: readonly string[] = [
   // cloud account (Tier 3 Phase A)
   'cloudToken',
   'cloudEmail',
+  // cloud sync (Tier 3 Phase B) — local userId → cloud playerId link map
+  'cloudPlayerLinks',
   // misc device-local
   'bugReports_local',
   'microphonePermissionState',

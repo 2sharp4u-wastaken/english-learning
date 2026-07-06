@@ -1,10 +1,13 @@
 # Cloud backend — accounts + multi-device progress sync (Tier-3)
 
-Status: **Phase A LIVE 2026-06-17.** D1 `english-learning-db`
-(`2e813bd2-689d-46ac-9889-c8263c868f0c`, region EEUR) + `AUTH_SECRET` provisioned,
-schema applied, `d1_databases` binding active in `wrangler.jsonc`, deployed. Verified
-live: register → token, `/me`, 401 on wrong password, player CRUD. Phases B–D are
-the roadmap. This is the §6 "Tier-3" work the backlog flagged. Everything stays
+Status: **Phase A LIVE 2026-06-17; Phase B shipped in code 2026-07-06.** D1
+`english-learning-db` (`2e813bd2-689d-46ac-9889-c8263c868f0c`, region EEUR) +
+`AUTH_SECRET` provisioned, schema applied, `d1_databases` binding active in
+`wrangler.jsonc`, deployed. Verified live: register → token, `/me`, 401 on wrong
+password, player CRUD. Phase B (progress/prefs backup) adds the `/api/progress|prefs`
+blob endpoints + `bridge/cloudSync.ts` — no new migration (the tables shipped in
+0001), so it goes live on the next deploy of the working branch. Phases C–D are the
+roadmap. This is the §6 "Tier-3" work the backlog flagged. Everything stays
 **offline-first** — the cloud account is an optional layer; the app plays fully
 offline with on-device profiles regardless.
 
@@ -46,10 +49,20 @@ leaderboards (backlog § LB) and the M5/M13 word/image review queues.
   dump) + `DELETE /api/family` (echo the account email as `confirmEmail`) — both
   wired to buttons in the כלי הורה cloud card. **Still open: email verification**
   (needs an email provider; do before any un-invited public signup).
-- **B — progress + prefs backup.** Push each player's `v2_userProgress_<id>` /
-  `v2_playerPrefs_<id>` blob to `PUT /api/progress/:playerId` / `/api/prefs/:playerId`
-  (debounced on change); pull on sign-in to a fresh device. Map local user ids ↔
-  cloud player ids at link time.
+- **B — progress + prefs backup (SHIPPED code, 2026-07-06).** Push each player's
+  `v2_userProgress_<id>` / `v2_playerPrefs_<id>` blob to `PUT /api/progress/:playerId`
+  / `PUT /api/prefs/:playerId` (auto-backup debounced 4s on change, via
+  `bridge/cloudSync.ts` listening to `elg:save-success` + `player-prefs-changed`);
+  pull back on a fresh device with `GET …`. A device-local link map
+  (`cloudPlayerLinks`: localUserId → cloudPlayerId) maps the ids; the parent links
+  each profile once from the כלי הורה cloud card ("הפעלת גיבוי" creates the cloud
+  player + pushes), then backs up / restores per profile. Blobs are opaque
+  pass-through (≤512 KB), family-scoped on the Worker (a token can only touch its
+  own family's players). This is BACKUP (last-write-wins push / overwrite-on-pull),
+  NOT bidirectional merge — that's Phase C. Tests: `worker/__tests__/auth.test.ts`
+  (blob round-trip + cross-family 404) + `src/bridge/__tests__/cloudSync.test.ts`
+  (link map, push/pull, link-and-backup) + `tests/cloud-phase-b.spec.js` (panel
+  E2E). No migration needed — the `progress`/`prefs` tables shipped in 0001.
 - **C — bidirectional multi-device sync + conflict resolution.** Offline-first
   queue; per-blob `updatedAt`; merge progress (max of counts, union of learned-word
   sets, sum-safe coins), last-write-wins for prefs/settings.

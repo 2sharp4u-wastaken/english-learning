@@ -1859,6 +1859,28 @@ a non-existent DB would break it) and the Worker 503s until provisioned. Go-live
 roadmap (B backup → C sync → D leaderboards) in `docs/cloud-backend.md`. Tests: `worker/__tests__/
 auth.test.ts` (8, mock D1) + `cloudAccount.test.ts` (4). See `[[project_cloud_backend]]`.
 
+### Slice CLOUD-B: Cloud accounts Phase B — per-profile progress/prefs backup — ✅ SHIPPED code (2026-07-06)
+
+Turns the Phase-A account into a real cross-device backup. **Worker** (`worker/auth.ts`): adds
+`GET/PUT /api/progress/:playerId` + `GET/PUT /api/prefs/:playerId` — opaque JSON blobs (the exact
+`v2_userProgress_<id>` / `v2_playerPrefs_<id>` bytes the client already stores), family-scoped by a
+`playerInFamily` gate (a token can only touch its own family's players → 404 otherwise), ≤512 KB, D1
+upsert into the `progress`/`prefs` tables that already shipped in `0001` (no new migration). GET
+returns `{blob:null}` when nothing is backed up. Also fixed a pre-existing gap: `/api/family*` routes
+were never dispatched from `worker/index.ts` (Phase-A.1 export/delete were unreachable) — now included.
+**Client** (`src/bridge/cloudSync.ts`): a device-local link map `cloudPlayerLinks` (localUserId →
+cloudPlayerId — local ids differ per device) + `pushBackup`/`pullBackupAndReload`/`linkAndBackup` +
+debounced (4 s) auto-backup (`initCloudAutoBackup`, wired once in `App`) that listens for the new
+`elg:save-success` window event (dispatched by `AppState.persistUserProgress` on every successful
+throttled write) and `player-prefs-changed`, and pushes the ACTIVE linked profile. `cloudApi` is now
+exported from `cloudAccount.ts` as the shared authed-fetch wrapper. **UI**: the CloudAccountPanel
+signed-in view lists each KID profile with "הפעלת גיבוי" (link = create cloud player + push) →
+"גיבוי כעת" / "שחזור" (restore reloads so the engine re-boots from the pulled blob, same discipline
+as `bridge/backup.ts`). Phase B is BACKUP (last-write-wins push / overwrite-on-pull); bidirectional
+merge is Phase C. Tests: `worker/__tests__/auth.test.ts` (+blob round-trip, overwrite, cross-family
+404, bad-blob 400) + `src/bridge/__tests__/cloudSync.test.ts` (link map, push/pull, link-and-backup)
++ `tests/cloud-phase-b.spec.js` (panel E2E: link → PUT). See `[[project_cloud_backend]]`.
+
 ### Slice CERT1: Certificate recalibration + per-player content unlock — ✅ SHIPPED (2026-06-25/26)
 
 Two related changes to the rewards/gating model. **(1) Cert recalibration (v3.0.3, product decision):**

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react'
-import { Cloud, CloudOff, LogOut, Download, Trash2 } from 'lucide-react'
+import { Cloud, CloudOff, LogOut, Download, Trash2, UploadCloud, DownloadCloud, CheckCircle2 } from 'lucide-react'
 import {
   cloudLogin,
   cloudRegister,
@@ -7,11 +7,18 @@ import {
   isCloudSignedIn,
   getCloudEmail,
   subscribeCloudAccount,
-  cloudListPlayers,
   cloudExportFamilyData,
   cloudDeleteFamily,
-  type CloudPlayer,
 } from '@/bridge/cloudAccount'
+import {
+  linkAndBackup,
+  pushBackup,
+  pullBackupAndReload,
+  isPlayerLinked,
+  subscribeCloudSync,
+} from '@/bridge/cloudSync'
+import { getAllUsers } from '@/bridge/auth'
+import type { User } from '@/bridge/types'
 
 /**
  * Cloud account ("חשבון בענן / גיבוי") — Phase A. An OPTIONAL family account
@@ -25,7 +32,6 @@ export function CloudAccountPanel() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [players, setPlayers] = useState<CloudPlayer[] | null>(null)
   // Closed-beta invite (Phase C): field appears once the server answers
   // 'invite-required', so an open server never shows a confusing extra input.
   const [inviteCode, setInviteCode] = useState('')
@@ -33,17 +39,6 @@ export function CloudAccountPanel() {
   const [deleteConfirm, setDeleteConfirm] = useState(false)
 
   useEffect(() => subscribeCloudAccount(setSignedIn), [])
-
-  const refreshPlayers = useCallback(async () => {
-    if (!isCloudSignedIn()) return
-    const r = await cloudListPlayers()
-    if (r.ok) setPlayers(r.data ?? [])
-  }, [])
-
-  useEffect(() => {
-    if (signedIn) void refreshPlayers()
-    else setPlayers(null)
-  }, [signedIn, refreshPlayers])
 
   const submit = useCallback(
     async (e: React.FormEvent) => {
@@ -97,17 +92,9 @@ export function CloudAccountPanel() {
           </span>
         </div>
         <p className="text-xs text-muted">
-          גיבוי ההתקדמות בין מכשירים יופעל בקרוב (שלב הבא). החשבון מוכן.
+          גבו את ההתקדמות של כל פרופיל לענן ושחזרו אותה במכשיר אחר.
         </p>
-        {players && players.length > 0 && (
-          <ul className="space-y-1 text-sm text-muted">
-            {players.map((p) => (
-              <li key={p.id} data-nikud-skip>
-                • {p.name}
-              </li>
-            ))}
-          </ul>
-        )}
+        <ProfileBackupList />
         <div className="flex flex-wrap items-center gap-2">
           <button
             type="button"
@@ -230,3 +217,124 @@ export function CloudAccountPanel() {
 
 const inputClass =
   'w-full rounded-lg border border-white/10 bg-white/5 px-3 py-2 text-sm text-text outline-none transition-colors focus:border-white/25'
+
+/**
+ * Per-profile cloud backup (Phase B). Lists the on-device kid profiles; each can
+ * be linked to a cloud player (first "הפעלת גיבוי" creates it + pushes), then
+ * backed up on demand or restored from the cloud (restore reloads the app so the
+ * engine re-boots from the pulled progress).
+ */
+function ProfileBackupList() {
+  // Kid profiles only — the parent/manager account doesn't accrue play progress.
+  const kids = getAllUsers().filter((u) => u.role !== 'parent' && u.role !== 'manager')
+  const [, force] = useState(0)
+  useEffect(() => subscribeCloudSync(() => force((n) => n + 1)), [])
+
+  if (kids.length === 0) {
+    return <p className="text-xs text-muted">אין פרופילים לגיבוי עדיין.</p>
+  }
+  return (
+    <ul className="space-y-2" data-testid="cloud-backup-list">
+      {kids.map((u) => (
+        <ProfileBackupRow key={u.id} user={u} />
+      ))}
+    </ul>
+  )
+}
+
+function ProfileBackupRow({ user }: { user: User }) {
+  const linked = isPlayerLinked(user.id)
+  const [busy, setBusy] = useState<null | 'link' | 'push' | 'pull'>(null)
+  const [msg, setMsg] = useState<string | null>(null)
+  const [err, setErr] = useState<string | null>(null)
+
+  const run = useCallback(
+    async (kind: 'link' | 'push' | 'pull') => {
+      setBusy(kind)
+      setMsg(null)
+      setErr(null)
+      const r =
+        kind === 'link'
+          ? await linkAndBackup(user.id, user.name, user.initial)
+          : kind === 'push'
+            ? await pushBackup(user.id)
+            : await pullBackupAndReload(user.id)
+      setBusy(null)
+      if (!r.ok) {
+        setErr(r.error ?? 'שגיאה')
+        return
+      }
+      // pull reloads on a real restore; only reach here with a message when there
+      // was nothing to restore.
+      if (kind === 'pull' && !(r as { data?: { restored?: boolean } }).data?.restored) {
+        setMsg('אין גיבוי בענן עדיין')
+      } else {
+        setMsg(kind === 'link' ? 'הגיבוי הופעל ✓' : kind === 'push' ? 'גובה ✓' : 'שוחזר ✓')
+      }
+    },
+    [user.id, user.name, user.initial],
+  )
+
+  return (
+    <li className="rounded-lg border border-white/10 bg-white/5 p-2.5" data-testid={`cloud-backup-${user.id}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 text-sm text-text">
+          <span
+            data-nikud-skip
+            className="grid h-6 w-6 place-items-center rounded-full bg-learn/20 text-xs font-bold text-learn"
+          >
+            {user.initial}
+          </span>
+          <span data-nikud-skip className="font-medium">
+            {user.name}
+          </span>
+          {linked && (
+            <span className="flex items-center gap-1 text-[11px] text-learn">
+              <CheckCircle2 size={12} />
+              מגובה
+            </span>
+          )}
+        </div>
+        <div className="flex items-center gap-1.5">
+          {linked ? (
+            <>
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={() => void run('push')}
+                data-testid={`cloud-push-${user.id}`}
+                className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:bg-white/10 hover:text-text disabled:opacity-60"
+              >
+                <UploadCloud size={13} />
+                <span>{busy === 'push' ? '…' : 'גיבוי כעת'}</span>
+              </button>
+              <button
+                type="button"
+                disabled={busy !== null}
+                onClick={() => void run('pull')}
+                data-testid={`cloud-pull-${user.id}`}
+                className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 px-2.5 py-1 text-xs font-medium text-muted transition-colors hover:bg-white/10 hover:text-text disabled:opacity-60"
+              >
+                <DownloadCloud size={13} />
+                <span>{busy === 'pull' ? '…' : 'שחזור'}</span>
+              </button>
+            </>
+          ) : (
+            <button
+              type="button"
+              disabled={busy !== null}
+              onClick={() => void run('link')}
+              data-testid={`cloud-link-${user.id}`}
+              className="flex items-center gap-1 rounded-lg bg-learn/90 px-2.5 py-1 text-xs font-medium text-ink-950 transition-colors hover:bg-learn disabled:opacity-60"
+            >
+              <UploadCloud size={13} />
+              <span>{busy === 'link' ? '…' : 'הפעלת גיבוי'}</span>
+            </button>
+          )}
+        </div>
+      </div>
+      {msg && <p className="mt-1.5 text-[11px] text-learn">{msg}</p>}
+      {err && <p className="mt-1.5 text-[11px] text-coral-400">{err}</p>}
+    </li>
+  )
+}

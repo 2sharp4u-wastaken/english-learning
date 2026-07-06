@@ -24,12 +24,17 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 > Cloudflare dashboard 2026-07-05** (D1 console migration 0002 + `SIGNUP_INVITE_CODE`
 > secret) — on-device verification checklist in §3.5.
 >
+> ✅ **Cloud Phase B DONE (code, 2026-07-06)** — per-profile progress/prefs BACKUP
+>     to the cloud account: `bridge/cloudSync.ts` + Worker `/api/progress|prefs/:id`
+>     (family-scoped opaque blobs), device-local link map (`cloudPlayerLinks`),
+>     auto-backup (debounced on `elg:save-success`/`player-prefs-changed`) + per-kid
+>     "הפעלת גיבוי / גיבוי כעת / שחזור" in the כלי הורה cloud card. No new migration.
+>     Ships live on next deploy. This is BACKUP; bidirectional merge is Phase C.
+>
 > **NEXT (pick up here):**
-> (1) **Cloud Phase B** — back up + sync each profile's progress (`v2_userProgress_<id>`)
->     + `playerPrefs` blobs to the cloud account (push on change, pull on a fresh
->     device); map local user ids ↔ cloud player ids at link time. This is what makes
->     "same profile on tablet + laptop" real. Roadmap in `docs/cloud-backend.md`.
->     The local file backup (§3.5) is the stopgap meanwhile.
+> (1) **Cloud Phase C** — bidirectional multi-device sync + conflict resolution
+>     (offline queue, per-blob `updatedAt`, merge progress: max-of-counts, union of
+>     learned-word sets, sum-safe coins; last-write-wins prefs). Builds on Phase B.
 > (2) **Email verification for cloud signup** — the last open guardrail (needs an
 >     email provider); required before any un-invited public signup.
 > (3) **Root-cause the pre-existing test failures:** 3 react-routes Custom Words
@@ -359,10 +364,12 @@ The rest of that doc is shipped; only these remain:
 > and deployed — `worker/auth.ts` (Cloudflare D1 `english-learning-db` + `/api/auth/*`
 > + `/api/players`, PBKDF2 + JWT) + offline-first `src/bridge/cloudAccount.ts` + the
 > "חשבון בענן וגיבוי" card in כלי הורה. Verified live (register/login/me/players, 401
-> on bad password). Roadmap (A done → B progress/prefs backup → C bidirectional sync
-> → D leaderboards) + runbook in **`docs/cloud-backend.md`**. See
-> `[[project_cloud_backend]]`. **NEXT: Phase B** — push/pull the per-user progress +
-> `playerPrefs` blobs (map local user ids ↔ cloud player ids at link time).
+> on bad password). Roadmap (A done → **B progress/prefs backup DONE 2026-07-06** →
+> C bidirectional sync → D leaderboards) + runbook in **`docs/cloud-backend.md`**.
+> See `[[project_cloud_backend]]`. **Phase B shipped (code):** `bridge/cloudSync.ts`
+> + Worker `/api/progress|prefs/:playerId` (family-scoped opaque blobs) + the
+> `cloudPlayerLinks` link map + per-kid backup/restore in the cloud card + debounced
+> auto-backup. **NEXT: Phase C** — bidirectional sync + conflict merge.
 
 
 Everything today is client-only: each browser's localStorage is its own island
