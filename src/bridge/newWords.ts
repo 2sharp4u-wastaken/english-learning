@@ -25,6 +25,13 @@ interface VocabWord {
 
 const PUNCT_EDGE = /^[.,!?;:'"()]+|[.,!?;:'"()]+$/g
 
+// Highly polysemous words whose single bank gloss actively MISLEADS as a floating
+// tooltip: e.g. "right" is banked as ימין (direction), but in "right now"/"right
+// away" it means כרגע/מיד (beta #55). The pill is exposure-only (never recorded to
+// mastery), so suppressing a wrong gloss is strictly better than teaching the
+// wrong sense — the sentence's own Hebrew translation still carries the meaning.
+const AMBIGUOUS_SKIP = new Set(['right'])
+
 // Cache the bank index by bank-array identity so we don't rebuild ~900 entries
 // on every question render.
 let cachedBank: VocabWord[] | null = null
@@ -70,7 +77,7 @@ export function detectNewWords(
     if (!text) continue
     for (const raw of text.split(/\s+/)) {
       const clean = raw.replace(PUNCT_EDGE, '').toLowerCase()
-      if (!clean || learned.has(clean) || out.has(clean)) continue
+      if (!clean || learned.has(clean) || out.has(clean) || AMBIGUOUS_SKIP.has(clean)) continue
       const entry = lookup(clean, idx)
       if (!entry) continue
       const hebrew = entry.translation ?? entry.hebrew

@@ -25,7 +25,10 @@ export function MemoryBoard({
 }: MemoryBoardProps) {
   // Keep cards comfortably tappable for kids: cap columns on narrow screens so
   // the largest level (24 cards) wraps to more rows instead of shrinking flat.
-  const narrowCols = Math.min(columns, 4)
+  // For the small level (≤12 cards) a 4-wide grid leaves cards width-bound and
+  // only fills the top of a tall portrait phone (beta #58 — "images/text too
+  // small"); 3 columns there lets the cards grow and use the vertical space.
+  const narrowCols = Math.min(columns, cards.length <= 12 ? 3 : 4)
 
   // Equal total card area across levels: cardCount × side² = AREA, so
   // side = √(AREA / cardCount). Fewer cards (low levels) → bigger cards; more
@@ -39,15 +42,17 @@ export function MemoryBoard({
   const GAP_REM = 0.625 // matches sm:gap-2.5; safe upper bound for gap-2 too
   // Reserve for the game chrome (header + title + progress + stats pill + footer)
   // so the board always fits one screen — no scroll on any level/device. Cards
-  // shrink to fit when a level has more rows, rather than overflowing.
-  const CHROME_REM = 19
+  // shrink to fit when a level has more rows, rather than overflowing. The reserve
+  // is a CSS variable so short landscape (globals.css hides the hero + progress
+  // there) can shrink it — a fixed 19rem exceeds the ~20rem viewport height in
+  // landscape and collapsed the cards to near-zero (beta #57).
   // Track = min(area-based size, width-fit, height-fit). NOTE: `100%` is the grid
   // container WIDTH and `100dvh` the viewport height — both are length caps on
   // different axes. The card scales its picture/word with container-query units.
   const track = (cols: number) => {
     const rows = Math.ceil(cards.length / cols)
     const widthCap = `calc((100% - ${((cols - 1) * GAP_REM).toFixed(2)}rem) / ${cols})`
-    const heightCap = `calc((100dvh - ${CHROME_REM}rem) / ${rows})`
+    const heightCap = `calc((100dvh - var(--mem-chrome, 19rem)) / ${rows})`
     return `min(${side.toFixed(2)}rem, ${widthCap}, ${heightCap})`
   }
 
@@ -57,7 +62,7 @@ export function MemoryBoard({
       className="mx-auto grid w-full max-w-3xl justify-center gap-2 sm:gap-2.5"
       style={{ gridTemplateColumns: `repeat(${narrowCols}, ${track(narrowCols)})` }}
     >
-      <style>{`@media (min-width:640px){[data-testid="memory-board"]{grid-template-columns:repeat(${columns},${track(columns)})!important;}}`}</style>
+      <style>{`@media (min-width:640px){[data-testid="memory-board"]{grid-template-columns:repeat(${columns},${track(columns)})!important;}}@media (orientation:landscape) and (max-height:600px){[data-testid="memory-board"]{--mem-chrome:9.5rem;}}`}</style>
       {cards.map((card, index) => (
         <MemoryCard
           key={card.id}

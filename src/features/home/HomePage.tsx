@@ -185,7 +185,7 @@ export function HomePage() {
             removed; the CTA stays prominent via bg-learn. */}
         <div className="relative rounded-3xl bg-[radial-gradient(circle_at_top_left,rgba(99,230,198,0.22),transparent_45%),radial-gradient(circle_at_bottom_right,rgba(96,165,250,0.18),transparent_40%)] p-3 sm:p-4">
           {prefs.sparkles && !prefs.reducedMotion && <HeroSparkles />}
-          <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 sm:flex-nowrap sm:justify-between">
+          <div className="relative z-10 flex flex-wrap items-center justify-center gap-x-4 gap-y-2.5 lg:flex-nowrap lg:justify-between">
             {/* Greeting + mascot */}
             <div className="flex shrink-0 items-center gap-2.5">
               {prefs.mascot && (
@@ -209,7 +209,7 @@ export function HomePage() {
 
             {/* Stat chips + primary continue action — kept on ONE row on sm+ so
                 the "בוא נשחק" CTA sits beside the chips, not on a second line (D2). */}
-            <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 sm:flex-nowrap sm:justify-end">
+            <div className="flex min-w-0 flex-wrap items-center justify-center gap-2 lg:flex-nowrap lg:justify-end">
               <StatChip emoji="🔥" value={summary.streakDays} label="ימים ברצף" effect="streak" />
               <StatChip emoji="⭐" value={summary.wordsLearned} label="מילים שלמדתי" effect="sparkle" />
               <StatChip emoji="🪙" value={summary.coins} label="מטבעות" effect="coin" />
