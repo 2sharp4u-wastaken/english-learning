@@ -96,3 +96,40 @@ The standalone `GrammarGamePage` is separate from the shared `BlankFillGamePage`
 2. `GrammarGamePage`: compute `newWords = detectNewWords(filledSentence)` for the current question; render per D1/D2 (in-sentence tappable) and D3 (table titled "מילים חדשות במשפט").
 3. Playwright assertion in the Grammar suite: after answering a seeded question whose sentence contains a known-unlearned bank word, the new-words table/affordance appears with that word.
 4. Update `docs/word-table-spec.md` build order (E8 row), `docs/wiring-map.md` (Grammar chain), and memory.
+
+## 8. Beta #59 extension — glue lexicon + inline cap (2026-07-07)
+
+**Problem (beta #59):** the sentences are full of common words that are **not in
+the 873-word vocab bank** — verbs/tenses (`need`, `want`, `has`, `running`,
+`rode`), everyday nouns (`fridge`, `puzzle`, `umbrella`), adjectives (`bright`,
+`delicious`). §2's bank-only rule left those inert, so the child saw untranslated
+English with no way to get the meaning (the parent's example was `need`). There is
+no general EN→HE lexicon in the project.
+
+**Fix (chosen over per-question authoring + the "color-match" idea):**
+
+- **`src/bridge/glueLexicon.ts`** — a curated `GLUE_LEXICON: Record<string,string>`
+  (~90 content words → Hebrew) used as a **fallback in `detectNewWords`** after the
+  bank lookup misses. Reused everywhere `detectNewWords` runs (grammar, articles,
+  progressive). Hebrew is authored **with nikud inline** on purpose: `applyNikud`
+  only rewrites bare consonant-runs from `window.nikudMap` and leaves interleaved
+  vowel points untouched, so a pre-pointed gloss renders correctly with the toggle
+  ON (marks kept) and OFF (`stripNikud`) — **no dependency on the network-only
+  `build-nikud-map.py` rebuild** (Dicta API is egress-blocked). Bank words still
+  win (their `translation` resolves via the map as before); the lexicon only fills
+  the gap.
+- **Curation rules:** content words only (function/pronoun glue omitted — noise);
+  the sense is the kid-dominant one the corpus actually uses; genuinely misleading
+  polysemes go in `AMBIGUOUS_SKIP` in `newWords.ts` (that's where beta #55's
+  `right`→ימין lives — a context-free gloss must never *teach* the wrong sense).
+- **Inline cap (`MAX_INLINE_NEW_WORDS = 3`)** in `BlankFillGamePage` +
+  `GrammarGamePage`: only the first N detected words become inline blue pills so the
+  live sentence stays readable for a 5–8yo (a wall of blue buttons competes with the
+  blank). The after-answer `WordTable` still iterates the **full** `newWordsList`, so
+  every detected word (bank + glue) is reviewable there with Hebrew + audio.
+
+**Delivery was already built** (D1 pills + D2 always-interactive + D3 merged table,
+each playing English→Hebrew) — #59 was purely a **coverage** gap, so no new UI. The
+color-match idea (link the Hebrew word in the sentence-translation to its English
+word) was deferred: it needs word-alignment authoring and adds visual/colorblind
+overload for marginal gain over a tappable, voiced pill.

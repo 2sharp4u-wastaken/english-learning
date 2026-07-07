@@ -1,4 +1,5 @@
 import { getLearnedWordKeySet } from './progress'
+import { GLUE_LEXICON } from './glueLexicon'
 
 /**
  * Shared "new word" detection (bug-dump 2026-06-07 E8; mirrors the E6 Story Time
@@ -78,11 +79,12 @@ export function detectNewWords(
     for (const raw of text.split(/\s+/)) {
       const clean = raw.replace(PUNCT_EDGE, '').toLowerCase()
       if (!clean || learned.has(clean) || out.has(clean) || AMBIGUOUS_SKIP.has(clean)) continue
+      // Bank word first (canonical translation); fall back to the glue lexicon
+      // for common non-bank sentence words (beta #59 — "need", "running", …).
       const entry = lookup(clean, idx)
-      if (!entry) continue
-      const hebrew = entry.translation ?? entry.hebrew
+      const hebrew = entry ? (entry.translation ?? entry.hebrew) : GLUE_LEXICON[clean]
       if (!hebrew) continue
-      out.set(clean, { word: clean, hebrew, category: entry.category })
+      out.set(clean, { word: clean, hebrew, category: entry ? entry.category : 'glue' })
     }
   }
   return [...out.values()]

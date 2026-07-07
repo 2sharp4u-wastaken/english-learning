@@ -27,6 +27,12 @@ import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
 
+// Cap how many new-word pills appear INLINE in the live sentence so it stays
+// readable for a 5–8yo (beta #59) — a sentence full of tappable blue pills is a
+// wall of buttons that competes with the blank. Every detected word still shows
+// in the after-answer word list (uncapped).
+const MAX_INLINE_NEW_WORDS = 3
+
 interface FeedbackState {
   variant: 'correct' | 'incorrect'
   text: string
@@ -142,8 +148,10 @@ export function BlankFillGamePage({
     () => (current ? detectNewWords(current.sentence.replace('___', ' ')) : []),
     [current],
   )
-  const newWordsMap = useMemo(
-    () => new Map(newWordsList.map((nw) => [nw.word, nw])),
+  // Inline pills are capped for readability; the after-answer WordTable below
+  // iterates the full `newWordsList` so nothing is lost.
+  const inlineNewWordsMap = useMemo(
+    () => new Map(newWordsList.slice(0, MAX_INLINE_NEW_WORDS).map((nw) => [nw.word, nw])),
     [newWordsList],
   )
 
@@ -387,7 +395,7 @@ export function BlankFillGamePage({
               >
                 <SentenceText
                   text={split.before.trimEnd()}
-                  newWords={newWordsMap}
+                  newWords={inlineNewWordsMap}
                   renderWord={renderWord}
                   gameContext={gameType}
                 />
@@ -405,7 +413,7 @@ export function BlankFillGamePage({
                 </span>
                 <SentenceText
                   text={split.after.trimStart()}
-                  newWords={newWordsMap}
+                  newWords={inlineNewWordsMap}
                   renderWord={renderWord}
                   gameContext={gameType}
                 />

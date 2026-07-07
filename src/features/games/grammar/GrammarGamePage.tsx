@@ -30,6 +30,10 @@ import { cn } from '@/lib/cn'
 
 type Phase = 'idle' | 'awaiting' | 'answered' | 'finished'
 
+// Cap inline new-word pills so the live sentence stays readable (beta #59);
+// the after-answer word list stays uncapped.
+const MAX_INLINE_NEW_WORDS = 3
+
 interface FeedbackState {
   variant: 'correct' | 'incorrect'
   text: string
@@ -142,8 +146,10 @@ export function GrammarGamePage() {
     () => (current ? detectNewWords(current.sentence.replace('___', ' ')) : []),
     [current],
   )
+  // Inline pills capped for readability (beta #59); the after-answer WordTable
+  // iterates the full `newWordsList` so every word is still reviewable.
   const newWordsMap = useMemo(
-    () => new Map(newWordsList.map((nw) => [nw.word, nw])),
+    () => new Map(newWordsList.slice(0, MAX_INLINE_NEW_WORDS).map((nw) => [nw.word, nw])),
     [newWordsList],
   )
 
