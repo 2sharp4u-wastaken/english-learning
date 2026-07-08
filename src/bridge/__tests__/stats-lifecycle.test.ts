@@ -65,6 +65,38 @@ describe('buildUserStatsModel — PROG1 introduced vs mastered', () => {
     expect(m.masteredCount).toBe(1)
   })
 
+  it('builds cross-game records: strongest game, perfect-game counts, top score (#49)', () => {
+    seedProgress('kid', { wordMastery: {}, learnedWords: {} })
+    // Per-game score history (percentages). vocabulary: best 100 (2 perfect);
+    // listening: best 80 (0 perfect).
+    localStorage.setItem('kid_vocabulary_history', JSON.stringify([60, 100, 100, 80]))
+    localStorage.setItem('kid_listening_history', JSON.stringify([70, 80]))
+    // Memory best (level 2 the higher score).
+    localStorage.setItem(
+      'memoryBest_kid',
+      JSON.stringify({ 1: { score: 120, stars: 3 }, 2: { score: 300, stars: 4 } }),
+    )
+
+    const m = buildUserStatsModel('kid', 'זוהר')
+    expect(m.records.strongestGame?.gameType).toBe('vocabulary')
+    expect(m.records.strongestGame?.bestScore).toBe(100)
+    expect(m.records.totalPerfectGames).toBe(2)
+    expect(m.records.topScore).toBe(100)
+    expect(m.records.bestMemory?.score).toBe(300)
+
+    const vocab = m.gameRows.find((r) => r.gameType === 'vocabulary')
+    expect(vocab?.perfectGames).toBe(2)
+  })
+
+  it('records summary is empty-safe when nothing has been played', () => {
+    seedProgress('kid', { wordMastery: {}, learnedWords: {} })
+    const m = buildUserStatsModel('kid', 'זוהר')
+    expect(m.records.strongestGame).toBeNull()
+    expect(m.records.totalPerfectGames).toBe(0)
+    expect(m.records.topScore).toBe(0)
+    expect(m.records.bestMemory).toBeNull()
+  })
+
   it('weekly velocity counts new words met in the last 7 days via firstSeen', () => {
     const recent = new Date().toISOString()
     const old = new Date(Date.now() - 30 * 864e5).toISOString()

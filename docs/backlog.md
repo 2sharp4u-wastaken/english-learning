@@ -478,6 +478,34 @@ on Android anyway. **Fix:** platform-gate BOTH off on Android (hide the
 "שמע את עצמך" button there); verify on both devices. If still silent after
 that, next suspects: recognition `lang`, Google-app speech service settings.
 
+**M1-d — beta mic reports #43 / #46 / #54 reviewed (2026-07-08): all env/device, not code bugs.**
+- **#43 (Linux):** logs loop `audiostart→audioend→nomatch` — mic captures, zero
+  transcript. Chromium-on-Linux exposes `webkitSpeechRecognition` but has NO
+  Google STT backend, so recognition always returns nomatch. Works in real
+  Chrome / Android / iOS Safari. Only code-level improvement possible: a friendlier
+  "needs Chrome" hint on repeated `network`/`nomatch` — not worth a risky change now.
+- **#46 (Android ABC):** letter **A** is voiced via the string `"ay"`, which the
+  device TTS renders as /aɪ/ ("eye" = letter **I**). TTS-pronunciation ambiguity in
+  the M18 letter-name map (tuned per-device in #15/#34/#37/#38); every alt spelling
+  risks a regression on another device → fold into **#28 (real-device QA)**.
+- **#54 (Android ABC):** the **TTS synthesis** engine wedged (`utterance never
+  started`, `Queue busy - cancel() to unwedge`, `interrupted`) + a recognition
+  watchdog abort at 15s with a result landing ~2.5 min later. Intermittent OS-level
+  Android speech instability the existing watchdog + Android `cancelSpeech()` already
+  mitigate; no clean deterministic fix. The real cure is the M1-c cloud-STT path.
+
+### STATS-REC ✅ Cross-game personal records (#49) — SHIPPED 2026-07-08
+Beta #49 asked whether games besides Memory can have "שיאים אישיים". Replaced the
+Stats **זיכרון** tab with a **שיאים** (Records) tab that surfaces cross-game records
+derived from data ALREADY stored (per-game score `_history` + `memoryBest_`, no new
+per-game instrumentation): highlights hero (strongest game, total 100% "perfect"
+games, best Memory score) + a per-game records table (שיא % · perfect count · played)
++ the existing detailed Memory per-level records folded in. Model: `records:
+RecordsSummary` + `GameStatsRow.perfectGames` in `src/bridge/stats.ts`
+(`buildRecordsSummary`); pinned in `stats-lifecycle.test.ts`. A "perfect game" = a
+history entry ≥100%. Future richer records (fastest round, longest answer streak)
+still need per-session instrumentation — deferred.
+
 ### M2 ✅ Hebrew player names mangled (עידן→עדן, זוהר→זהר) — SHIPPED 2026-06-14
 Fixed: new `data-nikud-skip` marker in `utils/nikudDOM.js` (mirrors
 `data-react-nikud-owned` — `isNikudSkipped()` early-returns in `processTextNode`

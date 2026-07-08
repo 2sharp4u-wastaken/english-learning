@@ -5,6 +5,7 @@ import {
   Brain,
   Clock,
   Coins,
+  Crown,
   Flame,
   Gamepad2,
   Layers,
@@ -39,14 +40,14 @@ import { cn } from '@/lib/cn'
 
 // ─── Tab definitions ────────────────────────────────────────────────────────
 
-type ContentTab = 'overview' | 'games' | 'words' | 'categories' | 'memory' | 'coins'
+type ContentTab = 'overview' | 'games' | 'records' | 'words' | 'categories' | 'coins'
 
 const CONTENT_TABS: { id: ContentTab; label: string; icon: typeof Star; disabledCheck?: (m: UserStatsModel) => boolean }[] = [
   { id: 'overview', label: 'סקירה', icon: BarChart3 },
   { id: 'games', label: 'משחקים', icon: Gamepad2 },
+  { id: 'records', label: 'שיאים', icon: Trophy, disabledCheck: (m) => m.gameRows.length === 0 && !m.hasMemory },
   { id: 'words', label: 'מילים', icon: BookOpen },
   { id: 'categories', label: 'קטגוריות', icon: Layers },
-  { id: 'memory', label: 'זיכרון', icon: Brain, disabledCheck: (m) => !m.hasMemory },
   { id: 'coins', label: 'מטבעות', icon: Coins },
 ]
 
@@ -164,9 +165,9 @@ function UserStatsContent({
       {/* Active panel */}
       {activeTab === 'overview' && <OverviewPanel model={model} />}
       {activeTab === 'games' && <GamesPanel model={model} />}
+      {activeTab === 'records' && <RecordsPanel model={model} />}
       {activeTab === 'words' && <WordsPanel model={model} />}
       {activeTab === 'categories' && <CategoriesPanel model={model} />}
-      {activeTab === 'memory' && <MemoryPanel records={model.memoryRecords} />}
       {activeTab === 'coins' && <CoinsPanel model={model} />}
     </div>
   )
@@ -430,13 +431,93 @@ function CategoriesPanel({ model }: { model: UserStatsModel }) {
   )
 }
 
-// ─── Memory Panel ───────────────────────────────────────────────────────────
+// ─── Records Panel (#49) ────────────────────────────────────────────────────
 
-function MemoryPanel({ records }: { records: MemoryRecord[] }) {
-  if (records.length === 0) {
-    return <EmptyState icon={<Brain className="h-12 w-12 opacity-40" />} text="עדיין לא שיחקת משחק זיכרון" />
+function RecordsPanel({ model }: { model: UserStatsModel }) {
+  const { records } = model
+  // Games with a meaningful record (any completed session), best first.
+  const recordRows = [...model.gameRows].sort((a, b) => b.bestScore - a.bestScore || b.perfectGames - a.perfectGames)
+
+  if (recordRows.length === 0 && !model.hasMemory) {
+    return (
+      <EmptyState
+        icon={<Trophy className="h-12 w-12 opacity-40" />}
+        text="עדיין אין שיאים אישיים"
+        sub="שחק כדי לקבוע שיאים חדשים!"
+      />
+    )
   }
 
+  return (
+    <div className="space-y-5">
+      {/* Highlights hero */}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <MetricTile
+          icon={<Crown className="h-6 w-6" />}
+          value={records.strongestGame ? `${records.strongestGame.bestScore}%` : '—'}
+          label={records.strongestGame ? `המשחק החזק: ${records.strongestGame.name}` : 'המשחק החזק שלך'}
+          variant="primary"
+        />
+        <MetricTile
+          icon={<Star className="h-6 w-6" />}
+          value={String(records.totalPerfectGames)}
+          label="משחקים מושלמים (100%)"
+          variant="green"
+        />
+        <MetricTile
+          icon={<Brain className="h-6 w-6" />}
+          value={records.bestMemory ? String(records.bestMemory.score) : '—'}
+          label={records.bestMemory ? `שיא זיכרון · רמה ${records.bestMemory.level}` : 'שיא זיכרון'}
+          variant="orange"
+        />
+      </div>
+
+      {/* Per-game records */}
+      {recordRows.length > 0 && (
+        <StatsCard title="שיא אישי לכל משחק" titleIcon={<Trophy className="h-4 w-4 text-amber-400" />}>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-white/10">
+                  <th className="pb-3 pe-2 text-start text-xs font-semibold text-muted" />
+                  <th className="pb-3 pe-4 text-start text-xs font-semibold text-muted">משחק</th>
+                  <th className="pb-3 px-2 text-center text-xs font-semibold text-muted">שיא</th>
+                  <th className="pb-3 px-2 text-center text-xs font-semibold text-muted">מושלמים</th>
+                  <th className="pb-3 ps-2 text-center text-xs font-semibold text-muted">שוחק</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recordRows.map((row) => (
+                  <tr key={row.gameType} className="border-b border-white/5 last:border-0">
+                    <td className="py-3 pe-2"><GameIcon gameId={row.gameType} variant="inline" /></td>
+                    <td className="py-3 pe-4 font-bold text-text">{row.name}</td>
+                    <td className="py-3 px-2 text-center font-extrabold text-amber-400">{row.bestScore}%</td>
+                    <td className="py-3 px-2 text-center">
+                      {row.perfectGames > 0 ? (
+                        <span className="inline-flex items-center gap-1 font-semibold text-emerald-400">
+                          <Star className="h-3.5 w-3.5" />
+                          {row.perfectGames}
+                        </span>
+                      ) : (
+                        <span className="text-muted/50">—</span>
+                      )}
+                    </td>
+                    <td className="py-3 ps-2 text-center text-muted">{row.gamesPlayed}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </StatsCard>
+      )}
+
+      {/* Memory per-level records (the richest per-game records) */}
+      {model.memoryRecords.length > 0 && <MemoryRecordsCard records={model.memoryRecords} />}
+    </div>
+  )
+}
+
+function MemoryRecordsCard({ records }: { records: MemoryRecord[] }) {
   return (
     <StatsCard title="שיאים אישיים — משחק הזיכרון" titleIcon={<Brain className="h-4 w-4 text-accent-blue" />}>
       <div className="overflow-x-auto">

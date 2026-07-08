@@ -75,6 +75,8 @@ export interface GameStatsRow {
   gamesPlayed: number
   averageScore: number
   bestScore: number
+  /** Sessions finished at 100% — a per-game "personal record" (#49). */
+  perfectGames: number
 }
 
 export interface WordMasteryInfo {
@@ -136,6 +138,23 @@ export interface MemoryRecord {
   date: string | null
 }
 
+/**
+ * Cross-game "personal records" (#49). Before this the only records surfaced were
+ * the Memory game's per-level bests; everything here is derived from data already
+ * stored (per-game score `_history` + memoryBest_), so no new per-game
+ * instrumentation is needed.
+ */
+export interface RecordsSummary {
+  /** The game with the highest best-score (ties → most-played). null = nothing played. */
+  strongestGame: { gameType: string; name: string; bestScore: number } | null
+  /** Total 100% sessions across every game. */
+  totalPerfectGames: number
+  /** Single highest best-score across all games (0 when nothing played). */
+  topScore: number
+  /** Best Memory record by score, if any memory game has been played. */
+  bestMemory: MemoryRecord | null
+}
+
 export interface UserStatsModel {
   userId: string
   displayName: string
@@ -147,6 +166,7 @@ export interface UserStatsModel {
   masteryStats: MasteryStats
   memoryRecords: MemoryRecord[]
   hasMemory: boolean
+  records: RecordsSummary
   journeyRows: JourneyRow[]
   /**
    * "Words learned" = INTRODUCED count (status !== new — Learning ∪ Learned), per
@@ -417,6 +437,34 @@ function loadMemoryRecords(userId: string): MemoryRecord[] {
   }
 }
 
+// ─── Cross-game records (#49) ───────────────────────────────────────────────
+
+function buildRecordsSummary(gameRows: GameStatsRow[], memoryRecords: MemoryRecord[]): RecordsSummary {
+  let strongestGame: RecordsSummary['strongestGame'] = null
+  let totalPerfectGames = 0
+  let topScore = 0
+
+  for (const row of gameRows) {
+    totalPerfectGames += row.perfectGames
+    topScore = Math.max(topScore, row.bestScore)
+    const better =
+      !strongestGame ||
+      row.bestScore > strongestGame.bestScore ||
+      (row.bestScore === strongestGame.bestScore &&
+        row.gamesPlayed > (gameRows.find((r) => r.gameType === strongestGame!.gameType)?.gamesPlayed ?? 0))
+    if (better) {
+      strongestGame = { gameType: row.gameType, name: row.name, bestScore: row.bestScore }
+    }
+  }
+
+  const bestMemory =
+    memoryRecords.length > 0
+      ? memoryRecords.reduce((best, r) => (r.score > best.score ? r : best), memoryRecords[0])
+      : null
+
+  return { strongestGame, totalPerfectGames, topScore, bestMemory }
+}
+
 // ─── Journey status ─────────────────────────────────────────────────────────
 
 function normalizeStageIds(stageIds: string[]): string[] {
@@ -640,12 +688,14 @@ export function buildUserStatsModel(userId: string, displayName: string): UserSt
     playedTypes.push(gt)
     const avg = Math.round(history.reduce((s, v) => s + v, 0) / played)
     const best = Math.max(...history)
+    const perfectGames = history.filter((v) => v >= 100).length
     gameRows.push({
       gameType: gt,
       name: GAME_NAMES[gt].name,
       gamesPlayed: played,
       averageScore: Math.min(100, avg),
       bestScore: Math.min(100, best),
+      perfectGames,
     })
   }
 
@@ -678,6 +728,7 @@ export function buildUserStatsModel(userId: string, displayName: string): UserSt
   const categoryCompletion = buildCategoryCompletion(lifecycle)
   const learningVelocity = getLearningVelocity(progress)
   const inProgressCount = journeyRows.filter((r) => !r.isLearned).length
+  const records = buildRecordsSummary(gameRows, memoryRecords)
 
   return {
     userId,
@@ -690,6 +741,7 @@ export function buildUserStatsModel(userId: string, displayName: string): UserSt
     masteryStats,
     memoryRecords,
     hasMemory: memoryRecords.length > 0,
+    records,
     journeyRows,
     learnedCount,
     masteredCount,
