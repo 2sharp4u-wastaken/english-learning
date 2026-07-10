@@ -6,7 +6,7 @@ import { AnswerGrid } from '@/features/games/shared/AnswerGrid'
 import { FeedbackBanner } from '@/features/games/shared/FeedbackBanner'
 import { WordTable, type WordTableRow } from '@/features/games/shared/WordTable'
 import { SentenceText } from '@/features/games/shared/NewWordPill'
-import { detectNewWords } from '@/bridge/newWords'
+import { detectGlossableWords } from '@/bridge/newWords'
 import { RewardModal } from '@/features/games/shared/RewardModal'
 import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
 import {
@@ -142,16 +142,16 @@ export function GrammarGamePage() {
   // the sentence as tappable pills + translation + audio. Exposure-only — not
   // recorded toward mastery. Scan the sentence with the blank dropped (the blank
   // answer is a grammar function word, never a content word).
-  const newWordsList = useMemo(
-    () => (current ? detectNewWords(current.sentence.replace('___', ' ')) : []),
+  // #60: gloss EVERY content word (bank/glue/authored), each tagged isNew.
+  const glossList = useMemo(
+    () => (current ? detectGlossableWords(current.sentence.replace('___', ' ')) : []),
     [current],
   )
-  // Inline pills capped for readability (beta #59); the after-answer WordTable
-  // iterates the full `newWordsList` so every word is still reviewable.
-  const newWordsMap = useMemo(
-    () => new Map(newWordsList.slice(0, MAX_INLINE_NEW_WORDS).map((nw) => [nw.word, nw])),
-    [newWordsList],
-  )
+  // SentenceText renders isNew words as pills (capped MAX_INLINE_NEW_WORDS) and the
+  // rest — learned words / overflow — as quiet tap-to-hear words.
+  const glossMap = useMemo(() => new Map(glossList.map((w) => [w.word, w])), [glossList])
+  // The after-answer WordTable stays NEW-words-only (the "learn these" review).
+  const newWordsList = useMemo(() => glossList.filter((w) => w.isNew), [glossList])
 
   // Speak the sentence with the blank skipped (comma pause replaces ___).
   const speakPrompt = useCallback((q: GrammarQuestion) => {
@@ -421,7 +421,8 @@ export function GrammarGamePage() {
               >
                 <SentenceText
                   text={split.before.trimEnd()}
-                  newWords={newWordsMap}
+                  newWords={glossMap}
+                  maxPills={MAX_INLINE_NEW_WORDS}
                   renderWord={renderWord}
                   gameContext="grammar"
                 />
@@ -439,7 +440,8 @@ export function GrammarGamePage() {
                 </span>
                 <SentenceText
                   text={split.after.trimStart()}
-                  newWords={newWordsMap}
+                  newWords={glossMap}
+                  maxPills={MAX_INLINE_NEW_WORDS}
                   renderWord={renderWord}
                   gameContext="grammar"
                 />

@@ -1,6 +1,17 @@
 # Spec — "Tap any word to hear its translation" (beta #60)
 
-Status: **proposal, awaiting decision.** No code written yet.
+Status: **T1 + T2 IMPLEMENTED (2026-07-10).** Maintainer chose T1+T2; T3 deferred.
+What shipped vs. this design:
+- **T1** — `detectGlossableWords` (`src/bridge/newWords.ts`) returns every bank/glue/
+  gloss word tagged `isNew` (no learned-skip); `detectNewWords` is now its `isNew`
+  subset. `SentenceText`/`NewWordPill` render `isNew` words as pills (capped
+  `maxPills`) and the rest as a quiet `variant='quiet'` tap-to-hear word.
+- **T2** — `src/bridge/sentenceGloss.ts` (third lookup source) + the maintainer tool
+  `scripts/build-sentence-gloss.mjs`, which reports authored-sentence words with no
+  gloss and exits non-zero until zero gaps. Current state: **0 gaps** (17 fills).
+- **T3** — deferred (cloud translation for custom/unknown words), as recommended.
+Tests: `src/bridge/__tests__/newWords.test.ts` (logic) +
+`src/features/games/shared/__tests__/SentenceText.test.ts` (two-tier render).
 
 ## 1. The report (#60)
 

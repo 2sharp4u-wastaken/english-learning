@@ -10,7 +10,7 @@ import { ExitConfirmDialog } from '@/features/games/shared/ExitConfirmDialog'
 import { GameIcon } from '@/features/games/shared/GameIcon'
 import { WordTable, type WordTableRow } from '@/features/games/shared/WordTable'
 import { SentenceText } from '@/features/games/shared/NewWordPill'
-import { detectNewWords } from '@/bridge/newWords'
+import { detectGlossableWords } from '@/bridge/newWords'
 import {
   abortBlankFillSession,
   beginBlankFillSession,
@@ -144,16 +144,15 @@ export function BlankFillGamePage({
 
   // E8 (bug-dump 2026-06-07): surface NEW (not-yet-learned) vocab-bank words in
   // the sentence as tappable pills + translation + audio. Exposure-only.
-  const newWordsList = useMemo(
-    () => (current ? detectNewWords(current.sentence.replace('___', ' ')) : []),
+  // #60: gloss EVERY content word (bank/glue/authored), each tagged isNew — new
+  // words render as pills (capped), the rest as quiet tap-to-hear words.
+  const glossList = useMemo(
+    () => (current ? detectGlossableWords(current.sentence.replace('___', ' ')) : []),
     [current],
   )
-  // Inline pills are capped for readability; the after-answer WordTable below
-  // iterates the full `newWordsList` so nothing is lost.
-  const inlineNewWordsMap = useMemo(
-    () => new Map(newWordsList.slice(0, MAX_INLINE_NEW_WORDS).map((nw) => [nw.word, nw])),
-    [newWordsList],
-  )
+  const glossMap = useMemo(() => new Map(glossList.map((w) => [w.word, w])), [glossList])
+  // The after-answer WordTable stays NEW-words-only (the "learn these" review).
+  const newWordsList = useMemo(() => glossList.filter((w) => w.isNew), [glossList])
 
   const speakPrompt = useCallback((q: BlankFillQuestion) => {
     const text = q.sentence.replace('___', ',').replace(/\s+,\s+/, ', ')
@@ -395,7 +394,8 @@ export function BlankFillGamePage({
               >
                 <SentenceText
                   text={split.before.trimEnd()}
-                  newWords={inlineNewWordsMap}
+                  newWords={glossMap}
+                  maxPills={MAX_INLINE_NEW_WORDS}
                   renderWord={renderWord}
                   gameContext={gameType}
                 />
@@ -413,7 +413,8 @@ export function BlankFillGamePage({
                 </span>
                 <SentenceText
                   text={split.after.trimStart()}
-                  newWords={inlineNewWordsMap}
+                  newWords={glossMap}
+                  maxPills={MAX_INLINE_NEW_WORDS}
                   renderWord={renderWord}
                   gameContext={gameType}
                 />

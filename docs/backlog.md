@@ -494,6 +494,20 @@ that, next suspects: recognition `lang`, Google-app speech service settings.
   Android speech instability the existing watchdog + Android `cancelSpeech()` already
   mitigate; no clean deterministic fix. The real cure is the M1-c cloud-STT path.
 
+### TAP-ANY-WORD ✅ Tap any sentence word to hear it (#60) — SHIPPED 2026-07-10
+Beta #60: a learned word (`astronaut`, in the bank) had no tap affordance because the
+new-words layer glossed unlearned words only. Chose **T1+T2** (spec:
+`docs/tap-any-word-spec.md`; design §9 of `grammar-new-words-spec.md`). T1:
+`detectGlossableWords` tags every bank/glue/gloss word `isNew` (no learned-skip);
+`SentenceText` renders `isNew` as pills (capped) and the rest as a quiet
+`variant='quiet'` tap-to-hear word — keeps the "new" signal, everything tappable. T2:
+`src/bridge/sentenceGloss.ts` (3rd lookup source) + `scripts/build-sentence-gloss.mjs`
+(fails loudly on unglossed authored tokens; kept at **0 gaps**, 17 fills). T3 (cloud
+translation for custom/unknown words) deferred. Tests: `newWords.test.ts` +
+`SentenceText.test.ts`. **INVARIANT:** after adding/editing any grammar/articles/
+progressive sentence, re-run `node scripts/build-sentence-gloss.mjs` and fill any gap
+into `sentenceGloss.ts` (Hebrew with nikud inline) so every word stays tappable.
+
 ### STATS-REC ✅ Cross-game personal records (#49) — SHIPPED 2026-07-08
 Beta #49 asked whether games besides Memory can have "שיאים אישיים". Replaced the
 Stats **זיכרון** tab with a **שיאים** (Records) tab that surfaces cross-game records

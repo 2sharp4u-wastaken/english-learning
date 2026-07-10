@@ -133,3 +133,26 @@ each playing English→Hebrew) — #59 was purely a **coverage** gap, so no new 
 color-match idea (link the Hebrew word in the sentence-translation to its English
 word) was deferred: it needs word-alignment authoring and adds visual/colorblind
 overload for marginal gain over a tappable, voiced pill.
+
+## 9. Beta #60 extension — tap ANY word (two-tier) (2026-07-10)
+
+**Problem (beta #60):** §2's rule glosses only *unlearned* words, so a word the child
+already learned (the report's `astronaut`, which IS in the bank) got no tap affordance
+— the parent couldn't hear it. Widening the pill to every word would drown the "these
+are NEW words" signal in a wall of highlights.
+
+**Fix (T1+T2 — full spec `docs/tap-any-word-spec.md`):**
+- **`detectGlossableWords`** (`newWords.ts`) returns EVERY bank/glue/gloss word tagged
+  `isNew` (drops the learned-skip); `detectNewWords` is now its `isNew`-only subset, so
+  existing callers/tests and the after-answer WordTable (new-only) are unchanged.
+- **Two render tiers** in `SentenceText`/`NewWordPill`: `isNew` words render as the
+  prominent pill (capped `maxPills`=`MAX_INLINE_NEW_WORDS`); learned words **and** new
+  words past the cap render as a quiet `variant='quiet'` dotted-underline tap-to-hear
+  word (same tooltip + EN→HE audio). Keeps the "new" signal, makes everything tappable.
+- **T2 completeness:** `src/bridge/sentenceGloss.ts` is a third lookup source (after
+  bank → glue) for authored-sentence words in neither; `scripts/build-sentence-gloss.mjs`
+  enumerates every token across the grammar/articles/progressive banks and fails loudly
+  listing any with no gloss. Kept at **0 gaps**.
+- **T3** (cloud translation for custom/unknown words) deferred.
+Pure grammatical glue (a/the/pronouns) stays untappable in ALL tiers (in no lookup
+source) — still intentional noise-reduction.
