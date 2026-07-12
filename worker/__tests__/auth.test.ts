@@ -195,6 +195,27 @@ describe('auth + players API', () => {
     expect(body.players).toHaveLength(0)
   })
 
+  it("one family cannot delete another family's player (cross-tenant guard)", async () => {
+    // Family A owns a player; family B holds a valid token and knows the UUID.
+    const { token: tokenA } = await register('a@test.com')
+    await handleCloudApi(req('/api/players', 'POST', { name: 'עידו', initial: 'ע' }, tokenA), env, '/api/players')
+    const listA = await handleCloudApi(req('/api/players', 'GET', undefined, tokenA), env, '/api/players')
+    const victimId = ((await listA!.json()) as { players: Array<{ id: string }> }).players[0].id
+
+    const { token: tokenB } = await register('b@test.com')
+    const res = await handleCloudApi(
+      req(`/api/players/${victimId}`, 'DELETE', undefined, tokenB),
+      env,
+      `/api/players/${victimId}`,
+    )
+    // Ownership check rejects before any progress/prefs blob delete fires.
+    expect(res!.status).toBe(404)
+
+    // Family A's player is untouched.
+    const stillThere = await handleCloudApi(req('/api/players', 'GET', undefined, tokenA), env, '/api/players')
+    expect(((await stillThere!.json()) as { players: unknown[] }).players).toHaveLength(1)
+  })
+
   it('503s cleanly when the backend is not configured', async () => {
     const res = await handleCloudApi(req('/api/auth/register', 'POST', { email: 'a@b.co', password: 'secret123' }), {}, '/api/auth/register')
     expect(res!.status).toBe(503)

@@ -324,7 +324,12 @@ async function createPlayer(request: Request, env: AuthEnv): Promise<Response> {
 async function deletePlayer(request: Request, env: AuthEnv, playerId: string): Promise<Response> {
   const fam = await familyFromRequest(request, env)
   if (!fam || !env.DB) return json({ error: 'unauthorized' }, 401)
-  // Scope the delete to the family so one family can't delete another's player.
+  // Verify ownership FIRST, then delete. The players row is family-scoped, but the
+  // progress/prefs blob deletes used to fire unconditionally on the raw playerId —
+  // so any authenticated family could wipe another family's child data by guessing
+  // a UUID (the players delete silently no-oped, the blob deletes did not). Gate
+  // the whole operation on ownership. (design-flaws follow-up, 2026-07-12)
+  if (!(await playerInFamily(env, playerId, fam.sub))) return json({ error: 'player not found' }, 404)
   await env.DB.prepare('DELETE FROM players WHERE id = ? AND family_id = ?').bind(playerId, fam.sub).run()
   await env.DB.prepare('DELETE FROM progress WHERE player_id = ?').bind(playerId).run()
   await env.DB.prepare('DELETE FROM prefs WHERE player_id = ?').bind(playerId).run()

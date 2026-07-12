@@ -42,7 +42,10 @@
     <script src="speechSynthesis.js?t=1742300000"></script>
     <script src="feedback.js"></script>
     <script src="audio-effects.js"></script>
-    <script src="gamification.js"></script>
+    <!-- gamification.js removed 2026-07-12: its only global (window.gamificationManager)
+         was referenced nowhere in the React app — orphaned dead code that still
+         built DOM via innerHTML from parent-authored word content (attack surface). -->
+
     <!-- Slice 4.2/4.3: legacy top-header + settings.js retired. React owns the
          header (TopNav / GameHeader) and the settings/stats UI. case/nikud init
          is covered by React textPrefs + data/_loader.js→nikud.js. -->

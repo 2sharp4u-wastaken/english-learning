@@ -39,16 +39,21 @@ interface R2Bucket {
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
 const MAX_DESC_CHARS = 4000
+const ALLOWED_IMAGE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
+
+// Neutralize a fenced code block: the recent-logs blob is dropped inside a ```
+// fence, so a payload containing its own ``` would close the fence early and
+// inject arbitrary markdown (links/images) into the issue. Zero-width-space the
+// backtick runs so they render literally and never terminate the fence.
+function fenceSafe(s: string): string {
+  return s.replace(/`+/g, (m) => m.split('').join('​'))
+}
 
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
     headers: { 'content-type': 'application/json; charset=utf-8' },
   })
-}
-
-function safeKeySegment(s: string): string {
-  return s.replace(/[^a-zA-Z0-9._-]/g, '').slice(0, 80)
 }
 
 async function handleReport(request: Request, env: Env, origin: string): Promise<Response> {
@@ -79,11 +84,18 @@ async function handleReport(request: Request, env: Env, origin: string): Promise
   if (file && typeof file !== 'string') {
     const blob = file as unknown as Blob
     if (blob.size > MAX_IMAGE_BYTES) return json({ error: 'screenshot too large' }, 413)
+    // Only store real images — the endpoint is unauthenticated, so don't let it
+    // serve arbitrary attacker-uploaded bytes back from our origin.
+    const contentType = ALLOWED_IMAGE_TYPES.has(blob.type) ? blob.type : ''
+    if (!contentType) return json({ error: 'unsupported screenshot type' }, 415)
     if (!env.REPORTS_BUCKET) return json({ error: 'storage not configured' }, 503)
-    const key = `reports/${Date.now()}-${safeKeySegment(String(context.userId ?? 'anon'))}-${crypto.randomUUID().slice(0, 8)}.jpg`
+    // Unguessable key: a full random UUID, no userId or timestamp. The image URL
+    // is effectively a capability, so the key must not be enumerable, and the
+    // child's userId must not leak into a publicly-fetchable path (kids' data).
+    const key = `reports/${crypto.randomUUID()}.jpg`
     const buf = await blob.arrayBuffer()
     await env.REPORTS_BUCKET.put(key, buf, {
-      httpMetadata: { contentType: blob.type || 'image/jpeg' },
+      httpMetadata: { contentType },
     })
     imageUrl = `${origin}/api/report-image/${key.slice('reports/'.length)}`
   }
@@ -105,7 +117,7 @@ async function handleReport(request: Request, env: Env, origin: string): Promise
     // Recent console logs (optional) → collapsed block so the issue stays readable.
     const logs = String(context.recentLogs ?? '').trim()
     const logsBlock = logs
-      ? ['', '<details><summary>recent logs</summary>', '', '```', logs, '```', '', '</details>']
+      ? ['', '<details><summary>recent logs</summary>', '', '```', fenceSafe(logs), '```', '', '</details>']
       : []
 
     const body = [
