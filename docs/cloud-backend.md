@@ -49,6 +49,14 @@ leaderboards (backlog § LB) and the M5/M13 word/image review queues.
   dump) + `DELETE /api/family` (echo the account email as `confirmEmail`) — both
   wired to buttons in the כלי הורה cloud card. **Still open: email verification**
   (needs an email provider; do before any un-invited public signup).
+- **A.2 — security review round 2 (SHIPPED code 2026-07-12, backlog §3.6).**
+  `deletePlayer` now verifies `playerInFamily()` before deleting the progress/prefs
+  blobs (they used to delete on the raw `playerId` — a cross-tenant data-loss bug).
+  Password floor raised to **min 8 + a letter and a digit** (`passwordProblem()`,
+  register-only). The `/api/report` pipeline gained a screenshot content-type
+  allowlist, a markdown-fence escape on the logs block, and an unguessable random
+  R2 key (no `userId`/timestamp). **Config still owed by the maintainer: make the
+  issues repo PRIVATE and add a Cloudflare rate-limit rule on `/api/report`.**
 - **B — progress + prefs backup (SHIPPED code, 2026-07-06).** Push each player's
   `v2_userProgress_<id>` / `v2_playerPrefs_<id>` blob to `PUT /api/progress/:playerId`
   / `PUT /api/prefs/:playerId` (auto-backup debounced 4s on change, via

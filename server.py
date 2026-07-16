@@ -20,6 +20,7 @@ Extra endpoints (only served from this machine's own IPs for safety):
 """
 import base64
 import http.server
+import ipaddress
 import json
 import mimetypes
 import os
@@ -27,6 +28,7 @@ import socket
 import socketserver
 import ssl
 import sys
+import urllib.parse
 import urllib.request
 from pathlib import Path
 from typing import Optional
@@ -61,6 +63,28 @@ def _safe_path(rel_path: str) -> Optional[Path]:
         return target
     except ValueError:
         return None
+
+
+def _url_host_is_public(url: str) -> bool:
+    """SSRF guard for _fetch_image: True only if the URL's host resolves entirely
+    to public (globally-routable) addresses. Rejects loopback / private /
+    link-local (incl. the 169.254.169.254 cloud metadata endpoint) / reserved
+    IPs. Fails closed on any resolution error."""
+    try:
+        host = urllib.parse.urlparse(url).hostname
+        if not host:
+            return False
+        infos = socket.getaddrinfo(host, None)
+        if not infos:
+            return False
+        for info in infos:
+            ip = ipaddress.ip_address(info[4][0])
+            if (ip.is_private or ip.is_loopback or ip.is_link_local
+                    or ip.is_reserved or ip.is_multicast or ip.is_unspecified):
+                return False
+        return True
+    except Exception:
+        return False
 
 
 class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
@@ -127,7 +151,16 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
         self._reply(200, {'ok': True, 'path': str(dest.relative_to(BASE_DIR))})
 
     def _fetch_image(self, data):
-        """Fetch an image from a remote URL and save it to a local path."""
+        """Fetch an image from a remote URL and save it to a local path.
+
+        SSRF note: this fetches a caller-supplied URL. The server binds to this
+        machine's own IPs only (see the guard in do_POST/_client_allowed), so the
+        caller is already local/maintainer — but as defence-in-depth we still
+        reject URLs that resolve to a private / loopback / link-local / reserved
+        address, so a local page can't use this to reach the cloud metadata
+        endpoint (169.254.169.254) or an internal host. If this endpoint is ever
+        exposed beyond localhost, tighten this to a positive host allowlist.
+        """
         url  = data.get('url', '')
         rel  = data.get('path', '')   # desired local path, e.g. img/icons/body/neck.png
         dest = _safe_path(rel)
@@ -136,6 +169,9 @@ class NoCacheHandler(http.server.SimpleHTTPRequestHandler):
             return
         if not url.startswith(('http://', 'https://')):
             self._reply(400, {'error': 'invalid URL'})
+            return
+        if not _url_host_is_public(url):
+            self._reply(400, {'error': 'URL resolves to a non-public address'})
             return
         try:
             req = urllib.request.Request(url, headers={'User-Agent': 'Mozilla/5.0'})

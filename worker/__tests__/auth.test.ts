@@ -162,6 +162,11 @@ describe('auth + players API', () => {
     expect(badEmail!.status).toBe(400)
     const shortPw = await handleCloudApi(req('/api/auth/register', 'POST', { email: 'a@b.co', password: '12' }), env, '/api/auth/register')
     expect(shortPw!.status).toBe(400)
+    // Complexity floor (security-review #4): min 8 + a letter and a digit.
+    const sevenChars = await handleCloudApi(req('/api/auth/register', 'POST', { email: 'a@b.co', password: 'abc1234' }), env, '/api/auth/register')
+    expect(sevenChars!.status).toBe(400)
+    const noDigit = await handleCloudApi(req('/api/auth/register', 'POST', { email: 'a@b.co', password: 'password' }), env, '/api/auth/register')
+    expect(noDigit!.status).toBe(400)
   })
 
   it('login succeeds with the right password, 401 on wrong', async () => {

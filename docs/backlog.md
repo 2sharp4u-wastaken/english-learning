@@ -45,7 +45,16 @@ Legend: 🔴 broken/wrong · 🟡 polish/UX · 🟢 nice-to-have/feature · ⏸ 
 > (5) **Older parked items:** deferred customization (coin cosmetics, per-kid
 >     nikud/case, richer mascot); Leaderboard (§ LB); M8 PWA install button; M5/M13
 >     parent word/image submission; beta issues #13–#22 (§7 M3 / §8).
-> Waiting on the user: install Hebrew TTS voice on the tablet (M7); C2/C3 images.
+> Waiting on the user: install Hebrew TTS voice on the tablet (M7); C2/C3 images;
+>     **security round-2 config (§3.6): make the repo/issues PRIVATE + add a
+>     Cloudflare rate-limit rule on `/api/report`** (both dashboard-only, can't be
+>     done from the repo).
+>
+> **Security review round 2 SHIPPED 2026-07-12** (branch `claude/brave-curie-h2h37t`):
+>     cross-tenant blob-delete fix (critical), report-pipeline hardening
+>     (content-type allowlist + markdown-fence escape + random R2 key), password
+>     floor 6→8+complexity, dead `gamification.js` removed, `server.py` SSRF guard.
+>     Details + the two config items above: **§3.6**.
 
 ---
 
@@ -294,6 +303,57 @@ the data-safety half (Phases A+B of the plan) shipped in one slice:
 `UserProgress` end-to-end (interface exists in `bridge/types.ts` but engine uses
 `any`); 🟢 consolidate the copy-pasted learned-pool/resume/audio-gate logic
 across game bridges (do lazily per-touch).
+
+## 3.6 Security review round 2 — cloud/worker + report pipeline ✅ SHIPPED 2026-07-12
+
+Branch `claude/brave-curie-h2h37t`. A second security pass reviewed the cloud API,
+the Worker, the bug-report pipeline, local auth, `server.py`, and XSS surfaces.
+Three flagged findings were already fixed in round 1 (§3.5) or wrong on inspection;
+the genuinely-live ones shipped here:
+- ✅ **#1 (critical) cross-tenant blob deletion** — `worker/auth.ts` `deletePlayer`
+  scoped only the `players` row; the `progress`/`prefs` deletes fired on the raw
+  `playerId`, so any authenticated family could wipe another family's child data by
+  guessing a UUID. Now gated on `playerInFamily()` → **404 before any delete**.
+  Regression test: "one family cannot delete another family's player".
+- ✅ **#3 report pipeline** (`worker/index.ts` `/api/report`): screenshot
+  content-type is validated against `ALLOWED_IMAGE_TYPES` (jpeg/png/webp → 415
+  otherwise) so the **unauthenticated** endpoint can't serve arbitrary attacker
+  bytes from our origin; recent-logs are `fenceSafe()`-escaped (zero-width space in
+  backtick runs) so a payload can't close the ``` fence and inject markdown into
+  issues.
+- ✅ **#2 R2 key** is now a bare `crypto.randomUUID()` — no enumerable timestamp,
+  and the child's `userId` no longer leaks into the publicly-fetchable image path.
+  (Old issues like #61 still carry the old `…-Zohar-…` URL; only new reports change.)
+- ✅ **#4 password floor** raised 6→8 + must include a letter and a digit
+  (`passwordProblem()` in `worker/auth.ts`; register-only, login never re-checks so
+  existing shorter passwords still work). Rate-limiting from §3.5 caps attempt rate;
+  this makes a leaked hash less enumerable.
+- ✅ **#6 dead code** — removed orphaned `gamification.js` (+ its `<script>` tag);
+  its only global `window.gamificationManager` was referenced nowhere in React
+  (it still built DOM via `innerHTML` from parent-authored word content). The other
+  three legacy scripts (`feedback.js`→`window.getFeedback`,
+  `audio-effects.js`→`window.audioEffects`, `speechSynthesis.js`→`window.speechManager`)
+  are **still live** — consumed by the React bridges/game pages. Do NOT remove them.
+- ✅ **#7 `server.py` SSRF** — `_fetch_image` now runs `_url_host_is_public()`
+  (resolves the host, rejects private/loopback/link-local incl. 169.254.169.254 /
+  reserved, fails closed). Defence-in-depth on the localhost-only maintainer tool;
+  tighten to a positive allowlist if ever exposed beyond localhost.
+
+**⏸ Config-only, LEFT TO THE MAINTAINER (not code — can't be done from the repo):**
+1. 🔴 **Make the repo / issues private** (or point the Worker `GITHUB_REPO` secret at
+   a private repo). The Worker is live and files `/api/report` issues — with kid
+   `userId`, screenshots, logs, UA — into the **public** repo. Biggest privacy gap.
+2. 🟡 **Cloudflare rate-limit rule (or Turnstile) on `/api/report`.** The code
+   hardening landed, but the endpoint is still unauthenticated; a dashboard
+   rate-limit is the real abuse cap (unlimited issue creation / R2 uploads otherwise).
+
+**Invite code (`SIGNUP_INVITE_CODE`):** the real value is a **Cloudflare Worker
+secret**, deliberately NOT in the repo. The `beta-2026` string in
+`worker/__tests__/auth.test.ts` is only a test fixture, NOT the live code. To see or
+change the live value: Cloudflare dashboard → the Worker → Settings → Variables and
+Secrets (secrets are write-only — you can overwrite/rotate but not read the current
+value), or `npx wrangler secret put SIGNUP_INVITE_CODE`. A secret change needs a
+redeploy to take effect.
 
 ## 4. Deferred infra / polish (low urgency)
 

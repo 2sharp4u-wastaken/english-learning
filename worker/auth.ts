@@ -53,8 +53,25 @@ export interface AuthEnv {
   SIGNUP_INVITE_CODE?: string
 }
 
-const PASSWORD_MIN = 6
+const PASSWORD_MIN = 8
 const TOKEN_TTL_SECONDS = 30 * 24 * 60 * 60 // 30 days
+
+/**
+ * Basic password floor for the family (parent) account. Raised from 6 to 8 with
+ * a letter+digit rule (security-review #4, 2026-07-12): rate limiting caps the
+ * attempt rate, but a 6-char all-lowercase secret is still enumerable offline if
+ * the hash ever leaks. Deliberately mild — a parent-account gate, not a bank —
+ * so it doesn't frustrate. Only enforced at register; login never re-checks, so
+ * existing shorter passwords keep working. Returns an error string or null when
+ * acceptable.
+ */
+function passwordProblem(password: string): string | null {
+  if (password.length < PASSWORD_MIN) return `password too short (min ${PASSWORD_MIN})`
+  if (!/[a-zA-Z]/.test(password) || !/[0-9]/.test(password)) {
+    return 'password must include a letter and a number'
+  }
+  return null
+}
 const PBKDF2_ITERS = 100_000
 
 // Fixed-window rate limits (design-flaws Phase C, 2026-07-05): the auth
@@ -245,9 +262,8 @@ async function register(request: Request, env: AuthEnv): Promise<Response> {
   }
   const e = String(email ?? '').trim().toLowerCase()
   if (!EMAIL_RE.test(e)) return json({ error: 'invalid email' }, 400)
-  if (String(password ?? '').length < PASSWORD_MIN) {
-    return json({ error: `password too short (min ${PASSWORD_MIN})` }, 400)
-  }
+  const pwProblem = passwordProblem(String(password ?? ''))
+  if (pwProblem) return json({ error: pwProblem }, 400)
   const existing = await env.DB.prepare('SELECT id FROM families WHERE email = ?').bind(e).first()
   if (existing) return json({ error: 'email already registered' }, 409)
 
