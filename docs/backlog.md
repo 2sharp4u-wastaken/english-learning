@@ -1303,6 +1303,23 @@ on-reload timing issue, not a product regression. Worth a separate look.
   didn't successfully say the letter). Long-term: cloud STT (M1-c, roadmap).
   **GitHub issues #35 and #36 closed.**
 
+- ✅ **#63/#65 — Word Journey say-word stage: "the microphone button doesn't start
+  recording" (Android).** Branch `claude/brave-curie-h2h37t`, 2026-11-02. Logs show a
+  tight loop of `[Speech] Recognition onerror: "not-allowed"` — the browser denies the
+  mic (a device/site-permission state, distinct from the #35/#36 silent-`onend`), so
+  `startPronunciationRecording()` rejects with the bridge's "enable microphone" message.
+  Root cause (same class as #35/#36): `SayWordStage.record()`'s `catch` **swallowed the
+  rejection** (`setPhase('awaiting'); return`) → the button silently reset and looked
+  dead, so the child just re-tapped. Fix mirrors `PronunciationGamePage` exactly: added a
+  `recordError` state, and the catch now shows the bridge message (`data-testid=
+  "wj-say-error"`, `whitespace-pre-line` for the numbered steps) for any non-
+  `RECORDING_CANCELLED` error. No new test — the WJ say-word stage is explicitly not
+  driven E2E (needs 3 stages completed, no headless mic; see `tests/wj-step1.spec.js`
+  header), and the identical bridge→UI error mechanism is already covered for
+  Pronunciation at `react-routes.spec.js:3323`. **#62 (true-or-not "why") + #64
+  (word-journey "two the same", has screenshot) still need triage — both low-signal;
+  #64 needs the screenshot, which the sandbox can't fetch (workers.dev egress-blocked).**
+
 - ✅ **M22 — PWA update banner — SHIPPED 2026-06-20.**
   After a new Cloudflare deploy, users with the old build open in a tab never
   knew an update was available (the SW silently took over but the page kept

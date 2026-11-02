@@ -37,6 +37,10 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
   const [feedback, setFeedback] = useState<{ variant: 'correct' | 'incorrect'; text: string } | null>(null)
   // Object URL for the captured mic blob — kids tap "שמע את עצמך" to replay it.
   const [recordingUrl, setRecordingUrl] = useState<string | null>(null)
+  // Mic/recognition failure surfaced to the child (beta #63/#65): a denied mic
+  // ("not-allowed") used to be swallowed here, so the button looked dead. Now we
+  // show the bridge's message (for not-allowed, the "enable microphone" steps).
+  const [recordError, setRecordError] = useState<string | null>(null)
   const supported = isSpeechRecognitionAvailable()
   const mic = useMicPlayback()
   const word = words[index]
@@ -47,6 +51,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
     setIsCorrect(false)
     setFeedback(null)
     setRecordingUrl(null)
+    setRecordError(null)
     mic.release()
     // Deferred auto-play (StrictMode-safe — see DiscoverStage).
     const playId = window.setTimeout(() => {
@@ -69,6 +74,7 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
     cancelSpeech()
     mic.release()
     setRecordingUrl(null)
+    setRecordError(null)
     setPhase('recording')
     // Capture the mic in parallel with recognition so the child can replay their
     // voice. Silent if unsupported/denied — recognition still drives scoring.
@@ -76,9 +82,15 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
     let result: { transcript: string }
     try {
       result = await startPronunciationRecording()
-    } catch {
+    } catch (err) {
+      // Surface the failure instead of silently resetting (beta #63/#65 —
+      // "the button doesn't do anything"). A user-initiated stop rejects with
+      // RECORDING_CANCELLED and is not an error; anything else (esp. a denied
+      // mic → the bridge's "enable microphone" steps) is shown to the child.
+      const msg = err instanceof Error ? err.message : String(err)
       void mic.stop()
       setPhase('awaiting')
+      if (msg !== 'RECORDING_CANCELLED') setRecordError(msg || 'הקלטה נכשלה.')
       return
     }
     setRecordingUrl(await mic.stop())
@@ -168,6 +180,15 @@ export function SayWordStage({ words, onAnswer, onComplete }: Props) {
                 : 'הדפדפן אינו תומך בזיהוי דיבור',
           )}
         </p>
+        {recordError ? (
+          <p
+            dir="rtl"
+            data-testid="wj-say-error"
+            className="max-w-md whitespace-pre-line text-center text-sm font-medium text-rose-300"
+          >
+            {nk(recordError)}
+          </p>
+        ) : null}
       </div>
       ) : null}
       {phase === 'answered' && transcript !== null ? (
