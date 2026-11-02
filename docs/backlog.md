@@ -874,6 +874,12 @@ testing unlock sooner.
 </details>
 
 ### M5 🟢 Custom words without a parent API key (decision: server-assisted + share-back)
+> ⚠️ **REDESIGNED 2026-11-02 → see `docs/content-submission-pipeline.md`.** M5 (words)
+> and M13 (images) are now one pipeline: parent "share" → private D1+R2 queue → a daily
+> (+ on-demand) Claude review agent that vision-screens, auto-approves high-confidence
+> safe items **into a PR the owner merges**, and pushes a push/email report. Decisions:
+> public repo + private queue, auto-approve-to-PR, daily+on-demand. The text below is
+> the original 2026-06 sketch, kept for history; implement per the design doc.
 > ⚠️ **PLATFORM UPDATE (2026-06-17): host is now Cloudflare Workers (Netlify retired).**
 > The "Netlify Function / Netlify Blobs" wording in M5/M13 below predates that — read it
 > as the generic serverless pattern and implement on **Cloudflare Workers + R2/KV**
@@ -896,6 +902,8 @@ central word-sharing:
 This is the first real backend seam — keep it tiny; full accounts/sync remain §6.
 
 ### M13 🟢 Parent picture upload → review → ship to everyone (design 2026-06-14)
+> ⚠️ **REDESIGNED 2026-11-02 → `docs/content-submission-pipeline.md`** (merged with M5
+> into one automated review pipeline — read that first). Original sketch kept below.
 The image twin of M5 — crowdsource the missing/wrong vocab pictures (the C2/C3
 class) from parents, owner-reviewed before they reach prod. **What already
 exists:** `WordImagesPanel` + `bridge/customContent.setImageOverride` let a
