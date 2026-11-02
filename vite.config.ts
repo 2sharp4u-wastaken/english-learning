@@ -43,7 +43,8 @@ function copyStaticAssets(): Plugin {
     'speechSynthesis.js',
     'feedback.js',
     'audio-effects.js',
-    'gamification.js',
+    // gamification.js removed 2026-11-02 (orphaned dead code — see index.html);
+    // it must stay out of this list or the build fails copying a missing file.
     // PWA (INFRA1): the service worker is referenced only as a runtime string
     // (navigator.serviceWorker.register('/sw.js')), so Vite never processes it —
     // it must be copied to the root verbatim. (The manifest + apple-touch-icon are
