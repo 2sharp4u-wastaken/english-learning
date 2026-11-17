@@ -204,14 +204,16 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 // ─── Rate limiting (D1 fixed-window, fail-open) ────────────────────────────────
 
-function clientIp(request: Request): string {
+export function clientIp(request: Request): string {
   return request.headers.get('cf-connecting-ip') ?? 'unknown'
 }
 
 /** True = allowed. Increments the counter for `key`; a fresh/expired window
  *  resets it (and opportunistically purges day-old rows). Any D1 error —
- *  including the table not existing yet — allows the request (fail-open). */
-async function rateLimit(
+ *  including the table not existing yet — allows the request (fail-open).
+ *  Exported so the content-submission handlers (worker/submissions.ts) reuse
+ *  the exact same D1 fixed-window limiter + rate_limits table. */
+export async function rateLimit(
   env: AuthEnv,
   key: string,
   { max, windowMs }: { max: number; windowMs: number },

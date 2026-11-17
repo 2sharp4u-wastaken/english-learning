@@ -159,11 +159,20 @@ This is a filter, not a verdict — the owner still merges the PR.
 
 ## Phased build plan
 
-1. **P1 — Submit path.** Worker `/api/submit-image` + `/api/submit-word`, D1
-   `submissions` migration, R2 writes, rate-limit + cap. Unit-test like `auth.test.ts`.
+1. **P1 — Submit path. ✅ DONE (2026-11-17, branch `claude/brave-curie-h2h37t`).**
+   `worker/submissions.ts` (`/api/submit-image` + `/api/submit-word`), D1
+   `migrations/0003_submissions.sql`, R2 writes under a `submissions/` prefix in the
+   existing `REPORTS_BUCKET` (no new bucket), per-IP rate limit (reuses the exported
+   `rateLimit`/`clientIp` + `rate_limits` table), content-type allowlist, 2 MB cap,
+   random keys, and pending caps (1000 global / 20 per submitter). Fails closed (503)
+   when DB/bucket/table are missing so a submission is never dropped. Mounted in
+   `worker/index.ts`. Tests: `worker/__tests__/submissions.test.ts` (11, mock D1+R2).
+   **Go-live needs:** `wrangler d1 execute english-learning-db --file=migrations/0003_submissions.sql --remote`
+   before the Phase-2 UI ships (endpoints 503 until then — safe: nothing calls them yet).
 2. **P2 — Parent UI.** "שתפו" button + client downscale on `WordImagesPanel` (local
    half exists) and `CustomWordsPanel`. Applies locally immediately (today's path) and
-   POSTs the submission.
+   POSTs the submission. **Note:** `CustomWordsPanel` has 3 known-red react-routes tests
+   (backlog §3, seeded-state path) — fix or account for them when touching it.
 3. **P3 — Admin endpoints.** `GET/POST /api/admin/submissions*` behind `ADMIN_TOKEN`.
 4. **P4 — Review agent + bake script.** `scripts/review-submissions.*` (list → vision
    screen → bake approved into `img/`+`data/categories/*` → open PR → mark D1). Wire it

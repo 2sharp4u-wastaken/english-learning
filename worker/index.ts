@@ -21,6 +21,7 @@
  */
 
 import { handleCloudApi, type AuthEnv } from './auth'
+import { handleSubmissions } from './submissions'
 
 interface Env extends AuthEnv {
   ASSETS: { fetch: (req: Request) => Promise<Response> }
@@ -182,6 +183,12 @@ export default {
     if (path === '/api/report') return handleReport(request, env, url.origin)
     if (path.startsWith('/api/report-image/')) {
       return handleReportImage(decodeURIComponent(path.slice('/api/report-image/'.length)), env)
+    }
+    // Content submissions (pipeline Phase 1): POST /api/submit-image | /api/submit-word.
+    // Returns null if not one of ours, so we fall through to the routes below.
+    if (path === '/api/submit-image' || path === '/api/submit-word') {
+      const res = await handleSubmissions(request, env, path)
+      if (res) return res
     }
     // Cloud accounts (Phase A) + progress/prefs backup (Phase B): /api/auth/*,
     // /api/players, /api/family, /api/progress/:id, /api/prefs/:id. Returns null
