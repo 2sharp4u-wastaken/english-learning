@@ -181,7 +181,19 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
   `[[project_prog1_lifecycle_single_source]]`.
   ⬜ Optional follow-up only: snapshot-based `isWordDue` so OTHER users' Words-tab due
   flags work (current guard just hides them for non-current users — correct, not wrong).
-- 🔴 **PROG1 (original) — Stats shows "0 מילים נלמדו" while Home shows 31 (design notes).**
+- ✅ **PROG1 — Stats "0 מילים נלמדו" vs Home 31 — ALREADY SHIPPED; verified 2026-11-19.**
+  Found already implemented when picked up (the entry was stale). The locked plan
+  landed: `src/engine/lifecycle.ts` is the pure single-source-of-truth (`deriveWordStatus`/
+  `isDerivedLearned`/`deriveLifecycle`, abc-excluded, grandfathered, sticky
+  `reachedLearned`); `ProgressManager._isDerivedLearned` delegates to it;
+  `bridge/stats.ts` uses `learnedCount=lifecycle.introducedCount` +
+  `masteredCount=lifecycle.learnedCount` with the cross-user `isWordDue` guard;
+  `StatsPage` shows both tiles (`מילים נלמדו`=introduced / `מילים בשליטה`=mastered) and
+  the HoF leaderboard ranks introduced; velocity reads `firstSeen`. Home and Stats now
+  resolve the SAME count: `Home.summary.wordsLearned = getIntroducedCount()` and
+  `Stats.learnedCount = lifecycle.introducedCount`. Verified: 11 `lifecycle.test.ts` unit
+  tests + 12 `tests/learning-lifecycle.spec.js` E2E tests pass. The original 🔴 plan
+  (decisions + sequence) is kept below for history.
   Root cause: the V3 model derives "learned" from `wordMastery`, but the **Stats**
   surface (`bridge/stats.ts`) still reads the legacy `learnedWords` stamp, which is
   written *only* by full Word-Journey graduation (`graduateWord`) → ~always 0. One
