@@ -247,11 +247,14 @@ Detail/spec: `master-plan.md` → "Slice INFRA1".
   say-word recording, and celebration animation/audio have no E2E.
   **Now partly unblocked:** the `webkitSpeechRecognition` stub
   (`tests/helpers/mockSpeech.js`) exists, so the mic/say-word paths are writable.
-- 🔴 **3 PRE-EXISTING react-routes failures (verified on clean tree 2026-07-05):**
-  `react-routes.spec.js:633/716/739` — all the Content-tab Custom Words panel
-  (`#react-root textarea` not found; `custom-words-list` never renders). Not
-  root-caused; joins the 2 known smoke failures. Suspect the CustomWordsPanel
-  seeded-state path broke in a recent settings redesign.
+- ✅ **3 PRE-EXISTING react-routes failures — FIXED 2026-11-19 (branch
+  `claude/brave-curie-h2h37t`).** Root cause: the Content-tab Custom Words panel is
+  inside a `SectionCard` that's been **collapsed by default since issue #53**, and the
+  card only mounts its children when expanded — so `#react-root textarea` /
+  `custom-words-list` never rendered for the tests, which never expanded it. Fix:
+  `openContentTab` (and the seeded-word test's re-open) now click
+  `content-customwords-toggle` first. All 6 content tests pass (ran vs the preinstalled
+  Chromium). Not a code bug — stale test assertions after the redesign.
 
 ## 3.5 Storage robustness — design-flaws review round 1 ✅ SHIPPED 2026-07-05
 

@@ -169,10 +169,20 @@ This is a filter, not a verdict — the owner still merges the PR.
    `worker/index.ts`. Tests: `worker/__tests__/submissions.test.ts` (11, mock D1+R2).
    **Go-live needs:** `wrangler d1 execute english-learning-db --file=migrations/0003_submissions.sql --remote`
    before the Phase-2 UI ships (endpoints 503 until then — safe: nothing calls them yet).
-2. **P2 — Parent UI.** "שתפו" button + client downscale on `WordImagesPanel` (local
-   half exists) and `CustomWordsPanel`. Applies locally immediately (today's path) and
-   POSTs the submission. **Note:** `CustomWordsPanel` has 3 known-red react-routes tests
-   (backlog §3, seeded-state path) — fix or account for them when touching it.
+2. **P2 — Parent UI. ✅ DONE (2026-11-19, branch `claude/brave-curie-h2h37t`).**
+   `src/bridge/contentSubmission.ts` (the "share to owner" seam: canvas downscale →
+   WebP, POST to `/api/submit-*`, graceful failure). "שתפו" (Share2) button added to
+   `WordImagesPanel` per word (enabled when a custom image override exists → shares the
+   override) and to `CustomWordsPanel` per custom word (shares word+translation+
+   category). Submitter = the active profile id. Tests: `src/bridge/__tests__/
+   contentSubmission.test.ts` (5, mock fetch) + 2 new E2E tests in `react-routes.spec.js`
+   that mock the Worker and verify both share flows reach the success state.
+   **Also fixed the 3 pre-existing red react-routes Custom-Words tests** (backlog §3):
+   they asserted `#react-root textarea` without expanding the now-default-collapsed
+   Custom Words `SectionCard` (collapsed since issue #53) — `openContentTab` + the
+   seeded-word test now expand it first. All 6 content tests green (ran against the
+   preinstalled Chromium). **Note:** `npm run migrate:submissions` applies migration
+   0003 — run it before this UI goes live (endpoints 503 until then).
 3. **P3 — Admin endpoints.** `GET/POST /api/admin/submissions*` behind `ADMIN_TOKEN`.
 4. **P4 — Review agent + bake script.** `scripts/review-submissions.*` (list → vision
    screen → bake approved into `img/`+`data/categories/*` → open PR → mark D1). Wire it

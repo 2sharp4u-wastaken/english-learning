@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react'
-import { Sparkles, Trash2, Download, Upload, Eye, EyeOff, Loader2 } from 'lucide-react'
+import { Sparkles, Trash2, Download, Upload, Eye, EyeOff, Loader2, Share2, Check } from 'lucide-react'
 import { useSettings } from '@/hooks/useSettings'
 import { importCustomWords, type ImportLog } from '@/bridge/wordImport'
+import { submitWord } from '@/bridge/contentSubmission'
 import {
   getCustomWords,
   deleteCustomWord,
@@ -19,7 +20,17 @@ export function CustomWordsPanel() {
   const [busy, setBusy] = useState(false)
   const [logs, setLogs] = useState<ImportLog[]>([])
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null)
+  // Per-word share-to-owner state (content-submission pipeline), keyed by word.
+  const [shareState, setShareState] = useState<Record<string, 'sharing' | 'ok' | 'error'>>({})
   const fileRef = useRef<HTMLInputElement>(null)
+
+  async function handleShare(w: CustomWord) {
+    if (shareState[w.word] === 'sharing' || shareState[w.word] === 'ok') return
+    setShareState((s) => ({ ...s, [w.word]: 'sharing' }))
+    const res = await submitWord(w.word, w.category, w.translation)
+    setShareState((s) => ({ ...s, [w.word]: res.ok ? 'ok' : 'error' }))
+    if (!res.ok) setMessage({ ok: false, text: res.error || 'השיתוף נכשל.' })
+  }
 
   useEffect(() => {
     getCustomWords().then(setWords)
@@ -184,6 +195,23 @@ export function CustomWordsPanel() {
                   <div className="truncate text-sm font-medium text-text" dir="ltr">{w.word}</div>
                   <div className="truncate text-xs text-muted">{w.translation} · {w.category}</div>
                 </div>
+                <button
+                  type="button"
+                  onClick={() => handleShare(w)}
+                  disabled={shareState[w.word] === 'sharing' || shareState[w.word] === 'ok'}
+                  data-testid="custom-word-share"
+                  className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted hover:text-blue-300 disabled:opacity-40"
+                  title={shareState[w.word] === 'ok' ? 'נשלח לבדיקה' : 'שתפו מילה זו עם היוצרים (לבדיקה)'}
+                  aria-label={`שתפו ${w.word}`}
+                >
+                  {shareState[w.word] === 'sharing' ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : shareState[w.word] === 'ok' ? (
+                    <Check size={15} className="text-learn" />
+                  ) : (
+                    <Share2 size={15} />
+                  )}
+                </button>
                 <button
                   type="button"
                   onClick={() => handleDelete(w.word)}

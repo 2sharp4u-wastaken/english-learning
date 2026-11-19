@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Check, Undo2, FolderOpen, Star, Pencil, X } from 'lucide-react'
+import { Check, Undo2, FolderOpen, Star, Pencil, X, Share2, Loader2 } from 'lucide-react'
 import { getAllWords, getCategories, type CatalogWord } from '@/bridge/categories'
+import { submitWordImage } from '@/bridge/contentSubmission'
 import {
   getImageOverrides,
   setImageOverride,
@@ -158,6 +159,24 @@ function WordCard({
   const displayTranslation = translationOverride || word.translation || ''
   const [transDraft, setTransDraft] = useState(displayTranslation)
 
+  // Share-to-owner (content-submission pipeline): only a custom image can be
+  // shared (there's nothing to send for the built-in emoji/imageUrl).
+  const [share, setShare] = useState<'idle' | 'sharing' | 'ok' | 'error'>('idle')
+  const [shareMsg, setShareMsg] = useState('')
+
+  async function doShare() {
+    if (!imageOverride || share === 'sharing') return
+    setShare('sharing')
+    setShareMsg('')
+    const res = await submitWordImage(word.category, word.word, imageOverride)
+    if (res.ok) {
+      setShare('ok')
+    } else {
+      setShare('error')
+      setShareMsg(res.error || 'השיתוף נכשל.')
+    }
+  }
+
   function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0]
     e.target.value = ''
@@ -269,7 +288,23 @@ function WordCard({
           >
             <Undo2 size={13} />
           </button>
+          <button
+            type="button"
+            data-testid="wim-share"
+            onClick={doShare}
+            disabled={!imageOverride || share === 'sharing' || share === 'ok'}
+            className="flex items-center gap-1 rounded border border-blue-400/25 bg-blue-400/10 px-2 py-1 text-xs text-blue-300 hover:bg-blue-400/15 disabled:opacity-30"
+            title="שתפו את התמונה עם היוצרים (לבדיקה)"
+            aria-label={`שתפו תמונה ${word.word}`}
+          >
+            {share === 'sharing' ? <Loader2 size={13} className="animate-spin" /> : share === 'ok' ? <Check size={13} /> : <Share2 size={13} />}
+          </button>
         </div>
+        {share === 'ok' ? (
+          <p data-testid="wim-share-status" className="text-[11px] text-learn">נשלח לבדיקה — תודה! 🙏</p>
+        ) : share === 'error' ? (
+          <p data-testid="wim-share-status" className="text-[11px] text-coral-400">{shareMsg}</p>
+        ) : null}
       </div>
     </li>
   )

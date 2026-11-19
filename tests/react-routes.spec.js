@@ -631,6 +631,11 @@ test.describe('Slice 1.6: Settings', () => {
     await seedUser(page, { role: 'parent' });
     await gotoHash(page, '/settings');
     await page.locator('[data-tab-id="content"]:visible').first().click();
+    // The Custom Words section is collapsed by default (issue #53) and its panel
+    // (textarea + custom-words-list) only mounts when expanded — open it so the
+    // content tests can see it. Word Images stays collapsed; tests that need it
+    // click content-images-toggle themselves.
+    await page.locator('[data-testid="content-customwords-toggle"]').click();
   }
 
   test('content + parents: tools render natively with no settings.html escape hatch', async ({ page }) => {
@@ -730,6 +735,9 @@ test.describe('Slice 1.6: Settings', () => {
     });
     await page.locator('[data-tab-id="game"]:visible').first().click();
     await page.locator('[data-tab-id="content"]:visible').first().click();
+    // Re-opening the tab re-collapses the Custom Words section; expand it so the
+    // panel re-mounts and reads the seeded word.
+    await page.locator('[data-testid="content-customwords-toggle"]').click();
 
     const list = page.locator('[data-testid="custom-words-list"]');
     await expect(list).toContainText('dragon');
@@ -740,6 +748,26 @@ test.describe('Slice 1.6: Settings', () => {
       JSON.parse(localStorage.getItem('customWords_global') || '[]'),
     );
     expect(remaining).toHaveLength(0);
+  });
+
+  test('content: sharing a custom word POSTs it to the submission pipeline', async ({ page }) => {
+    let posted = null;
+    await page.route('**/api/submit-word', async (route) => {
+      posted = route.request().postDataJSON();
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, id: 'w1' }) });
+    });
+    await openContentTab(page);
+    await page.evaluate(() => localStorage.setItem('customWords_global', JSON.stringify([
+      { word: 'otter', translation: 'לוטרה', category: 'animals', image: '🦦' },
+    ])));
+    await page.locator('[data-tab-id="game"]:visible').first().click();
+    await page.locator('[data-tab-id="content"]:visible').first().click();
+    await page.locator('[data-testid="content-customwords-toggle"]').click();
+
+    await page.locator('[data-testid="custom-word-share"]').click();
+    // On success the button enters the "sent" state (disabled).
+    await expect(page.locator('[data-testid="custom-word-share"]')).toBeDisabled();
+    expect(posted).toMatchObject({ word: 'otter', category: 'animals', translation: 'לוטרה' });
   });
 
   test('content: Custom Words import restores a backup bundle', async ({ page }) => {
@@ -789,6 +817,29 @@ test.describe('Slice 1.6: Settings', () => {
     await expect.poll(() => page.evaluate((u) =>
       Object.values(window.wordImageOverrides || {}).includes(u), url,
     )).toBe(false);
+  });
+
+  test('content: sharing a word image POSTs it to the submission pipeline', async ({ page }) => {
+    let posted = false;
+    await page.route('**/api/submit-image', async (route) => {
+      posted = true;
+      await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ ok: true, id: 'i1' }) });
+    });
+    await openContentTab(page);
+    await page.locator('[data-testid="content-images-toggle"]').click();
+    const card = page.locator('[data-testid="word-images-list"] li').first();
+    await expect(card).toBeVisible();
+
+    // A tiny real PNG data URL so the client-side downscale (fetch → canvas →
+    // webp) has something to encode; the share button is enabled once an
+    // override exists.
+    const png = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==';
+    await card.locator('input[type="url"]').fill(png);
+    await card.locator('[data-testid="wim-save"]').click();
+
+    await card.locator('[data-testid="wim-share"]').click();
+    await expect(card.locator('[data-testid="wim-share-status"]')).toContainText('נשלח');
+    expect(posted).toBe(true);
   });
 
   test('content: Word Images saves a translation override to localStorage', async ({ page }) => {
